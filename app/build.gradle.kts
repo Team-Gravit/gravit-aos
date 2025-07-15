@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.androidx.monitor)
     implementation(libs.androidx.junit.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
