@@ -77,7 +77,7 @@ fun MainScreen() {
                         .align(Alignment.CenterStart)
                 )
             }
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(100.dp)) /*** 간격 조절 필요 **/
 
             Box(
                 modifier = Modifier
@@ -290,18 +290,18 @@ fun MainScreen() {
 
 @Preview(showBackground = true)
 @Composable
-fun view() {
+fun View() {
    MainScreen()
 }
 
 @Composable
 private fun CustomText (
+    modifier: Modifier = Modifier,
     text: String,
     fontFamily: FontFamily = pretendard,
     fontWeight: FontWeight,
     fontSize: TextUnit,
     color: Color = Color.Black,
-    modifier: Modifier = Modifier
 ) {
     Text(
         text = text,
