@@ -1,4 +1,4 @@
-package com.example.gravit
+package com.example.gravit.login
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -52,14 +53,16 @@ fun LoginScreen (navController: NavController) {
         )
         Column(
             modifier = Modifier
-                .padding(start = 25.dp, top = 129.dp)
+                .width(325.dp)
+                .padding(top = 129.dp)
+                .align(Alignment.TopCenter),
 
         ) {
             Image(
-                painter = painterResource(id=R.drawable.gravit_login_logo),
+                painter = painterResource(id= R.drawable.gravit_login_logo),
                 contentDescription = "login_logo",
-                modifier = Modifier
-                    .size(72.dp)
+                modifier = Modifier.size(72.dp)
+
             )
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -192,5 +195,3 @@ fun ChoiceScreenPreview() {
     val navController = rememberNavController()
     LoginScreen(navController)
 }
-
-/*** 점선 사이즈 체크 **/

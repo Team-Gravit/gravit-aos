@@ -1,4 +1,4 @@
-package com.example.gravit
+package com.example.gravit.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 
 
