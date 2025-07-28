@@ -1,4 +1,4 @@
-package com.example.gravit.main
+package com.example.gravit.main.Home
 
 import android.icu.text.SimpleDateFormat
 import androidx.compose.foundation.Canvas
@@ -84,7 +84,8 @@ fun MainScreen() {
                     .width(328.dp)
                     .align(Alignment.CenterHorizontally)
             ) {
-                CustomText( /*** 닉네임 안 넣음 **/
+                CustomText(
+                    /*** 닉네임 안 넣음 **/ /*** 닉네임 안 넣음 **/
                     text = "어서오세요,",
                     fontWeight = FontWeight.Bold,
                     fontSize = 28.sp,
