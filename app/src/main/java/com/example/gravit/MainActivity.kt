@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.gravit.login.DetailScreen
+import com.example.gravit.navigation.AppNavigation
 import com.example.gravit.ui.theme.GravitTheme
 
 class MainActivity : ComponentActivity() {
