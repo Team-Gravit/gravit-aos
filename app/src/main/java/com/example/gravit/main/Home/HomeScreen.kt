@@ -39,13 +39,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun MainScreen() {
+fun HomeScreen() {
     val dateFormat = remember { SimpleDateFormat("yyyy. MM. dd (E)", Locale.KOREAN) }
     val today = remember { dateFormat.format(Date()) }
 
@@ -288,12 +289,13 @@ fun MainScreen() {
     }
 }
 
-
+/*
 @Preview(showBackground = true)
 @Composable
 fun View() {
-   MainScreen()
+   HomeScreen()
 }
+ */
 
 @Composable
 private fun CustomText (
