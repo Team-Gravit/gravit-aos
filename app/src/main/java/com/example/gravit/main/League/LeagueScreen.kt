@@ -41,8 +41,10 @@ fun LeagueScreen() {
                         .fillMaxWidth()
                         .height(80.dp)
                 ) {
-                    Row(modifier = Modifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "##등",
@@ -73,16 +75,18 @@ fun LeagueScreen() {
                 }
             }
 
-            Box(modifier = Modifier
-                .weight(3f)
-                .fillMaxSize()
+            Box(
+                modifier = Modifier
+                    .weight(3f)
+                    .fillMaxSize()
             ) // 티어 들어갈 부분
 
-            Box(modifier = Modifier
-                .weight(5f)
-                .fillMaxSize()
-            ){
-                Column(modifier = Modifier.fillMaxSize()){
+            Box(
+                modifier = Modifier
+                    .weight(5f)
+                    .fillMaxSize()
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
                             .padding(15.dp) // 배경과의 거리
@@ -269,15 +273,7 @@ fun LeagueScreen() {
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(100.dp))
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .background(Color.LightGray)
-                .align(Alignment.BottomCenter)
-        )
     }
 }
 
