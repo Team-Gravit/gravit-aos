@@ -13,8 +13,8 @@ fun Earth(){
     BoxWithConstraints (
         modifier = Modifier.fillMaxSize()
     ) {
-        val screenHeight = maxHeight
-        val screenWidth = maxWidth
+        //val screenHeight = maxHeight
+        //val screenWidth = maxWidth
 
         Text("earth")
     }
