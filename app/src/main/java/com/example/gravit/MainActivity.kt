@@ -14,7 +14,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             GravitTheme {
                 AppNavigation()
-                //DetailScreen()
             }
         }
     }
@@ -24,5 +23,4 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigationPreview() {
     AppNavigation()
-    //DetailScreen()
 }

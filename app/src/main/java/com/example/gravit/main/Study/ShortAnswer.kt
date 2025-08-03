@@ -200,69 +200,6 @@ fun ShortAnswer() {
         }
     }
 
-@Composable
-fun NameInputFiled (
-    text: String,
-    onTextChange: (String) -> Unit,
-) {
-    val isValid = text.length >= 2
-    val isError = text.isNotEmpty() && !isValid
-    val showErrorMessage = isError
-    val screenWidth = LocalScreenWidth.current
-    val screenHeight = LocalScreenHeight.current
-
-    Column {
-        OutlinedTextField(
-            value = text,
-            onValueChange = onTextChange,
-            isError = isError,
-            placeholder = {
-                Text(
-                    text = "닉네임",
-                    color = Color(0xFF868686), // 회색
-                    fontFamily = pretendard,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            },
-            textStyle = TextStyle(
-                color = if (isError) Color.Red else Color.Black,
-                fontFamily = pretendard,
-                fontSize = 18.sp
-            ),
-            modifier = Modifier
-                .padding(start = screenWidth * (25f / 375f),
-                    top = screenHeight * (12f / 815f))
-                .size(width = screenWidth * (325f / 375f),
-                    height = screenHeight * (50f / 815f)),
-            shape = RoundedCornerShape(10.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                errorContainerColor = Color.White,
-                focusedIndicatorColor = if (isError) Color.Red else Color.Black,
-                unfocusedIndicatorColor = if (isError) Color.Red else Color(0xFFC3C3C3),
-                errorIndicatorColor = Color.Red,
-                cursorColor = if (isError) Color.Red else Color.Black
-            )
-        )
-
-        if (showErrorMessage) {
-            Text(
-                text = "이름은 두 글자 이상이어야 합니다",
-                color = Color(0xFF868686),
-                modifier = Modifier.padding(start = screenWidth * (25f / 375f),
-                    top = screenHeight * (8f / 815f)),
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 12.sp
-                )
-            )
-        }
-
-    }
-}
 
 @Composable
 fun AnswerInputField(
