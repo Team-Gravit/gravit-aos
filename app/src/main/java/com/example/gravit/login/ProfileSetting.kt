@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.ui.theme.LocalScreenHeight
 import com.example.gravit.ui.theme.LocalScreenWidth
@@ -44,7 +45,7 @@ import com.example.gravit.ui.theme.pretendard
 
 
 @Composable
-fun DetailScreen() {
+fun ProfileSetting(navController: NavController) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -59,71 +60,68 @@ fun DetailScreen() {
         ) {
             var text by remember { mutableStateOf("") }
 
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = screenHeight * (51f / 812f))
-                ) {
-                    ImageButton(
-                        painter = painterResource(id = R.drawable.back_arrow),
-                        contentDescription = "back arrow",
-                        modifier = Modifier
-                            .size(screenWidth * (48f / 375f))
-                            .padding(start = screenWidth * (14f / 375f)),
-                        onClick = {}
-                    )
+            Box (modifier = Modifier.fillMaxSize()){
 
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.TopStart)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = screenHeight * (51f / 812f))
+                    ) {
+                        ImageButton(
+                            painter = painterResource(id = R.drawable.back_arrow),
+                            contentDescription = "back arrow",
+                            modifier = Modifier
+                                .size(screenWidth * (48f / 375f))
+                                .padding(start = screenWidth * (14f / 375f)),
+                            onClick = { navController.popBackStack() }
+                        )
+
+                        Text(
+                            text = "로그인",
+                            modifier = Modifier.align(Alignment.Center),
+                            style = TextStyle(
+                                fontFamily = pretendard,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 20.sp
+                            )
+                        )
+                    }
+                    ProfileSwitcher()
                     Text(
-                        text = "로그인",
-                        modifier = Modifier.align(Alignment.Center),
+                        text = "닉네임 설정",
+                        modifier = Modifier.padding(start = screenWidth * (25f / 375f)),
                         style = TextStyle(
                             fontFamily = pretendard,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 20.sp
+                            fontSize = 18.sp
                         )
                     )
-                }
-                ProfileSwitcher()
-                Text(
-                    text = "닉네임 설정",
-                    modifier = Modifier.padding(start = screenWidth * (25f / 375f)),
-                    style = TextStyle(
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.sp
+
+                    NameInputFiled(
+                        text = text,
+                        onTextChange = { text = it }
                     )
-                )
 
-                NameInputFiled(
-                    text = text,
-                    onTextChange = {}
-                )
-
-                CustomButton(
-                    text = "다음",
-                    onClick =
-                        {
-                            // 다음으로
-                        },
-                    modifier = Modifier
-                        .padding(top = screenHeight * (298f / 812f))
-                        .size(screenWidth * (325f / 375f), screenHeight * (60f / 740f))
-                        .align(Alignment.CenterHorizontally)
-
-                )
+                }
             }
+
+            CustomButton(
+                text = "다음",
+                onClick = { navController.navigate("profile finish") },
+                enabled = isValidNickname(text),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = screenHeight * (34f / 812f)) // 하단 여백 조절
+                    .size(screenWidth * (325f / 375f), screenHeight * (60f / 812f))
+            )
         }
 
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ScreenPreview() {
-    DetailScreen()
 }
 
 @Composable
@@ -131,7 +129,7 @@ fun ImageButton(
     painter: Painter,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Image(
         painter = painter,
@@ -141,11 +139,12 @@ fun ImageButton(
 }
 
 @Composable
-fun ProfileSwitcher() {
-    val profileImages = listOf(
-        R.drawable.profile1,
-        R.drawable.profile2,
-        R.drawable.profile3
+fun ProfileSwitcher(
+    onProfileSelected: (Int) -> Unit = {} //서버 전송용
+) {
+    val profileColor = listOf( //컬러 팔레트가 안 보여서 임시로 9가지 색상을 넣어놨음
+        Color.Red, Color.Black, Color.Blue, Color.Cyan, Color.Yellow
+        ,Color.DarkGray, Color.Gray, Color.Green, Color.Magenta,
     )
     val screenWidth = LocalScreenWidth.current
     val screenHeight = LocalScreenHeight.current
@@ -155,8 +154,10 @@ fun ProfileSwitcher() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = screenWidth * (35f / 375f),
-                     vertical = screenHeight * (30f / 812f)),
+            .padding(
+                horizontal = screenWidth * (35f / 375f),
+                vertical = screenHeight * (30f / 812f)
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -166,28 +167,40 @@ fun ProfileSwitcher() {
             contentDescription = "Previous profile",
             modifier = Modifier.size(screenWidth * (48f / 375f)),
             onClick = {
-                currentIndex = if (currentIndex == 0) profileImages.lastIndex else currentIndex - 1
+                currentIndex = if (currentIndex == 0) profileColor.lastIndex else currentIndex - 1
+                onProfileSelected(currentIndex + 1)
             }
         )
 
-        Image(
-            painter = painterResource(id = profileImages[currentIndex]),
-            contentDescription = "Profile image",
+        Box( //선택에 따라 뒷배경 색이 바뀌도록
             modifier = Modifier
                 .size(screenWidth * (178f / 375f))
                 .clip(CircleShape)
-
-        )
+                .background(profileColor[currentIndex]),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.profile_logo),
+                contentDescription = "profile logo",
+                modifier = Modifier.size(screenWidth * (71.96f / 375f), screenHeight * (90.89f / 812f))
+            )
+        }
 
         ImageButton(
             painter = painterResource(id = R.drawable.arrow_right),
             contentDescription = "Next profile",
             modifier = Modifier.size(screenWidth * (48f / 375f)),
             onClick = {
-                currentIndex = if (currentIndex == profileImages.lastIndex) 0 else currentIndex + 1
-            }
+                currentIndex = if (currentIndex == profileColor.lastIndex) 0 else currentIndex + 1
+                onProfileSelected(currentIndex + 1)
+            },
         )
     }
+}
+
+fun isValidNickname(nickname: String): Boolean { //닉네임 규정
+    val regex = "^[가-힣a-zA-Z0-9]{2,8}$".toRegex()
+    return regex.matches(nickname)
 }
 
 @Composable
@@ -195,7 +208,7 @@ fun NameInputFiled (
     text: String,
     onTextChange: (String) -> Unit,
 ) {
-    val isValid = text.length >= 2
+    val isValid = isValidNickname(text)
     val isError = text.isNotEmpty() && !isValid
     val showErrorMessage = isError
     val screenWidth = LocalScreenWidth.current
@@ -221,10 +234,14 @@ fun NameInputFiled (
                 fontSize = 18.sp
             ),
             modifier = Modifier
-                .padding(start = screenWidth * (25f / 375f),
-                         top = screenHeight * (12f / 815f))
-                .size(width = screenWidth * (325f / 375f),
-                      height = screenHeight * (50f / 815f)),
+                .padding(
+                    start = screenWidth * (25f / 375f),
+                    top = screenHeight * (12f / 815f)
+                )
+                .size(
+                    width = screenWidth * (325f / 375f),
+                    height = screenHeight * (50f / 815f)
+                ),
             shape = RoundedCornerShape(10.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
@@ -237,9 +254,9 @@ fun NameInputFiled (
             )
         )
 
-        if (showErrorMessage) {
+        if (showErrorMessage) { //규정에 맞지 않을 때
             Text(
-                text = "이름은 두 글자 이상이어야 합니다",
+                text = "공백, 특수문자 없이 2~8자로 입력하세요",
                 color = Color(0xFF868686),
                 modifier = Modifier.padding(start = screenWidth * (25f / 375f),
                                             top = screenHeight * (8f / 815f)),
@@ -255,19 +272,28 @@ fun NameInputFiled (
 }
 
 @Composable
-fun CustomButton(
+fun CustomButton( //profile finish랑 똑같은 버튼이길래 함수로 만들었음
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
-    Button(
+    val activeBackground = Color(0xFF8100B3)
+    val inactiveBackground = activeBackground.copy(alpha = 0.5f) // 50% 투명도
+    val activeTextColor = Color.White
+    val inactiveTextColor = Color.White.copy(alpha = 0.5f)
+
+    Button( //비활성화 조건 추가함
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF8100B3),
-            contentColor = Color.White
-        )
+            containerColor = if (enabled) activeBackground else inactiveBackground,
+            contentColor = if (enabled) activeTextColor else inactiveTextColor,
+            disabledContainerColor = inactiveBackground,
+            disabledContentColor = inactiveTextColor
+        ),
+        enabled = enabled
     ) {
         Text(
             text = text,

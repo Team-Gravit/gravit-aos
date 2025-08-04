@@ -39,7 +39,7 @@ fun MainScreen() {
         ) {
             composable("home") { HomeScreen() }
 
-            // 🔽 study 관련 라우트들을 MainScreen에서 직접 정의
+            //study
             composable("study") { StudyScreen(navController) }      // == study/root
             composable("study/earth") { Earth() }
             composable("study/jupiter") { Jupiter() }
