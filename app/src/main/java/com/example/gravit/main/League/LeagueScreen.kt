@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gravit.ui.theme.pretendard
 
 @Composable
 
@@ -89,7 +90,7 @@ fun LeagueScreen() {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
-                            .padding(15.dp) // 배경과의 거리
+                            .padding(15.dp)
                             .fillMaxWidth()
                             .weight(1f)
                             .border(
@@ -111,7 +112,8 @@ fun LeagueScreen() {
                                 Text(
                                     text = "##등",
                                     fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Box(
@@ -124,12 +126,15 @@ fun LeagueScreen() {
                                 Text(
                                     text = "닉네임",
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                             }
                             Column {
-                                Text(text = "LV ##")
-                                Text(text = "LP ####")
+                                Text(text = "LV ##",
+                                    fontFamily = pretendard)
+                                Text(text = "LP ####",
+                                    fontFamily = pretendard)
                             }
                         }
                     }
@@ -157,7 +162,8 @@ fun LeagueScreen() {
                                 Text(
                                     text = "##등",
                                     fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Box(
@@ -170,12 +176,15 @@ fun LeagueScreen() {
                                 Text(
                                     text = "닉네임",
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                             }
                             Column {
-                                Text(text = "LV ##")
-                                Text(text = "LP ####")
+                                Text(text = "LV ##",
+                                    fontFamily = pretendard)
+                                Text(text = "LP ####",
+                                    fontFamily = pretendard)
                             }
                         }
                     }
@@ -203,7 +212,8 @@ fun LeagueScreen() {
                                 Text(
                                     text = "##등",
                                     fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Box(
@@ -216,12 +226,15 @@ fun LeagueScreen() {
                                 Text(
                                     text = "닉네임",
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                             }
                             Column {
-                                Text(text = "LV ##")
-                                Text(text = "LP ####")
+                                Text(text = "LV ##",
+                                    fontFamily = pretendard)
+                                Text(text = "LP ####",
+                                    fontFamily = pretendard)
                             }
                         }
                     }
@@ -249,7 +262,8 @@ fun LeagueScreen() {
                                 Text(
                                     text = "##등",
                                     fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Box(
@@ -262,12 +276,15 @@ fun LeagueScreen() {
                                 Text(
                                     text = "닉네임",
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = pretendard
                                 )
                             }
                             Column {
-                                Text(text = "LV ##")
-                                Text(text = "LP ####")
+                                Text(text = "LV ##",
+                                    fontFamily = pretendard)
+                                Text(text = "LP ####",
+                                    fontFamily = pretendard)
                             }
                         }
                     }

@@ -21,9 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.R
-import com.example.gravit.main.Study.Stage.Moon
-import com.example.gravit.ui.theme.LocalScreenHeight
-import com.example.gravit.ui.theme.LocalScreenWidth
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.launch
 
@@ -39,8 +36,6 @@ fun ShortAnswer() {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            Spacer(modifier = Modifier.height(10.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -49,6 +44,7 @@ fun ShortAnswer() {
                 Text(
                     text = "챕터 이름",
                     fontSize = 20.sp,
+                    fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge
@@ -77,6 +73,7 @@ fun ShortAnswer() {
 
                     Text(
                         text = "스톱워치",
+                        fontFamily = pretendard,
                         modifier = Modifier.padding(end = 16.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -92,12 +89,14 @@ fun ShortAnswer() {
                     Text(
                         text = "문제 번호",
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = pretendard
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "다음 문장을 읽고, 빈칸에 들어갈 알맞은 말을 쓰시오.",
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        fontFamily = pretendard
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Box(
@@ -107,9 +106,14 @@ fun ShortAnswer() {
                             .border(
                                 width = 1.dp,
                                 color = Color(0xFFDCDCDC),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(8.dp)
                             )
                     )
+                    {Text(modifier = Modifier.padding(10.dp),
+                        text = " ",
+                        fontSize = 16.sp,
+                        fontFamily = pretendard)
+                    }
                 }
             }
 
@@ -148,12 +152,14 @@ fun ShortAnswer() {
                     Text("지금까지 푼 내역이\n모두 사라져요!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = pretendard,
                         textAlign = TextAlign.Center)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(text = "#### 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
                         fontSize = 16.sp,
+                        fontFamily = pretendard,
                         color = Color(0xFF6D6D6D),
                         textAlign = TextAlign.Center)
 
@@ -175,7 +181,10 @@ fun ShortAnswer() {
                         ),
                         shape = RoundedCornerShape(100.dp)
                     ) {
-                        Text("계속하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("계속하기",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = pretendard)
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -183,6 +192,7 @@ fun ShortAnswer() {
                     Text(
                         text = "그만두기",
                         color = Color(0xFF6D6D6D),
+                        fontFamily = pretendard,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
@@ -201,70 +211,6 @@ fun ShortAnswer() {
     }
 
 @Composable
-fun NameInputFiled (
-    text: String,
-    onTextChange: (String) -> Unit,
-) {
-    val isValid = text.length >= 2
-    val isError = text.isNotEmpty() && !isValid
-    val showErrorMessage = isError
-    val screenWidth = LocalScreenWidth.current
-    val screenHeight = LocalScreenHeight.current
-
-    Column {
-        OutlinedTextField(
-            value = text,
-            onValueChange = onTextChange,
-            isError = isError,
-            placeholder = {
-                Text(
-                    text = "닉네임",
-                    color = Color(0xFF868686), // 회색
-                    fontFamily = pretendard,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            },
-            textStyle = TextStyle(
-                color = if (isError) Color.Red else Color.Black,
-                fontFamily = pretendard,
-                fontSize = 18.sp
-            ),
-            modifier = Modifier
-                .padding(start = screenWidth * (25f / 375f),
-                    top = screenHeight * (12f / 815f))
-                .size(width = screenWidth * (325f / 375f),
-                    height = screenHeight * (50f / 815f)),
-            shape = RoundedCornerShape(10.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                errorContainerColor = Color.White,
-                focusedIndicatorColor = if (isError) Color.Red else Color.Black,
-                unfocusedIndicatorColor = if (isError) Color.Red else Color(0xFFC3C3C3),
-                errorIndicatorColor = Color.Red,
-                cursorColor = if (isError) Color.Red else Color.Black
-            )
-        )
-
-        if (showErrorMessage) {
-            Text(
-                text = "이름은 두 글자 이상이어야 합니다",
-                color = Color(0xFF868686),
-                modifier = Modifier.padding(start = screenWidth * (25f / 375f),
-                    top = screenHeight * (8f / 815f)),
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 12.sp
-                )
-            )
-        }
-
-    }
-}
-
-@Composable
 fun AnswerInputField(
     text: String,
     onTextChange: (String) -> Unit,
@@ -276,7 +222,8 @@ fun AnswerInputField(
             placeholder = {
                 Text(
                     text = "정답을 입력해주세요.",
-                    color = Color(0xFF868686)
+                    color = Color(0xFF868686),
+                    fontFamily = pretendard
                 )
             },
             textStyle = TextStyle(
@@ -294,7 +241,7 @@ fun AnswerInputField(
                 unfocusedIndicatorColor = Color(0xFFC3C3C3),
                 cursorColor = Color.Black
             ),
-            maxLines = 5,//입력창에 보여지는 최대 줄 수
+            maxLines = 5,
             minLines = 1,
         )
     }

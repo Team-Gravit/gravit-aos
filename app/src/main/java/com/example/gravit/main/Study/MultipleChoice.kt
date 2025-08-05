@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.R
+import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,8 +34,6 @@ fun MultipleChoice() {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            Spacer(modifier = Modifier.height(10.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -43,6 +42,7 @@ fun MultipleChoice() {
                 Text(
                     text = "챕터 이름",
                     fontSize = 20.sp,
+                    fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge
@@ -72,6 +72,7 @@ fun MultipleChoice() {
                     Text(
                         text = "스톱워치",
                         modifier = Modifier.padding(end = 16.dp),
+                        fontFamily = pretendard,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -88,12 +89,14 @@ fun MultipleChoice() {
                     Text(
                         text = "문제 번호",
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = pretendard
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "빈칸에 알맞은 말을 고르세요",
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        fontFamily = pretendard
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Box(
@@ -103,13 +106,12 @@ fun MultipleChoice() {
                             .border(
                                 width = 1.dp,
                                 color = Color(0xFFDCDCDC),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(8.dp)
                             )
                     )
                 }
             }
 
-            // 예시 박스들
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,12 +152,14 @@ fun MultipleChoice() {
                     Text("지금까지 푼 내역이\n모두 사라져요!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = pretendard,
                         textAlign = TextAlign.Center)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(text = "#### 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
                         fontSize = 16.sp,
+                        fontFamily = pretendard,
                         color = Color(0xFF6D6D6D),
                         textAlign = TextAlign.Center)
 
@@ -170,14 +174,17 @@ fun MultipleChoice() {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(70.dp), // 높이 조절
+                            .height(70.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8100B3), // 배경색
-                            contentColor = Color.White // 텍스트 색
+                            containerColor = Color(0xFF8100B3),
+                            contentColor = Color.White
                         ),
-                        shape = RoundedCornerShape(100.dp) // 선택사항: 버튼 모서리 둥글게
+                        shape = RoundedCornerShape(100.dp)
                     ) {
-                        Text("계속하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("계속하기",
+                            fontSize = 16.sp,
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -185,6 +192,7 @@ fun MultipleChoice() {
                     Text(
                         text = "그만두기",
                         color = Color(0xFF6D6D6D),
+                        fontFamily = pretendard,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
