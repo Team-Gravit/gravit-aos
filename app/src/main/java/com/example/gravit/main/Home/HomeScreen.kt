@@ -289,13 +289,12 @@ fun HomeScreen() {
     }
 }
 
-/*
+
 @Preview(showBackground = true)
 @Composable
 fun View() {
    HomeScreen()
 }
- */
 
 @Composable
 private fun CustomText (
