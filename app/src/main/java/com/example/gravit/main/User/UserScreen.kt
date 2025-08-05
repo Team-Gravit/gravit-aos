@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -34,7 +36,9 @@ import com.example.gravit.ui.theme.pretendard
 @Composable
 fun UserScreen() {
     BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
         val screenHeight = maxHeight
         val screenWidth = maxWidth
@@ -42,15 +46,12 @@ fun UserScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
         ) {
-            val boxheight = screenHeight * (70f / 740f)
-            val boxpadding = screenWidth * (25f / 360f)
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(boxheight)
+                    .height(screenHeight * (70f / 740f))
             ) {
                 Text(
                     text = "사용자",
@@ -65,7 +66,7 @@ fun UserScreen() {
                     painter = painterResource(id = R.drawable.setting),
                     contentDescription = "setting",
                     modifier = Modifier
-                        .padding(end = boxpadding)
+                        .padding(end = screenWidth * (25f / 360f))
                         .size(screenWidth * (20f / 360f))
                         .align(Alignment.CenterEnd)
                         .clickable{
