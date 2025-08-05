@@ -78,7 +78,6 @@ fun MultipleChoice() {
                 }
             }
 
-            // 문제 영역
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -174,7 +173,7 @@ fun MultipleChoice() {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(70.dp),
+                            .height(60.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF8100B3),
                             contentColor = Color.White
