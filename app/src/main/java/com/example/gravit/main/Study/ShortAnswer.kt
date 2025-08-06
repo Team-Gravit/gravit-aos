@@ -110,7 +110,7 @@ fun ShortAnswer() {
                             )
                     )
                     {Text(modifier = Modifier.padding(10.dp),
-                        text = " ",
+                        text = "일이삼사오육칠팔구십일이삼사오육칠팔구십일이삼사\n이\n삼\n사\n오\n육\n칠\n팔\n구\n십\n일\n이\n삼\n사",
                         fontSize = 16.sp,
                         fontFamily = pretendard)
                     }
@@ -174,7 +174,7 @@ fun ShortAnswer() {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(70.dp),
+                            .height(60.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF8100B3),
                             contentColor = Color.White
@@ -209,7 +209,6 @@ fun ShortAnswer() {
             }
         }
     }
-
 @Composable
 fun AnswerInputField(
     text: String,
