@@ -1,6 +1,7 @@
 package com.example.gravit.main
 
 import BottomNavigationBar
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -26,9 +27,8 @@ fun MainScreen() {
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = {
-            BottomNavigationBar(navController)
-        }
+        bottomBar = { BottomNavigationBar(navController) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -39,7 +39,7 @@ fun MainScreen() {
 
             //study
             composable("study") { StudyScreen(navController) }      // == study/root
-            composable("study/earth") { Earth() }
+            composable("study/earth") { Earth(navController) }
             composable("study/jupiter") { Jupiter() }
             composable("study/mars") { Mars() }
             composable("study/mercury") { Mercury() }
