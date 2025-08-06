@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,34 +26,38 @@ import com.example.gravit.main.User.UserScreen
 
 @Composable
 fun SplashScreen(navController: NavController) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
+    val configuration = LocalConfiguration.current
+    val widthDp = configuration.screenWidthDp.dp
+    val heightDp = configuration.screenHeightDp.dp
 
-        val gradient = Brush.linearGradient(
-            colors = listOf(Color(0xFF8100B3), Color(0xFFDD00FF)),
-            start = Offset(0f, heightPx),
-            end = Offset(widthPx, 0f)
+    // dp → px 변환
+    val density = LocalDensity.current
+    val widthPx = with(density) { widthDp.toPx() }
+    val heightPx = with(density) { heightDp.toPx() }
+
+    val gradient = Brush.linearGradient(
+        colors = listOf(Color(0xFF8100B3), Color(0xFFDD00FF)),
+        start = Offset(0f, heightPx),
+        end = Offset(widthPx, 0f)
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(gradient),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.splash_gravit_logo),
+            contentDescription = "Logo",
+            modifier = Modifier.size(200.dp)
         )
+    }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(gradient),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.splash_gravit_logo),
-                contentDescription = "Logo",
-                modifier = Modifier.size(200.dp)
-            )
-        }
-
-        LaunchedEffect(Unit) {
-            delay(2000)
-            navController.navigate("login_choice") {
-                popUpTo("splash") { inclusive = true }
-            }
+    LaunchedEffect(Unit) {
+        delay(2000)
+        navController.navigate("login_choice") {
+            popUpTo("splash") { inclusive = true }
         }
     }
 }

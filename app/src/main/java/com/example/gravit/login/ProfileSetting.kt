@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -46,13 +47,15 @@ import com.example.gravit.ui.theme.pretendard
 
 @Composable
 fun ProfileSetting(navController: NavController) {
-    BoxWithConstraints(
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        val screenHeight = maxHeight
-        val screenWidth = maxWidth
 
         CompositionLocalProvider(
             LocalScreenWidth provides screenWidth,
