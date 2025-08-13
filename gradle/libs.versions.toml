@@ -1,5 +1,10 @@
 [versions]
 agp = "8.11.1"
+auth0 = "3.8.0"
+auth0Version = "2.12.0"
+browserVersion = "1.5.0"
+converterGson = "3.0.0"
+converterGsonVersion = "2.9.0"
 kotlin = "2.0.21"
 coreKtx = "1.10.1"
 junit = "4.13.2"
@@ -8,11 +13,28 @@ espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.8.0"
 composeBom = "2024.09.00"
+lifecycleViewmodelKtx = "2.9.2"
+lifecycleViewmodelKtxVersion = "2.7.0"
 navigation = "2.7.7"
+retrofit = "3.0.0"
+firebaseAppdistributionGradle = "5.1.1"
+browser = "1.9.0"
+retrofitVersion = "2.9.0"
+securityCrypto = "<latest>"
+securityCryptoVersion = "1.1.0-alpha06"
 
 
 [libraries]
+androidx-browser-v150 = { module = "androidx.browser:browser", version.ref = "browserVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
+androidx-lifecycle-viewmodel-ktx-v270 = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtxVersion" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
+androidx-security-crypto-v110alpha06 = { module = "androidx.security:security-crypto", version.ref = "securityCryptoVersion" }
+auth0 = { module = "com.auth0.android:auth0", version.ref = "auth0" }
+auth0-v2120 = { module = "com.auth0.android:auth0", version.ref = "auth0Version" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+converter-gson-v290 = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGsonVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -27,6 +49,10 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+firebase-appdistribution-gradle = { group = "com.google.firebase", name = "firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
+retrofit-v290 = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofitVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
