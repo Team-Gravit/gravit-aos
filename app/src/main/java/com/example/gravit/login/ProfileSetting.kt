@@ -146,8 +146,8 @@ fun ProfileSwitcher(
     onProfileSelected: (Int) -> Unit = {} //서버 전송용
 ) {
     val profileColor = listOf( //컬러 팔레트가 안 보여서 임시로 9가지 색상을 넣어놨음
-        Color.Red, Color.Black, Color.Blue, Color.Cyan, Color.Yellow
-        ,Color.DarkGray, Color.Gray, Color.Green, Color.Magenta,
+        Color(0xFFEB1D64), Color(0xFFF44336), Color(0xFFFFEA3F), Color(0xFF4CAE51), Color(0xFF53A8EB),
+        Color(0xFF9D27B0) ,Color(0xFF673AB7), Color(0xFF3F50B5), Color(0xFF808081), Color(0xFF000000),
     )
     val screenWidth = LocalScreenWidth.current
     val screenHeight = LocalScreenHeight.current

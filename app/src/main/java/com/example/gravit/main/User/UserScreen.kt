@@ -165,6 +165,39 @@ fun UserScreen() {
                                 }
                         )
                     }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(screenHeight * (38f / 740f)),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.group),
+                            contentDescription = "user",
+                            modifier = Modifier.size(screenWidth * (24f / 360f))
+                        )
+
+                        Text(
+                            text = "친구 추가",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = pretendard
+                            ),
+                            color = Color(0xFF222222),
+                            modifier = Modifier.padding(start = screenWidth * (32f / 360f))
+                        )
+
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
+                            contentDescription = "account info",
+                            modifier = Modifier
+                                .size(screenWidth * (24f / 360f))
+                                .align(Alignment.CenterEnd)
+                                .clickable {
+                                }
+                        )
+                    }
                 }
             }
         }

@@ -14,11 +14,12 @@ import com.example.gravit.splash.SplashScreen
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "profile setting") {
+    NavHost(navController = navController, startDestination = "main") {
         composable("splash") { SplashScreen(navController) }
         composable("login choice") { LoginScreen(navController) }
         composable("profile setting") { ProfileSetting(navController) }
         composable("profile finish") { ProfileFinish(navController) }
         composable("main") { MainScreen() }
+        composable("short") {ShortAnswer()}
     }
 }
