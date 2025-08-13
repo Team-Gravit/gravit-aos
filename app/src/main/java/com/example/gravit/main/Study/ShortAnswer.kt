@@ -39,7 +39,7 @@ fun ShortAnswer() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(60.dp)
             ) {
                 Text(
                     text = "챕터 이름",
@@ -204,11 +204,12 @@ fun ShortAnswer() {
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp
                     )
-                    }
                 }
             }
         }
     }
+}
+
 @Composable
 fun AnswerInputField(
     text: String,
