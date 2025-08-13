@@ -37,7 +37,7 @@ fun MultipleChoice() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(100.dp)
             ) {
                 Text(
                     text = "챕터 이름",

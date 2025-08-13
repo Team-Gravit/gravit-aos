@@ -17,6 +17,7 @@ fun AppNavigation() {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "splash") {
+
         composable("splash") { SplashScreen(navController) }
         composable("login choice") {
             val loginViewModel = viewModel<LoginViewModel>()
@@ -25,5 +26,6 @@ fun AppNavigation() {
         composable("profile setting") { ProfileSetting(navController) }
         composable("profile finish") { ProfileFinish(navController) }
         composable("main") { MainScreen() }
+        composable("short") {ShortAnswer()}
     }
 }

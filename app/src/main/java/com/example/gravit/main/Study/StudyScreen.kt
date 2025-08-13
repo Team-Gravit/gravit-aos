@@ -67,7 +67,7 @@ fun StudyScreen(navController: NavController){
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(screenHeight * (70f / 740f))
+                        .height(100.dp)
                         .background(Color.White),
                     contentAlignment = Alignment.Center
                 ){
