@@ -35,7 +35,7 @@ fun MainScreen() {
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("home") { HomeScreen() }
+            composable("home") { HomeScreen(navController) }
 
             //study
             composable("study") { StudyScreen(navController) }      // == study/root
