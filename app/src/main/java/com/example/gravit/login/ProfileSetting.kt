@@ -20,7 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,16 +33,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
+import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.ui.theme.LocalScreenHeight
 import com.example.gravit.ui.theme.LocalScreenWidth
 import com.example.gravit.ui.theme.pretendard
+import com.example.gravit.ui.theme.ProfilePalette
 
 
 
@@ -48,6 +55,37 @@ fun ProfileSetting(navController: NavController) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
+
+    val context = LocalContext.current
+
+    val vm: OnboardingViewModel = viewModel(
+        factory = OnboardingVMFactory(RetrofitInstance.api, context)
+    )
+    val ui by vm.state.collectAsState()
+
+    var nickname by remember { mutableStateOf("") }
+    var profileNo by remember { mutableIntStateOf(ProfilePalette.DEFAULT_ID) } // 1~N
+
+    //UI 상태로 판단
+    LaunchedEffect(ui) {
+        when (ui) {
+            OnboardingViewModel.UiState.Success -> {
+                navController.navigate("profile finish") {
+                    popUpTo(0)
+                    launchSingleTop = true
+                    restoreState = false
+                }
+            }
+            OnboardingViewModel.UiState.SessionExpired -> {
+                navController.navigate("login choice") {
+                    popUpTo(0)
+                    launchSingleTop = true
+                    restoreState = false
+                }
+            }
+            else -> Unit
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -59,7 +97,6 @@ fun ProfileSetting(navController: NavController) {
             LocalScreenWidth provides screenWidth,
             LocalScreenHeight provides screenHeight
         ) {
-            var text by remember { mutableStateOf("") }
 
             Box (modifier = Modifier.fillMaxSize()){
 
@@ -79,7 +116,11 @@ fun ProfileSetting(navController: NavController) {
                             modifier = Modifier
                                 .size(screenWidth * (48f / 375f))
                                 .padding(start = screenWidth * (14f / 375f)),
-                            onClick = { navController.popBackStack() }
+                            onClick = { navController.navigate("login choice") {
+                                popUpTo(0)              // 전부 비우고 로그인 초이스를 루트로
+                                launchSingleTop = true
+                                restoreState = false
+                            } }
                         )
 
                         Text(
@@ -92,7 +133,10 @@ fun ProfileSetting(navController: NavController) {
                             )
                         )
                     }
-                    ProfileSwitcher()
+                    ProfileSwitcher(
+                        selectedId = profileNo,
+                        onProfileSelected = { newId -> profileNo = newId }
+                    )
                     Text(
                         text = "닉네임 설정",
                         modifier = Modifier.padding(start = screenWidth * (25f / 375f)),
@@ -104,8 +148,8 @@ fun ProfileSetting(navController: NavController) {
                     )
 
                     NameInputFiled(
-                        text = text,
-                        onTextChange = { text = it }
+                        text = nickname,
+                        onTextChange = { nickname = it }
                     )
 
                 }
@@ -113,11 +157,15 @@ fun ProfileSetting(navController: NavController) {
 
             CustomButton(
                 text = "다음",
-                onClick = { navController.navigate("profile finish") },
-                enabled = isValidNickname(text),
+                onClick = {
+                    if (isValidNickname(nickname) && ui !is OnboardingViewModel.UiState.Loading) {
+                        vm.submit(nickname, profileNo)
+                    }
+                },
+                enabled = isValidNickname(nickname) && ui !is OnboardingViewModel.UiState.Loading,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = screenHeight * (34f / 812f)) // 하단 여백 조절
+                    .padding(bottom = screenHeight * (34f / 812f))
                     .size(screenWidth * (325f / 375f), screenHeight * (60f / 812f))
             )
         }
@@ -141,16 +189,14 @@ fun ImageButton(
 
 @Composable
 fun ProfileSwitcher(
-    onProfileSelected: (Int) -> Unit = {} //서버 전송용
+    selectedId: Int = ProfilePalette.DEFAULT_ID,
+    onProfileSelected: (Int) -> Unit = {}
 ) {
-    val profileColor = listOf( //컬러 팔레트가 안 보여서 임시로 9가지 색상을 넣어놨음
-        Color(0xFFEB1D64), Color(0xFFF44336), Color(0xFFFFEA3F), Color(0xFF4CAE51), Color(0xFF53A8EB),
-        Color(0xFF9D27B0) ,Color(0xFF673AB7), Color(0xFF3F50B5), Color(0xFF808081), Color(0xFF000000),
-    )
+
     val screenWidth = LocalScreenWidth.current
     val screenHeight = LocalScreenHeight.current
 
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember { mutableIntStateOf(ProfilePalette.idToIndex(selectedId)) }
 
     Row(
         modifier = Modifier
@@ -168,8 +214,8 @@ fun ProfileSwitcher(
             contentDescription = "Previous profile",
             modifier = Modifier.size(screenWidth * (48f / 375f)),
             onClick = {
-                currentIndex = if (currentIndex == 0) profileColor.lastIndex else currentIndex - 1
-                onProfileSelected(currentIndex + 1)
+                currentIndex = (currentIndex - 1 + ProfilePalette.size) % ProfilePalette.size
+                onProfileSelected(ProfilePalette.indexToId(currentIndex))
             }
         )
 
@@ -177,7 +223,7 @@ fun ProfileSwitcher(
             modifier = Modifier
                 .size(screenWidth * (178f / 375f))
                 .clip(CircleShape)
-                .background(profileColor[currentIndex]),
+                .background(ProfilePalette.colors[currentIndex]),
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -192,8 +238,8 @@ fun ProfileSwitcher(
             contentDescription = "Next profile",
             modifier = Modifier.size(screenWidth * (48f / 375f)),
             onClick = {
-                currentIndex = if (currentIndex == profileColor.lastIndex) 0 else currentIndex + 1
-                onProfileSelected(currentIndex + 1)
+                currentIndex = (currentIndex + 1) % ProfilePalette.size
+                onProfileSelected(ProfilePalette.indexToId(currentIndex))
             },
         )
     }
@@ -211,7 +257,6 @@ fun NameInputFiled (
 ) {
     val isValid = isValidNickname(text)
     val isError = text.isNotEmpty() && !isValid
-    val showErrorMessage = isError
     val screenWidth = LocalScreenWidth.current
     val screenHeight = LocalScreenHeight.current
 
@@ -255,7 +300,7 @@ fun NameInputFiled (
             )
         )
 
-        if (showErrorMessage) { //규정에 맞지 않을 때
+        if (isError) { //규정에 맞지 않을 때
             Text(
                 text = "공백, 특수문자 없이 2~8자로 입력하세요",
                 color = Color(0xFF868686),

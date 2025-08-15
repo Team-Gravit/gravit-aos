@@ -1,7 +1,5 @@
 package com.example.gravit.login
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,7 +39,6 @@ import com.example.gravit.ui.theme.pretendard
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.LocalScreenHeight
 import com.example.gravit.ui.theme.LocalScreenWidth
-import androidx.core.content.edit
 import com.example.gravit.api.AuthPrefs
 
 @Composable
@@ -72,7 +69,13 @@ fun LoginScreen (
             //온보딩 여부 확인
             val target = if (s.isOnboarded) "main" else "profile setting"
             navController.navigate(target) {
-                popUpTo("login choice") { inclusive = true }
+                if (target == "profile setting") {
+                    //뒤로가기 시 복귀
+                    popUpTo("login choice") { inclusive = false }
+                } else {
+                    //온보딩 완료 사용자는 로그인 제거
+                    popUpTo("login choice") { inclusive = true }
+                }
                 launchSingleTop = true
                 restoreState = false
             }

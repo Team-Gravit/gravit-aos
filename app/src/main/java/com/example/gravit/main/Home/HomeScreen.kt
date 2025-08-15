@@ -18,8 +18,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,273 +32,411 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
+import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.Study.RoundedGauge
+import com.example.gravit.ui.theme.LocalScreenHeight
+import com.example.gravit.ui.theme.LocalScreenWidth
+import com.example.gravit.ui.theme.mbc1961
 import com.example.gravit.ui.theme.pretendard
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
+    val context = LocalContext.current
+    val vm: HomeViewModel = viewModel(
+        factory = HomeVMFactory(RetrofitInstance.api, context)
+    )
+    val ui by vm.state.collectAsState()
+
+    LaunchedEffect(Unit) { vm.load() }
+    when (ui) {
+        HomeViewModel.UiState.SessionExpired -> {
+            navController.navigate("login choice") {
+                popUpTo(0)
+                launchSingleTop = true
+                restoreState = false
+            }
+        }
+
+        else -> Unit
+    }
+
+
     val dateFormat = remember { SimpleDateFormat("yyyy. MM. dd (E)", Locale.KOREAN) }
     val today = remember { dateFormat.format(Date()) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = Color(0xFFF2F2F2))
+
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val previousImg: Map<Int, Int> = mapOf(
+        0 to R.drawable.previous_null,
+        1 to R.drawable.data_structure,
+        2 to R.drawable.algorithm,
+        3 to R.drawable.computer_network,
+        4 to R.drawable.operating_system,
+        5 to R.drawable.database,
+        6 to R.drawable.computer_security,
+        7 to R.drawable.programming_language,
+        8 to R.drawable.programming_language
+    )
+
+    CompositionLocalProvider(
+        LocalScreenWidth provides screenWidth,
+        LocalScreenHeight provides screenHeight
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.main_back),
-            contentDescription = "main back",
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier
-                .fillMaxWidth()
-        )
 
-        Column {
-            Box(modifier = Modifier
-                .padding(top = 35.dp)
-                .size(322.dp, 48.dp)
-                .align(Alignment.CenterHorizontally)
-            ) {
-                Image(
-                    /*** 하단에 블러 안 함 **/
-                    painter = painterResource(id = R.drawable.gravit_main_logo),
-                    contentDescription = "gravit typo",
-                    modifier = Modifier
-                        .size(133.dp, 32.22.dp)
-                        .align(Alignment.CenterStart)
-                )
-            }
-            Spacer(modifier = Modifier.height(100.dp)) /*** 간격 조절 필요 **/
+        Box(
+            modifier = Modifier.fillMaxSize()
 
-            Box(
-                modifier = Modifier
-                    .width(328.dp)
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                CustomText(
-                    /*** 닉네임 안 넣음 **/ /*** 닉네임 안 넣음 **/
-                    text = "어서오세요,",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
-                    color = Color.White,
-                )
-
-                CustomText(
-                    text = today,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier.align(Alignment.BottomEnd),
-                    color = Color.White
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-
-            ) {
-
-                Row {
-                    PillShape {
-                        Image(
-                            painter = painterResource(id = R.drawable.rank_cup),
-                            contentDescription = "rank mark",
-                            modifier = Modifier.size(16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        CustomText(
-                            text = "임시임",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF8100B3)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    PillShape(width = 76.dp) {
-                        Image(
-                            painter = painterResource(id = R.drawable.xp_mark),
-                            contentDescription = "rank mark",
-                            modifier = Modifier.size(16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        CustomText(
-                            text = "123",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF8100B3)
-                        )
-
-                        Spacer(modifier = Modifier.width(2.dp))
-
-                        CustomText(
-                            text = "XP",
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 14.sp,
-                            color = Color(0xFF8100B3)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    PillShape(width = 169.dp) {
-                        Text(text = "미완성")
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
+        ) {
             Box (
-                modifier = Modifier
-                    .size(328.dp, 186.dp)
-                    .align(Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxSize()
             ){
-                Row {
-                    Box(
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF2F2F2))
+                )
+
+                Image( //배경 이미지
+                    painter = painterResource(id = R.drawable.main_back),
+                    contentDescription = "main back",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier
+                        .fillMaxWidth()
+
+                )
+
+            }
+
+
+            Column {
+                Box(
+                    modifier = Modifier
+                        .padding(top = screenHeight * (24f / 740f))
+                        .fillMaxWidth()
+                        .height(screenHeight * (70f / 740f))
+                ) {
+                    Image(
+                        //로고 이미지
+                        painter = painterResource(id = R.drawable.gravit_main_logo),
+                        contentDescription = "gravit typo",
                         modifier = Modifier
-                            .size(160.dp, 186.dp)
-                            .clip(shape = RoundedCornerShape(16.dp))
-                            .background(Color.White)
+                            .padding(start = screenWidth * (19f / 360f))
+                            .align(Alignment.CenterStart)
+                    )
 
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
+                }
 
-                            CustomText(
-                                text = "오늘의 미션🔥",
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(top = 16.dp)
+                Box(
+                    modifier = Modifier
+                        .padding(top = screenHeight * (60f / 740f))
+                        .padding(horizontal = screenWidth * (16f / 360f))
+                        .fillMaxWidth()
+                        .height(screenHeight * (84f / 740f))
+
+                ) {
+                    val nickname = (ui as? HomeViewModel.UiState.Success)?.data?.nickname
+                    Column {
+                        CustomText(
+                            text = "어서오세요,",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp,
+                            color = Color.White,
+                            shadow = Shadow(
+                                color = Color(0xFF000000),
+                                offset = Offset(0f, 2f),
+                                blurRadius = 4f
                             )
+                        )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
 
-                            Canvas(
-                                modifier = Modifier.size(128.dp, 1.dp)
+                        CustomText(
+                            text = if (nickname.isNullOrBlank()) "" else "$nickname!",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp,
+                            color = Color.White,
+                            shadow = Shadow(
+                                color = Color(0xFF000000),
+                                offset = Offset(0f, 2f),
+                                blurRadius = 4f
+                            )
+                        )
+                    }
 
-                            ) {
-                                drawLine(
-                                    color = Color(0xFFA8A8A8),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, 0f),
-                                    strokeWidth = 3f,
-                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
-                                    cap = StrokeCap.Butt
+                    CustomText(
+                        text = today,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        modifier = Modifier.align(Alignment.BottomEnd),
+                        color = Color.White
+                    )
+                }
 
+                Box(
+                    modifier = Modifier
+                        .padding(top = screenHeight * (8f / 740f))
+                        .padding(horizontal = screenWidth * (16f / 360f))
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+
+                ) {
+                    Column {
+                        Row {
+                            PillShape { //리그
+                                Image(
+                                    painter = painterResource(id = R.drawable.rank_cup),
+                                    contentDescription = "rank mark",
+                                    modifier = Modifier
+                                        .size(screenWidth * (16f / 360f))
+
+                                )
+
+                                Spacer(modifier = Modifier.width(screenWidth * (4f / 360f)))
+
+                                val league = (ui as? HomeViewModel.UiState.Success)?.data?.league ?: "—"
+                                CustomText(
+                                    text = league,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF8100B3)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
 
-                            CustomText(
-                                text = "• 임시\n임시",
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 16.sp,
-                                color = Color(0xFF222124)
-                            )
+                            PillShape(width = 76f) { //XP
+                                Image(
+                                    painter = painterResource(id = R.drawable.xp_mark),
+                                    contentDescription = "rank mark",
+                                    modifier = Modifier
+                                        .size(screenWidth * (16f / 360f))
+                                )
 
-                            Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.width(screenWidth * (4f / 360f)))
 
-                            CustomText(
-                                text = "임시 XP",
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 12.sp,
-                                color = Color(0xFF494949)
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Button(  /*** 버튼 크기 다시 해야 함 **/
-                                onClick = {},
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFF2F2F2),
-                                    contentColor = Color.Black
-                                ),
-                            ) {
+                                val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp ?: 0
                                 CustomText(
-                                    text = "학습하러 가기",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 16.sp,
-                                    color = Color.Black
+                                    text = xp.toString(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF8100B3)
+                                )
+
+                                Spacer(modifier = Modifier.width(screenWidth * (2f / 360f)))
+
+                                CustomText(
+                                    text = "XP",
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF8100B3)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
+                            //LV
+                            val level = (ui as? HomeViewModel.UiState.Success)?.data?.level ?: 0
+                            PillShape(width = 169f) {
+                                CustomText(
+                                    text = "LV",
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 14.sp,
+                                    color = Color.White
+                                )
+                                CustomText(
+                                    text = level.toString(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color.White
                                 )
                             }
                         }
 
-                    }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.height(screenHeight * (16f / 740f)))
 
-                    Column {
-                        RoundRect(
-                            imageRes = R.drawable.rocket_main,
-                            title = "행성 정복률",
-                            value = "임시%"
-                        )
+                        Box(
+                            modifier = Modifier.size(screenWidth * (328f /360f), screenHeight * (186f / 740f))
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        ) {
+                            Row {
+                                Box( //오늘의 미션
+                                    modifier = Modifier
+                                        .size(
+                                            screenWidth * (160f / 360f),
+                                            screenHeight * (186f / 740f)
+                                        )
+                                        .clip(shape = RoundedCornerShape(16.dp))
+                                        .background(Color.White)
 
-                        RoundRect(
-                            imageRes = R.drawable.fire_main,
-                            title = "연속 학습일",
-                            value = "임시일"
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(
+                                                horizontal = screenWidth * (16f / 360f),
+                                                vertical = screenHeight * (16f / 740f)
+                                            )
+                                            .fillMaxSize(),
+                                    ) {
+
+                                        CustomText(
+                                            text = "오늘의 미션🔥",
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 20.sp,
+                                            modifier = Modifier.size(screenWidth * (128f / 360f) , screenHeight * (24f / 740f))
+                                        )
+
+                                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
+
+                                        Canvas(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(1.dp)
+
+                                        ) {
+                                            drawLine(
+                                                color = Color(0xFFA8A8A8),
+                                                start = Offset(0f, 0f),
+                                                end = Offset(size.width, 0f),
+                                                strokeWidth = 3f,
+                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
+                                                cap = StrokeCap.Butt
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
+
+                                        CustomText(
+                                            text = "•자료구조 챕터3",
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 16.sp,
+                                            color = Color(0xFF222124)
+                                        )
+
+                                        CustomText(
+                                            text = "완료",
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 16.sp,
+                                            color = Color(0xFF222124),
+                                            modifier = Modifier.padding(start = screenWidth * (8f / 360f))
+                                        )
+
+                                        Spacer(modifier = Modifier.height(screenHeight * (3f / 740f)))
+
+                                        CustomText(
+                                            text = "완료시 150XP",
+                                            fontWeight = FontWeight.Normal,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF494949),
+                                            modifier = Modifier.padding(start = screenWidth * (8f / 360f))
+                                        )
+
+                                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
+
+                                        Button(
+                                            modifier = Modifier.size(screenWidth * (128f / 360f) , screenHeight * (39f / 740f)),
+                                            onClick = {},
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFFF2F2F2),
+                                                contentColor = Color.Black
+                                            ),
+                                        ) {
+                                            CustomText(
+                                                text = "학습하러 가기",
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 16.sp,
+                                                color = Color.Black
+                                            )
+                                        }
+                                    }
+
+                                }
+
+                                Spacer(modifier = Modifier.width(screenWidth * (8f/ 360f)))
+
+                                Column {
+                                    RoundRect(
+                                        imageRes = R.drawable.rocket_main,
+                                        title = "행성 정복률",
+                                        value = "임시%"
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    RoundRect(
+                                        imageRes = R.drawable.fire,
+                                        title = "연속 학습일",
+                                        value = "임시일"
+                                    )
+                                }
+                            }
+
+                        }
+
+                        Spacer(modifier = Modifier.height(screenHeight * (16f / 740f)))
+
+                        val success = ui as? HomeViewModel.UiState.Success
+                        val recent  = success?.data?.recentLearningSummaryResponse
+
+                        val chapterId = (recent?.chapterId ?: 0).toInt()
+
+                        val (chapterName, totalUnits, completedUnits) =
+                            if (chapterId == 0) {
+                                Triple("최근에 진행한 학습 정보가 없습니다", 0, 0)
+                            } else {
+                                Triple(
+                                    recent?.chapterName ?: "",
+                                    recent?.totalUnits ?: 0,
+                                    recent?.completedUnits ?: 0
+                                )
+                            }
+
+                        val bgResId = previousImg[chapterId] ?: 0
+                        PreviousButton(
+                            chapterId = chapterId,
+                            chapter = chapterName,
+                            filledSegments = completedUnits,
+                            backgroundImg = bgResId,
+                            totalSegments = totalUnits
                         )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            RoundRect(
-                width = 328.dp,
-                height = 123.dp,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                imageRes = R.drawable.clipboard_main,
-                title = "미완성",
-                titleFontWeight = FontWeight.SemiBold,
-                titleFontSize = 20.sp,
-                titleColor = Color(0xFF222124),
-                value = "▶︎ 임시",
-                valueFontWeight = FontWeight.Normal,
-                valueFontSize = 14.sp,
-                valueColor = Color(0xFF6D6D6D)
-            )  /*** 이거 버튼인가? ***/
-
         }
-
     }
 }
+
+
 
 
 @Preview(showBackground = true)
 @Composable
 fun View() {
-   HomeScreen()
+    val navController = rememberNavController()
+   HomeScreen(navController)
 }
 
 @Composable
@@ -304,13 +447,15 @@ private fun CustomText (
     fontWeight: FontWeight,
     fontSize: TextUnit,
     color: Color = Color.Black,
+    shadow: Shadow? = null,
 ) {
     Text(
         text = text,
         style = TextStyle(
             fontFamily = fontFamily,
             fontWeight = fontWeight,
-            fontSize = fontSize
+            fontSize = fontSize,
+            shadow =  shadow
         ),
         color = color,
         modifier = modifier
@@ -320,15 +465,18 @@ private fun CustomText (
 @Composable
 fun PillShape(
     modifier: Modifier = Modifier,
-    width: Dp = 67.dp,
-    height: Dp = 25.dp,
+    width: Float = 67f,
+    height: Float = 25f,
     backgroundColor: Color = Color.White,
     shape: Shape = RoundedCornerShape(50),
     content: @Composable RowScope.() -> Unit
 ) {
+    val screenWidth = LocalScreenWidth.current
+    val screenHeight = LocalScreenHeight.current
+
     Box(
         modifier = modifier
-            .size(width = width, height = height)
+            .size(width = screenWidth * (width / 360f), height = screenHeight * (height / 740f))
             .background(backgroundColor, shape = shape),
         contentAlignment = Alignment.Center
     ) {
@@ -341,55 +489,131 @@ fun PillShape(
 
 @Composable
 fun RoundRect(
-    modifier: Modifier = Modifier,
-    width: Dp = 160.dp,
-    height: Dp = 89.dp,
-    corner: Dp = 16.dp,
-    backgroundColor: Color = Color.White,
     imageRes: Int,
-    imageSize: Dp = 50.dp,
     title: String,
-    value: String,
-    titleFontSize: TextUnit = 14.sp,
-    valueFontSize: TextUnit = 20.sp,
-    titleFontWeight: FontWeight = FontWeight.Normal,
-    valueFontWeight: FontWeight = FontWeight.SemiBold,
-    titleColor: Color = Color.Black,
-    valueColor: Color = Color.Black
+    value: String
 ) {
+    val screenWidth = LocalScreenWidth.current
+    val screenHeight = LocalScreenHeight.current
+
     Box(
-        modifier = modifier
-            .size(width, height)
-            .clip(RoundedCornerShape(corner))
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .size(screenWidth * (160f / 360f), screenHeight * (89f / 740f))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row (
+            modifier = Modifier.padding(vertical = screenHeight * (20f / 740f))
+        ){
             Image(
-                painter = painterResource(id = imageRes),
+                modifier = Modifier
+                    .padding(start = screenWidth * (8f / 360f))
+                    .size(screenWidth * (50f / 360f)),
                 contentDescription = null,
-                modifier = Modifier.size(imageSize)
+                painter = painterResource(id = imageRes)
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
+
             Column {
                 CustomText(
                     text = title,
-                    fontSize = titleFontSize,
-                    fontWeight = titleFontWeight,
-                    color = titleColor
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(screenWidth * (8f / 360f)))
                 CustomText(
                     text = value,
-                    fontSize = valueFontSize,
-                    fontWeight = valueFontWeight,
-                    color = valueColor
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 20.sp
                 )
             }
-            Spacer(modifier = Modifier.width(29.dp))
         }
+    }
+}
+
+@Composable
+fun PreviousButton(
+    chapterId: Int,
+    backgroundImg: Int,
+    chapter: String,
+    filledSegments: Int,
+    totalSegments: Int
+) {
+    val screenWidth = LocalScreenWidth.current
+    val screenHeight = LocalScreenHeight.current
+
+    Box(
+        modifier = Modifier
+            .size(screenWidth * (328f / 360f), screenHeight * (131f / 740f))
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        Image(
+            painter = painterResource(id = backgroundImg),
+            contentDescription = null,
+        )
+        Column (
+            modifier = Modifier.padding(
+                horizontal = screenWidth * (16f / 360f),
+                vertical = screenHeight * (16f / 740f)
+            )
+        ) {
+
+            if (chapterId == 0) {
+                Row {
+                    CustomText(
+                        text = "새로운 학습을 시작하기",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = mbc1961,
+                        color = Color.White,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Icon(
+                        painter = painterResource(id = R.drawable.round_arrow_forward_ios_24),
+                        contentDescription = null,
+                        modifier = Modifier,
+                        tint = Color.White
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(screenHeight * (8f/ 740f)))
+
+                CustomText(
+                    text = chapter,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp,
+                    color = Color.White,
+                )
+            } else {
+                CustomText(
+                    text = "직전학습 이어서 하기",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(screenHeight * (8f/ 740f)))
+
+                CustomText(
+                    text = chapter,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp,
+                    fontFamily = mbc1961,
+                    color = Color.White,
+                )
+                Spacer(modifier = Modifier.height(screenHeight * (23f/ 740f)))
+
+                RoundedGauge(
+                    height = screenHeight * (10f / 740f),
+                    width = screenWidth * (271f / 360f),
+                    filledSegments = filledSegments,
+                    totalSegments = totalSegments
+                )
+            }
+
+        }
+
     }
 }
 

@@ -8,6 +8,7 @@ import com.example.gravit.login.LoginScreen
 import com.example.gravit.login.LoginViewModel
 import com.example.gravit.login.ProfileFinish
 import com.example.gravit.login.ProfileSetting
+import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.MainScreen
 import com.example.gravit.main.Study.ShortAnswer
 import com.example.gravit.splash.SplashScreen
