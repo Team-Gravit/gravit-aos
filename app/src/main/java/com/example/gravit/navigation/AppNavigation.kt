@@ -7,19 +7,17 @@ import com.example.gravit.login.LoginScreen
 import com.example.gravit.login.ProfileFinish
 import com.example.gravit.login.ProfileSetting
 import com.example.gravit.main.MainScreen
-import com.example.gravit.main.Study.ShortAnswer
 import com.example.gravit.splash.SplashScreen
 
 @Composable
 fun AppNavigation() {
-    val navController = rememberNavController()
+    val rootnavController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "main") {
-        composable("splash") { SplashScreen(navController) }
-        composable("login choice") { LoginScreen(navController) }
-        composable("profile setting") { ProfileSetting(navController) }
-        composable("profile finish") { ProfileFinish(navController) }
-        composable("main") { MainScreen() }
-        composable("short") {ShortAnswer()}
+    NavHost(navController = rootnavController, startDestination = "main") {
+        composable("splash") { SplashScreen(rootnavController) }
+        composable("login choice") { LoginScreen(rootnavController) }
+        composable("profile setting") { ProfileSetting(rootnavController) }
+        composable("profile finish") { ProfileFinish(rootnavController) }
+        composable("main") { MainScreen(rootnavController) }
     }
 }
