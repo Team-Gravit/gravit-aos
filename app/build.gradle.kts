@@ -15,6 +15,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        manifestPlaceholders["auth0Domain"] = "dev-fl5wpn5srn5xay26.us.auth0.com"
+        manifestPlaceholders["auth0Scheme"] = "gravit"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -37,6 +40,15 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/io.netty.versions.properties"
+        }
+    }
+
+
 }
 
 dependencies {
@@ -50,6 +62,12 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.browser)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.auth0)
+    implementation(libs.androidx.security.crypto.v110alpha06)
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 

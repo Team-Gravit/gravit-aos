@@ -70,7 +70,11 @@ fun ProfileFinish(navController: NavController) {
 
         CustomButton(
             text = "홈으로",
-            onClick = { navController.navigate("main") },
+            onClick = { navController.navigate("main") {
+                popUpTo(0)              // 전체 스택 제거
+                launchSingleTop = true
+                restoreState = false
+            } },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = screenHeight * (34f / 812f))
