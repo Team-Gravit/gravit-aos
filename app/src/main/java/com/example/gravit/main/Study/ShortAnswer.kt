@@ -39,7 +39,7 @@ fun ShortAnswer() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .height(80.dp)
             ) {
                 Text(
                     text = "챕터 이름",
