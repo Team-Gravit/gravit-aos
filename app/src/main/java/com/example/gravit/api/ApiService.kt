@@ -74,6 +74,14 @@ data class LessonResultRequest(
     val problemResults: List<ProblemResultItem>
 )
 
+data class UserPageResponse(
+    val nickname: String,
+    val profileImgNumber: Int,
+    val handle: String,
+    val follower: Int,
+    val following: Int
+)
+
 interface ApiService {
     @POST("api/v1/oauth/android")
     suspend fun sendCode(
@@ -113,5 +121,10 @@ interface ApiService {
         @Body body: LessonResultRequest,
         @Header("Authorization") auth: String,
     )
+
+    @GET("api/v1/users/my-page")
+    suspend fun getUser(
+        @Header("Authorization") auth: String
+    ) : UserPageResponse
 }
 
