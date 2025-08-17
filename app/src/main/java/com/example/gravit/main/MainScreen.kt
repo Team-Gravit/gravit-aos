@@ -18,6 +18,8 @@ import com.example.gravit.main.Chapter.ChapterScreen
 import com.example.gravit.main.Chapter.Lesson.LessonScreen
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
+import com.example.gravit.main.User.AddFriend
+import com.example.gravit.main.User.Setting
 import com.example.gravit.main.User.UserScreen
 
 fun build(chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
@@ -36,21 +38,21 @@ fun NavController.navigateToLesson(
 
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController()
+    val innerNavController = rememberNavController()
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) },
+        bottomBar = { BottomNavigationBar(innerNavController) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         NavHost(
-            navController = navController,
+            navController = innerNavController,
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("home") { HomeScreen(navController) }
+            composable("home") { HomeScreen(innerNavController) }
 
             //chapter
-            composable("chapter") { ChapterScreen(navController) }
+            composable("chapter") { ChapterScreen(innerNavController) }
 
             composable(
                 route = "units/{chapterId}" +
@@ -71,7 +73,7 @@ fun MainScreen() {
 
                 //Unit 화면으로 즉시 표시용 인자 전달
                 Unit(
-                    navController = navController,
+                    navController = innerNavController,
                     chapterId = chapterId,
                     initialName = name,
                     initialDesc = desc,
@@ -94,7 +96,7 @@ fun MainScreen() {
                 val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
 
                 LessonScreen(
-                    navController = navController,
+                    navController = innerNavController,
                     chapterId = chapterId,
                     chapterName = chapterName,   // 헤더 표시용
                     unitId = unitId,
@@ -103,7 +105,12 @@ fun MainScreen() {
             }
 
             composable("league") { LeagueScreen() }
-            composable("user") { UserScreen() }
+
+            composable("user") { UserScreen(innerNavController) }
+            composable("setting") { Setting(innerNavController) }
+            composable("account") { com.example.gravit.main.User.Account(innerNavController)}
+        //Account로 하면 안되고 저렇게 하면 되더라ㅠ
+            composable("addfriend") { AddFriend(innerNavController) }
         }
     }
 }

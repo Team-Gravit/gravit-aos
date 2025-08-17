@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,8 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,11 +35,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
-fun UserScreen() {
+fun UserScreen(navController: NavController) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
@@ -50,29 +56,29 @@ fun UserScreen() {
                 .fillMaxSize()
         ) {
 
+            Spacer(modifier = Modifier.height(30.dp))
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(screenHeight * (70f / 740f))
+                    .height(80.dp)
             ) {
                 Text(
                     text = "사용자",
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = pretendard
-                    ),
-                    modifier = Modifier.align(Alignment.Center)
+                    fontSize = 20.sp,
+                    fontFamily = pretendard,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Image(
                     painter = painterResource(id = R.drawable.setting),
                     contentDescription = "setting",
                     modifier = Modifier
-                        .padding(end = screenWidth * (25f / 360f))
-                        .size(screenWidth * (20f / 360f))
+                        .padding(end = 16.dp)
                         .align(Alignment.CenterEnd)
                         .clickable{
-                            //설정 창으로 넘어가기
+                            navController.navigate("setting")
                         }
                 )
             }
@@ -107,18 +113,19 @@ fun UserScreen() {
 
             Box(
                 modifier = Modifier
-                    .padding(horizontal = screenWidth * (16f / 360f))
                     .fillMaxWidth()
-                    .height(screenHeight * (114f / 740f)),
+                    .height(130.dp),
             ) {
                 Column (
-                    modifier = Modifier.fillMaxHeight(),
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 16.dp, end = 16.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(screenHeight * (38f / 740f)),
+                            .height(40.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Text(
@@ -128,85 +135,105 @@ fun UserScreen() {
                                 fontWeight = FontWeight.Medium,
                                 fontFamily = pretendard
                             ),
-                            color = Color(0xFF222222),
+                            color = Color(0xFF4E4E4E),
                         )
                     }
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(screenHeight * (38f / 740f)),
+                            .height(40.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.user),
-                            contentDescription = "user",
-                            modifier = Modifier.size(screenWidth * (24f / 360f))
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.user),
+                                contentDescription = "user",
+                                modifier = Modifier
+                                    .padding(vertical = 3.dp)
+                                    .size(24.dp)
+                            )
 
-                        Text(
-                            text = "계정 정보",
-                            style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = pretendard
-                            ),
-                            color = Color(0xFF222222),
-                            modifier = Modifier.padding(start =  screenWidth * (32f / 360f))
-                        )
+                            Spacer(modifier = Modifier.width(5.dp))
+
+                            Text(
+                                text = "계정 정보",
+                                style = TextStyle(
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = pretendard
+                                ),
+                                color = Color(0xFF222222),
+                            )
+                        }
 
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
                             contentDescription = "account info",
                             modifier = Modifier
-                                .size(screenWidth * (24f / 360f))
+                                .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigate("account")
                                 }
                         )
                     }
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(screenHeight * (38f / 740f)),
+                            .height(40.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.group),
-                            contentDescription = "user",
-                            modifier = Modifier.size(screenWidth * (24f / 360f))
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.group),
+                                contentDescription = "user",
+                                modifier = Modifier
+                                    .padding(vertical = 3.dp)
+                                    .size(24.dp)
+                            )
 
-                        Text(
-                            text = "친구 추가",
-                            style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = pretendard
-                            ),
-                            color = Color(0xFF222222),
-                            modifier = Modifier.padding(start = screenWidth * (32f / 360f))
-                        )
+                            Spacer(modifier = Modifier.width(5.dp))
+
+                            Text(
+                                text = "친구 추가",
+                                style = TextStyle(
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = pretendard
+                                ),
+                                color = Color(0xFF222222),
+                            )
+                        }
 
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
                             contentDescription = "account info",
                             modifier = Modifier
-                                .size(screenWidth * (24f / 360f))
+                                .size(18.dp)
                                 .align(Alignment.CenterEnd)
-                                .clickable {
-                                }
+                                .clickable { }
                         )
                     }
                 }
             }
+            HorizontalDivider(
+                color = Color.Black.copy(alpha = 0.1f),
+                thickness = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
-fun Preview() {
-    UserScreen()
+fun UserScreenPreview() {
+    // 프리뷰용 NavController 생성
+    val navController = rememberNavController()
+    UserScreen(navController = navController)
 }
