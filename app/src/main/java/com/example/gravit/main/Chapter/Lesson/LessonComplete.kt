@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study
+package com.example.gravit.main.Chapter.Lesson
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,9 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.main.Study.Stage.Moon
 import com.example.gravit.ui.theme.pretendard
-import kotlinx.coroutines.launch
 
 @Composable
 fun StudyComplete(){

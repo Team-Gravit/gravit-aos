@@ -1,4 +1,4 @@
-package com.example.gravit.main.Home
+package com.example.gravit.main.Chapter
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -6,19 +6,19 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.MainPageResponse
+import com.example.gravit.api.ChapterPageResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel(
+class ChapterViewModel(
     private val api: ApiService,
     private val appContext: Context
 ) : ViewModel() {
 
-    sealed interface UiState {
+    sealed interface UiState{
         data object Loading : UiState
-        data class Success(val data: MainPageResponse) : UiState
+        data class Success(val data: List<ChapterPageResponse>) : UiState
         data object Failed : UiState
         data object SessionExpired : UiState
     }
@@ -38,7 +38,7 @@ class HomeViewModel(
 
         val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getMainPage(auth)
+            api.getChapterPage(auth)
         }.onSuccess { res ->
             _state.value = UiState.Success(res)
         }.onFailure { e ->
@@ -54,11 +54,11 @@ class HomeViewModel(
 }
 
 @Suppress("UNCHECKED_CAST")
-class HomeVMFactory(
+class ChapterVMFactory(
     private val api: ApiService,
     private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return HomeViewModel(api, context.applicationContext) as T
+        return ChapterViewModel(api, context.applicationContext) as T
     }
 }

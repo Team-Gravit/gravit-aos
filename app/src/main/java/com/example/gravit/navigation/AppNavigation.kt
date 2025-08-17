@@ -8,7 +8,6 @@ import com.example.gravit.login.LoginScreen
 import com.example.gravit.login.LoginViewModel
 import com.example.gravit.login.ProfileFinish
 import com.example.gravit.login.ProfileSetting
-import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.MainScreen
 import com.example.gravit.splash.SplashScreen
 
@@ -16,16 +15,16 @@ import com.example.gravit.splash.SplashScreen
 fun AppNavigation() {
     val rootnavController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "splash") {
+    NavHost(navController = rootnavController, startDestination = "splash") {
 
-        composable("splash") { SplashScreen(navController) }
+        composable("splash") { SplashScreen(rootnavController) }
         composable("login choice") {
             val loginViewModel = viewModel<LoginViewModel>()
-            LoginScreen(navController, loginViewModel)
+            LoginScreen(rootnavController, loginViewModel)
         }
-        composable("profile setting") { ProfileSetting(navController) }
-        composable("profile finish") { ProfileFinish(navController) }
+
+        composable("profile setting") { ProfileSetting(rootnavController) }
+        composable("profile finish") { ProfileFinish(rootnavController) }
         composable("main") { MainScreen() }
-        composable("short") {ShortAnswer()}
     }
 }

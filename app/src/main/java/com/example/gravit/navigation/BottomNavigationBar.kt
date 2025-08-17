@@ -11,6 +11,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.gravit.R
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.navigation.NavGraph.Companion.findStartDestination
 
 data class BottomNavItem(
     val route: String,
@@ -22,7 +24,7 @@ data class BottomNavItem(
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem("home", icon = R.drawable.unselected_home_button, selectedIcon = R.drawable.selected_home_button,"홈"),
-        BottomNavItem("study", icon = R.drawable.unselected_study_button, selectedIcon = R.drawable.selected_study_button,"학습"),
+        BottomNavItem("chapter", icon = R.drawable.unselected_study_button, selectedIcon = R.drawable.selected_study_button,"학습"),
         BottomNavItem("league", icon = R.drawable.unselected_league_button, selectedIcon = R.drawable.selected_league_button,"리그"),
         BottomNavItem("user", icon = R.drawable.unselected_user_button, selectedIcon = R.drawable.selected_user_button,"사용자")
     )
@@ -30,8 +32,13 @@ fun BottomNavigationBar(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
 
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
+
+
     NavigationBar(
-        modifier = Modifier.height(100.dp), // 바텀바 높이
+        modifier = Modifier.height(screenHeight * (100f / 740f)), // 바텀바 높이
         containerColor = Color.White,
         tonalElevation = 4.dp
     ) {
@@ -43,30 +50,40 @@ fun BottomNavigationBar(navController: NavHostController) {
                     Image( // Icon -> Image 로 바꿨더니 변경이 됨
                         painter = painterResource(id = if (selected) item.selectedIcon else item.icon),
                         contentDescription = item.label,
-                        modifier = Modifier.size(24.dp, 43.dp)
+                        modifier = Modifier.size(screenWidth * (24f / 360f), screenHeight * (43f / 740f))
                     )
                 },
                 selected = selected,
                 onClick = {
-                    val currentRoute = navController.currentDestination?.route
+                    val current = navController.currentDestination?.route
+                    val target = item.route
 
-                    val targetRoute = item.route
-
-                    if (currentRoute?.startsWith(targetRoute) == true) {
-                        // 이미 선택된 상태일 때만 study 초기화 (예: study/earth → study)
-                        if (targetRoute == "study") {
-                            navController.navigate("study") {
+                    when {
+                        //홈 버튼 루트로 이동
+                        target == "home" -> {
+                            navController.navigate("home") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                                restoreState = false
+                            }
+                        }
+                        //이미 챕터 안이면 root로 초기화
+                        target == "chapter" && current?.startsWith("chapter") == true -> {
+                            navController.navigate("chapter") {
                                 launchSingleTop = true
                             }
                         }
-                    } else {
-                        navController.navigate(targetRoute) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
+
+                        else -> {
+                            navController.navigate(target) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = target != "chapter"
                             }
-                            launchSingleTop = true
-                            // 학습 탭만 복원하지 않음, 추후에 다른 페이지 생기면 수정할 예정
-                            restoreState = item.route != "study"
                         }
                     }
                 },

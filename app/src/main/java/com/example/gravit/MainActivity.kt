@@ -7,13 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.ViewModelProvider
 import com.auth0.android.provider.WebAuthProvider
-import com.example.gravit.login.LoginViewModel
-import com.example.gravit.main.Study.ShortAnswer
 import com.example.gravit.navigation.AppNavigation
 import com.example.gravit.ui.theme.GravitTheme
-import android.net.Uri
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
