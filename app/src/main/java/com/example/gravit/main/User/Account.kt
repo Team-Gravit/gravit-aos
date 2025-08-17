@@ -40,7 +40,10 @@ import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
-fun Account(navController: NavController){
+fun Account(
+    navController: NavController,
+    nickname: String
+){
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -118,7 +121,7 @@ fun Account(navController: NavController){
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "####",
+                                text = nickname,
                                 style = TextStyle(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
@@ -214,13 +217,4 @@ fun Account(navController: NavController){
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AccountPreview() {
-    // 프리뷰용 NavController 생성
-    val navController = rememberNavController()
-    Account(navController = navController)
-
 }

@@ -18,6 +18,7 @@ import com.example.gravit.main.Chapter.ChapterScreen
 import com.example.gravit.main.Chapter.Lesson.LessonScreen
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
+import com.example.gravit.main.User.Account
 import com.example.gravit.main.User.AddFriend
 import com.example.gravit.main.User.Setting
 import com.example.gravit.main.User.UserScreen
@@ -34,6 +35,10 @@ fun NavController.navigateToLesson(
     chapterName: String
 ) {
     navigate(build(chapterId, unitId, lessonId, chapterName))
+}
+
+fun NavController.navigateToAccount(nickname: String) {
+    navigate("account?nickname=${Uri.encode(nickname)}")
 }
 
 @Composable
@@ -108,9 +113,20 @@ fun MainScreen() {
 
             composable("user") { UserScreen(innerNavController) }
             composable("setting") { Setting(innerNavController) }
-            composable("account") { com.example.gravit.main.User.Account(innerNavController)}
-        //Account로 하면 안되고 저렇게 하면 되더라ㅠ
             composable("addfriend") { AddFriend(innerNavController) }
+
+            composable(
+                route = "account?nickname={nickname}",
+                arguments = listOf(
+                    navArgument("nickname") { type = NavType.StringType; defaultValue = "" }
+                )
+            ) { backStackEntry ->
+                val nickname = backStackEntry.arguments?.getString("nickname").orEmpty()
+                Account(
+                    navController = innerNavController,
+                    nickname = nickname
+                )
+            }
         }
     }
 }
