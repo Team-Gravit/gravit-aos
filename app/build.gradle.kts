@@ -69,7 +69,8 @@ dependencies {
     implementation(libs.auth0)
     implementation(libs.androidx.security.crypto.v110alpha06)
 
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.material3.window.size.class1)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

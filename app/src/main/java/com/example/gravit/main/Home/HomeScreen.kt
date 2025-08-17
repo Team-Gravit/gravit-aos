@@ -4,6 +4,7 @@ import android.icu.text.SimpleDateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,7 +52,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.main.Study.RoundedGauge
+import com.example.gravit.main.Chapter.RoundedGauge
 import com.example.gravit.ui.theme.LocalScreenHeight
 import com.example.gravit.ui.theme.LocalScreenWidth
 import com.example.gravit.ui.theme.mbc1961
@@ -418,9 +419,14 @@ fun HomeScreen(navController: NavController) {
                         PreviousButton(
                             chapterId = chapterId,
                             chapter = chapterName,
-                            filledSegments = completedUnits,
+                            completedUnits = completedUnits,
                             backgroundImg = bgResId,
-                            totalSegments = totalUnits
+                            totalUnits = totalUnits,
+                            onClick = {
+                                navController.navigate("chapter") {
+                                    launchSingleTop = true
+                                }
+                            }
                         )
                     }
                 }
@@ -536,8 +542,9 @@ fun PreviousButton(
     chapterId: Int,
     backgroundImg: Int,
     chapter: String,
-    filledSegments: Int,
-    totalSegments: Int
+    completedUnits: Int,
+    totalUnits: Int,
+    onClick: () -> Unit,
 ) {
     val screenWidth = LocalScreenWidth.current
     val screenHeight = LocalScreenHeight.current
@@ -546,6 +553,7 @@ fun PreviousButton(
         modifier = Modifier
             .size(screenWidth * (328f / 360f), screenHeight * (131f / 740f))
             .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
     ) {
         Image(
             painter = painterResource(id = backgroundImg),
@@ -607,8 +615,8 @@ fun PreviousButton(
                 RoundedGauge(
                     height = screenHeight * (10f / 740f),
                     width = screenWidth * (271f / 360f),
-                    filledSegments = filledSegments,
-                    totalSegments = totalSegments
+                    completedUnits = completedUnits,
+                    totalUnits = totalUnits
                 )
             }
 

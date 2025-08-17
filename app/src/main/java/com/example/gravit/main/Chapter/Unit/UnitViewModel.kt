@@ -1,4 +1,4 @@
-package com.example.gravit.main.Home
+package com.example.gravit.main.Chapter.Unit
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -6,27 +6,28 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.MainPageResponse
+import com.example.gravit.api.UnitPageResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel(
+class UnitViewModel(
     private val api: ApiService,
     private val appContext: Context
 ) : ViewModel() {
 
-    sealed interface UiState {
+    sealed interface UiState{
+        data object Idle : UiState
         data object Loading : UiState
-        data class Success(val data: MainPageResponse) : UiState
+        data class Success(val data: List<UnitPageResponse>) : UiState
         data object Failed : UiState
         data object SessionExpired : UiState
     }
 
-    private val _state = MutableStateFlow<UiState>(UiState.Loading)
+    private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun load() = viewModelScope.launch {
+    fun load(chapterId: Int) = viewModelScope.launch {
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -38,7 +39,7 @@ class HomeViewModel(
 
         val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getMainPage(auth)
+            api.getUnitPage(auth, chapterId)
         }.onSuccess { res ->
             _state.value = UiState.Success(res)
         }.onFailure { e ->
@@ -54,11 +55,11 @@ class HomeViewModel(
 }
 
 @Suppress("UNCHECKED_CAST")
-class HomeVMFactory(
+class UnitVMFactory(
     private val api: ApiService,
     private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return HomeViewModel(api, context.applicationContext) as T
+        return UnitViewModel(api, context.applicationContext) as T
     }
 }
