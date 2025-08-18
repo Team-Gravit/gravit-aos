@@ -24,6 +24,11 @@ import com.example.gravit.main.Chapter.Unit.Unit
 import com.example.gravit.main.User.Account
 import com.example.gravit.main.User.AddFriend
 import com.example.gravit.main.User.Setting
+import com.example.gravit.main.User.Setting.Notice
+import com.example.gravit.main.User.Setting.PrivacyPolicy
+import com.example.gravit.main.User.Setting.ScreenSetting
+import com.example.gravit.main.User.Setting.Service
+import com.example.gravit.main.User.Setting.ToS
 import com.example.gravit.main.User.UserScreen
 
 fun build(chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
@@ -121,6 +126,11 @@ fun MainScreen(rootNavController: NavController) {
             composable("user") { UserScreen(innerNavController) }
             composable("setting") { Setting(innerNavController) }
             composable("addfriend") { AddFriend(innerNavController) }
+            composable("screensetting") { ScreenSetting(innerNavController) }
+            composable("notice") { Notice(innerNavController) }
+            composable("service") { Service(innerNavController) }
+            composable("tos") { ToS(innerNavController) }
+            composable("account") { PrivacyPolicy(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
             composable(

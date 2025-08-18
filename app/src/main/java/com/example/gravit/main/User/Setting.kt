@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
+import com.example.gravit.main.navigateToAccount
 import com.example.gravit.ui.theme.pretendard
 
 
@@ -133,7 +134,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigateToAccount("screensetting")
                                 }
                         )
                     }
@@ -160,7 +161,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigateToAccount("notice")
                                 }
                         )
                     }
@@ -187,7 +188,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigateToAccount("sevice")
                                 }
                         )
                     }
@@ -214,7 +215,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigateToAccount("tos")
                                 }
                         )
                     }
@@ -241,7 +242,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigateToAccount("privacypolicy")
                                 }
                         )
                     }
