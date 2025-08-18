@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gravit.main.Home.HomeScreen
@@ -24,7 +26,7 @@ import com.example.gravit.main.User.Setting
 import com.example.gravit.main.User.UserScreen
 
 fun build(chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
-    val encodedName = Uri.encode(chapterName) // 한글/공백/특수문자 안전
+    val encodedName = Uri.encode(chapterName) // 한글/공백/특수문자
     return "lesson/$chapterId/$unitId/$lessonId/$encodedName"
 }
 
@@ -44,9 +46,13 @@ fun NavController.navigateToAccount(nickname: String) {
 @Composable
 fun MainScreen() {
     val innerNavController = rememberNavController()
+    val backStackEntry by innerNavController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route.orEmpty()
+
+    val hideBottomBar = currentRoute.startsWith("lesson/")
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(innerNavController) },
+        bottomBar = { if (!hideBottomBar) { BottomNavigationBar(innerNavController) } },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         NavHost(
@@ -115,6 +121,7 @@ fun MainScreen() {
             composable("setting") { Setting(innerNavController) }
             composable("addfriend") { AddFriend(innerNavController) }
 
+            //account 화면에 닉네임 인자 전달
             composable(
                 route = "account?nickname={nickname}",
                 arguments = listOf(
