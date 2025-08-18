@@ -67,12 +67,20 @@ fun ShortAnswer(
                     .padding(horizontal = 16.dp)
             ) {
                 Column {
-                    Text(
-                        text = "${problemNum}/${totalProblems}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = pretendard
-                    )
+                    Row (verticalAlignment = Alignment.CenterVertically){
+                        Image(
+                            painter = painterResource(id = R.drawable.clipboard),
+                            contentDescription = "clipboard",
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "${problemNum}/${totalProblems}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = pretendard
+                        )
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "다음 문장을 읽고, 빈칸에 들어갈 알맞은 말을 쓰시오.",
@@ -121,7 +129,7 @@ fun ShortAnswer(
                             if (text.isNotBlank() && !submitted) {
                                 focusManager.clearFocus()
                                 keyboard?.hide()
-                                showCompleteButton = true                      // ✅ Done → ‘완료’ 버튼
+                                showCompleteButton = true                      //Done → 완료 버튼
                             }
                         }
                     )
@@ -129,7 +137,7 @@ fun ShortAnswer(
                     if (!submitted && text.isNotBlank() && showCompleteButton && !readyToSubmit) {
                         Spacer(Modifier.height(12.dp))
                         Button(
-                            onClick = { readyToSubmit = true },  // 완료 → FAB(체크) 등장
+                            onClick = { readyToSubmit = true },  // 완료 → 체크
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp),

@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -26,6 +28,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +48,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
@@ -64,6 +70,24 @@ fun LessonScreen(
     unitId: Int,
     lessonId: Int
 ) {
+    //스톱워치
+    val swVm: StopwatchViewModel = viewModel()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        // 앱이 백그라운드로 가면 멈춤
+        val obs = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                swVm.pause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+
+        // 컴포저블이 사라질 때(네비게이션 이동 등)도 멈춤
+        onDispose {
+            swVm.pause()
+            lifecycleOwner.lifecycle.removeObserver(obs)
+        }
+    }
 
     val resultsMap = remember { mutableStateMapOf<Int, ProblemResultItem>() }
     val wrongAttempts = remember { mutableStateMapOf<Int, Int>() }
@@ -126,11 +150,12 @@ fun LessonScreen(
 
     //제출
     fun finishLesson() {
+        swVm.pause()
         if (submitting) return
         submitting = true
         val payload = resultsMap.values.toList()
         if (payload.isEmpty()) {
-            // 문제 풀지 않고 종료하는 케이스면 정책에 맞춰 처리(토스트 등)
+            // 문제 풀지 않고 종료하는 케이스 아직 안 넣음
         }
         vm.submitResults(
             chapterId = chapterId,
@@ -189,6 +214,7 @@ fun LessonScreen(
                         modifier = Modifier
                             .padding(start = 16.dp)
                             .clickable {
+                                swVm.pause()
                                 coroutineScope.launch {
                                     showSheet = true
                                     sheetState.show()
@@ -196,13 +222,20 @@ fun LessonScreen(
                             },
                         tint = Color(0xFF4D4D4D)
                     )
-
-                    Text(
-                        text = "스톱워치",
-                        modifier = Modifier.padding(end = 16.dp),
-                        fontFamily = pretendard,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Row (verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.outline_timer_24),
+                            contentDescription = "stopwatch",
+                            modifier = Modifier
+                                .size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Stopwatch(
+                            vm = swVm,
+                            autoStart = true,
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
+                    }
                 }
             }
             Box(
@@ -392,14 +425,14 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
     if (correctAnswer.isNullOrBlank()) return false
     if (userAnswer.isNullOrBlank()) return false
 
-    // 1. 숫자 비교 (천단위 콤마 허용, "02" → "2")
+    //숫자 비교
     val userNum = userAnswer.replace(",", "").toBigDecimalOrNull()
     val corrNum = correctAnswer.replace(",", "").toBigDecimalOrNull()
     if (userNum != null && corrNum != null) {
         return userNum.compareTo(corrNum) == 0
     }
 
-    // 2. 일반 문자열 비교 (공백, 대소문자, 구두점 무시)
+    // 문자열 비교
     fun norm(s: String) = s.trim()
         .lowercase()
         .replace(Regex("\\s+"), " ")  // 여러 공백 → 하나

@@ -29,19 +29,19 @@ fun MultipleChoice(
     problem: Problem,
     problemNum: Int,
     totalProblems: Int,
-    selectedIndex: Int?,         // 부모 상태
-    submitted: Boolean,          // 부모 상태
-    onSelect: (Int) -> Unit,     // 선택 이벤트 (부모로 올림)
+    selectedIndex: Int?,
+    submitted: Boolean,
+    onSelect: (Int) -> Unit,
     onSubmit: (String) -> Unit,
-    isLast: Boolean,             // 마지막 문제 여부
-    onNext: () -> Unit,          // 다음으로
+    isLast: Boolean,
+    onNext: () -> Unit,
     modifier: Modifier = Modifier,
     isCorrect: Boolean?
 ) {
     var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
     var readyToSubmit by remember(problemNum) { mutableStateOf(false) }
 
-    // 선택 해제되면 버튼/FAB 숨김
+    // 선택 해제되면 버튼 숨김
     LaunchedEffect(selectedIndex, submitted) {
         if (selectedIndex == null || submitted) {
             showCompleteButton = false
@@ -60,12 +60,20 @@ fun MultipleChoice(
                     .padding(horizontal = 20.dp)
             ) {
                 Column {
-                    Text(
-                        text = "${problemNum}/${totalProblems}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = pretendard
-                    )
+                    Row (verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.clipboard),
+                            contentDescription = "clipboard",
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "${problemNum}/${totalProblems}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = pretendard
+                        )
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "빈칸에 알맞은 말을 고르세요",
@@ -131,7 +139,7 @@ fun MultipleChoice(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)          // ★ 4칸 동일 높이
+                                .weight(1f)          //4칸 동일 높이
                                 .padding(vertical = 6.dp)
                         )
                     }
@@ -140,7 +148,7 @@ fun MultipleChoice(
             }
         }
 
-        //우하단 FAB (체크 ↔ 다음)
+        //우하단 체크 ↔ 다음
         val fabState = when {
             !submitted && selectedIndex != null -> FabState.SUBMIT
             submitted && !isLast -> FabState.NEXT
@@ -183,8 +191,8 @@ fun MultipleChoice(
 
 
 data class MCOption(
-    val badge: String,  // 동그라미 안에 들어갈 숫자(예: "1")
-    val text: String    // 오른쪽에 표시할 텍스트(예: "행,열")
+    val badge: String,  // 동그라미 안에 들어갈 숫자
+    val text: String    // 오른쪽에 표시할 텍스트
 )
 
 fun parseMCOptions(raw: String?): List<MCOption> {
@@ -206,7 +214,7 @@ fun parseMCOptions(raw: String?): List<MCOption> {
             }
         }
 }
-// 정답 인덱스(0-base)
+// 정답 인덱스
 fun correctIndexFromAnswer(answer: String?): Int = (answer?.trim()?.toIntOrNull() ?: 1) - 1
 
 @Composable
@@ -225,22 +233,26 @@ private fun OptionCell(
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = enabled) { onClick() }
-            .background(when {
-                isSelected -> Color(0xFFDCDCDC)
-                else -> Color(0xFFF2F2F2)
-            })
+            .background(
+                when {
+                    isSelected -> Color(0xFFDCDCDC)
+                    else -> Color(0xFFF2F2F2)
+                }
+            )
     ) {
         Box(
             modifier = Modifier
                 .padding(horizontal = 20.dp)
                 .size(40.dp)
                 .clip(RoundedCornerShape(50.dp))
-                .background(when {
-                    isRight -> Color(0xFF00A80B)
-                    isWrong -> Color(0xFFFF0000)
-                    isSelected -> Color.Black
-                    else -> Color.White
-                })
+                .background(
+                    when {
+                        isRight -> Color(0xFF00A80B)
+                        isWrong -> Color(0xFFFF0000)
+                        isSelected -> Color.Black
+                        else -> Color.White
+                    }
+                )
                 .border(1.dp, Color(0xFF6D6D6D), RoundedCornerShape(50.dp)),
             contentAlignment = Alignment.Center
 

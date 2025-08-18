@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.gravit.R
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -29,8 +28,9 @@ fun BottomNavigationBar(navController: NavHostController) {
         BottomNavItem("user", icon = R.drawable.unselected_user_button, selectedIcon = R.drawable.selected_user_button,"사용자")
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute = navBackStackEntry?.destination?.route.orEmpty()
 
+    val inLearnStack = currentRoute.startsWith("chapter") || currentRoute.startsWith("units")
 
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
@@ -44,7 +44,11 @@ fun BottomNavigationBar(navController: NavHostController) {
     ) {
 
         items.forEach { item ->
-            val selected = currentRoute == item.route || currentRoute?.startsWith("${item.route}/") == true
+            val selected = when (item.route) {
+                "chapter" -> inLearnStack
+                else -> currentRoute == item.route ||
+                        currentRoute.startsWith("${item.route}/")
+            }
             NavigationBarItem(
                 icon = {
                     Image( // Icon -> Image 로 바꿨더니 변경이 됨
