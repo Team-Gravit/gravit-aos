@@ -1,7 +1,5 @@
 package com.example.gravit.main.Chapter.Lesson
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -181,7 +179,7 @@ fun MultipleChoice(
                                 .clickable { onNext() }
                         )
                     }
-                    FabState.HIDDEN -> {} // 안 나타남
+                    else -> Unit
                 }
             }
         }

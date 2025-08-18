@@ -8,6 +8,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -44,7 +45,7 @@ fun NavController.navigateToAccount(nickname: String) {
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(rootNavController: NavController) {
     val innerNavController = rememberNavController()
     val backStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
@@ -131,7 +132,14 @@ fun MainScreen() {
                 val nickname = backStackEntry.arguments?.getString("nickname").orEmpty()
                 Account(
                     navController = innerNavController,
-                    nickname = nickname
+                    nickname = nickname,
+                    onLogout = {
+                        rootNavController.navigate("login choice") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = false
+                        }
+                    }
                 )
             }
         }
