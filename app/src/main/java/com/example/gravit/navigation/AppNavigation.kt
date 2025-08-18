@@ -25,6 +25,6 @@ fun AppNavigation() {
 
         composable("profile setting") { ProfileSetting(rootnavController) }
         composable("profile finish") { ProfileFinish(rootnavController) }
-        composable("main") { MainScreen() }
+        composable("main") { MainScreen(rootnavController) }
     }
 }
