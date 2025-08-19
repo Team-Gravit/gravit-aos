@@ -23,6 +23,7 @@ import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
 import com.example.gravit.main.User.Account
 import com.example.gravit.main.User.AddFriend
+import com.example.gravit.main.User.FollowList
 import com.example.gravit.main.User.Setting
 import com.example.gravit.main.User.Setting.Notice
 import com.example.gravit.main.User.Setting.PrivacyPolicy
@@ -48,6 +49,8 @@ fun NavController.navigateToLesson(
 fun NavController.navigateToAccount(nickname: String) {
     navigate("account?nickname=${Uri.encode(nickname)}")
 }
+
+enum class FollowTab { Followers, Following }
 
 @Composable
 fun MainScreen(rootNavController: NavController) {
@@ -121,7 +124,7 @@ fun MainScreen(rootNavController: NavController) {
                 )
             }
 
-            composable("league") { LeagueScreen() }
+            composable("league") { LeagueScreen(innerNavController) }
 
             composable("user") { UserScreen(innerNavController) }
             composable("setting") { Setting(innerNavController) }
@@ -150,6 +153,20 @@ fun MainScreen(rootNavController: NavController) {
                             restoreState = false
                         }
                     }
+                )
+            }
+
+            composable(
+                route ="followList?tab={tab}",
+                arguments = listOf(
+                    navArgument("tab") { type = NavType.StringType; defaultValue = "followers"}
+                )
+            ) { backStackEntry ->
+                val tabArg  = backStackEntry.arguments?.getString("tab") ?: "followers"
+                val tab = if (tabArg.equals("following", true)) FollowTab.Following else FollowTab.Followers
+                FollowList(
+                    navController = innerNavController,
+                    initialTab = tab
                 )
             }
         }
