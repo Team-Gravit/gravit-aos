@@ -5,12 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,23 +47,25 @@ fun AddFriend(navController: NavController){
                     .fillMaxWidth()
                     .height(80.dp)
             ) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronLeft,
+                    contentDescription = "뒤로가기",
+                    tint = Color.Black,
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .size(30.dp)
+                        .align(Alignment.CenterStart)
+                        .clickable {
+                        navController.popBackStack()
+                    }
+                )
                 Text(
-                    text = "사용자",
+                    text = "친구추가",
                     fontSize = 20.sp,
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.setting),
-                    contentDescription = "setting",
-                    modifier = Modifier
-                        .padding(end = 16.dp)
-                        .align(Alignment.CenterEnd)
-                        .clickable {
-                            navController.navigate("setting")
-                        }
                 )
             }
 

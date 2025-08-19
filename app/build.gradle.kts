@@ -69,6 +69,8 @@ dependencies {
     implementation(libs.auth0)
     implementation(libs.androidx.security.crypto.v110alpha06)
 
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
+
     implementation(libs.play.services.auth)
     implementation(libs.androidx.material3.window.size.class1)
 

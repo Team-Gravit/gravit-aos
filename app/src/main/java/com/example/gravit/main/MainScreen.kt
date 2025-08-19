@@ -130,7 +130,7 @@ fun MainScreen(rootNavController: NavController) {
             composable("notice") { Notice(innerNavController) }
             composable("service") { Service(innerNavController) }
             composable("tos") { ToS(innerNavController) }
-            composable("account") { PrivacyPolicy(innerNavController) }
+            composable("privacypolicy") { PrivacyPolicy(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
             composable(

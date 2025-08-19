@@ -331,7 +331,9 @@ fun UserScreen(navController: NavController) {
                             modifier = Modifier
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
-                                .clickable { }
+                                .clickable {
+                                    navController.navigate("addfriend")
+                                }
                         )
                     }
                 }
