@@ -551,7 +551,6 @@ fun PreviousButton(
 
     Box(
         modifier = Modifier
-            .size(screenWidth * (328f / 360f), screenHeight * (131f / 740f))
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
     ) {
@@ -624,5 +623,6 @@ fun PreviousButton(
 
     }
 }
+
 
 

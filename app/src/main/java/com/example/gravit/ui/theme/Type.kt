@@ -46,3 +46,7 @@ val pretendard = FontFamily(
 val mbc1961 = FontFamily(
     Font(R.font.mbc1961gulim_medium, FontWeight.Medium)
 )
+
+val gmarketsans = FontFamily(
+    Font(R.font.gmarketsans_bold, FontWeight.Bold)
+)

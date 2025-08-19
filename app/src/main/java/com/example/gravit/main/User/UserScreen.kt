@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
@@ -88,15 +91,13 @@ fun UserScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
             .background(Color.White)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-
-            Spacer(modifier = Modifier.height(30.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,7 +143,7 @@ fun UserScreen(navController: NavController) {
                         modifier = Modifier
                             .size(screenWidth * (80f / 375f))
                             .clip(CircleShape)
-                            .background(ProfilePalette.colors[s.data.profileImgNumber]),
+                            .background(ProfilePalette.idToColor(s.data.profileImgNumber)),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -175,7 +176,9 @@ fun UserScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row {
                             Button(
-                                onClick = {},
+                                onClick = { navController.navigate("followList?tab=followers") {
+                                    launchSingleTop = true   // 중복 쌓임 방지
+                                } },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
                                     contentColor = Color(0xFF222222),
@@ -196,7 +199,9 @@ fun UserScreen(navController: NavController) {
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
-                                onClick = {},
+                                onClick = {navController.navigate("followList?tab=following") {
+                                    launchSingleTop = true
+                                }},
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
                                     contentColor = Color(0xFF222222),
@@ -206,7 +211,7 @@ fun UserScreen(navController: NavController) {
                                 border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.1f)),
                             ) {
                                 Text(
-                                    text = "팔로워  ${s.data.following}",
+                                    text = "팔로잉  ${s.data.following}",
                                     fontFamily = pretendard,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Medium,
@@ -331,7 +336,9 @@ fun UserScreen(navController: NavController) {
                             modifier = Modifier
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
-                                .clickable { }
+                                .clickable {
+                                    navController.navigate("addfriend")
+                                }
                         )
                     }
                 }

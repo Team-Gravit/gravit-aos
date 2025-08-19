@@ -31,7 +31,14 @@ fun BottomNavigationBar(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route.orEmpty()
 
     val inLearnStack = currentRoute.startsWith("chapter") || currentRoute.startsWith("units")
-
+    val inUserStack = currentRoute.run {
+                startsWith("user") || startsWith("account?nickname={nickname}")
+                || startsWith("addfriend") || startsWith("setting")
+                || startsWith("followlist") || startsWith("screensetting")
+                || startsWith("notice") || startsWith("tos")
+                || startsWith("service") || startsWith("privacypolicy")
+                        || startsWith("followList?tab={tab}")
+    }
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
@@ -46,6 +53,7 @@ fun BottomNavigationBar(navController: NavHostController) {
         items.forEach { item ->
             val selected = when (item.route) {
                 "chapter" -> inLearnStack
+                "user" -> inUserStack
                 else -> currentRoute == item.route ||
                         currentRoute.startsWith("${item.route}/")
             }
@@ -77,6 +85,12 @@ fun BottomNavigationBar(navController: NavHostController) {
                         target == "chapter" && current?.startsWith("chapter") == true -> {
                             navController.navigate("chapter") {
                                 launchSingleTop = true
+                            }
+                        }
+                        target == "user" && inUserStack -> {
+                            navController.navigate("user") {
+                                launchSingleTop = true
+                                restoreState = true
                             }
                         }
 

@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
@@ -40,6 +43,7 @@ fun Setting(navController: NavController){
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
             .background(Color(0xFFDCDCDC))
     ){
         Column {
@@ -133,7 +137,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigate("screensetting")
                                 }
                         )
                     }
@@ -160,7 +164,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigate("notice")
                                 }
                         )
                     }
@@ -187,7 +191,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigate("service")
                                 }
                         )
                     }
@@ -214,7 +218,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigate("tos")
                                 }
                         )
                     }
@@ -241,7 +245,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 계정 정보 창으로 넘어가기
+                                    navController.navigate("privacypolicy")
                                 }
                         )
                     }
