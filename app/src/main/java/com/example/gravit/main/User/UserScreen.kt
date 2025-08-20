@@ -6,9 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,17 +18,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -117,7 +111,7 @@ fun UserScreen(navController: NavController) {
                         .padding(end = 16.dp)
                         .align(Alignment.CenterEnd)
                         .clickable {
-                            navController.navigate("setting")
+                            navController.navigate("user/setting")
                         }
                 )
             }
@@ -176,7 +170,7 @@ fun UserScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row {
                             Button(
-                                onClick = { navController.navigate("followList?tab=followers") {
+                                onClick = { navController.navigate("user/followList?tab=followers") {
                                     launchSingleTop = true   // 중복 쌓임 방지
                                 } },
                                 modifier = Modifier.weight(1f),
@@ -199,7 +193,7 @@ fun UserScreen(navController: NavController) {
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
-                                onClick = {navController.navigate("followList?tab=following") {
+                                onClick = {navController.navigate("user/followList?tab=following") {
                                     launchSingleTop = true
                                 }},
                                 modifier = Modifier.weight(1f),
@@ -337,7 +331,7 @@ fun UserScreen(navController: NavController) {
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("addfriend")
+                                    navController.navigate("user/addfriend")
                                 }
                         )
                     }

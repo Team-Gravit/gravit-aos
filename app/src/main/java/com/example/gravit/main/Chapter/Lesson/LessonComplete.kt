@@ -1,5 +1,6 @@
 package com.example.gravit.main.Chapter.Lesson
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,10 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,28 +27,34 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.example.gravit.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.gravit.ui.theme.pretendard
-
 @Composable
-fun StudyComplete(){
+fun StudyComplete(
+    navController: NavController,
+){
     Box(modifier = Modifier.fillMaxSize()
         .background(Color(0xFFF2F2F2))) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(WindowInsets.statusBars.asPaddingValues())
                     .height(80.dp)
                     .background(Color.White)
             ) {
                 Text(
-                    text = "챕터 이름",
+                    text = "데이터베이스",
                     fontSize = 20.sp,
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
@@ -112,7 +123,15 @@ fun StudyComplete(){
                         color = Color(0xFFDCDCDC),
                         shape = RoundedCornerShape(16.dp)
                     )
-                )
+                ){
+                    Image(
+                        painter = painterResource(id = R.drawable.tokki),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(156.dp, 196.dp)
+                            .align(Alignment.Center)
+                    )
+                }
             }
 
             Box(modifier = Modifier
@@ -160,6 +179,7 @@ fun StudyComplete(){
 
             Button(
                 onClick = {
+                    navController.navigate("home")
                 },
                 modifier = Modifier
                     .padding(16.dp)
@@ -183,5 +203,6 @@ fun StudyComplete(){
 @Preview(showBackground = true)
 @Composable
 fun StudyCompletePreview() {
-    StudyComplete()
+    val navController = rememberNavController()
+    StudyComplete(navController)
 }
