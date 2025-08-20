@@ -8,14 +8,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -155,7 +160,8 @@ fun LessonScreen(
         submitting = true
         val payload = resultsMap.values.toList()
         if (payload.isEmpty()) {
-            // 문제 풀지 않고 종료하는 케이스 아직 안 넣음
+            submitting = false
+            return
         }
         vm.submitResults(
             chapterId = chapterId,
@@ -167,7 +173,9 @@ fun LessonScreen(
         }
     }
 
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false
+    )
     val coroutineScope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
 
@@ -183,6 +191,7 @@ fun LessonScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.safeDrawing.asPaddingValues())
             .background(Color(0xFFF2F2F2))
         ) {
 
@@ -281,6 +290,9 @@ fun LessonScreen(
                                 recordResult(current.problemId, correct)
                                 if (isLast) {
                                     finishLesson()
+                                    navController.navigate("lesson complete") {
+                                        launchSingleTop = true
+                                    }
                                 }
                             },
                             isLast = isLast,
@@ -310,6 +322,9 @@ fun LessonScreen(
                                 recordResult(current.problemId, correct)
                                 if (isLast) {
                                     finishLesson()
+                                    navController.navigate("lesson complete") {
+                                        launchSingleTop = true
+                                    }
                                 }
                             },
                             isLast = isLast,
@@ -339,12 +354,13 @@ fun LessonScreen(
                         showSheet = false
                     }
                 },
-                sheetState = sheetState,
-                modifier = Modifier
-                    .fillMaxHeight(0.9f)
+                sheetState = sheetState
             ) {
                 Column(
                     modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.65f)
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -364,7 +380,7 @@ fun LessonScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "#### 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
+                        text = "${chapterName} 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
                         fontSize = 16.sp,
                         fontFamily = pretendard,
                         color = Color(0xFF6D6D6D),
@@ -409,6 +425,10 @@ fun LessonScreen(
                                 coroutineScope.launch {
                                     sheetState.hide()
                                     showSheet = false
+                                    navController.navigate("home"){
+                                        popUpTo(0) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
                                 }
                             },
                         textAlign = TextAlign.Center,

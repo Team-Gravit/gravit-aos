@@ -137,7 +137,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("screensetting")
+                                    navController.navigate("user/screensetting")
                                 }
                         )
                     }
@@ -164,7 +164,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("notice")
+                                    navController.navigate("user/notice")
                                 }
                         )
                     }
@@ -191,7 +191,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("service")
+                                    navController.navigate("user/service")
                                 }
                         )
                     }
@@ -218,7 +218,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("tos")
+                                    navController.navigate("user/tos")
                                 }
                         )
                     }
@@ -245,7 +245,7 @@ fun Setting(navController: NavController){
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("privacypolicy")
+                                    navController.navigate("user/privacypolicy")
                                 }
                         )
                     }

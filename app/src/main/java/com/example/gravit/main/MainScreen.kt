@@ -2,6 +2,7 @@ package com.example.gravit.main
 
 import BottomNavigationBar
 import android.net.Uri
+import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -10,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,6 +21,7 @@ import androidx.navigation.navArgument
 import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.Chapter.ChapterScreen
 import com.example.gravit.main.Chapter.Lesson.LessonScreen
+import com.example.gravit.main.Chapter.Lesson.StudyComplete
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
 import com.example.gravit.main.User.Account
@@ -47,7 +50,7 @@ fun NavController.navigateToLesson(
 }
 
 fun NavController.navigateToAccount(nickname: String) {
-    navigate("account?nickname=${Uri.encode(nickname)}")
+    navigate("user/account?nickname=${Uri.encode(nickname)}")
 }
 
 enum class FollowTab { Followers, Following }
@@ -127,17 +130,18 @@ fun MainScreen(rootNavController: NavController) {
             composable("league") { LeagueScreen(innerNavController) }
 
             composable("user") { UserScreen(innerNavController) }
-            composable("setting") { Setting(innerNavController) }
-            composable("addfriend") { AddFriend(innerNavController) }
-            composable("screensetting") { ScreenSetting(innerNavController) }
-            composable("notice") { Notice(innerNavController) }
-            composable("service") { Service(innerNavController) }
-            composable("tos") { ToS(innerNavController) }
-            composable("privacypolicy") { PrivacyPolicy(innerNavController) }
+            composable("user/setting") { Setting(innerNavController) }
+            composable("user/addfriend") { AddFriend(innerNavController) }
+            composable("user/screensetting") { ScreenSetting(innerNavController) }
+            composable("user/notice") { Notice(innerNavController) }
+            composable("user/service") { Service(innerNavController) }
+            composable("user/tos") { ToS(innerNavController) }
+            composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
+            composable("lesson complete") { StudyComplete(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
             composable(
-                route = "account?nickname={nickname}",
+                route = "user/account?nickname={nickname}",
                 arguments = listOf(
                     navArgument("nickname") { type = NavType.StringType; defaultValue = "" }
                 )
@@ -157,7 +161,7 @@ fun MainScreen(rootNavController: NavController) {
             }
 
             composable(
-                route ="followList?tab={tab}",
+                route ="user/followList?tab={tab}",
                 arguments = listOf(
                     navArgument("tab") { type = NavType.StringType; defaultValue = "followers"}
                 )

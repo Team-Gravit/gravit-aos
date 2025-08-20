@@ -123,7 +123,7 @@ fun FollowList(
                 tab = tab,
                 onTabChange = { newTab -> tab = newTab },
                 followerCount = followerCount,
-                followingCount =followingCount
+                followingCount = followingCount
             )
 
             when (ui) {

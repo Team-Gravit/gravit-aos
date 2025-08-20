@@ -165,8 +165,8 @@ fun ShortAnswer(
         }
         val fabState = when {
             !submitted && readyToSubmit && text.isNotBlank() -> FabState.SUBMIT    // 채점
-            submitted && !isLast                              -> FabState.NEXT      // 다음
-            else                                              -> FabState.HIDDEN
+            submitted && !isLast -> FabState.NEXT      // 다음
+            else -> FabState.HIDDEN
         }
 
         if (fabState != FabState.HIDDEN) {
