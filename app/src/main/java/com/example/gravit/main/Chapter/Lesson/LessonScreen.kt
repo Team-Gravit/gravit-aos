@@ -62,6 +62,7 @@ import com.example.gravit.R
 import com.example.gravit.api.ProblemResultItem
 import com.example.gravit.api.Problems
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.navigateTo
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.launch
 import kotlin.math.min
@@ -290,9 +291,13 @@ fun LessonScreen(
                                 recordResult(current.problemId, correct)
                                 if (isLast) {
                                     finishLesson()
-                                    navController.navigate("lesson complete") {
-                                        launchSingleTop = true
-                                    }
+                                    navController.navigateTo(
+                                        chapterId = chapterId,
+                                        chapterName = chapterName,
+                                        unitId = unitId,
+                                        lessonId = lessonId,
+                                        togo = "lesson/complete"
+                                    )
                                 }
                             },
                             isLast = isLast,
@@ -322,9 +327,13 @@ fun LessonScreen(
                                 recordResult(current.problemId, correct)
                                 if (isLast) {
                                     finishLesson()
-                                    navController.navigate("lesson complete") {
-                                        launchSingleTop = true
-                                    }
+                                    navController.navigateTo(
+                                        chapterId = chapterId,
+                                        chapterName = chapterName,
+                                        unitId = unitId,
+                                        lessonId = lessonId,
+                                        togo = "lesson/complete"
+                                    )
                                 }
                             },
                             isLast = isLast,

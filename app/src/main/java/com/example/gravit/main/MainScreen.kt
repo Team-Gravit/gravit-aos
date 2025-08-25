@@ -2,16 +2,13 @@ package com.example.gravit.main
 
 import BottomNavigationBar
 import android.net.Uri
-import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,8 +17,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.Chapter.ChapterScreen
+import com.example.gravit.main.Chapter.Lesson.LessonComplete
 import com.example.gravit.main.Chapter.Lesson.LessonScreen
-import com.example.gravit.main.Chapter.Lesson.StudyComplete
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
 import com.example.gravit.main.User.Account
@@ -35,18 +32,24 @@ import com.example.gravit.main.User.Setting.Service
 import com.example.gravit.main.User.Setting.ToS
 import com.example.gravit.main.User.UserScreen
 
-fun build(chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
+fun build(togo: String, chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
     val encodedName = Uri.encode(chapterName) // 한글/공백/특수문자
-    return "lesson/$chapterId/$unitId/$lessonId/$encodedName"
+    return "$togo/$chapterId/$unitId/$lessonId/$encodedName"
 }
 
-fun NavController.navigateToLesson(
+fun NavController.navigateTo(
     chapterId: Int,
     unitId: Int,
     lessonId: Int,
-    chapterName: String
+    chapterName: String,
+    togo: String
 ) {
-    navigate(build(chapterId, unitId, lessonId, chapterName))
+    navigate(build(togo, chapterId, unitId, lessonId, chapterName)){
+        popUpTo(0) {
+            inclusive = true
+        }
+        launchSingleTop = true
+    }
 }
 
 fun NavController.navigateToAccount(nickname: String) {
@@ -127,6 +130,29 @@ fun MainScreen(rootNavController: NavController) {
                 )
             }
 
+            composable(
+                route =  "lesson/complete/{chapterId}/{unitId}/{lessonId}/{chapterName}",
+                arguments = listOf(
+                    navArgument("chapterId") { type = NavType.IntType },
+                    navArgument("unitId") { type = NavType.IntType },
+                    navArgument("lessonId") { type = NavType.IntType },
+                    navArgument("chapterName") { type = NavType.StringType },
+                )
+            ) { backStackEntry ->
+                val chapterId   = backStackEntry.arguments!!.getInt("chapterId")
+                val unitId      = backStackEntry.arguments!!.getInt("unitId")
+                val lessonId    = backStackEntry.arguments!!.getInt("lessonId")
+                val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
+
+                LessonComplete(
+                    navController = innerNavController,
+                    chapterId = chapterId,
+                    chapterName = chapterName,   // 헤더 표시용
+                    unitId = unitId,
+                    lessonId = lessonId
+                )
+            }
+
             composable("league") { LeagueScreen(innerNavController) }
 
             composable("user") { UserScreen(innerNavController) }
@@ -137,7 +163,6 @@ fun MainScreen(rootNavController: NavController) {
             composable("user/service") { Service(innerNavController) }
             composable("user/tos") { ToS(innerNavController) }
             composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
-            composable("lesson complete") { StudyComplete(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
             composable(
