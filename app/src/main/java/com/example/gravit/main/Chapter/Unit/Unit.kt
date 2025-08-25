@@ -50,7 +50,7 @@ import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.api.UnitPageResponse
-import com.example.gravit.main.navigateToLesson
+import com.example.gravit.main.navigateTo
 import com.example.gravit.ui.theme.LocalScreenHeight
 import com.example.gravit.ui.theme.LocalScreenWidth
 import com.example.gravit.ui.theme.pretendard
@@ -306,12 +306,14 @@ fun Unit(
                                                     .firstOrNull { it.isCompleted == false }?.lessonId
                                                     ?: lessons.lastOrNull()?.lessonId
                                                     ?: 1
+                                                val togo = "lesson"
 
-                                                navController.navigateToLesson(
+                                                navController.navigateTo(
                                                     chapterId = chapterId,
                                                     unitId = unitId,
                                                     lessonId = nextLessonId,
-                                                    chapterName = initialName
+                                                    chapterName = initialName,
+                                                    togo = togo
                                                 ) },
                                             shape = RoundedCornerShape(16.dp),
                                             modifier = Modifier

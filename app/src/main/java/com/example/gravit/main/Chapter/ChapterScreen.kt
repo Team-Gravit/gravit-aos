@@ -163,6 +163,14 @@ fun ChapterScreen(navController: NavController){
                                 }
 
                             }
+                            if (pair.size == 1) {
+                                Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
+                                Spacer(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(160f / 166f) // 높이 균형 유지
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(screenHeight * (8f / 740f)))
                     }
