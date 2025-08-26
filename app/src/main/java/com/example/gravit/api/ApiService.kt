@@ -6,6 +6,7 @@ import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 //로그인
 data class IdTokenRequest(val idToken: String)
@@ -107,6 +108,21 @@ data class FriendItem(
     val handle: String
 )
 
+data class FriendSearchResponse(
+    val page: Int,
+    val size: Int,
+    val total: Int,
+    val hasNext: Boolean,
+    val searchUsers: List<FriendUser>
+)
+
+data class FriendUser(
+    val userId: Long,
+    val profileImgNumber: Int,
+    val nickname: String,
+    val handle: String,
+    val isFollowing: Boolean
+)
 
 interface ApiService {
     @POST("api/v1/oauth/android")
@@ -179,13 +195,20 @@ interface ApiService {
     @POST("api/v1/friends/following/{followeeId}")
     suspend fun sendFolloweeId (
         @Header("Authorization") auth: String,
-        @Path("followeeId") followeeId: Int
+        @Path("followeeId") followeeId: Long
     )
 
     @POST("api/v1/friends/unfollowing/{followeeId}")
     suspend fun sendUnFolloweeId (
         @Header("Authorization") auth: String,
-        @Path("followeeId") followeeId: Int
+        @Path("followeeId") followeeId: Long
     )
+
+    @GET("api/v1/friends/search")
+    suspend fun getFriends(
+        @Header("Authorization") auth: String,
+        @Query("handleQuery") handleQuery: String,
+        @Query("page") page: Int = 0
+    ) : FriendSearchResponse
 }
 
