@@ -1,5 +1,6 @@
 package com.example.gravit.main.Home
 
+import android.R.attr.level
 import android.icu.text.SimpleDateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -8,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -37,7 +37,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,6 +54,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.Chapter.Lesson.PillShape
+import com.example.gravit.main.Chapter.Lesson.RoundBox
 import com.example.gravit.main.Chapter.RoundedGauge
 import com.example.gravit.ui.theme.LocalScreenHeight
 import com.example.gravit.ui.theme.LocalScreenWidth
@@ -211,73 +212,26 @@ fun HomeScreen(navController: NavController) {
                 ) {
                     Column {
                         Row {
-                            PillShape { //리그
-                                Image(
-                                    painter = painterResource(id = R.drawable.rank_cup),
-                                    contentDescription = "rank mark",
-                                    modifier = Modifier
-                                        .size(screenWidth * (16f / 360f))
+                            val level = (ui as? HomeViewModel.UiState.Success)?.data?.level ?: 1
+                            val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp ?: 0
+                            val league = (ui as? HomeViewModel.UiState.Success)?.data?.league ?: "Bronze 1"
+                            PillShape(
+                                img = R.drawable.rank_cup,
+                                league = league,
+                            )
 
-                                )
-
-                                Spacer(modifier = Modifier.width(screenWidth * (4f / 360f)))
-
-                                val league = (ui as? HomeViewModel.UiState.Success)?.data?.league ?: "—"
-                                CustomText(
-                                    text = league,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF8100B3)
-                                )
-                            }
+                            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
+                            PillShape(
+                                img = R.drawable.xp_mark,
+                                xp = xp.toString()
+                            )
 
                             Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
 
-                            PillShape(width = 76f) { //XP
-                                Image(
-                                    painter = painterResource(id = R.drawable.xp_mark),
-                                    contentDescription = "rank mark",
-                                    modifier = Modifier
-                                        .size(screenWidth * (16f / 360f))
-                                )
-
-                                Spacer(modifier = Modifier.width(screenWidth * (4f / 360f)))
-
-                                val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp ?: 0
-                                CustomText(
-                                    text = xp.toString(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF8100B3)
-                                )
-
-                                Spacer(modifier = Modifier.width(screenWidth * (2f / 360f)))
-
-                                CustomText(
-                                    text = "XP",
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF8100B3)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
-                            //LV
-                            val level = (ui as? HomeViewModel.UiState.Success)?.data?.level ?: 0
-                            PillShape(width = 169f) {
-                                CustomText(
-                                    text = "LV",
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 14.sp,
-                                    color = Color.White
-                                )
-                                CustomText(
-                                    text = level.toString(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = Color.White
-                                )
-                            }
+                            LevelGauge(
+                                lv = level,
+                                xp = xp
+                            )
                         }
 
 
@@ -384,18 +338,20 @@ fun HomeScreen(navController: NavController) {
                                 Spacer(modifier = Modifier.width(screenWidth * (8f/ 360f)))
 
                                 Column {
-                                    RoundRect(
-                                        imageRes = R.drawable.rocket_main,
+                                    RoundBox(
                                         title = "행성 정복률",
-                                        value = "임시%"
+                                        value = planetComplete(navController),
+                                        img = R.drawable.rocket_main,
+                                        modifier = Modifier.weight(1f)
                                     )
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    RoundRect(
-                                        imageRes = R.drawable.fire,
+                                    RoundBox(
                                         title = "연속 학습일",
-                                        value = "임시일"
+                                        value = "보류",
+                                        img = R.drawable.fire,
+                                        modifier = Modifier.weight(1f)
                                     )
                                 }
                             }
@@ -472,76 +428,6 @@ private fun CustomText (
         modifier = modifier
     )
 }
-
-@Composable
-fun PillShape(
-    modifier: Modifier = Modifier,
-    width: Float = 67f,
-    height: Float = 25f,
-    backgroundColor: Color = Color.White,
-    shape: Shape = RoundedCornerShape(50),
-    content: @Composable RowScope.() -> Unit
-) {
-    val screenWidth = LocalScreenWidth.current
-    val screenHeight = LocalScreenHeight.current
-
-    Box(
-        modifier = modifier
-            .size(width = screenWidth * (width / 360f), height = screenHeight * (height / 740f))
-            .background(backgroundColor, shape = shape),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            content = content
-        )
-    }
-}
-
-@Composable
-fun RoundRect(
-    imageRes: Int,
-    title: String,
-    value: String
-) {
-    val screenWidth = LocalScreenWidth.current
-    val screenHeight = LocalScreenHeight.current
-
-    Box(
-        modifier = Modifier
-            .size(screenWidth * (160f / 360f), screenHeight * (89f / 740f))
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-    ) {
-        Row (
-            modifier = Modifier.padding(vertical = screenHeight * (20f / 740f))
-        ){
-            Image(
-                modifier = Modifier
-                    .padding(start = screenWidth * (8f / 360f))
-                    .size(screenWidth * (50f / 360f)),
-                contentDescription = null,
-                painter = painterResource(id = imageRes)
-            )
-            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
-
-            Column {
-                CustomText(
-                    text = title,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(screenWidth * (8f / 360f)))
-                CustomText(
-                    text = value,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp
-                )
-            }
-        }
-    }
-}
-
 @Composable
 fun PreviousButton(
     chapterId: Int,

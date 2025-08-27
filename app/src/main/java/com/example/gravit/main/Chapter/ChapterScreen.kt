@@ -123,8 +123,6 @@ fun ChapterScreen(navController: NavController){
                     )
                 }
 
-
-
                 val chapters: List<ChapterPageResponse> =
                     (ui as? ChapterViewModel.UiState.Success)?.data ?: emptyList()
 

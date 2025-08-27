@@ -77,7 +77,8 @@ fun ShortAnswer(
                             text = "${problemNum}/${totalProblems}",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = pretendard
+                            fontFamily = pretendard,
+                            color = Color.Black
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
@@ -105,7 +106,8 @@ fun ShortAnswer(
                             text = problem.question,
                             fontSize = 16.sp,
                             fontFamily = pretendard,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
                         )
                     }
                 }

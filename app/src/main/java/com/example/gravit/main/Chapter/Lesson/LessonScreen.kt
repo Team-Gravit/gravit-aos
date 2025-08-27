@@ -208,7 +208,8 @@ fun LessonScreen(
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF030303)
                 )
 
                 Row(
@@ -230,14 +231,15 @@ fun LessonScreen(
                                     sheetState.show()
                                 }
                             },
-                        tint = Color(0xFF4D4D4D)
+                        tint = Color(0xFF494949)
                     )
                     Row (verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             painter = painterResource(id = R.drawable.outline_timer_24),
                             contentDescription = "stopwatch",
-                            modifier = Modifier
-                                .size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = Color(0xFF494949)
+
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Stopwatch(

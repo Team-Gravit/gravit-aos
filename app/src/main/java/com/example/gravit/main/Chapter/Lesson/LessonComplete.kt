@@ -1,6 +1,5 @@
 package com.example.gravit.main.Chapter.Lesson
 
-import android.icu.lang.UCharacter.GraphemeClusterBreak.LV
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,6 +55,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Home.HomeVMFactory
 import com.example.gravit.main.Home.HomeViewModel
+import com.example.gravit.main.Home.LevelGauge
+import com.example.gravit.main.Home.planetComplete
+import com.example.gravit.ui.theme.mbc1961
 import com.example.gravit.ui.theme.pretendard
 @Composable
 fun LessonComplete(
@@ -82,17 +85,18 @@ fun LessonComplete(
 
         else -> Unit
     }
-    val league = (ui as? HomeViewModel.UiState.Success)?.data?.league?: "-"
-    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.level?: "-"
+    val league = (ui as? HomeViewModel.UiState.Success)?.data?.league?: "Bronze 1"
+    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.level?: 1
+    val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp?: 0
 
     Box(modifier = Modifier
         .fillMaxSize()
+        .padding(WindowInsets.statusBars.asPaddingValues())
         .background(Color(0xFFF2F2F2))) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(WindowInsets.statusBars.asPaddingValues())
                     .height(80.dp)
                     .background(Color.White)
             ) {
@@ -102,7 +106,8 @@ fun LessonComplete(
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF030303)
                 )
 
                 Icon(
@@ -126,80 +131,31 @@ fun LessonComplete(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier
-                        .wrapContentSize()
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .border(
+                    PillShape(
+                        modifier = Modifier.border(
                             width = 1.dp,
                             color = Color(0xFFDCDCDC),
                             shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row (verticalAlignment = Alignment.CenterVertically) {
-                            Image(
-                                painter = painterResource(id = R.drawable.rank_cup),
-                                contentDescription = "rank mark",
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = league,
-                                fontSize = 14.sp,
-                                fontFamily = pretendard,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF8100B3)
-                            )
-                        }
-                    }
+                        ),
+                        img = R.drawable.rank_cup,
+                        league = league
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Box(modifier = Modifier
-                        .wrapContentHeight()
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFDCDCDC),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .weight(1f)
-                        .padding(6.dp),
-                    ){
-                        Text(
-                            buildAnnotatedString {
-                                withStyle(SpanStyle(
-                                    fontWeight = FontWeight.Normal
-                                )){
-                                    append("LV")
-                                }
-                                withStyle(SpanStyle(
-                                    fontWeight = FontWeight.Bold
-                                )){
-                                    append("${lv}")
-                                }
-                            },
-                            fontFamily = pretendard,
-                            fontSize = 14.sp,
-                            color = Color.White,
-                            modifier = Modifier.padding(start = 14.dp)
-                        )
-                    }
+                    LevelGauge(
+                        lv = lv,
+                        xp = xp,
+                    )
                 }
             }
-            Box(modifier = Modifier
+            Column(modifier = Modifier
                 .fillMaxWidth()
-                .weight(5f)){
+                .weight(1f)){
                 Box(modifier = Modifier
-                    .fillMaxSize()
+                    .weight(3f)
+                    .fillMaxWidth()
                     .padding(
                         start = 16.dp,
                         end = 16.dp,
-                        bottom = 8.dp
                     )
                     .background(
                         color = Color.White,
@@ -213,7 +169,8 @@ fun LessonComplete(
                     contentAlignment = Alignment.Center
                 ){
                     Column (verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
                             text = "${planetName[chapterId].toString()}에 한발 더 가까워졌어요!",
                             fontFamily = pretendard,
@@ -240,73 +197,72 @@ fun LessonComplete(
                 }
             }
 
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .weight(2f)){
-                Row(modifier = Modifier
-                    .padding(
-                        start = 16.dp,
-                        top = 8.dp,
-                        end = 16.dp,
-                        bottom = 16.dp
-                    )
-                    .fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Box(modifier = Modifier
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(0.6f)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .weight(1f)
-                        .fillMaxSize()
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFDCDCDC),
-                            shape = RoundedCornerShape(16.dp)
-                        )
+                ) {
+                    RoundBox(
+                        title = "행성 정복률",
+                        value = planetComplete(navController),
+                        img = R.drawable.rocket_main,
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFDCDCDC),
+                                shape = RoundedCornerShape(16.dp)
+                            )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    Box(modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFDCDCDC),
-                            shape = RoundedCornerShape(16.dp)
-                        )
+                    RoundBox(
+                        title = "연속 학습일",
+                        value = "보류",
+                        img = R.drawable.fire,
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFDCDCDC),
+                                shape = RoundedCornerShape(16.dp)
+                            )
                     )
                 }
-            }
+                Spacer(Modifier.height(16.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("home")
-                },
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8100B3),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(100.dp)
-            ) {
-                Text("계속하기",
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Bold)
+                Box(modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = {
+                            navController.navigate("home")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8100B3),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(100.dp)
+                    ) {
+                        Text(
+                            "계속하기",
+                            fontSize = 16.sp,
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }
 }
+
 
 private val planetName = mapOf(
     1 to "지구",
@@ -318,6 +274,118 @@ private val planetName = mapOf(
     7 to "천왕성",
     8 to "해왕성",
 )
+
+@Composable
+fun RoundBox(
+    title: String,
+    value: String,
+    img: Int,
+    modifier: Modifier
+){
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+    ){
+        Row (
+            modifier= Modifier.padding(start = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Image(
+                painter = painterResource(id = img),
+                contentDescription = null,
+                modifier = Modifier.size(50.dp)
+                )
+            Spacer(Modifier.width(8.dp))
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxHeight()
+            ){
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    fontFamily = pretendard,
+                    color = Color.Black
+                )
+                Text(
+                    text = value,
+                    fontFamily = pretendard,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PillShape(
+    modifier: Modifier = Modifier,
+    img: Int,
+    league: String = "",
+    xp: String = ""
+){
+    Box(modifier = modifier
+        .wrapContentWidth()
+        .height(30.dp)
+        .background(
+            color = Color.White,
+            shape = RoundedCornerShape(50)
+        )
+        .padding(6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row (
+            modifier = Modifier.fillMaxHeight(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = img),
+                contentDescription = "rank mark",
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            if(league != "") {
+                Text(
+                    text = league,
+                    style = TextStyle(
+                        fontFamily = pretendard,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF8100B3),
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    ),
+                )
+            } else {
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )){
+                            append(xp)
+                        }
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Normal
+                        )){
+                            append("XP")
+                        }
+                    },
+                    style = TextStyle(
+                        fontFamily = pretendard,
+                        fontSize = 14.sp,
+                        color = Color(0xFF8100B3),
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    ),
+                )
+            }
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

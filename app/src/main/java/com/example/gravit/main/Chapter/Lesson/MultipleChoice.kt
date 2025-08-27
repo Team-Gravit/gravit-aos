@@ -69,14 +69,17 @@ fun MultipleChoice(
                             text = "${problemNum}/${totalProblems}",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = pretendard
+                            fontFamily = pretendard,
+                            color = Color.Black
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "빈칸에 알맞은 말을 고르세요",
                         fontSize = 16.sp,
-                        fontFamily = pretendard
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF383838)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Box(
@@ -90,10 +93,13 @@ fun MultipleChoice(
                             )
                             .background(Color.White)
                     ){
-                        Text(modifier = Modifier.padding(10.dp),
+                        Text(
+                            modifier = Modifier.padding(10.dp),
                             text = problem.question,
                             fontSize = 16.sp,
-                            fontFamily = pretendard)
+                            fontFamily = pretendard,
+                            color = Color.Black
+                        )
                     }
                 }
             }
