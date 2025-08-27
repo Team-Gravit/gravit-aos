@@ -109,7 +109,7 @@ fun Stopwatch(
             fontSize = 12.sp,
             fontFamily = pretendard,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF4D4D4D),
+            color = Color(0xFF494949),
             style = TextStyle(fontFeatureSettings = "tnum")
         )
     }
