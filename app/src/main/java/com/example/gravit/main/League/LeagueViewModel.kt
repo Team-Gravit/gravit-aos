@@ -18,7 +18,9 @@ data class MyRankUi(
     val level: Int,
     val xp: Int,
     val nickname: String,
-    val profileImgNumber: Int
+    val profileImgNumber: Int,
+    val league: String?,
+    val lp: Int
 )
 
 
@@ -54,6 +56,7 @@ class LeagueViewModel(
     val myRank = _myRank.asStateFlow()
     private var myNickname: String? = null
     private var myEXP: Int = 0
+    var myLeague: String? = null
     @Volatile private var myRankPrefetching = false
 
 
@@ -71,6 +74,7 @@ class LeagueViewModel(
             .onSuccess { user ->
                 myNickname = user.nickname
                 myEXP = user.xp
+                myLeague = user.league
             }
             .onFailure { e ->
                 if ((e as? retrofit2.HttpException)?.code() == 401) {
@@ -85,7 +89,9 @@ class LeagueViewModel(
             level = level,
             xp = myEXP,
             nickname = nickname,
-            profileImgNumber = profileImgNumber
+            profileImgNumber = profileImgNumber,
+            league = myLeague,
+            lp = lp
         )
 
     fun prefetchMyRank() = viewModelScope.launch {
