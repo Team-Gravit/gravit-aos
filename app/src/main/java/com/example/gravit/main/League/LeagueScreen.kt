@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,6 +68,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.api.LeagueItem
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.Home.LeagueGauge
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.gmarketsans
 import com.example.gravit.ui.theme.mbc1961
@@ -84,6 +86,7 @@ fun LeagueScreen(
     val ui by vm.state.collectAsState()
     val myRank by vm.myRank.collectAsState()
     val sessionExpired by vm.sessionExpired.collectAsState()
+    val source by vm.source.collectAsState()
 
     LaunchedEffect(Unit) {
         vm.loadMyUser()
@@ -117,6 +120,13 @@ fun LeagueScreen(
                 if (lastVisible >= total - 3) vm.loadNextL()
             }
     }
+
+    val listLeagueId: Int = when (val s = source) {
+        is LeagueViewModel.Source.Tier -> s.leagueId
+        LeagueViewModel.Source.UserLeague -> myRank?.league?.let { tierIdFromName(it) } ?: -1
+    }
+
+    val myLeagueId = myRank?.league?.let { tierIdFromName(it) }
 
     Box(modifier = Modifier
         .fillMaxWidth()
@@ -156,17 +166,25 @@ fun LeagueScreen(
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.width(16.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(ProfilePalette.idToColor(rank.profileImgNumber)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.profile_logo),
-                                contentDescription = "profile logo",
-                                modifier = Modifier.size(20.dp)
+                        Box (modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center){
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(ProfilePalette.idToColor(rank.profileImgNumber)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.profile_logo),
+                                    contentDescription = "profile logo",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            val leagueId = tierIdFromName(rank.league)
+                            LeagueGauge(
+                                leagueId = leagueId,
+                                lp = rank.lp,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                         Spacer(modifier = Modifier.width(10.dp))
@@ -232,7 +250,7 @@ fun LeagueScreen(
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                TierSelector(vm = vm)
+                TierSelector(vm = vm, initialLeagueId = myLeagueId)
             }
 
             HorizontalDivider(
@@ -253,14 +271,16 @@ fun LeagueScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(ui.items, key = { it.userId }) { item ->
-                        RankCell(item)
+                        RankCell(item = item, listLeagueId = listLeagueId)
                     }
 
                     item {
                         when {
                             ui.isLoading -> {
                                 Box(
-                                    Modifier.fillMaxWidth().padding(16.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CircularProgressIndicator()
@@ -268,7 +288,9 @@ fun LeagueScreen(
                             }
                             ui.endReached -> {
                                 Box(
-                                    Modifier.fillMaxWidth().padding(16.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text("마지막 페이지입니다")
@@ -276,7 +298,9 @@ fun LeagueScreen(
                             }
                             ui.error != null -> {
                                 Column(
-                                    Modifier.fillMaxWidth().padding(16.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(ui.error!!)
@@ -292,7 +316,10 @@ fun LeagueScreen(
     }
 }
 @Composable
-private fun RankCell(item: LeagueItem) { //랭킹
+private fun RankCell(
+    item: LeagueItem,
+    listLeagueId: Int
+) { //랭킹
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -321,18 +348,26 @@ private fun RankCell(item: LeagueItem) { //랭킹
                 textAlign = TextAlign.Start
             )
             Spacer(Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(ProfilePalette.idToColor(item.profileImgNumber)),
-                contentAlignment = Alignment.Center
-            ){
-                Image(
-                    painter = painterResource(id = R.drawable.profile_logo),
-                    contentDescription = "profile logo",
-                    modifier = Modifier.size(20.dp)
+            Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(ProfilePalette.idToColor(item.profileImgNumber)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.profile_logo),
+                        contentDescription = "profile logo",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                LeagueGauge(
+                    leagueId = listLeagueId,
+                    lp = item.lp,
+                    modifier = Modifier.fillMaxSize()
                 )
+
             }
             Spacer(Modifier.width(8.dp))
             Text(
@@ -344,7 +379,8 @@ private fun RankCell(item: LeagueItem) { //랭킹
             )
         }
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
                 .background(Color(0xFFFFF2FF))
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center
@@ -390,7 +426,8 @@ fun TierSelector( //티어 선택
     vm: LeagueViewModel,
     tiers: List<Int> = (1..15).toList(),
     dotSize: Dp = 100.dp,
-    spacing: Dp = 12.dp
+    spacing: Dp = 12.dp,
+    initialLeagueId: Int?
 ) {
     val listState = rememberLazyListState()
     val fling = rememberSnapFlingBehavior(listState)
@@ -411,7 +448,16 @@ fun TierSelector( //티어 선택
     }
 
     var userHasScrolled by remember { mutableStateOf(false) }
-    var lastAppliedIndex by remember { mutableStateOf(-1) }
+    var lastAppliedIndex by remember { mutableIntStateOf(-1) }
+
+    LaunchedEffect(initialLeagueId, tiers) {
+        val idx = initialLeagueId?.let { tiers.indexOf(it) } ?: -1
+        if (idx >= 0) {
+            listState.scrollToItem(idx)   // sidePad 덕분에 중앙에 맞춰짐
+            lastAppliedIndex = idx
+            vm.selectTier(tiers[idx])     // 소스도 내 티어로 바로 세팅
+        }
+    }
 
     // 스크롤이 멈췄을 때만 가운데 티어로 전환
     LaunchedEffect(listState) {
@@ -464,6 +510,24 @@ private fun tierName(id: Int): String = when (id) { //티어 이름 변경
     else -> "Unranked"
 }
 
+private fun tierIdFromName(name: String?): Int = when (name) {
+    "Bronze 1" -> 1
+    "Bronze 2" -> 2
+    "Bronze 3" -> 3
+    "Silver 1" -> 4
+    "Silver 2" -> 5
+    "Silver 3" -> 6
+    "Gold 1" -> 7
+    "Gold 2" -> 8
+    "Gold 3" -> 9
+    "Platinum 1" -> 10
+    "Platinum 2" -> 11
+    "Platinum 3" -> 12
+    "Diamond 1" -> 13
+    "Diamond 2" -> 14
+    "Diamond 3" -> 15
+    else -> -1 // Unranked나 매칭 안 될 때
+}
 @Composable
 private fun TierDot( //티어 (아직 로고 안 넣음)
     tierId: Int,
