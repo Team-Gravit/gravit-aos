@@ -463,11 +463,23 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
         return userNum.compareTo(corrNum) == 0
     }
 
-    // 문자열 비교
+    // 문자열 정규화
     fun norm(s: String) = s.trim()
         .lowercase()
         .replace(Regex("\\s+"), " ")  // 여러 공백 → 하나
         .replace(Regex("[.,]"), "")   // 쉼표/마침표 무시
 
-    return norm(userAnswer) == norm(correctAnswer)
+    //중복 답 분리
+    val candidates = correctAnswer
+        .split(',')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
+    val userN = norm(userAnswer)
+
+    if (candidates.isNotEmpty()) {
+        return candidates.any { norm(it) == userN }
+    }
+
+    return norm(correctAnswer) == userN
 }

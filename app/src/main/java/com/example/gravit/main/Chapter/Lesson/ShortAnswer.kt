@@ -83,7 +83,7 @@ fun ShortAnswer(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "다음 문장을 읽고, 빈칸에 들어갈 알맞은 말을 쓰시오.",
+                        text =if(problem.problemType == "FILL_BLANK") "빈칸에 들어갈 단어를 작성하시오." else "다음 질문에 대한 답을 작성하시오.",
                         fontSize = 16.sp,
                         fontFamily = pretendard,
                         fontWeight = FontWeight.SemiBold,

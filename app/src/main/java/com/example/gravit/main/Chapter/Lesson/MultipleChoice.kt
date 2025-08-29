@@ -75,7 +75,7 @@ fun MultipleChoice(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "빈칸에 알맞은 말을 고르세요",
+                        text = if(problem.problemType == "FILL_BLANK") "빈칸에 들어갈 단어를 고르세요" else "다음 질문에 대한 답을 고르시오.",
                         fontSize = 16.sp,
                         fontFamily = pretendard,
                         fontWeight = FontWeight.SemiBold,
