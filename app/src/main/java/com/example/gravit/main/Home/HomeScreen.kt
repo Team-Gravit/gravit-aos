@@ -1,13 +1,12 @@
 package com.example.gravit.main.Home
 
-import android.R.attr.level
 import android.icu.text.SimpleDateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -22,10 +21,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,7 +37,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -48,18 +45,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
+import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Chapter.Lesson.PillShape
 import com.example.gravit.main.Chapter.Lesson.RoundBox
-import com.example.gravit.main.Chapter.RoundedGauge
-import com.example.gravit.ui.theme.LocalScreenHeight
-import com.example.gravit.ui.theme.LocalScreenWidth
-import com.example.gravit.ui.theme.mbc1961
 import com.example.gravit.ui.theme.pretendard
 import java.util.Date
 import java.util.Locale
@@ -67,109 +60,85 @@ import java.util.Locale
 @Composable
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
-    val vm: HomeViewModel = viewModel(
-        factory = HomeVMFactory(RetrofitInstance.api, context)
-    )
+    val vm: HomeViewModel = viewModel(factory = HomeVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
 
     LaunchedEffect(Unit) { vm.load() }
     when (ui) {
         HomeViewModel.UiState.SessionExpired -> {
             navController.navigate("login choice") {
-                popUpTo(0)
-                launchSingleTop = true
-                restoreState = false
+                popUpTo(0); launchSingleTop = true; restoreState = false
             }
         }
-
+        HomeViewModel.UiState.Loading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
         else -> Unit
     }
-
+    val home = (ui as? HomeViewModel.UiState.Success)?.data
 
     val dateFormat = remember { SimpleDateFormat("yyyy. MM. dd (E)", Locale.KOREAN) }
     val today = remember { dateFormat.format(Date()) }
 
 
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
-    val screenWidth = configuration.screenWidthDp.dp
-
-    val previousImg: Map<Int, Int> = mapOf(
-        0 to R.drawable.previous_null,
-        1 to R.drawable.data_structure,
-        2 to R.drawable.algorithm,
-        3 to R.drawable.computer_network,
-        4 to R.drawable.operating_system,
-        5 to R.drawable.database,
-        6 to R.drawable.computer_security,
-        7 to R.drawable.programming_language,
-        8 to R.drawable.programming_language
-    )
-
-    CompositionLocalProvider(
-        LocalScreenWidth provides screenWidth,
-        LocalScreenHeight provides screenHeight
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF2F2F2))
+            )
+            Image(
+                painter = painterResource(id = R.drawable.main_back),
+                contentDescription = "main back",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(Responsive.h(266f)),
+                contentScale = ContentScale.FillWidth
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(WindowInsets.statusBars.asPaddingValues())
+            )
+        }
+        Column {
+            Spacer(Modifier.height(Responsive.h(11f)))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(Responsive.h(70f))
 
-        ) {
-            Box (
-                modifier = Modifier.fillMaxSize()
-            ){
-                Box(
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.gravit_main_logo),
+                    contentDescription = "gravit typo",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF2F2F2))
+                        .size(Responsive.w(133f), Responsive.w(32f))
+                        .align(Alignment.CenterStart)
+                        .padding(start = Responsive.w(19f))
                 )
-
-                Image( //배경 이미지
-                    painter = painterResource(id = R.drawable.main_back),
-                    contentDescription = "main back",
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .fillMaxWidth()
-
-                )
-
             }
+            Spacer(Modifier.height(Responsive.h(60f)))
 
-
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Responsive.w(16f))
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(top = screenHeight * (24f / 740f))
                         .fillMaxWidth()
-                        .height(screenHeight * (70f / 740f))
+                        .height(Responsive.h(84f))
                 ) {
-                    Image(
-                        //로고 이미지
-                        painter = painterResource(id = R.drawable.gravit_main_logo),
-                        contentDescription = "gravit typo",
-                        modifier = Modifier
-                            .padding(start = screenWidth * (19f / 360f))
-                            .align(Alignment.CenterStart)
-                    )
-
-                }
-
-                Box(
-                    modifier = Modifier
-                        .padding(top = screenHeight * (60f / 740f))
-                        .padding(horizontal = screenWidth * (16f / 360f))
-                        .fillMaxWidth()
-                        .height(screenHeight * (84f / 740f))
-
-                ) {
-                    val nickname = (ui as? HomeViewModel.UiState.Success)?.data?.nickname
+                    val nickname = home?.nickname
                     Column {
                         CustomText(
                             text = "어서오세요,",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 28.sp,
+                            fontSize = Responsive.spH(28f),
                             color = Color.White,
                             shadow = Shadow(
                                 color = Color(0xFF000000),
@@ -177,13 +146,11 @@ fun HomeScreen(navController: NavController) {
                                 blurRadius = 4f
                             )
                         )
-
-                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
-
+                        Spacer(modifier = Modifier.height(Responsive.h(12f)))
                         CustomText(
                             text = if (nickname.isNullOrBlank()) "" else "$nickname!",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 28.sp,
+                            fontSize = Responsive.spH(28f),
                             color = Color.White,
                             shadow = Shadow(
                                 color = Color(0xFF000000),
@@ -192,194 +159,183 @@ fun HomeScreen(navController: NavController) {
                             )
                         )
                     }
-
                     CustomText(
                         text = today,
-                        fontSize = 12.sp,
+                        fontSize = Responsive.spH(12f),
                         fontWeight = FontWeight.Normal,
                         modifier = Modifier.align(Alignment.BottomEnd),
                         color = Color.White
                     )
                 }
 
+                Spacer(Modifier.height(Responsive.h(8f)))
                 Box(
-                    modifier = Modifier
-                        .padding(top = screenHeight * (8f / 740f))
-                        .padding(horizontal = screenWidth * (16f / 360f))
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
-
                 ) {
                     Column {
                         Row {
-                            val level = (ui as? HomeViewModel.UiState.Success)?.data?.level ?: 1
-                            val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp ?: 0
-                            val league = (ui as? HomeViewModel.UiState.Success)?.data?.league ?: "Bronze 1"
-                            PillShape(
-                                img = R.drawable.rank_cup,
-                                league = league,
-                            )
+                            val level = home?.level ?: 1
+                            val xp = home?.xp ?: 0
+                            val league = home?.leagueName ?: "Bronze 1"
+                            PillShape(img = R.drawable.rank_cup, league = league)
 
-                            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
-                            PillShape(
-                                img = R.drawable.xp_mark,
-                                xp = xp.toString()
-                            )
+                            Spacer(modifier = Modifier.width(Responsive.w(8f)))
+                            PillShape(img = R.drawable.xp_mark, xp = xp.toString())
 
-                            Spacer(modifier = Modifier.width(screenWidth * (8f / 360f)))
-
-                            LevelGauge(
-                                lv = level,
-                                xp = xp
-                            )
+                            Spacer(modifier = Modifier.width(Responsive.w(8f)))
+                            LevelGauge(lv = level, xp = xp)
                         }
 
-
-                        Spacer(modifier = Modifier.height(screenHeight * (16f / 740f)))
+                        Spacer(modifier = Modifier.height(Responsive.h(16f)))
 
                         Box(
-                            modifier = Modifier.size(screenWidth * (328f /360f), screenHeight * (186f / 740f))
-
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Responsive.h(186f))
                         ) {
                             Row {
-                                Box( //오늘의 미션
+                                Box(
                                     modifier = Modifier
-                                        .size(
-                                            screenWidth * (160f / 360f),
-                                            screenHeight * (186f / 740f)
-                                        )
-                                        .clip(shape = RoundedCornerShape(16.dp))
+                                        .size(Responsive.w(160f), Responsive.h(186f))
+                                        .clip(RoundedCornerShape(Responsive.h(16f)))
                                         .background(Color.White)
-
                                 ) {
                                     Column(
                                         modifier = Modifier
                                             .padding(
-                                                horizontal = screenWidth * (16f / 360f),
-                                                vertical = screenHeight * (16f / 740f)
+                                                horizontal = Responsive.w(16f),
+                                                vertical = Responsive.h(16f)
                                             )
-                                            .fillMaxSize(),
+                                            .fillMaxSize()
                                     ) {
-
                                         CustomText(
                                             text = "오늘의 미션🔥",
                                             fontWeight = FontWeight.SemiBold,
-                                            fontSize = 20.sp,
-                                            modifier = Modifier.size(screenWidth * (128f / 360f) , screenHeight * (24f / 740f))
+                                            fontSize = Responsive.spH(20f),
+                                            modifier = Modifier.size(
+                                                Responsive.w(128f),
+                                                Responsive.h(24f)
+                                            )
                                         )
 
-                                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
+                                        Spacer(modifier = Modifier.height(Responsive.h(12f)))
 
                                         Canvas(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(1.dp)
-
                                         ) {
                                             drawLine(
                                                 color = Color(0xFFA8A8A8),
                                                 start = Offset(0f, 0f),
                                                 end = Offset(size.width, 0f),
                                                 strokeWidth = 3f,
-                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
+                                                pathEffect = PathEffect.dashPathEffect(
+                                                    floatArrayOf(6f, 4f)
+                                                ),
                                                 cap = StrokeCap.Butt
                                             )
                                         }
+                                        Spacer(modifier = Modifier.height(Responsive.h(12f)))
 
-                                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
+                                        val mission = home?.missionName
+                                        val missionXp = home?.awardXp
+                                        val isCompleted = home?.isCompleted
+                                        isCompleted?.let {
+                                            if(!it){
+                                                Row{
+                                                    CustomText(
+                                                        text = "•",
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = Responsive.spH(16f),
+                                                        color = Color(0xFF222124)
+                                                    )
+                                                    CustomText(
+                                                        text = mission,
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = Responsive.spH(16f),
+                                                        color = Color(0xFF222124)
+                                                    )
+                                                }
 
-                                        CustomText(
-                                            text = "•자료구조 챕터3",
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = 16.sp,
-                                            color = Color(0xFF222124)
-                                        )
+                                                Spacer(modifier = Modifier.height(Responsive.h(3f)))
 
-                                        CustomText(
-                                            text = "완료",
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = 16.sp,
-                                            color = Color(0xFF222124),
-                                            modifier = Modifier.padding(start = screenWidth * (8f / 360f))
-                                        )
+                                                CustomText(
+                                                    text = "완료시 ${missionXp}XP",
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = Responsive.spH(12f),
+                                                    color = Color(0xFF494949),
+                                                    modifier = Modifier.padding(start = Responsive.w(8f))
+                                                )
 
-                                        Spacer(modifier = Modifier.height(screenHeight * (3f / 740f)))
+                                                Spacer(modifier = Modifier.height(Responsive.h(12f)))
 
-                                        CustomText(
-                                            text = "완료시 150XP",
-                                            fontWeight = FontWeight.Normal,
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF494949),
-                                            modifier = Modifier.padding(start = screenWidth * (8f / 360f))
-                                        )
-
-                                        Spacer(modifier = Modifier.height(screenHeight * (12f / 740f)))
-
-                                        Button(
-                                            modifier = Modifier.size(screenWidth * (128f / 360f) , screenHeight * (39f / 740f)),
-                                            onClick = {},
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFFF2F2F2),
-                                                contentColor = Color.Black
-                                            ),
-                                        ) {
-                                            CustomText(
-                                                text = "학습하러 가기",
-                                                fontWeight = FontWeight.SemiBold,
-                                                fontSize = 16.sp,
-                                                color = Color.Black
-                                            )
+                                                Button(
+                                                    modifier = Modifier.size(
+                                                        Responsive.w(128f),
+                                                        Responsive.h(39f)
+                                                    ),
+                                                    onClick = {navController.navigate("chapter") {
+                                                        launchSingleTop = true
+                                                    }},
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = Color(0xFFF2F2F2),
+                                                        contentColor = Color.Black
+                                                    ),
+                                                    contentPadding = PaddingValues(0.dp)
+                                                ) {
+                                                    CustomText(
+                                                        text = "도전하러 가기",
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        fontSize = Responsive.spH(16f),
+                                                        color = Color.Black,
+                                                    )
+                                                }
+                                            } else {
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.mission_complete),
+                                                    contentDescription = "mission completed"
+                                                )
+                                            }
                                         }
-                                    }
 
+                                    }
                                 }
 
-                                Spacer(modifier = Modifier.width(screenWidth * (8f/ 360f)))
+                                Spacer(modifier = Modifier.width(Responsive.w(8f)))
 
                                 Column {
                                     RoundBox(
                                         title = "행성 정복률",
-                                        value = planetComplete(navController),
+                                        value = "${home?.planetConquestRate}%",
                                         img = R.drawable.rocket_main,
                                         modifier = Modifier.weight(1f)
                                     )
-
                                     Spacer(modifier = Modifier.height(8.dp))
-
                                     RoundBox(
                                         title = "연속 학습일",
-                                        value = "보류",
+                                        value = "${home?.consecutiveDays}일",
                                         img = R.drawable.fire,
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
                             }
-
                         }
 
-                        Spacer(modifier = Modifier.height(screenHeight * (16f / 740f)))
+                        Spacer(modifier = Modifier.height(Responsive.h(16f)))
 
-                        val success = ui as? HomeViewModel.UiState.Success
-                        val recent  = success?.data?.recentLearningSummaryResponse
-
-                        val chapterId = (recent?.chapterId ?: 0).toInt()
-
-                        val (chapterName, totalUnits, completedUnits) =
-                            if (chapterId == 0) {
-                                Triple("최근에 진행한 학습 정보가 없습니다", 0, 0)
-                            } else {
-                                Triple(
-                                    recent?.chapterName ?: "",
-                                    recent?.totalUnits ?: 0,
-                                    recent?.completedUnits ?: 0
-                                )
-                            }
-
+                        val chapterId = home?.chapterId ?: 0
+                        val chapterName = home?.chapterName
+                        val chapterDescription = home?.chapterDescription
+                        val totalUnits = home?.totalUnits
+                        val completedUnits = home?.completedUnits
                         val bgResId = previousImg[chapterId] ?: 0
+
                         PreviousButton(
                             chapterId = chapterId,
-                            chapter = chapterName,
+                            chapterName = chapterName,
                             completedUnits = completedUnits,
                             backgroundImg = bgResId,
                             totalUnits = totalUnits,
@@ -399,6 +355,7 @@ fun HomeScreen(navController: NavController) {
 
 
 
+
 @Preview(showBackground = true)
 @Composable
 fun View() {
@@ -407,113 +364,27 @@ fun View() {
 }
 
 @Composable
-private fun CustomText (
+fun CustomText (
     modifier: Modifier = Modifier,
-    text: String,
+    text: String?,
     fontFamily: FontFamily = pretendard,
     fontWeight: FontWeight,
     fontSize: TextUnit,
     color: Color = Color.Black,
-    shadow: Shadow? = null,
+    shadow: Shadow? = null
 ) {
-    Text(
-        text = text,
-        style = TextStyle(
-            fontFamily = fontFamily,
-            fontWeight = fontWeight,
-            fontSize = fontSize,
-            shadow =  shadow
-        ),
-        color = color,
-        modifier = modifier
-    )
-}
-@Composable
-fun PreviousButton(
-    chapterId: Int,
-    backgroundImg: Int,
-    chapter: String,
-    completedUnits: Int,
-    totalUnits: Int,
-    onClick: () -> Unit,
-) {
-    val screenWidth = LocalScreenWidth.current
-    val screenHeight = LocalScreenHeight.current
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Image(
-            painter = painterResource(id = backgroundImg),
-            contentDescription = null,
+    if (text != null) {
+        Text(
+            text = text,
+            style = TextStyle(
+                fontFamily = fontFamily,
+                fontWeight = fontWeight,
+                fontSize = fontSize,
+                shadow =  shadow
+            ),
+            color = color,
+            modifier = modifier
         )
-        Column (
-            modifier = Modifier.padding(
-                horizontal = screenWidth * (16f / 360f),
-                vertical = screenHeight * (16f / 740f)
-            )
-        ) {
-
-            if (chapterId == 0) {
-                Row {
-                    CustomText(
-                        text = "새로운 학습을 시작하기",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = mbc1961,
-                        color = Color.White,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    Icon(
-                        painter = painterResource(id = R.drawable.round_arrow_forward_ios_24),
-                        contentDescription = null,
-                        modifier = Modifier,
-                        tint = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(screenHeight * (8f/ 740f)))
-
-                CustomText(
-                    text = chapter,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 18.sp,
-                    color = Color.White,
-                )
-            } else {
-                CustomText(
-                    text = "직전학습 이어서 하기",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(screenHeight * (8f/ 740f)))
-
-                CustomText(
-                    text = chapter,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 18.sp,
-                    fontFamily = mbc1961,
-                    color = Color.White,
-                )
-                Spacer(modifier = Modifier.height(screenHeight * (23f/ 740f)))
-
-                RoundedGauge(
-                    height = screenHeight * (10f / 740f),
-                    width = screenWidth * (271f / 360f),
-                    completedUnits = completedUnits,
-                    totalUnits = totalUnits
-                )
-            }
-
-        }
-
     }
 }
-
-
 

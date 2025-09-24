@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.example.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

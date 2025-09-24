@@ -2,6 +2,8 @@ package com.example.gravit.main
 
 import BottomNavigationBar
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -21,15 +23,12 @@ import com.example.gravit.main.Chapter.Lesson.LessonComplete
 import com.example.gravit.main.Chapter.Lesson.LessonScreen
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
-import com.example.gravit.main.User.Account
+import com.example.gravit.main.User.Setting.Account
 import com.example.gravit.main.User.AddFriend
 import com.example.gravit.main.User.FollowList
 import com.example.gravit.main.User.Setting
-import com.example.gravit.main.User.Setting.Notice
+import com.example.gravit.main.User.Notice
 import com.example.gravit.main.User.Setting.PrivacyPolicy
-import com.example.gravit.main.User.Setting.ScreenSetting
-import com.example.gravit.main.User.Setting.Service
-import com.example.gravit.main.User.Setting.ToS
 import com.example.gravit.main.User.UserScreen
 
 fun build(togo: String, chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
@@ -58,6 +57,7 @@ fun NavController.navigateToAccount(nickname: String) {
 
 enum class FollowTab { Followers, Following }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(rootNavController: NavController) {
     val innerNavController = rememberNavController()
@@ -65,6 +65,14 @@ fun MainScreen(rootNavController: NavController) {
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
 
     val hideBottomBar = currentRoute.startsWith("lesson/")
+
+    val goToLoginChoice: () -> Unit = {
+        rootNavController.navigate("login choice") {
+            popUpTo(0) { inclusive = true }   // 백스택 싹 비우기
+            launchSingleTop = true
+            restoreState = false
+        }
+    }
 
     Scaffold(
         bottomBar = { if (!hideBottomBar) { BottomNavigationBar(innerNavController) } },
@@ -126,7 +134,8 @@ fun MainScreen(rootNavController: NavController) {
                     chapterId = chapterId,
                     chapterName = chapterName,   // 헤더 표시용
                     unitId = unitId,
-                    lessonId = lessonId
+                    lessonId = lessonId,
+                    onSessionExpired = goToLoginChoice
                 )
             }
 
@@ -156,13 +165,25 @@ fun MainScreen(rootNavController: NavController) {
             composable("league") { LeagueScreen(innerNavController) }
 
             composable("user") { UserScreen(innerNavController) }
-            composable("user/setting") { Setting(innerNavController) }
-            composable("user/addfriend") { AddFriend(innerNavController) }
-            composable("user/screensetting") { ScreenSetting(innerNavController) }
-            composable("user/notice") { Notice(innerNavController) }
-            composable("user/service") { Service(innerNavController) }
-            composable("user/tos") { ToS(innerNavController) }
+
+            composable("user/setting") {
+                Setting(
+                    navController = innerNavController,
+                    onLogout = {
+                        rootNavController.navigate("login choice") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = false
+                        }
+                    }
+                )
+            }
+
             composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
+            //composable("user/setting/account") { Account(innerNavController) }
+
+            composable("user/addfriend") { AddFriend(innerNavController) }
+            composable("user/notice") { Notice(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
             composable(

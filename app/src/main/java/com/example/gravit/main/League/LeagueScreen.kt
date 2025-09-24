@@ -1,5 +1,7 @@
 package com.example.gravit.main.League
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,8 +29,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,8 +51,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -58,18 +66,21 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
+import com.example.gravit.api.LastSeasonPopupDto
 import com.example.gravit.api.LeagueItem
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Home.LeagueGauge
 import com.example.gravit.ui.theme.ProfilePalette
+import com.example.gravit.ui.theme.TierPalette
 import com.example.gravit.ui.theme.gmarketsans
 import com.example.gravit.ui.theme.mbc1961
 import com.example.gravit.ui.theme.pretendard
@@ -77,6 +88,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlin.math.abs
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LeagueScreen(
     navController: NavController
@@ -84,14 +96,15 @@ fun LeagueScreen(
     val context = LocalContext.current
     val vm: LeagueViewModel = viewModel(factory = LeagueVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
-    val myRank by vm.myRank.collectAsState()
     val sessionExpired by vm.sessionExpired.collectAsState()
     val source by vm.source.collectAsState()
+    val myLeagueState by vm.myLeague.collectAsState()
+    val seasonState by vm.seasonPopup.collectAsState()
 
     LaunchedEffect(Unit) {
-        vm.loadMyUser()
-        vm.prefetchMyRank()
+        vm.loadMyLeague()
         vm.selectUserLeague()
+        vm.loadSeasonPopup()
     }
 
     //세션 만료
@@ -120,13 +133,21 @@ fun LeagueScreen(
                 if (lastVisible >= total - 3) vm.loadNextL()
             }
     }
-
+    val my = (myLeagueState as? LeagueViewModel.MyLeagueState.Success)?.data
     val listLeagueId: Int = when (val s = source) {
         is LeagueViewModel.Source.Tier -> s.leagueId
-        LeagueViewModel.Source.UserLeague -> myRank?.league?.let { tierIdFromName(it) } ?: -1
+        LeagueViewModel.Source.UserLeague -> my?.leagueName?.let { tierIdFromName(it) } ?: -1
     }
+    val myLeagueId = my?.leagueName?.let { tierIdFromName(it) }
+    val season = (seasonState as? LeagueViewModel.SeasonPopupState.Ready)?.data
 
-    val myLeagueId = myRank?.league?.let { tierIdFromName(it) }
+    val shadow = with(LocalDensity.current) {
+        Shadow(
+            color = Color.Black.copy(alpha = 0.25f),
+            offset = Offset(0f, 1.46.dp.toPx()),
+            blurRadius = 1.46.dp.toPx()
+        )
+    }
 
     Box(modifier = Modifier
         .fillMaxWidth()
@@ -134,7 +155,7 @@ fun LeagueScreen(
         .background(Color(0xFFF2F2F2)))
     {
         Column(modifier = Modifier.fillMaxSize()) {
-            myRank?.let { rank -> //내 랭킹
+            my?.let { rank -> //내 랭킹
                 Surface(
                     shadowElevation = 5.dp,
                     color = Color.White
@@ -149,7 +170,7 @@ fun LeagueScreen(
                         Text(
                             buildAnnotatedString {
                                 withStyle(SpanStyle(
-                                    color = Color(0xFF930000),
+                                    color = Color(0xFFFFB608),
                                     fontFamily = mbc1961,
                                     fontSize = 20.sp
                                 )){
@@ -180,10 +201,8 @@ fun LeagueScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                            val leagueId = tierIdFromName(rank.league)
                             LeagueGauge(
-                                leagueId = leagueId,
-                                lp = rank.lp,
+                                xp = rank.xp,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -193,7 +212,7 @@ fun LeagueScreen(
                                 Text(
                                     buildAnnotatedString {
                                         withStyle(SpanStyle(
-                                            color = Color(0xFFFF3B2F))){
+                                            color = Color(0xFF5A5A5A))){
                                             append("LV")
                                         }
                                         append(" ")
@@ -211,13 +230,16 @@ fun LeagueScreen(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(
                                     buildAnnotatedString {
-                                        withStyle(SpanStyle(
-                                            color = Color(0xFFFF3B2F))){
-                                            append("EXP")
+                                        withStyle(SpanStyle(color = Color(0xFF5A5A5A))){
+                                            append("LP")
                                         }
                                         append(" ")
                                         withStyle(SpanStyle(color = Color(0xFFFF9500))){
-                                            append("${rank.xp}XP")
+                                            append("${rank.lp}")
+                                        }
+                                        append(" ")
+                                        withStyle(SpanStyle(color = Color(0xFF5A5A5A))){
+                                            append("/ ${rank.maxLp}")
                                         }
                                     },
                                     style = TextStyle(
@@ -228,16 +250,24 @@ fun LeagueScreen(
                                     )
                                 )
                             }
-                            Text(
-                                text = rank.nickname,
-                                style = TextStyle(
-                                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = mbc1961,
-                                    color = Color.Black,
+
+                            Row (modifier = Modifier.size(75.dp, 28.dp)){
+                                Image(
+                                    painter = TierPalette.painterFor(rank.leagueId),
+                                    contentDescription = "tier",
                                 )
-                            )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = rank.nickname,
+                                    style = TextStyle(
+                                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        fontFamily = mbc1961,
+                                        color = Color.Black,
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -245,12 +275,48 @@ fun LeagueScreen(
 
             //티어 선택
             Box(
-                modifier = Modifier
-                    .weight(3f)
-                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                TierSelector(vm = vm, initialLeagueId = myLeagueId)
+                val seasonName = season?.currentSeason?.nowSeason
+                Column {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        text = "${seasonName}",
+                        color = Color(0xFF8A00B8),
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        style = TextStyle(
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = mbc1961,
+                            fontSize = 24.sp,
+                            shadow = shadow
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .size(192.dp, 28.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Row (modifier = Modifier.align(Alignment.CenterStart)) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.outline_timer_24),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .align(Alignment.CenterVertically)
+                                    .size(15.dp)
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            WeeklyCountdown()
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    TierSelector(vm = vm, initialLeagueId = myLeagueId)
+                    Spacer(Modifier.height(20.dp))
+                }
             }
 
             HorizontalDivider(
@@ -263,15 +329,16 @@ fun LeagueScreen(
             //랭킹
             Box(
                 modifier = Modifier
-                    .weight(5f)
+                    .weight(1f)
                     .fillMaxSize()
             ) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(ui.items, key = { it.userId }) { item ->
-                        RankCell(item = item, listLeagueId = listLeagueId)
+                        RankCell(item = item)
                     }
 
                     item {
@@ -314,16 +381,171 @@ fun LeagueScreen(
             }
         }
     }
+    val seasonPopup = season?.lastSeasonPopupDto
+    if (season?.containsPopup == true && seasonPopup != null) {
+        SeasonCompleted(
+            popupDetail = seasonPopup,
+            onConfirm = { vm.confirmSeasonPopup(season.currentSeason.nowSeason) }
+        )
+    }
+}
+
+@Composable
+fun SeasonCompleted(
+    popupDetail: LastSeasonPopupDto,
+    onConfirm: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+            dismissOnBackPress = false
+        )
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(497.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(30.dp))
+                Text(
+                    text = "시즌 종료",
+                    fontFamily = pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 20.sp,
+                    color = Color.Black
+                )
+                Spacer(Modifier.height(22.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val shadow = with(LocalDensity.current) {
+                        Shadow(
+                            color = Color.Black.copy(alpha = 0.25f),
+                            offset = Offset(0f, 1.46.dp.toPx()),
+                            blurRadius = 1.46.dp.toPx()
+                        )
+                    }
+                    Text(
+                        text = "${popupDetail.rank}등",
+                        color = Color(0xFF8100B3),
+                        style = TextStyle(
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 32.sp,
+                            shadow = shadow
+                        ),
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.leaf),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(start = 35.dp, top = 20.dp)
+                            .size(81.dp, 99.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 50.dp)
+                            .size(150.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(CircleShape)
+                                .background(ProfilePalette.idToColor(popupDetail.profileImgNumber))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .border(
+                                    width = 5.dp,
+                                    brush = Brush.horizontalGradient(
+                                        listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .clip(CircleShape)
+                        )
+                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.leaf),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 20.dp, end = 35.dp)
+                            .size(81.dp, 99.dp)
+                            .graphicsLayer { scaleX = -1f }
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Row (
+                    modifier = Modifier.size(175.dp, 56.dp)
+                ){
+                    Image(
+                        painter = TierPalette.painterFor(tierIdFromName(popupDetail.leagueName)),
+                        contentDescription = "tier"
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = popupDetail.leagueName,
+                        fontSize = 32.sp,
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF222124)
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "다음 시즌도 지금처럼\n진행해주세요!",
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 15.sp,
+                    fontFamily = pretendard,
+                    color = Color(0xFF6D6D6D),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.weight(1f))
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .size(275.dp, 53.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8100B3))
+                ) {
+                    Text(
+                        text = "확인",
+                        fontSize = 18.sp,
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
 }
 @Composable
 private fun RankCell(
-    item: LeagueItem,
-    listLeagueId: Int
+    item: LeagueItem
 ) { //랭킹
     Row(
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
+            .height(54.dp)
             .border(1.dp, Color(0xFFDCDCDC), RoundedCornerShape(16.dp))
             .background(Color(0xFFFFFFFF), RoundedCornerShape(16.dp)),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -340,18 +562,18 @@ private fun RankCell(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = mbc1961,
-                    color = Color(0xFF930000),
+                    color = if(item.rank == 1 || item.rank == 2 || item.rank == 3) Color(0xFFBA00FF) else Color(0xFFFFB608),
                     fontFeatureSettings = "tnum"
                 ),
 
-                modifier = Modifier.width(45.dp),
+                modifier = Modifier.width(40.dp),
                 textAlign = TextAlign.Start
             )
             Spacer(Modifier.width(8.dp))
-            Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(38.dp), contentAlignment = Alignment.Center) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
                         .background(ProfilePalette.idToColor(item.profileImgNumber)),
                     contentAlignment = Alignment.Center
@@ -359,12 +581,11 @@ private fun RankCell(
                     Image(
                         painter = painterResource(id = R.drawable.profile_logo),
                         contentDescription = "profile logo",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                 }
                 LeagueGauge(
-                    leagueId = listLeagueId,
-                    lp = item.lp,
+                    xp = item.xp,
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -372,17 +593,18 @@ private fun RankCell(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = item.nickname,
-                fontSize = 20.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
+                fontFamily = mbc1961,
                 color = Color.Black
             )
         }
         Column(
             modifier = Modifier
                 .weight(1f)
+                .fillMaxHeight()
                 .background(Color(0xFFFFF2FF))
-                .padding(16.dp),
+                .padding(horizontal = 15.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
@@ -390,32 +612,38 @@ private fun RankCell(
                     withStyle(SpanStyle(color = Color(0xFF4C4C4C))){
                         append("LV")
                     }
-                    append("  ")
+                    append(" ")
 
                     withStyle(SpanStyle(color = Color(0xFFFF9500))){
                         append("${item.level}")
                     }
                 },
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
-                modifier = Modifier.align(Alignment.Start)
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = pretendard,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                ),
+                modifier = Modifier.align(Alignment.Start),
             )
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = Color(0xFF4C4C4C))){
                         append("LP")
                     }
-                    append("  ")
+                    append(" ")
 
                     withStyle(SpanStyle(color = Color(0xFFFF9500))){
                         append("${item.lp}")
                     }
                 },
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
-                modifier = Modifier.align(Alignment.Start)
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = pretendard,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                ),
+                modifier = Modifier.align(Alignment.Start),
             )
         }
     }
@@ -539,16 +767,14 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            modifier = Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(if (selected) Color(0xFFEEE0FF) else Color.White)
-                .border(
-                    width = if (selected) 2.dp else 1.dp,
-                    color = if (selected) Color(0xFF7B61FF) else Color(0xFFE1E1E1),
-                    shape = CircleShape
-                )
-        )
+            modifier = Modifier.size(size),
+            contentAlignment = Alignment.Center
+        ){
+            Image(
+                painter = TierPalette.painterFor(tierId),
+                contentDescription = "tier"
+            )
+        }
         Spacer(Modifier.height(28.dp))
         if (selected) {
             val density = LocalDensity.current
@@ -562,7 +788,7 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
             Text(
                 text = label,
                 style = TextStyle(
-                    fontSize = 24.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = gmarketsans,
                     color = Color(0xFF8A00B8),
@@ -572,11 +798,4 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LeagueScreenPreview() {
-    val navController = rememberNavController()
-    LeagueScreen(navController)
 }

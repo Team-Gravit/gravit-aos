@@ -3,12 +3,15 @@ package com.example.gravit.main.Home
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.ui.theme.pretendard
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.Dp
+import com.example.gravit.Responsive
+
 @Composable
 fun LevelGauge(
     lv: Int,
@@ -109,33 +115,19 @@ fun LevelGauge(
 
 @Composable
 fun LeagueGauge(
-    leagueId: Int,
-    lp: Int,
-    modifier: Modifier = Modifier.size(64.dp) // 프로필 크기에 맞게 조절
+    xp: Int,
+    modifier: Modifier = Modifier.size(64.dp)
 ) {
-    val leagueRanges = listOf(
-        0 to 100,
-        101 to 200,
-        201 to 320,
-        321 to 460,
-        461 to 620,
-        621 to 800,
-        801 to 1000,
-        1001 to 1220,
-        1221 to 1460,
-        1461 to 1720,
-        1721 to 2000,
-        2001 to 2300,
-        2301 to 2620,
-        2621 to 2960,
-        2961 to Int.MAX_VALUE // 마지막은 만렙
-    )
+    val steps = intArrayOf(0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700)
 
-    val (start, end) = leagueRanges.getOrNull(leagueId - 1) ?: (0 to 0)
-    val progress = when {
-        end == Int.MAX_VALUE -> 1f
-        end > start -> ((lp - start).toFloat() / (end - start).toFloat()).coerceIn(0f, 1f)
-        else -> 0f
+    val idx = steps.indexOfLast { xp >= it }.coerceAtLeast(0)
+    val start = steps[idx]
+    val end = steps.getOrNull(idx + 1) ?: Int.MAX_VALUE
+
+    val progress = if (end == Int.MAX_VALUE) {
+        1f
+    } else {
+        ((xp - start).toFloat() / (end - start).toFloat()).coerceIn(0f, 1f)
     }
 
     Canvas(modifier = modifier) {
@@ -155,6 +147,46 @@ fun LeagueGauge(
                 (size.width - radius * 2) / 2,
                 (size.height - radius * 2) / 2
             )
+        )
+    }
+}
+
+@Composable
+fun RoundedGauge(
+    totalUnits: Int?,
+    completedUnits: Int?,
+    width: Dp,
+    height: Dp,
+    modifier: Modifier = Modifier
+) {
+    val ratio = if (totalUnits != null && completedUnits != null && totalUnits > 0) {
+        completedUnits.toFloat() / totalUnits
+    } else {
+        0f
+    }
+    Column(modifier = Modifier.size(width, height * 3)) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(height)
+                .clip(RoundedCornerShape(50))
+                .background(Color(0xFFEEEEEE))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(width * ratio)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color(0xFFBA00FF))
+            )
+        }
+        Spacer(modifier = Modifier.height(Responsive.h(3f)))
+        Text(
+            text = "$completedUnits/$totalUnits",
+            fontSize = Responsive.spH(15f),
+            fontFamily = pretendard,
+            fontWeight = FontWeight.Normal,
+            color = Color.White
         )
     }
 }
