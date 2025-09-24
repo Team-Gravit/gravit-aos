@@ -1,14 +1,15 @@
 package com.example.gravit.main.Chapter.Unit
 
-import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,7 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,21 +38,18 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
+import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.api.UnitPageResponse
 import com.example.gravit.main.navigateTo
-import com.example.gravit.ui.theme.LocalScreenHeight
-import com.example.gravit.ui.theme.LocalScreenWidth
 import com.example.gravit.ui.theme.pretendard
 
 data class PlanetState(
@@ -87,7 +84,6 @@ fun Unit(
                 restoreState = false
             }
         }
-
         else -> Unit
     }
 
@@ -105,235 +101,258 @@ fun Unit(
 
     var selectedUnitIndex by remember { mutableStateOf<Int?>(null) }
 
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val screenHeight = configuration.screenHeightDp.dp
-
     Box (
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        CompositionLocalProvider(
-            LocalScreenWidth provides screenWidth,
-            LocalScreenHeight provides screenHeight
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
+            Image( //베경 이미지
+                painter = painterResource(id = img),
+                contentDescription = "background",
+                modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                contentScale = ContentScale.FillWidth
+
+            )
+
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Image( //베경 이미지
-                    painter = painterResource(id = img),
-                    contentDescription = "background",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Column { //설명 텍스트
-                        Text(
-                            text = initialName,
-                            color = Color.White,
-                            fontFamily = pretendard,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(
-                                start = screenWidth * (20f / 360f),
-                                top = screenHeight * (103f / 1290f)
-                            )
-                        )
-
-                        Text(
-                            text = initialDesc,
-                            color = Color.White,
-                            fontFamily = pretendard,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(
-                                start = screenWidth * (20f / 360f),
-                                top = screenHeight * (8f / 1290f)
-                            )
-                        )
-                    }
-                    val positionFracs: Map<Int, Pair<Float, Float>> = mapOf(
-                        0 to (239f / 360f to 175f / 1290f),
-                        1 to (136f / 360f to 277f / 1290f),
-                        2 to (37f / 360f to 390f / 1290f),
-                        3 to (136f / 360f to 504f / 1290f),
-                        4 to (228f / 360f to 616f / 1290f),
-                        5 to (136f / 360f to 800f / 1290f),
-                        6 to (37f / 360f to 914f / 1290f),
-                        7 to (136f / 360f to 1027f / 1290f),
-                        8 to (228f / 360f to 1139f / 1290f),
-                        9 to (136f / 360f to 1270f / 1290f),
-                        10 to (37f / 360f to 1380f / 1290f),
-                        11 to (136f / 360f to 1490f / 1290f)
+                Column (modifier = Modifier
+                    .fillMaxWidth()
+                    .height(Responsive.h(116f))
+                    .padding(start = Responsive.w(20f), end = Responsive.w(20f), top = Responsive.h(40f)),
+                    verticalArrangement = Arrangement.Center,
+                ){ //설명 텍스트
+                    Text(
+                        text = initialName,
+                        color = Color.White,
+                        fontFamily = pretendard,
+                        fontSize = Responsive.spH(20f),
+                        fontWeight = FontWeight.SemiBold,
                     )
-                    val positions: Map<Int, Modifier> = positionFracs.mapValues { (_, frac) ->
-                        val (sx, ty) = frac
-                        Modifier.padding(
-                            start = screenWidth * sx,
-                            top = screenHeight * ty
+                    Spacer(Modifier.height(Responsive.h(8f)))
+                    Text(
+                        text = initialDesc,
+                        color = Color.White,
+                        fontFamily = pretendard,
+                        fontSize = Responsive.spH(16f),
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = Responsive.spH(22f)
+                    )
+                }
+
+                val x1 = 239f
+                val x2 = 136f
+                val x3 =  37f
+                val x4 = 136f
+
+                val y1 = 160f
+                val y2 = 205f
+                val y3 = 246f
+                val y4 = 325f
+
+                val step1 = 220f
+                val step2 = 258f
+                val step3 = 270f
+
+                @Composable
+                fun positionFor(index1: Int): Pair<Dp, Dp> {
+                    val pat = (index1 - 1) % 4
+                    val x = when (pat) {
+                        0 -> x1     // 1,5,9,...
+                        1 -> x2     // 2,6,10,...
+                        2 -> x3     // 3,7,11,...
+                        else -> x4  // 4,8,12,...
+                    }
+
+                    val cycles = (index1 - 1) / 4
+
+                    val y = when (pat) {
+                        0 -> y1 + cycles * step1
+                        1 -> y2 + cycles * step2
+                        2 -> y3 + cycles * step3
+                        else -> y4 + cycles * step2
+                    }
+
+                    val start = Responsive.w(x)
+                    val top   = Responsive.w(y)
+                    return start to top
+                }
+                val unitSlots: List<UnitPageResponse?> = remember(ui, initialTotalUnits) {
+                    List(initialTotalUnits) { idx ->
+                        (ui as? UnitViewModel.UiState.Success)?.data?.getOrNull(idx)
+                    }
+                }
+
+                val positions: Map<Int, Modifier> =
+                    (1..unitSlots.size).associateWith { idx ->
+                        val (start, top) = positionFor(idx)
+                        Modifier.padding(start = start, top = top)
+                    }
+                val anchorMap: Map<Int, Pair<Dp, Dp>> =
+                    (1..unitSlots.size).associateWith { idx -> positionFor(idx) }
+
+                //행성 생성
+                Box {
+                    unitSlots.forEachIndexed { index, unit ->
+                        val index = index + 1
+                        val detail = unit?.unitProgressDetailResponse
+                        val prevDetail = unitSlots.getOrNull(index - 1)?.unitProgressDetailResponse
+                        val prevDone = (prevDetail?.completedLesson ?: 0) >= (prevDetail?.totalLesson ?: 3)
+
+                        val isUnlocked = when {
+                            index == 1 -> true                       // 유닛 1은 무조건 보라
+                            prevDetail != null -> prevDone           // 이전 유닛을 다 끝냈다면 언락
+                            else -> false                            // 이전 정보가 없으면 잠금 유지
+                        }
+
+                        val completedLesson = detail?.completedLesson ?: 0
+                        val totalLesson = detail?.totalLesson ?: 3
+
+                        Planet(
+                            state = PlanetState(
+                                name = detail?.name ?: index.toString(),
+                                isUnlocked = isUnlocked,
+                                progress = completedLesson
+                            ),
+                            totalLesson = totalLesson,
+                            modifier = positions[index] ?: Modifier,
+                            onClick = { selectedUnitIndex = index }
                         )
                     }
-                    val unitSlots: List<UnitPageResponse?> = remember(ui, initialTotalUnits) {
-                        List(initialTotalUnits) { idx ->
-                            (ui as? UnitViewModel.UiState.Success)?.data?.getOrNull(idx)
-                        }
+                }
+
+                selectedUnitIndex?.let { idx ->
+                    val (anchorStart, anchorTop) = anchorMap[idx] ?: (0.dp to 0.dp)
+                    val triangleTop = anchorTop + Responsive.w(100f)
+
+
+                    val prevDetail = unitSlots.getOrNull(idx - 2)?.unitProgressDetailResponse
+                    val prevDone  = (prevDetail?.completedLesson ?: 0) >= (prevDetail?.totalLesson ?: 3)
+                    val isUnlocked = when {
+                        idx == 1      -> true
+                        prevDetail != null -> prevDone
+                        else          -> false
                     }
-                    //생성
-                    Box {
-                        unitSlots.forEachIndexed { index, unit ->
-                            val detail = unit?.unitProgressDetailResponse
 
-                            val prevDetail = unitSlots.getOrNull(index - 1)?.unitProgressDetailResponse
-                            val prevDone = (prevDetail?.completedLesson ?: 0) >= (prevDetail?.totalLesson ?: 3)
+                    val popupBg = if (isUnlocked) Color(0xFFFFB608) else Color(0xFFA8A8A8)
 
-                            val isUnlocked = when {
-                                index == 0 -> true                       // 유닛 1은 무조건 보라
-                                prevDetail != null -> prevDone           // 이전 유닛을 다 끝냈다면 언락
-                                else -> false                            // 이전 정보가 없으면 잠금 유지
-                            }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { selectedUnitIndex = null }, //다른 부분 누르면 팝업 닫힘
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Column {
+                            Canvas( //삼각형
+                                modifier = Modifier
+                                    .padding(start = anchorStart- Responsive.w(10f), top = triangleTop)
+                                    .size(Responsive.w(61f), Responsive.h(27f))
+                            ) {
+                                val width = size.width
+                                val height = size.height
 
-                            val completedLesson = detail?.completedLesson ?: 0
-                            val totalLesson = detail?.totalLesson ?: 3
-
-                            Planet(
-                                state = PlanetState(
-                                    name = detail?.name ?: (index + 1).toString(),
-                                    isUnlocked = isUnlocked,
-                                    progress = completedLesson
-                                ),
-                                totalLesson = totalLesson,
-                                modifier = positions[index] ?: Modifier,
-                                onClick = { selectedUnitIndex = index }
-                            )
-                        }
-                    }
-                    fun popupAnchorStart(idx: Int): Dp =
-                        screenWidth * (positionFracs[idx]?.first ?: 0f)
-
-                    fun popupAnchorTop(idx: Int): Dp =
-                        screenHeight * (positionFracs[idx]?.second ?: 0f)
-
-                    selectedUnitIndex?.let { idx ->
-                        val anchorStart = popupAnchorStart(idx)
-                        val anchorTop   = popupAnchorTop(idx)
-
-                        val triangleStart = anchorStart - screenWidth * (10f / 360f)
-                        val triangleTop   = anchorTop   + screenHeight * (153f / 1290f)
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable { selectedUnitIndex = null }, //다른 부분 누르면 팝업 닫힘
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            val triangleWidth = 61f / 360f
-
-                            Box {
-                                Canvas( //삼각형
-                                    modifier = Modifier
-                                        .padding(start = triangleStart, top = triangleTop)
-                                        .size(
-                                            screenWidth * triangleWidth,
-                                            screenHeight * (27f / 740f)
-                                        )
-                                ) {
-                                    val width = size.width
-                                    val height = size.height
-
-                                    val path = Path().apply {
-                                        moveTo(width / 2f, 0f)      // 위쪽 중앙 꼭짓점 (가로 중앙, y=0)
-                                        lineTo(0f, height)          // 왼쪽 아래 꼭짓점 (x=0, y=height)
-                                        lineTo(
-                                            width,
-                                            height
-                                        )       // 오른쪽 아래 꼭짓점 (x=width, y=height)
-                                        close()
-                                    }
-                                    drawPath(path, Color(0xFFFFB608))
+                                val path = Path().apply {
+                                    moveTo(width / 2f, 0f)      // 위쪽 중앙 꼭짓점 (가로 중앙, y=0)
+                                    lineTo(0f, height)          // 왼쪽 아래 꼭짓점 (x=0, y=height)
+                                    lineTo(
+                                        width,
+                                        height
+                                    )       // 오른쪽 아래 꼭짓점 (x=width, y=height)
+                                    close()
                                 }
-                                Box(
-                                    Modifier
-                                        .padding(top = anchorTop + screenHeight * (180f / 1290f))
-                                        .size(
-                                            screenWidth * (316f / 360f),
-                                            screenHeight * (118f / 740f)
-                                        )
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(Color(0xFFFFB608))
+                                drawPath(path, popupBg)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(
+                                        Responsive.w(316f),
+                                        Responsive.h(118f)
+                                    )
+                                    .clip(RoundedCornerShape(Responsive.h(16f)))
+                                    .background(popupBg)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            horizontal = Responsive.w(16f),
+                                            vertical = Responsive.h(16f)
+                                        ),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Column(
+                                    val unit = unitSlots.getOrNull(idx)
+                                    val unitName = unit?.unitProgressDetailResponse?.name
+                                        ?: "${idx + 1}번 유닛"
+
+                                    Text(
+                                        text = "$initialName: $unitName",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = Responsive.spH(20f),
+                                        fontFamily = pretendard,
+                                        color = Color.White,
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(
-                                                horizontal = screenWidth * (16f / 360f),
-                                                vertical = screenHeight * (16f / 740f)
-                                            ),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        val unit = unitSlots.getOrNull(idx)
-                                        val unitName = unit?.unitProgressDetailResponse?.name ?: "${idx + 1}번 유닛"
-
-                                        Text(
-                                            text = "$initialName: $unitName",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 20.sp,
-                                            fontFamily = pretendard,
-                                            color = Color.White,
-                                            modifier = Modifier
-                                                .size(
-                                                    screenWidth * (284f / 360f),
-                                                    screenHeight * (30f / 740f)
-                                                )
-                                                .align(Alignment.Start)
-                                        )
-
-                                        Spacer(modifier = Modifier.height(screenHeight * (8f / 740f)))
-
-                                        Button(
-                                            onClick = {
-                                                val unit = unitSlots.getOrNull(idx)
-                                                val detail = unit?.unitProgressDetailResponse
-                                                val unitId = detail?.unitId ?: return@Button
-                                                val lessons = unit.lessonProgressSummaryResponses
-
-                                                // 2) 미완료 첫 레슨 → 없으면 마지막 레슨 → 없으면 1로 폴백
-                                                val nextLessonId = lessons
-                                                    .sortedBy { it.lessonId }
-                                                    .firstOrNull { it.isCompleted == false }?.lessonId
-                                                    ?: lessons.lastOrNull()?.lessonId
-                                                    ?: 1
-                                                val togo = "lesson"
-
-                                                navController.navigateTo(
-                                                    chapterId = chapterId,
-                                                    unitId = unitId,
-                                                    lessonId = nextLessonId,
-                                                    chapterName = initialName,
-                                                    togo = togo
-                                                ) },
-                                            shape = RoundedCornerShape(16.dp),
-                                            modifier = Modifier
-                                                .align(Alignment.CenterHorizontally)
-                                                .size(
-                                                    screenWidth * (284f / 360f),
-                                                    screenHeight * (48f / 740f)
-                                                ),
-                                            colors = ButtonDefaults.buttonColors(
-                                                contentColor = Color(0xFF222124),
-                                                containerColor = Color.White
+                                            .size(
+                                                Responsive.w(284f),
+                                                Responsive.h(30f)
                                             )
-                                        ) {
+                                            .align(Alignment.Start)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(Responsive.h(8f)))
+
+                                    Button(
+                                        onClick = {
+                                            if (!isUnlocked) return@Button
+                                            val detail = unit?.unitProgressDetailResponse
+                                            val unitId = detail?.unitId ?: return@Button
+                                            val lessons = unit.lessonProgressSummaryResponses
+                                            val nextLessonId = lessons
+                                                .sortedBy { it.lessonId }
+                                                .firstOrNull { it.isCompleted == false }?.lessonId
+                                                ?: lessons.lastOrNull()?.lessonId
+                                                ?: 1
+                                            val togo = "lesson"
+
+                                            navController.navigateTo(
+                                                chapterId = chapterId,
+                                                unitId = unitId,
+                                                lessonId = nextLessonId,
+                                                chapterName = initialName,
+                                                togo = togo
+                                            )
+                                        },
+                                        enabled = isUnlocked,
+                                        shape = RoundedCornerShape(Responsive.h(16f)),
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .size(
+                                                Responsive.w(284f),
+                                                Responsive.h(48f)
+                                            ),
+                                        colors = ButtonDefaults.buttonColors(
+                                            contentColor = Color(0xFF222124),
+                                            containerColor = Color.White,
+                                            disabledContainerColor = Color.White,
+                                        )
+                                    ) {
+                                        if(isUnlocked){
                                             Text(
                                                 text = "학습 시작하기 (+20xp)",
-                                                fontSize = 16.sp,
+                                                fontSize = Responsive.spH(16f),
                                                 fontFamily = pretendard,
                                                 fontWeight = FontWeight.SemiBold
                                             )
+                                        }else{
+                                            Image(
+                                                painter = painterResource(id = R.drawable.round_lock_24),
+                                                contentDescription = null,
+                                            )
                                         }
+
                                     }
                                 }
                             }
@@ -341,11 +360,9 @@ fun Unit(
                     }
                 }
             }
-
         }
     }
 }
-
 
 @Composable
 fun Planet(
@@ -355,32 +372,38 @@ fun Planet(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     totalLesson: Int
-
 ) {
     val enabled = state.isUnlocked
-    val screenWidth = LocalScreenWidth.current
 
     val segmentCount = totalLesson.coerceAtLeast(1)
     val progress = state.progress.coerceIn(0, segmentCount)
+    val strokeWidthDp = Responsive.w(9f)
+    val isSingle = segmentCount <= 1
+    val rotation = when (segmentCount) {
+        1 -> 0f
+        2 -> 11f
+        else -> 14f
+    }
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.size(screenWidth * (90f / 360f))
+        modifier = modifier.size(Responsive.w(90f))
     ) {
         // 바깥 테두리 게이지
         if (enabled) {
-            Canvas(modifier = Modifier
-                .fillMaxSize()
-                .rotate(14f)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .rotate(rotation)
             ) {
-                val strokeWidth = 9.dp.toPx()
+                val strokeWidth = strokeWidthDp.toPx()
                 val padding = strokeWidth / 2
                 val arcDiameter = size.minDimension - strokeWidth
                 val topLeftOffset = Offset(padding, padding)
 
                 val totalSweep = 360f
-                val gapAngle = 20f.coerceAtLeast(12f - (segmentCount - 3))
-                val segmentSweep = (totalSweep - (gapAngle * segmentCount)) / segmentCount
+                val gapAngle = if (isSingle) 0f else 20f.coerceAtLeast(12f - (segmentCount - 3))
+                val segmentSweep = if (isSingle) 360f else (totalSweep - (gapAngle * segmentCount)) / segmentCount
 
                 repeat(segmentCount) { i ->
                     val startAngle = -90f + i * (segmentSweep + gapAngle)
@@ -399,9 +422,9 @@ fun Planet(
 
         Box(
             modifier = Modifier
-                .size(screenWidth * (58f / 360f))
+                .size(Responsive.w(58f))
                 .clip(CircleShape)
-                .clickable(enabled = enabled) { onClick() }
+                .clickable{ onClick() }
         ) {
             Image( //enable 조건을 넣어서 이미지 변경
                 painter = painterResource(id = if (enabled) selectedPlanetImage else planetImage),
@@ -414,3 +437,4 @@ fun Planet(
         }
     }
 }
+

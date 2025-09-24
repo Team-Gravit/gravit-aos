@@ -7,23 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
 import com.example.gravit.api.LeagueItem
+import com.example.gravit.api.MyLeague
+import com.example.gravit.api.SeasonPopupResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-
-data class MyRankUi(
-    val rank: Int,
-    val level: Int,
-    val xp: Int,
-    val nickname: String,
-    val profileImgNumber: Int,
-    val league: String?,
-    val lp: Int
-)
-
-
 class LeagueViewModel(
     private val api: ApiService,
     private val appContext: Context
@@ -44,97 +33,46 @@ class LeagueViewModel(
         val endReached: Boolean = false,
         val error: String? = null
     )
-
-
     private val _ui = MutableStateFlow(PagingUi())
     val state = _ui.asStateFlow()
-
     private val _sessionExpired = MutableStateFlow(false)
     val sessionExpired = _sessionExpired.asStateFlow()
+    sealed class MyLeagueState{
+        data object Idle : MyLeagueState()
+        data object Loading : MyLeagueState()
+        data object SessionExpired : MyLeagueState()
+        data class Success(val data: MyLeague) : MyLeagueState()
+        data object Failed : MyLeagueState()
+    }
+    private val _myLeague = MutableStateFlow<MyLeagueState>(MyLeagueState.Idle)
+    val myLeague = _myLeague.asStateFlow()
 
-    private val _myRank = MutableStateFlow<MyRankUi?>(null)
-    val myRank = _myRank.asStateFlow()
-    private var myNickname: String? = null
-    private var myEXP: Int = 0
-    var myLeague: String? = null
-    @Volatile private var myRankPrefetching = false
-
-
-    fun loadMyUser() = viewModelScope.launch {
+    fun loadMyLeague() = viewModelScope.launch {
+        _myLeague.value = MyLeagueState.Loading
 
         val session = AuthPrefs.load(appContext)
         if (session == null || AuthPrefs.isExpired(session)) {
             AuthPrefs.clear(appContext)
+            _myLeague.value = MyLeagueState.SessionExpired
             _sessionExpired.value = true
             return@launch
         }
 
         val auth = "Bearer ${session.accessToken}"
-        runCatching { api.getMainPage(auth) }
-            .onSuccess { user ->
-                myNickname = user.nickname
-                myEXP = user.xp
-                myLeague = user.league
-            }
-            .onFailure { e ->
-                if ((e as? retrofit2.HttpException)?.code() == 401) {
-                    AuthPrefs.clear(appContext); _sessionExpired.value = true
+        runCatching {
+            api.getMyLeague(auth)
+        }.onSuccess { res ->
+            _myLeague.value = MyLeagueState.Success(res)
+        }.onFailure { e ->
+                val code = (e as? retrofit2.HttpException)?.code()
+                if (code == 401) {
+                    AuthPrefs.clear(appContext)
+                    _myLeague.value = MyLeagueState.SessionExpired
+                    _sessionExpired.value = true
+                } else {
+                    _myLeague.value = MyLeagueState.Failed
                 }
             }
-    }
-
-    fun LeagueItem.toMyRankUi(): MyRankUi =
-        MyRankUi(
-            rank = rank,
-            level = level,
-            xp = myEXP,
-            nickname = nickname,
-            profileImgNumber = profileImgNumber,
-            league = myLeague,
-            lp = lp
-        )
-
-    fun prefetchMyRank() = viewModelScope.launch {
-        if (myRankPrefetching || _myRank.value != null) return@launch
-        myRankPrefetching = true
-        try {
-            // 닉네임 미로딩 시 먼저 불러옴
-            if (myNickname == null) loadMyUser().join()
-
-            val found = fetchMyRankFromUserLeague()   // ← 아래 suspend 함수
-            if (found != null) _myRank.value = found.toMyRankUi()
-        } finally {
-            myRankPrefetching = false
-        }
-    }
-
-    private suspend fun fetchMyRankFromUserLeague(
-        maxPages: Int = 10 // 안전장치: 필요시 늘리거나 제거
-    ): LeagueItem? {
-        val session = AuthPrefs.load(appContext) ?: run { _sessionExpired.value = true; return null }
-        if (AuthPrefs.isExpired(session)) { AuthPrefs.clear(appContext); _sessionExpired.value = true; return null }
-
-        val auth = "Bearer ${session.accessToken}"
-        val target = myNickname ?: return null
-
-        var page = 0
-        while (page < maxPages) {
-            val list = runCatching { api.getLeagues_league(auth, page) }
-                .getOrElse { e ->
-                    if ((e as? retrofit2.HttpException)?.code() == 401) {
-                        AuthPrefs.clear(appContext); _sessionExpired.value = true
-                    }
-                    return null
-                }
-
-            if (list.isEmpty()) break
-
-            val match = list.find { it.nickname == target }
-            if (match != null) return match
-
-            page++
-        }
-        return null
     }
 
     fun refreshL() {
@@ -142,28 +80,24 @@ class LeagueViewModel(
         loadNextL()
     }
 
-    //소스를 내 리그로 전환
     fun selectUserLeague() {
         _source.value = Source.UserLeague
         refreshL()
     }
 
-    //소스를 특정 티어로 전환
     fun selectTier(leagueId: Int) {
         _source.value = Source.Tier(leagueId)
         refreshL()
     }
 
-    //끝 근처에서 다음 페이지 로드
+    // 페이징 로드 (끝 근처에서 호출)
     fun loadNextL() = viewModelScope.launch {
         val curr = _ui.value
         if (curr.isLoading || curr.endReached) return@launch
 
         val session = AuthPrefs.load(appContext)
         if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext)
-            _sessionExpired.value = true
-            return@launch
+            AuthPrefs.clear(appContext); _sessionExpired.value = true; return@launch
         }
 
         _ui.update { it.copy(isLoading = true, error = null) }
@@ -171,7 +105,7 @@ class LeagueViewModel(
         val auth = "Bearer ${session.accessToken}"
         val nextPage = curr.page
 
-        val list = runCatching {
+        val pageResp = runCatching {
             when (val s = _source.value) {
                 Source.UserLeague -> api.getLeagues_league(auth, nextPage)
                 is Source.Tier -> api.getLeagues_tier(auth, s.leagueId, nextPage)
@@ -187,17 +121,79 @@ class LeagueViewModel(
             return@launch
         }
 
-        if (list.isEmpty()) {
-            _ui.update { it.copy(isLoading = false, endReached = true) }
-        } else {
-            _ui.update {
-                it.copy(
-                    items = it.items + list,
-                    page = nextPage + 1,
-                    isLoading = false
-                )
-            }
+        val newItems = pageResp.contents
+        val hasNext  = pageResp.hasNextPage
+
+        _ui.update {
+            it.copy(
+                items = it.items + newItems,
+                page = if (hasNext) nextPage + 1 else nextPage, // 다음 페이지 있을 때만 증가
+                isLoading = false,
+                endReached = !hasNext
+            )
         }
+    }
+
+    sealed class SeasonPopupState {
+        data object Loading : SeasonPopupState()
+        data object SessionExpired : SeasonPopupState()
+        data class Ready(
+            val data: SeasonPopupResponse,
+            val show: Boolean
+        ) : SeasonPopupState()
+        data class Failed(val message: String? = null) : SeasonPopupState()
+    }
+
+    private val _seasonPopup = MutableStateFlow<SeasonPopupState>(SeasonPopupState.Loading)
+    val seasonPopup = _seasonPopup.asStateFlow()
+
+    //시즌 팝업
+    private val seasonPrefs by lazy {
+        appContext.getSharedPreferences("season_popup", Context.MODE_PRIVATE)
+    }
+    private fun lastShownSeason(): String? =
+        seasonPrefs.getString("last_shown_season", null)
+
+    private fun markShownSeason(seasonId: String) {
+        seasonPrefs.edit().putString("last_shown_season", seasonId).apply()
+    }
+    fun confirmSeasonPopup(seasonId: String) {
+        markShownSeason(seasonId)
+        val cur = _seasonPopup.value
+        if (cur is SeasonPopupState.Ready) {
+            _seasonPopup.value = cur.copy(show = false)
+        }
+    }
+    fun loadSeasonPopup() = viewModelScope.launch {
+        _seasonPopup.value = SeasonPopupState.Loading
+
+        val session = AuthPrefs.load(appContext)
+        if (session == null || AuthPrefs.isExpired(session)) {
+            AuthPrefs.clear(appContext)
+            _sessionExpired.value = true
+            _seasonPopup.value = SeasonPopupState.SessionExpired
+            return@launch
+        }
+
+        val auth = "Bearer ${session.accessToken}"
+        val res = runCatching { api.getLeagueHome(auth) }
+            .getOrElse { e ->
+                val code = (e as? retrofit2.HttpException)?.code()
+                if (code == 401) {
+                    AuthPrefs.clear(appContext)
+                    _sessionExpired.value = true
+                    _seasonPopup.value = SeasonPopupState.SessionExpired
+                } else {
+                    _seasonPopup.value = SeasonPopupState.Failed(e.message)
+                }
+                return@launch
+            }
+        val seasonId = res.currentSeason.nowSeason
+        val shouldShow = res.containsPopup && lastShownSeason() != seasonId
+        _seasonPopup.value = SeasonPopupState.Ready(
+            data = res,
+            show = shouldShow
+        )
     }
 }
 

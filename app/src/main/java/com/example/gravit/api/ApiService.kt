@@ -28,16 +28,19 @@ data class ChapterPageResponse(
 //홈
 data class MainPageResponse(
     val nickname: String,
-    val level: Int,
+    val leagueName: String,
     val xp: Int,
-    val league: String,
-    val recentLearningSummaryResponse: RecentLearningSummaryResponse? = null
-)
-data class RecentLearningSummaryResponse(
+    val level: Int,
+    val planetConquestRate: Int,
+    val consecutiveDays: Int,
     val chapterId: Int,
     val chapterName: String,
+    val chapterDescription: String,
     val totalUnits: Int,
-    val completedUnits: Int
+    val completedUnits: Int,
+    val missionName: String,
+    val awardXp: Int,
+    val isCompleted: Boolean
 )
 
 // 유닛
@@ -66,8 +69,16 @@ data class Problems(
     val problemId: Int,
     val problemType: String,
     val question: String,
-    val options: String,
-    val answer: String
+    val content: String,
+    val answer: String,
+    val options: List<OptionDto>,
+)
+data class OptionDto(
+    val optionId: Int,
+    val content: String,
+    val explanation: String,
+    val isAnswer: Boolean,
+    val problemId: Int
 )
 data class ProblemResultItem(
     val problemId: Int,
@@ -91,15 +102,44 @@ data class UserPageResponse(
 )
 
 //리그
+data class LeaguePageResponse<T>(
+    val hasNextPage: Boolean,
+    val contents: List<T>
+)
 data class LeagueItem(
     val rank: Int,
     val userId: Int,
     val lp: Int,
     val nickname: String,
     val profileImgNumber: Int,
+    val xp: Int,
     val level: Int
 )
-
+data class MyLeague(
+    val leagueId: Int,
+    val leagueName: String,
+    val rank: Int,
+    val userId: Int,
+    val lp: Int,
+    val maxLp: Int,
+    val nickname: String,
+    val profileImgNumber: Int,
+    val xp: Int,
+    val level: Int
+)
+data class SeasonPopupResponse(
+    val containsPopup: Boolean,
+    val currentSeason: CurrentSeason,
+    val lastSeasonPopupDto: LastSeasonPopupDto?
+)
+data class CurrentSeason(
+    val nowSeason: String
+)
+data class LastSeasonPopupDto(
+    val rank: Int,
+    val leagueName: String,
+    val profileImgNumber: Int
+)
 //친구
 data class FriendItem(
     val id: Int,
@@ -130,7 +170,7 @@ interface ApiService {
         @Body token: IdTokenRequest
     ): AuthTokenResponse
 
-    @PATCH("api/v1/users/onboarding")
+    @POST("api/v1/users/me/onboarding")
     suspend fun completeOnboarding(
         @Body body: OnboardingRequest,
         @Header("Authorization") auth: String
@@ -152,7 +192,7 @@ interface ApiService {
         @Path("chapterId") chapterId: Int
     ): List<UnitPageResponse>
 
-    @GET("api/v1/learning/{lessonId}/problems")
+    @GET("api/v1/learning/{lessonId}")
     suspend fun getLesson(
         @Header("Authorization") auth: String,
         @Path("lessonId") lessonId: Int
@@ -164,23 +204,33 @@ interface ApiService {
         @Header("Authorization") auth: String
     )
 
-    @GET("api/v1/users/my-page")
+    @GET("api/v1/users/me/my-page")
     suspend fun getUser(
         @Header("Authorization") auth: String
     ) : UserPageResponse
 
-    @GET("api/v1/rank/user-leagues/page/{pageNum}")
+    @GET("api/v1/ranking/user-leagues/page/{pageNum}")
     suspend fun getLeagues_league(
         @Header("Authorization") auth: String,
         @Path("pageNum") pageNum: Int
-    ) : List<LeagueItem>
+    ) : LeaguePageResponse<LeagueItem>
 
-    @GET("api/v1/rank/leagues/{leagueId}/page/{pageNum}")
+    @GET("api/v1/ranking/leagues/{leagueId}/page/{pageNum}")
     suspend fun getLeagues_tier(
         @Header("Authorization") auth: String,
         @Path("leagueId") leagueId: Int,
         @Path("pageNum") pageNum: Int
-    ) : List<LeagueItem>
+    ) : LeaguePageResponse<LeagueItem>
+
+    @GET("api/v1/ranking/me")
+    suspend fun getMyLeague(
+        @Header("Authorization") auth: String,
+    ) : MyLeague
+
+    @GET("api/v1/league/home")
+    suspend fun getLeagueHome(
+        @Header("Authorization") auth: String,
+    ) : SeasonPopupResponse
 
     @GET("api/v1/friends/follower")
     suspend fun getFollower(
@@ -207,7 +257,7 @@ interface ApiService {
     @GET("api/v1/friends/search")
     suspend fun getFriends(
         @Header("Authorization") auth: String,
-        @Query("handleQuery") handleQuery: String,
+        @Query("queryText") queryText: String,
         @Query("page") page: Int = 0
     ) : FriendSearchResponse
 }

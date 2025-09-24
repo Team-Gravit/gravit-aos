@@ -83,7 +83,7 @@ class AddFriendVM(
         }
         val requestedPage = 0
         runCatching {
-            api.getFriends(auth = auth, handleQuery = nq, page = requestedPage)
+            api.getFriends(auth = auth, queryText = nq, page = requestedPage)
         }.onSuccess { res ->
             _state.value = UiState.Success(
                 query = nq,
@@ -126,7 +126,7 @@ class AddFriendVM(
             _state.value = latestBefore.copy(isLoadingNext = true, lastError = null)
 
             runCatching {
-                api.getFriends(auth = auth, handleQuery = cur.query, page = requestedPage)
+                api.getFriends(auth = auth, queryText = cur.query, page = requestedPage)
             }.onSuccess { res ->
                 val latest = _state.value as? UiState.Success ?: return@onSuccess
                 _state.value = latest.copy(

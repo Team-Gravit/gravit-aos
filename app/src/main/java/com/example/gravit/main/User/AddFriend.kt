@@ -187,7 +187,7 @@ fun AddFriend(navController: NavController) {
                             state = listState,
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items<FriendUser>(items = s.results, key = { it.userId }) { user: FriendUser ->
+                            items(items = s.results, key = { it.userId }) { user: FriendUser ->
                                 FriendCell(
                                     result = user,
                                     inUndo = s.showUndo.contains(user.userId),        // ← 타입 맞추기

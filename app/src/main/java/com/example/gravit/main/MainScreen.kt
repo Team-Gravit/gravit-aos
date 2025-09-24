@@ -66,6 +66,14 @@ fun MainScreen(rootNavController: NavController) {
 
     val hideBottomBar = currentRoute.startsWith("lesson/")
 
+    val goToLoginChoice: () -> Unit = {
+        rootNavController.navigate("login choice") {
+            popUpTo(0) { inclusive = true }   // 백스택 싹 비우기
+            launchSingleTop = true
+            restoreState = false
+        }
+    }
+
     Scaffold(
         bottomBar = { if (!hideBottomBar) { BottomNavigationBar(innerNavController) } },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -126,7 +134,8 @@ fun MainScreen(rootNavController: NavController) {
                     chapterId = chapterId,
                     chapterName = chapterName,   // 헤더 표시용
                     unitId = unitId,
-                    lessonId = lessonId
+                    lessonId = lessonId,
+                    onSessionExpired = goToLoginChoice
                 )
             }
 

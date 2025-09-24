@@ -73,6 +73,10 @@ dependencies {
 
     implementation(libs.play.services.auth)
     implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.foundation.layout)
+
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-gif:2.7.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

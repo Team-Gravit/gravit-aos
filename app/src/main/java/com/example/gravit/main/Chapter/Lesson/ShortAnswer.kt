@@ -31,11 +31,9 @@ enum class FabState { HIDDEN, SUBMIT, NEXT }
 
 @Composable
 fun ShortAnswer(
-    problem: Problem,
-    totalProblems: Int,      // 총 문항 수
     submitted: Boolean,      // 제출 여부(부모 상태; 정오답 색상 표시용)
     modifier: Modifier = Modifier,
-    problemNum: Int,
+    problemId: Int,
     onTextChange: (String) -> Unit,
     text: String,
     isCorrect: Boolean?,
@@ -46,8 +44,8 @@ fun ShortAnswer(
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
-    var readyToSubmit by remember(problemNum) { mutableStateOf(false) }
+    var showCompleteButton by remember(problemId) { mutableStateOf(false) }
+    var readyToSubmit by remember(problemId) { mutableStateOf(false) }
 
     // 입력을 비우면 상태 초기화
     LaunchedEffect(text) {
@@ -57,113 +55,49 @@ fun ShortAnswer(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = modifier.background(Color(0xFFF2F2F2))) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp)
-            ) {
-                Column {
-                    Row (verticalAlignment = Alignment.CenterVertically){
-                        Image(
-                            painter = painterResource(id = R.drawable.clipboard),
-                            contentDescription = "clipboard",
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "${problemNum}/${totalProblems}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = pretendard,
-                            color = Color.Black
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text =if(problem.problemType == "FILL_BLANK") "빈칸에 들어갈 단어를 작성하시오." else "다음 질문에 대한 답을 작성하시오.",
-                        fontSize = 16.sp,
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF383838)
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                width = 1.dp,
-                                color = Color(0xFFDCDCDC),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(Color.White)
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(10.dp),
-                            text = problem.question,
-                            fontSize = 16.sp,
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Black
-                        )
+
+    Box(modifier = Modifier
+        .fillMaxSize()) {
+        Column {
+            AnswerInputField(
+                value = text,
+                onValueChange = onTextChange,
+                submitted = submitted,
+                isCorrect = isCorrect,
+                onImeDone = {
+                    if (text.isNotBlank() && !submitted) {
+                        focusManager.clearFocus()
+                        keyboard?.hide()
+                        showCompleteButton = true                      //Done → 완료 버튼
                     }
                 }
-            }
-            Spacer(modifier = Modifier.height(20.dp))
+            )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 20.dp),
-            ) {
-                Column {
-                    AnswerInputField(
-                        value = text,
-                        onValueChange = onTextChange,
-                        submitted = submitted,
-                        isCorrect = isCorrect,
-                        onImeDone = {
-                            if (text.isNotBlank() && !submitted) {
-                                focusManager.clearFocus()
-                                keyboard?.hide()
-                                showCompleteButton = true                      //Done → 완료 버튼
-                            }
-                        }
+            if (!submitted && text.isNotBlank() && showCompleteButton && !readyToSubmit) {
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { readyToSubmit = true },  // 완료 → 체크
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF009FFF),
+                        contentColor = Color.White
                     )
-
-                    if (!submitted && text.isNotBlank() && showCompleteButton && !readyToSubmit) {
-                        Spacer(Modifier.height(12.dp))
-                        Button(
-                            onClick = { readyToSubmit = true },  // 완료 → 체크
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF009FFF),
-                                contentColor = Color.White
-                            )
-                        ) { Text("완료") }
-                    }
-
-                    if (submitted && isCorrect != null) {
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            if (isCorrect) "정답입니다!" else "정답: ",
-                            color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-
+                ) { Text("완료") }
             }
 
+            if (submitted && isCorrect != null) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    if (isCorrect) "정답입니다!" else "정답: ",
+                    color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
+                    fontFamily = pretendard,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+            }
         }
         val fabState = when {
             !submitted && readyToSubmit && text.isNotBlank() -> FabState.SUBMIT    // 채점
@@ -201,6 +135,7 @@ fun ShortAnswer(
             }
         }
     }
+
 }
 
 @Composable

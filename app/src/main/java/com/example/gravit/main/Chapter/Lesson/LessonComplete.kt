@@ -56,8 +56,6 @@ import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Home.HomeVMFactory
 import com.example.gravit.main.Home.HomeViewModel
 import com.example.gravit.main.Home.LevelGauge
-import com.example.gravit.main.Home.planetComplete
-import com.example.gravit.ui.theme.mbc1961
 import com.example.gravit.ui.theme.pretendard
 @Composable
 fun LessonComplete(
@@ -85,9 +83,10 @@ fun LessonComplete(
 
         else -> Unit
     }
-    val league = (ui as? HomeViewModel.UiState.Success)?.data?.league?: "Bronze 1"
+    val league = (ui as? HomeViewModel.UiState.Success)?.data?.leagueName?: "Bronze 1"
     val lv = (ui as? HomeViewModel.UiState.Success)?.data?.level?: 1
     val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp?: 0
+    val planetConquestRate = (ui as? HomeViewModel.UiState.Success)?.data?.planetConquestRate?: 0
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -209,8 +208,8 @@ fun LessonComplete(
                 ) {
                     RoundBox(
                         title = "행성 정복률",
-                        value = planetComplete(navController),
-                        img = R.drawable.rocket_main,
+                        value = "${planetConquestRate}%",
+                        img = R.drawable.books,
                         modifier = Modifier
                             .weight(1f)
                             .border(
@@ -224,7 +223,7 @@ fun LessonComplete(
                     RoundBox(
                         title = "연속 학습일",
                         value = "보류",
-                        img = R.drawable.fire,
+                        img = R.drawable.play_button,
                         modifier = Modifier
                             .weight(1f)
                             .border(

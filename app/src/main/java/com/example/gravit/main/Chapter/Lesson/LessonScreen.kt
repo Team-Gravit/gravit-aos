@@ -1,7 +1,13 @@
 package com.example.gravit.main.Chapter.Lesson
 
+import android.R.attr.fontFamily
+import android.R.attr.fontWeight
+import android.R.attr.strokeWidth
+import android.R.attr.text
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,6 +64,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
 import com.example.gravit.R
 import com.example.gravit.api.ProblemResultItem
 import com.example.gravit.api.Problems
@@ -74,7 +85,8 @@ fun LessonScreen(
     chapterId: Int,
     chapterName: String,
     unitId: Int,
-    lessonId: Int
+    lessonId: Int,
+    onSessionExpired: () -> Unit
 ) {
     //스톱워치
     val swVm: StopwatchViewModel = viewModel()
@@ -110,22 +122,73 @@ fun LessonScreen(
     }
 
     val ui by vm.state.collectAsState()
-    when (ui) {
-        LessonViewModel.UiState.SessionExpired -> {
-            navController.navigate("login choice") {
-                popUpTo(0)
-                launchSingleTop = true
-                restoreState = false
-            }
+
+    LaunchedEffect(ui) {
+        if (ui is LessonViewModel.UiState.SessionExpired) {
+            onSessionExpired()   // 여기서 네비게이션 실행
         }
+    }
+    when (ui) {
         LessonViewModel.UiState.Failed -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("문제를 불러오지 못했습니다.", fontFamily = pretendard)
             }
         }
         LessonViewModel.UiState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            val context = LocalContext.current
+            val imageLoader = remember {
+                ImageLoader.Builder(context)
+                    .components {
+                        if (Build.VERSION.SDK_INT >= 28) {
+                            add(ImageDecoderDecoder.Factory())
+                        } else {
+                            add(GifDecoder.Factory())
+                        }
+                    }
+                    .build()
+            }
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(R.drawable.loading)
+                        .build(),
+                    imageLoader = imageLoader,
+                    contentDescription = "Loading GIF",
+                    modifier = Modifier.padding(bottom = 131.dp)
+                )
+                Column (
+                    modifier = Modifier.padding(top = 320.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Loading....",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = pretendard,
+                        color = Color(0xFF383838),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(61.dp))
+                    Text(
+                        text = "알고 게셨나요?",
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = pretendard,
+                        fontSize = 15.sp,
+                        color = Color(0xFF494949),
+                    )
+                    Text(
+                        text ="문제가 이상이 있는 경우\n우측 상단의 신고 버튼으로 접수할 수 있어요.",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = pretendard,
+                        color = Color(0xFF6D6D6D),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
             return
         }
@@ -195,7 +258,6 @@ fun LessonScreen(
             .padding(WindowInsets.safeDrawing.asPaddingValues())
             .background(Color(0xFFF2F2F2))
         ) {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -211,7 +273,6 @@ fun LessonScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFF030303)
                 )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -266,96 +327,146 @@ fun LessonScreen(
                         .background(Color(0xFFBA01FF))
                 )
             }
-
             Spacer(modifier = Modifier.height(25.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .padding(horizontal = 16.dp)
             ) {
-                key(index) {
-                    if (current.options == "-") {
-                        //주관식
-                        ShortAnswer(
-                            problem = current,
-                            problemNum = index + 1,
-                            totalProblems = total,
-                            text = shortText,
-                            submitted = submitted,
-                            onTextChange = { shortText = it },
-                            modifier = Modifier.fillMaxSize(),
-                            isCorrect = lastCorrect,
-                            onSubmit = {
-                                val correct = isAnswerCorrect(shortText, current.answer)
-                                lastCorrect = correct
-                                submitted = true
-                                recordResult(current.problemId, correct)
-                                if (isLast) {
-                                    finishLesson()
-                                    navController.navigateTo(
-                                        chapterId = chapterId,
-                                        chapterName = chapterName,
-                                        unitId = unitId,
-                                        lessonId = lessonId,
-                                        togo = "lesson/complete"
-                                    )
-                                }
-                            },
-                            isLast = isLast,
-                            onNext = {
-                                if (!isLast) {
-                                    index++
-                                    submitted = false
-                                    shortText = ""
-                                    lastCorrect = null
-                                }
-                            }
+                Column (modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.clipboard),
+                            contentDescription = "clipboard",
+                            modifier = Modifier.size(32.dp)
                         )
-                    } else {
-                        //객관식
-                        MultipleChoice(
-                            problem = current,
-                            problemNum = index + 1,
-                            totalProblems = total,
-                            selectedIndex = selectedIndex,
-                            submitted = submitted,
-                            isCorrect = lastCorrect,
-                            onSelect = { selectedIndex = it },
-                            onSubmit = { selectedAnswerStr ->
-                                val correct = isAnswerCorrect(selectedAnswerStr, current.answer)
-                                lastCorrect = correct
-                                submitted = true
-                                recordResult(current.problemId, correct)
-                                if (isLast) {
-                                    finishLesson()
-                                    navController.navigateTo(
-                                        chapterId = chapterId,
-                                        chapterName = chapterName,
-                                        unitId = unitId,
-                                        lessonId = lessonId,
-                                        togo = "lesson/complete"
-                                    )
-                                }
-                            },
-                            isLast = isLast,
-                            onNext = {
-                                if (!isLast) {
-                                    index++
-                                    submitted = false
-                                    selectedIndex = null
-                                    shortText = ""
-                                    lastCorrect = null
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize()
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "${index+1}/${total}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = pretendard,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        ReportDialog()
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = current.question,
+                        fontSize = 16.sp,
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF383838)
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFDCDCDC),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(Color.White)
+                    ) {
+                        InlineUnderlineText(
+                            raw = current.content,
+                            modifier = Modifier.padding(10.dp),
+                            fontSize = 16.sp,
+                            fontFamily = pretendard,
+                            color = Color.Black,
+                            strokeWidth = 1.dp
                         )
                     }
-
                 }
-
+            }
+            Spacer(modifier=Modifier.height(30.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+            ) {
+                if(current.problemType == "SUBJECTIVE") {
+                    ShortAnswer(
+                        submitted = submitted,
+                        problemId = current.problemId,
+                        text = shortText,
+                        onTextChange = { shortText = it },
+                        modifier = Modifier.fillMaxSize(),
+                        isCorrect = lastCorrect,
+                        onSubmit = {
+                            val correct = isAnswerCorrect(shortText, current.answer)
+                            lastCorrect = correct
+                            submitted = true
+                            recordResult(current.problemId, correct)
+                            if (isLast) {
+                                finishLesson()
+                                navController.navigateTo(
+                                    chapterId = chapterId,
+                                    chapterName = chapterName,
+                                    unitId = unitId,
+                                    lessonId = lessonId,
+                                    togo = "lesson/complete"
+                                )
+                            }
+                        },
+                        isLast = isLast,
+                        onNext = {
+                            if (!isLast) {
+                                index++
+                                submitted = false
+                                shortText = ""
+                                lastCorrect = null
+                            }
+                        }
+                    )
+                } else{
+                    MultipleChoice(
+                        options = current.options,
+                        problemNum = current.problemId,
+                        selectedIndex = selectedIndex,
+                        submitted = submitted,
+                        isCorrect = lastCorrect,
+                        onSelect = { selectedIndex = it },
+                        onSubmit = { selectedAnswerStr ->
+                            val correct = isAnswerCorrect(selectedAnswerStr, current.answer)
+                            lastCorrect = correct
+                            submitted = true
+                            recordResult(current.problemId, correct)
+                            if (isLast) {
+                                finishLesson()
+                                navController.navigateTo(
+                                    chapterId = chapterId,
+                                    chapterName = chapterName,
+                                    unitId = unitId,
+                                    lessonId = lessonId,
+                                    togo = "lesson/complete"
+                                )
+                            }
+                        },
+                        isLast = isLast,
+                        onNext = {
+                            if (!isLast) {
+                                index++
+                                submitted = false
+                                selectedIndex = null
+                                shortText = ""
+                                lastCorrect = null
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
+
 
         if (showSheet) {
             ModalBottomSheet(
@@ -448,6 +559,7 @@ fun LessonScreen(
                 }
             }
         }
+
     }
 
 }
