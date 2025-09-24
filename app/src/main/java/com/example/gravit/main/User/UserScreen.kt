@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendModeColorFilter
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -104,16 +105,33 @@ fun UserScreen(navController: NavController) {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center),
                 )
-                Image(
-                    painter = painterResource(id = R.drawable.setting),
-                    contentDescription = "setting",
+                Row(
                     modifier = Modifier
-                        .padding(end = 16.dp)
                         .align(Alignment.CenterEnd)
-                        .clickable {
-                            navController.navigate("user/setting")
-                        }
-                )
+                        .padding(end = 20.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.lamp),
+                        contentDescription = "notification",
+                        modifier = Modifier
+                            .size(25.dp)
+                            .clickable {
+                                navController.navigate("user/notice")
+                            }
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Image(
+                        painter = painterResource(id = R.drawable.setting),
+                        contentDescription = "setting",
+                        modifier = Modifier
+                            .size(25.dp)
+                            .clickable {
+                                navController.navigate("user/setting")
+                            }
+                    )
+                }
             }
 
             HorizontalDivider(
@@ -124,12 +142,12 @@ fun UserScreen(navController: NavController) {
 
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    .padding(16.dp)
                     .fillMaxWidth()
                     .height(screenHeight * (129f / 740f)),
                 contentAlignment = Alignment.Center
             ) {
-                Row (
+                Row(
                     modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -150,35 +168,41 @@ fun UserScreen(navController: NavController) {
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column (modifier = Modifier.weight(1f)){
-                        Text(
-                            text = "@${s.data.handle}",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 15.sp,
-                            fontFamily = pretendard,
-                            color = Color(0xFF222222),
-                            modifier = Modifier.alpha(80f)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = s.data.nickname,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = pretendard,
-                            color = Color(0xFF222222)
-                        )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = s.data.nickname,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = pretendard,
+                                color = Color(0xFF222222)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "@${s.data.handle}",
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp,
+                                fontFamily = pretendard,
+                                color = Color(0xFF222222),
+                                modifier = Modifier.alpha(80f)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row {
                             Button(
-                                onClick = { navController.navigate("user/followList?tab=followers") {
-                                    launchSingleTop = true   // 중복 쌓임 방지
-                                } },
-                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    navController.navigate("user/followList?tab=followers") {
+                                        launchSingleTop = true   // 중복 쌓임 방지
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(40.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     contentColor = Color(0xFF222222),
                                     containerColor = Color.White,
                                 ),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.1f)),
                             ) {
                                 Text(
@@ -193,15 +217,19 @@ fun UserScreen(navController: NavController) {
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
-                                onClick = {navController.navigate("user/followList?tab=following") {
-                                    launchSingleTop = true
-                                }},
-                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    navController.navigate("user/followList?tab=following") {
+                                        launchSingleTop = true
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(40.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     contentColor = Color(0xFF222222),
                                     containerColor = Color.White,
                                 ),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.1f)),
                             ) {
                                 Text(
@@ -215,133 +243,53 @@ fun UserScreen(navController: NavController) {
                                 )
                             }
                         }
-                    }
-                }
-            }
-
-            HorizontalDivider(
-                color = Color.Black.copy(alpha = 0.1f),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(130.dp),
-            ) {
-                Column (
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 16.dp, end = 16.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "내 정보",
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = pretendard
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                navController.navigate("user/addfriend") {
+                                    launchSingleTop = true   // 중복 쌓임 방지
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8100B3),
                             ),
-                            color = Color(0xFF4E4E4E),
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, Color(0xFF8100B3).copy(alpha = 0.1f)),
                         ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.user),
-                                contentDescription = "user",
-                                modifier = Modifier
-                                    .padding(vertical = 3.dp)
-                                    .size(24.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(5.dp))
-
-                            Text(
-                                text = "계정 정보",
-                                style = TextStyle(
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.group),
+                                    contentDescription = "user",
+                                    modifier = Modifier
+                                        .padding(vertical = 3.dp)
+                                        .size(30.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "친구추가",
+                                    fontFamily = pretendard,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Medium,
-                                    fontFamily = pretendard
-                                ),
-                                color = Color(0xFF222222),
-                            )
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .alpha(0.8f)
+                                )
+                            }
+
                         }
-
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
-                            contentDescription = "account info",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .align(Alignment.CenterEnd)
-                                .clickable {
-                                    navController.navigateToAccount(s.data.nickname)
-                                }
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.group),
-                                contentDescription = "user",
-                                modifier = Modifier
-                                    .padding(vertical = 3.dp)
-                                    .size(24.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(5.dp))
-
-                            Text(
-                                text = "친구 추가",
-                                style = TextStyle(
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = pretendard
-                                ),
-                                color = Color(0xFF222222),
-                            )
-                        }
-
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
-                            contentDescription = "account info",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .align(Alignment.CenterEnd)
-                                .clickable {
-                                    navController.navigate("user/addfriend")
-                                }
-                        )
                     }
                 }
             }
+
             HorizontalDivider(
                 color = Color.Black.copy(alpha = 0.1f),
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
+
         }
     }
 }
