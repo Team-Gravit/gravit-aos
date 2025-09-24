@@ -1,4 +1,6 @@
 package com.example.gravit.navigation
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -11,6 +13,7 @@ import com.example.gravit.login.ProfileSetting
 import com.example.gravit.main.MainScreen
 import com.example.gravit.splash.SplashScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation() {
     val rootnavController = rememberNavController()

@@ -1,6 +1,5 @@
 package com.example.gravit.main.Chapter.Lesson
 
-import android.R.attr.displayOptions
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

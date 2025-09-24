@@ -204,7 +204,7 @@ interface ApiService {
         @Header("Authorization") auth: String
     )
 
-    @GET("api/v1/users/me/my-page")
+    @GET("api/v1/users/my-page")
     suspend fun getUser(
         @Header("Authorization") auth: String
     ) : UserPageResponse

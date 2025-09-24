@@ -2,6 +2,8 @@ package com.example.gravit.main
 
 import BottomNavigationBar
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -55,6 +57,7 @@ fun NavController.navigateToAccount(nickname: String) {
 
 enum class FollowTab { Followers, Following }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(rootNavController: NavController) {
     val innerNavController = rememberNavController()
