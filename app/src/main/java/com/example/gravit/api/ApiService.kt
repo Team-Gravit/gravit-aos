@@ -130,7 +130,7 @@ interface ApiService {
         @Body token: IdTokenRequest
     ): AuthTokenResponse
 
-    @PATCH("api/v1/users/onboarding")
+    @POST("api/v1/users/me/onboarding")
     suspend fun completeOnboarding(
         @Body body: OnboardingRequest,
         @Header("Authorization") auth: String
@@ -164,7 +164,7 @@ interface ApiService {
         @Header("Authorization") auth: String
     )
 
-    @GET("api/v1/users/my-page")
+    @GET("api/v1/users/me/my-page")
     suspend fun getUser(
         @Header("Authorization") auth: String
     ) : UserPageResponse

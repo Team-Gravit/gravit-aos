@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.example.gravit.main.User.Setting
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

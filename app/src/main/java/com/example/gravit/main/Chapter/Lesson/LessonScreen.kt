@@ -449,7 +449,6 @@ fun LessonScreen(
             }
         }
     }
-
 }
 
 fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {

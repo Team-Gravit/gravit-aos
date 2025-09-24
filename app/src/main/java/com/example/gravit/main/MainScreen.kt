@@ -21,15 +21,12 @@ import com.example.gravit.main.Chapter.Lesson.LessonComplete
 import com.example.gravit.main.Chapter.Lesson.LessonScreen
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Chapter.Unit.Unit
-import com.example.gravit.main.User.Account
+import com.example.gravit.main.User.Setting.Account
 import com.example.gravit.main.User.AddFriend
 import com.example.gravit.main.User.FollowList
 import com.example.gravit.main.User.Setting
-import com.example.gravit.main.User.Setting.Notice
+import com.example.gravit.main.User.Notice
 import com.example.gravit.main.User.Setting.PrivacyPolicy
-import com.example.gravit.main.User.Setting.ScreenSetting
-import com.example.gravit.main.User.Setting.Service
-import com.example.gravit.main.User.Setting.ToS
 import com.example.gravit.main.User.UserScreen
 
 fun build(togo: String, chapterId: Int, unitId: Int, lessonId: Int, chapterName: String): String {
@@ -156,13 +153,25 @@ fun MainScreen(rootNavController: NavController) {
             composable("league") { LeagueScreen(innerNavController) }
 
             composable("user") { UserScreen(innerNavController) }
-            composable("user/setting") { Setting(innerNavController) }
-            composable("user/addfriend") { AddFriend(innerNavController) }
-            composable("user/screensetting") { ScreenSetting(innerNavController) }
-            composable("user/notice") { Notice(innerNavController) }
-            composable("user/service") { Service(innerNavController) }
-            composable("user/tos") { ToS(innerNavController) }
+
+            composable("user/setting") {
+                Setting(
+                    navController = innerNavController,
+                    onLogout = {
+                        rootNavController.navigate("login choice") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = false
+                        }
+                    }
+                )
+            }
+
             composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
+            //composable("user/setting/account") { Account(innerNavController) }
+
+            composable("user/addfriend") { AddFriend(innerNavController) }
+            composable("user/notice") { Notice(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
             composable(
