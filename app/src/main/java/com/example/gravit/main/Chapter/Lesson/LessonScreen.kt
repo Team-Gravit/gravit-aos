@@ -35,7 +35,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -91,6 +93,7 @@ fun LessonScreen(
     //스톱워치
     val swVm: StopwatchViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
+
     DisposableEffect(lifecycleOwner) {
         // 앱이 백그라운드로 가면 멈춤
         val obs = LifecycleEventObserver { _, event ->
@@ -467,99 +470,24 @@ fun LessonScreen(
             }
         }
 
-
         if (showSheet) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    coroutineScope.launch {
-                        sheetState.hide()
-                        showSheet = false
-                    }
+            ConfirmBottomSheet(
+                onDismiss = { showSheet = false },
+                imageRes = R.drawable.study_popup,
+                titleText = "지금까지 푼 내역이\n모두 사라져요!",
+                descriptionText = "${chapterName} 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
+                confirmButtonText = "계속하기",
+                cancelText = "그만두기",
+                onConfirm = {
                 },
-                sheetState = sheetState
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.65f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.study_popup),
-                        contentDescription = "학습 중단 팝업 일러",
-                        modifier = Modifier.padding(20.dp)
-                    )
-                    Text(
-                        "지금까지 푼 내역이\n모두 사라져요!",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = pretendard,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "${chapterName} 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
-                        fontSize = 16.sp,
-                        fontFamily = pretendard,
-                        color = Color(0xFF6D6D6D),
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                sheetState.hide()
-                                showSheet = false
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8100B3),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(100.dp)
-                    ) {
-                        Text(
-                            "계속하기",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = pretendard
-                        )
+                onCancel = {
+                    navController.navigate("home") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = "그만두기",
-                        color = Color(0xFF6D6D6D),
-                        fontFamily = pretendard,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                coroutineScope.launch {
-                                    sheetState.hide()
-                                    showSheet = false
-                                    navController.navigate("home"){
-                                        popUpTo(0) { inclusive = true }
-                                        launchSingleTop = true
-                                    }
-                                }
-                            },
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp
-                    )
                 }
-            }
+            )
         }
-
     }
 }
 
@@ -593,4 +521,112 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
     }
 
     return norm(correctAnswer) == userN
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ConfirmBottomSheet(
+    onDismiss: () -> Unit,
+    imageRes: Int? = null,   // 🔥 여기서 imageRes를 옵션으로 추가
+    titleText: String,
+    descriptionText: String,
+    confirmButtonText: String,
+    cancelText: String,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            scope.launch {
+                sheetState.hide()
+                onDismiss()
+            }
+        },
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 🔥 imageRes가 null이 아닐 때만 보여줌
+            imageRes?.let {
+                Image(
+                    painter = painterResource(id = it),
+                    contentDescription = null,
+                    modifier = Modifier.padding(20.dp)
+                )
+            }
+
+            Text(
+                text = titleText,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = pretendard,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = descriptionText,
+                fontSize = 16.sp,
+                fontFamily = pretendard,
+                color = Color(0xFF6D6D6D),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    onConfirm()
+                    scope.launch {
+                        sheetState.hide()
+                        onDismiss()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF8100B3),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(100.dp)
+            ) {
+                Text(
+                    confirmButtonText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = pretendard
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                text = cancelText,
+                color = Color(0xFF6D6D6D),
+                fontFamily = pretendard,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onCancel()
+                        scope.launch {
+                            sheetState.hide()
+                            onDismiss()
+                        }
+                    },
+                textAlign = TextAlign.Center,
+                fontSize = 16.sp
+            )
+
+            Spacer(Modifier.height(16.dp))
+        }
+    }
 }

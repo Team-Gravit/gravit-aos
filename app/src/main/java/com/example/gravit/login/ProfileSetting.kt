@@ -46,6 +46,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.DesignSpec
@@ -273,7 +275,7 @@ fun NameInputFiled(
                         text = "닉네임",
                         color = Color(0xFF868686),
                         fontFamily = pretendard,
-                        fontSize = Responsive.spH(18f),
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Normal
                     )
                 }
@@ -286,7 +288,7 @@ fun NameInputFiled(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(Responsive.h(56f)),
+                .height(60.dp),
             shape = RoundedCornerShape(Responsive.h(10f)),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
@@ -312,7 +314,7 @@ fun NameInputFiled(
             )
         } else {
             Text(
-                text = if (isError) "부적절한 언어가 포함되어 있어요." else "사용 가능한 닉네임이에요.",
+                text = if (isError) "사용할 수 없는 닉네임이에요." else "사용 가능한 닉네임이에요.",
                 color = Color(0xFF868686),
                 style = TextStyle(
                     fontFamily = pretendard,
@@ -338,8 +340,8 @@ fun CustomButton(
 
     Button(
         onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(Responsive.h(10f)),
+        modifier = modifier.height(60.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (enabled) activeBackground else inactiveBackground,
             contentColor = if (enabled) activeTextColor else inactiveTextColor,
@@ -351,7 +353,7 @@ fun CustomButton(
         Text(
             text = text,
             style = TextStyle(
-                fontSize = Responsive.spH(18f),
+                fontSize = 18.sp,
                 fontFamily = pretendard,
                 fontWeight = FontWeight.SemiBold
             )
