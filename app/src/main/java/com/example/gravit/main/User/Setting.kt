@@ -1,11 +1,13 @@
 package com.example.gravit.main.User
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,13 +17,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,21 +42,26 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
+import com.example.gravit.main.Chapter.Lesson.ConfirmBottomSheet
 import com.example.gravit.main.User.Setting.LogoutVMFactory
 import com.example.gravit.main.User.Setting.LogoutViewModel
 import com.example.gravit.ui.theme.pretendard
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Setting(
     navController: NavController,
@@ -55,6 +69,9 @@ fun Setting(
     var isChecked by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val vm: LogoutViewModel = viewModel(factory = LogoutVMFactory(context))
+
+    var showDeleteSheet by remember { mutableStateOf(false) }
+    var showSentDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -137,7 +154,7 @@ fun Setting(
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("user/account?nickname={nickname}")
+                                    navController.navigate("user/account")
                                 }
                         )
                     }
@@ -306,11 +323,96 @@ fun Setting(
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    navController.navigate("user/screensetting")
+                                    showDeleteSheet = true
                                 }
                         )
+
+                        if (showDeleteSheet) {
+                            ConfirmBottomSheet(
+                                onDismiss = { showDeleteSheet = false },
+                                imageRes = R.drawable.study_popup,
+                                titleText = "정말 탈퇴하실건가요?",
+                                descriptionText = "계정을 삭제하면 저장된\n 모든 데이터가 사라져요.\n 정말로 계정을 삭제하실건가요?",
+                                confirmButtonText = "돌아가기",
+                                cancelText = "탈퇴하기",
+                                onConfirm = {
+                                },
+                                onCancel = {
+                                    showSentDialog = true
+                                }
+                            )
+                        }
+                        if (showSentDialog) {
+                            WithdrawalSentDialog(onDismiss = { showSentDialog = false })
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun WithdrawalSentDialog(
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, shape = RoundedCornerShape(20.dp)),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+                Image(
+                    painter = painterResource(id = R.drawable.check),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .align(Alignment.CenterHorizontally)
+                        //.padding(top = 24.dp)
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    text = "탈퇴하신다니 정말 아쉬워요.",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 20.sp,
+                    fontFamily = pretendard,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "가입하신 이메일로 메일을\n전송해드렸으니 메일을 확인해주시고\n절차를 따라주세요.",
+                    fontFamily = pretendard,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF868686),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(65.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF8100B3),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
+            ) {
+                Text(
+                    text = "확인",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp,
+                    fontFamily = pretendard
+                )
             }
         }
     }

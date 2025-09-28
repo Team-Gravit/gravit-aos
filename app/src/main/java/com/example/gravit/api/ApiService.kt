@@ -1,5 +1,6 @@
 package com.example.gravit.api
 
+import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -99,6 +100,45 @@ data class UserPageResponse(
     val handle: String,
     val follower: Int,
     val following: Int
+)
+
+data class UserInfoResponse(
+    val userId: Int,
+    val profileImgNumber: Int,
+    val nickname: String,
+    val providerId: String
+)
+
+data class UpdateUserInfoRequest(
+    val profilePhotoNumber: Int,
+    val nickname: String,
+)
+
+//공지
+data class NoticeDetailResponse(
+    val id: Long,
+    val title: String,
+    val content: String,
+    val pinned: Boolean,
+    val status: String,
+    val publishedAt: String,
+    val createdAt: String,
+    val updatedAt: String
+)
+
+data class NoticeSummaryItem(
+    val id: Long,
+    val title: String,
+    val summary: String,
+    val pinned: Boolean,
+    val publishedAt: String
+)
+
+data class NoticeSummaryPageResponse(
+    val page: Int,
+    val totalPages: Int,
+    val hasNext: Boolean,
+    @SerializedName("contents") val content: List<NoticeSummaryItem>
 )
 
 //리그
@@ -260,5 +300,28 @@ interface ApiService {
         @Query("queryText") queryText: String,
         @Query("page") page: Int = 0
     ) : FriendSearchResponse
+
+    @GET("api/v1/users")
+    suspend fun userInfo(
+        @Header("Authorization") auth: String
+    ): retrofit2.Response<UserInfoResponse>
+
+    @PATCH("api/v1/users")
+    suspend fun updateUserInfo(
+        @Header("Authorization") auth: String,
+        @Body body: UpdateUserInfoRequest
+    ): retrofit2.Response<UserInfoResponse>
+
+    @GET("api/v1/notice/{noticeId}")
+    suspend fun getNoticeDetail(
+        @Header("Authorization") auth: String,
+        @Path("noticeId") noticeId: Long
+    ): NoticeDetailResponse
+
+    @GET("api/v1/notice/summaries/{page}")
+    suspend fun getNoticeSummaries(
+        @Header("Authorization") auth: String,
+        @Path("page") page: Int // 1부터 시작
+    ): NoticeSummaryPageResponse
 }
 

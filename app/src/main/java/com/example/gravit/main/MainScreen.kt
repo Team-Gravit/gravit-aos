@@ -28,6 +28,7 @@ import com.example.gravit.main.User.AddFriend
 import com.example.gravit.main.User.FollowList
 import com.example.gravit.main.User.Setting
 import com.example.gravit.main.User.Notice
+import com.example.gravit.main.User.NoticeDetail
 import com.example.gravit.main.User.Setting.PrivacyPolicy
 import com.example.gravit.main.User.UserScreen
 
@@ -180,31 +181,11 @@ fun MainScreen(rootNavController: NavController) {
             }
 
             composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
-            //composable("user/setting/account") { Account(innerNavController) }
 
             composable("user/addfriend") { AddFriend(innerNavController) }
-            composable("user/notice") { Notice(innerNavController) }
 
             //account 화면에 닉네임 인자 전달
-            composable(
-                route = "user/account?nickname={nickname}",
-                arguments = listOf(
-                    navArgument("nickname") { type = NavType.StringType; defaultValue = "" }
-                )
-            ) { backStackEntry ->
-                val nickname = backStackEntry.arguments?.getString("nickname").orEmpty()
-                Account(
-                    navController = innerNavController,
-                    nickname = nickname,
-                    onLogout = {
-                        rootNavController.navigate("login choice") {
-                            popUpTo(0) { inclusive = true }
-                            launchSingleTop = true
-                            restoreState = false
-                        }
-                    }
-                )
-            }
+            composable("user/account") {Account(innerNavController)}
 
             composable(
                 route ="user/followList?tab={tab}",
@@ -219,6 +200,20 @@ fun MainScreen(rootNavController: NavController) {
                     initialTab = tab
                 )
             }
+
+
+            composable("user/notice") { Notice(innerNavController) }
+            composable(
+                route = "user/notice/detail/{noticeId}",
+                arguments = listOf(
+                    navArgument("noticeId") { type = NavType.LongType }
+                )
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments!!.getLong("noticeId")
+                NoticeDetail(navController = innerNavController, noticeId = id)
+            }
+
+
         }
     }
 }
