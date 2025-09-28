@@ -53,6 +53,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -71,7 +73,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
@@ -91,13 +92,13 @@ import kotlin.math.abs
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LeagueScreen(
-    navController: NavController
+    navController: NavController,
+    onSessionExpired: () -> Unit
 ) {
     val context = LocalContext.current
     val vm: LeagueViewModel = viewModel(factory = LeagueVMFactory(RetrofitInstance.api, context))
-    val ui by vm.state.collectAsState()
-    val sessionExpired by vm.sessionExpired.collectAsState()
     val source by vm.source.collectAsState()
+    val ui by vm.state.collectAsState()
     val myLeagueState by vm.myLeague.collectAsState()
     val seasonState by vm.seasonPopup.collectAsState()
 
@@ -107,14 +108,67 @@ fun LeagueScreen(
         vm.loadSeasonPopup()
     }
 
+    val sessionExpired by vm.sessionExpired.collectAsState()
+    val notFound by vm.notFound.collectAsState()
+    var navigated by remember { mutableStateOf(false) }
     //세션 만료
     LaunchedEffect(sessionExpired) {
         if (sessionExpired) {
-            navController.navigate("login choice") {
-                popUpTo(0)
-                launchSingleTop = true
-                restoreState = false
+            navigated = true
+            navController.navigate("error/401") {
+                popUpTo(0); launchSingleTop = true; restoreState = false
             }
+        }
+    }
+    LaunchedEffect(notFound) {
+        if (notFound) {
+            navigated = true
+            navController.navigate("error/404") {
+                popUpTo(0); launchSingleTop = true; restoreState = false
+            }
+        }
+    }
+
+    LaunchedEffect(seasonState) {
+        when (seasonState) {
+            LeagueViewModel.SeasonPopupState.SessionExpired ->  {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LeagueViewModel.SeasonPopupState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LeagueViewModel.SeasonPopupState.Failed -> {
+                navigated = true
+                onSessionExpired()
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(myLeagueState) {
+        when (myLeagueState) {
+            LeagueViewModel.MyLeagueState.SessionExpired ->  {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LeagueViewModel.MyLeagueState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LeagueViewModel.MyLeagueState.Failed -> {
+                navigated = true
+                onSessionExpired()
+            }
+            else -> Unit
         }
     }
 
@@ -138,7 +192,8 @@ fun LeagueScreen(
         is LeagueViewModel.Source.Tier -> s.leagueId
         LeagueViewModel.Source.UserLeague -> my?.leagueName?.let { tierIdFromName(it) } ?: -1
     }
-    val myLeagueId = my?.leagueName?.let { tierIdFromName(it) }
+    val myLeagueId = my?.leagueId
+    val myLeagueNmae = my?.leagueName?.let {tierIdFromName(it)}
     val season = (seasonState as? LeagueViewModel.SeasonPopupState.Ready)?.data
 
     val shadow = with(LocalDensity.current) {
@@ -251,7 +306,11 @@ fun LeagueScreen(
                                 )
                             }
 
-                            Row (modifier = Modifier.size(75.dp, 28.dp)){
+                            Row (
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(28.dp)
+                            ){
                                 Image(
                                     painter = TierPalette.painterFor(rank.leagueId),
                                     contentDescription = "tier",
@@ -307,7 +366,8 @@ fun LeagueScreen(
                                 modifier = Modifier
                                     .padding(start = 10.dp)
                                     .align(Alignment.CenterVertically)
-                                    .size(15.dp)
+                                    .size(15.dp),
+                                tint = Color.Black
                             )
                             Spacer(Modifier.width(10.dp))
                             WeeklyCountdown()
@@ -360,7 +420,7 @@ fun LeagueScreen(
                                         .padding(16.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("마지막 페이지입니다")
+                                    Text("마지막입니다.")
                                 }
                             }
                             ui.error != null -> {
@@ -565,8 +625,7 @@ private fun RankCell(
                     color = if(item.rank == 1 || item.rank == 2 || item.rank == 3) Color(0xFFBA00FF) else Color(0xFFFFB608),
                     fontFeatureSettings = "tnum"
                 ),
-
-                modifier = Modifier.width(40.dp),
+                modifier = Modifier.width(50.dp),
                 textAlign = TextAlign.Start
             )
             Spacer(Modifier.width(8.dp))
@@ -681,9 +740,9 @@ fun TierSelector( //티어 선택
     LaunchedEffect(initialLeagueId, tiers) {
         val idx = initialLeagueId?.let { tiers.indexOf(it) } ?: -1
         if (idx >= 0) {
-            listState.scrollToItem(idx)   // sidePad 덕분에 중앙에 맞춰짐
+            listState.scrollToItem(idx)
             lastAppliedIndex = idx
-            vm.selectTier(tiers[idx])     // 소스도 내 티어로 바로 세팅
+            vm.selectTier(tiers[idx])
         }
     }
 
@@ -713,28 +772,27 @@ fun TierSelector( //티어 선택
                 TierDot(
                     tierId = id,
                     selected = selected,
-                    isCenter = true
                 )
             }
         }
     }
 }
 private fun tierName(id: Int): String = when (id) { //티어 이름 변경
-    1 -> "Bronze 1"
-    2 -> "Bronze 2"
-    3 -> "Bronze 3"
-    4 -> "Silver 1"
-    5 -> "Silver 2"
-    6 -> "Silver 3"
-    7 -> "Gold 1"
-    8 -> "Gold 2"
-    9 -> "Gold 3"
-    10 -> "Platinum 1"
-    11 -> "Platinum 2"
-    12 -> "Platinum 3"
-    13 -> "Diamond 1"
-    14 -> "Diamond 2"
-    15 -> "Diamond 3"
+    1 -> "브론즈 1"
+    2 -> "브론즈 2"
+    3 -> "브론즈 3"
+    4 -> "실버 1"
+    5 -> "실버 2"
+    6 -> "실버 3"
+    7 -> "골드 1"
+    8 -> "골드 2"
+    9 -> "골드 3"
+    10 -> "플래티넘 1"
+    11 -> "플래티넘 2"
+    12 -> "플래티넘 3"
+    13 -> "다이아몬드 1"
+    14 -> "다이아몬드 2"
+    15 -> "다이아몬드 3"
     else -> "Unranked"
 }
 
@@ -759,23 +817,50 @@ private fun tierIdFromName(name: String?): Int = when (name) {
 @Composable
 private fun TierDot( //티어 (아직 로고 안 넣음)
     tierId: Int,
-    isCenter: Boolean,
     selected: Boolean
 ) {
-    val size = if (isCenter) 107.dp else 80.dp   // 중앙은 더 크게
+    val size = if (selected) 107.dp else 80.dp   // 중앙은 더 크게
     val label = tierName(tierId)
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier.size(size),
-            contentAlignment = Alignment.Center
-        ){
-            Image(
-                painter = TierPalette.painterFor(tierId),
-                contentDescription = "tier"
+    val darkenFilter = ColorFilter.colorMatrix(
+        ColorMatrix(
+            floatArrayOf(
+                0.6f, 0f, 0f, 0f, 0f,
+                0f, 0.6f, 0f, 0f, 0f,
+                0f, 0f, 0.6f, 0f, 0f,
+                0f, 0f, 0f, 1f, 0f
             )
+        )
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier.size(size+10.dp),
+        ) {
+            if(selected){
+                Column {
+                    Image(
+                        painter = TierPalette.painterFor(tierId),
+                        contentDescription = "tier",
+                        modifier = Modifier.size(size)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.shadow),
+                        contentDescription = null,
+                        modifier = Modifier.size(size)
+                    )
+                }
+             } else {
+                Image(
+                    painter = TierPalette.painterFor(tierId),
+                    contentDescription = "tier",
+                    modifier = Modifier.size(size),
+                    colorFilter = darkenFilter
+                )
+            }
         }
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(7.dp))
         if (selected) {
             val density = LocalDensity.current
             val shadow = with(density) {

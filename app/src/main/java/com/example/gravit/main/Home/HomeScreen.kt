@@ -1,6 +1,5 @@
 package com.example.gravit.main.Home
 
-import android.icu.text.SimpleDateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,7 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,31 +43,38 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Chapter.Lesson.PillShape
 import com.example.gravit.main.Chapter.Lesson.RoundBox
 import com.example.gravit.ui.theme.pretendard
-import java.util.Date
-import java.util.Locale
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    onSessionExpired: () -> Unit
+) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel(factory = HomeVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
 
+    var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
     when (ui) {
         HomeViewModel.UiState.SessionExpired -> {
-            navController.navigate("login choice") {
+            navigated = true
+            navController.navigate("error/401") {
+                popUpTo(0); launchSingleTop = true; restoreState = false
+            }
+        }
+        HomeViewModel.UiState.NotFound -> {
+            navigated = true
+            navController.navigate("error/404") {
                 popUpTo(0); launchSingleTop = true; restoreState = false
             }
         }
@@ -75,14 +83,13 @@ fun HomeScreen(navController: NavController) {
                 CircularProgressIndicator()
             }
         }
+        HomeViewModel.UiState.Failed -> {
+            navigated = true
+            onSessionExpired()
+        }
         else -> Unit
     }
     val home = (ui as? HomeViewModel.UiState.Success)?.data
-
-    val dateFormat = remember { SimpleDateFormat("yyyy. MM. dd (E)", Locale.KOREAN) }
-    val today = remember { dateFormat.format(Date()) }
-
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -110,7 +117,6 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(Responsive.h(70f))
-
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.gravit_main_logo),
@@ -128,53 +134,37 @@ fun HomeScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(horizontal = Responsive.w(16f))
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(Responsive.h(84f))
-                ) {
-                    val nickname = home?.nickname
-                    Column {
-                        CustomText(
-                            text = "어서오세요,",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Responsive.spH(28f),
-                            color = Color.White,
-                            shadow = Shadow(
-                                color = Color(0xFF000000),
-                                offset = Offset(0f, 2f),
-                                blurRadius = 4f
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(Responsive.h(12f)))
-                        CustomText(
-                            text = if (nickname.isNullOrBlank()) "" else "$nickname!",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Responsive.spH(28f),
-                            color = Color.White,
-                            shadow = Shadow(
-                                color = Color(0xFF000000),
-                                offset = Offset(0f, 2f),
-                                blurRadius = 4f
-                            )
-                        )
-                    }
-                    CustomText(
-                        text = today,
-                        fontSize = Responsive.spH(12f),
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                        color = Color.White
+                val nickname = home?.nickname
+                CustomText(
+                    text = "어서오세요,",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = Responsive.spH(28f),
+                    color = Color.White,
+                    shadow = Shadow(
+                        color = Color(0xFF000000),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 4f
                     )
-                }
-
+                )
+                Spacer(modifier = Modifier.height(Responsive.h(12f)))
+                CustomText(
+                    text = if (nickname.isNullOrBlank()) "" else "$nickname!님",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = Responsive.spH(28f),
+                    color = Color.White,
+                    shadow = Shadow(
+                        color = Color(0xFF000000),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 4f
+                    )
+                )
                 Spacer(Modifier.height(Responsive.h(8f)))
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column {
-                        Row {
+                        Row (verticalAlignment = Alignment.CenterVertically){
                             val level = home?.level ?: 1
                             val xp = home?.xp ?: 0
                             val league = home?.leagueName ?: "Bronze 1"
@@ -269,7 +259,7 @@ fun HomeScreen(navController: NavController) {
                                                     modifier = Modifier.padding(start = Responsive.w(8f))
                                                 )
 
-                                                Spacer(modifier = Modifier.height(Responsive.h(12f)))
+                                                Spacer(modifier = Modifier.weight(1f))
 
                                                 Button(
                                                     modifier = Modifier.size(
@@ -294,10 +284,17 @@ fun HomeScreen(navController: NavController) {
                                                     )
                                                 }
                                             } else {
-                                                Image(
-                                                    painter = painterResource(id = R.drawable.mission_complete),
-                                                    contentDescription = "mission completed"
-                                                )
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource(id = R.drawable.mission_complete),
+                                                        contentDescription = "mission completed",
+                                                        modifier = Modifier.size(Responsive.w(92f),
+                                                            Responsive.h(92f))
+                                                    )
+                                                }
                                             }
                                         }
 
@@ -345,24 +342,13 @@ fun HomeScreen(navController: NavController) {
                                 }
                             }
                         )
+                        Spacer(Modifier.height(Responsive.h(12f)))
                     }
                 }
             }
         }
     }
 }
-
-
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun View() {
-    val navController = rememberNavController()
-   HomeScreen(navController)
-}
-
 @Composable
 fun CustomText (
     modifier: Modifier = Modifier,

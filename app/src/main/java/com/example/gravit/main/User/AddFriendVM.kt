@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
 import com.example.gravit.api.FriendUser
+import com.example.gravit.error.handleApiFailure
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,8 +33,9 @@ class AddFriendVM(
             val lastError: String? = null,
             val showUndo: Set<Long> = emptySet()
         ) : UiState
-        data class Failed(val message: String? = null) : UiState
+        data object Failed : UiState
         data object SessionExpired : UiState
+        data object NotFound : UiState
     }
 
     private val _state = MutableStateFlow<UiState>(
@@ -96,12 +98,14 @@ class AddFriendVM(
                 showUndo = emptySet()
             )
         }.onFailure { e ->
-            if ((e as? HttpException)?.code() == 401) {
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-            } else {
-                _state.value = UiState.Failed(e.message)
-            }
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _state.value = it },
+                unauthorizedState = UiState.SessionExpired,
+                notFoundState = UiState.NotFound,
+                failedState = UiState.Failed
+            )
         }
     }
 

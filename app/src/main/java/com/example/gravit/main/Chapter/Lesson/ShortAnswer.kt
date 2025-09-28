@@ -1,6 +1,7 @@
 package com.example.gravit.main.Chapter.Lesson
 
 
+import android.util.Log.e
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,7 +33,7 @@ enum class FabState { HIDDEN, SUBMIT, NEXT }
 @Composable
 fun ShortAnswer(
     submitted: Boolean,      // 제출 여부(부모 상태; 정오답 색상 표시용)
-    modifier: Modifier = Modifier,
+    answer: String,
     problemId: Int,
     onTextChange: (String) -> Unit,
     text: String,
@@ -54,10 +55,10 @@ fun ShortAnswer(
             readyToSubmit = false
         }
     }
-
-
     Box(modifier = Modifier
-        .fillMaxSize()) {
+        .fillMaxSize()
+        .padding(horizontal = 16.dp)
+    ) {
         Column {
             AnswerInputField(
                 value = text,
@@ -68,40 +69,22 @@ fun ShortAnswer(
                     if (text.isNotBlank() && !submitted) {
                         focusManager.clearFocus()
                         keyboard?.hide()
-                        showCompleteButton = true                      //Done → 완료 버튼
+                        showCompleteButton = true
                     }
                 }
             )
-
             if (!submitted && text.isNotBlank() && showCompleteButton && !readyToSubmit) {
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = { readyToSubmit = true },  // 완료 → 체크
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF009FFF),
-                        contentColor = Color.White
-                    )
-                ) { Text("완료") }
+                readyToSubmit = true
             }
-
             if (submitted && isCorrect != null) {
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    if (isCorrect) "정답입니다!" else "정답: ",
-                    color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
+                FeedbackSubjective(isCorrect = isCorrect, answer = answer)
             }
+
         }
         val fabState = when {
             !submitted && readyToSubmit && text.isNotBlank() -> FabState.SUBMIT    // 채점
-            submitted && !isLast -> FabState.NEXT      // 다음
+            submitted -> FabState.NEXT      // 다음
             else -> FabState.HIDDEN
         }
 
@@ -109,7 +92,7 @@ fun ShortAnswer(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 20.dp)
+                    .padding(bottom = 20.dp)
             ) {
                 when (fabState) {
                     FabState.SUBMIT -> {
@@ -139,6 +122,20 @@ fun ShortAnswer(
 }
 
 @Composable
+fun FeedbackSubjective(
+    isCorrect: Boolean,
+    answer: String
+) {
+    Text(
+        text = if (isCorrect) "정답입니다!" else "정답: $answer",
+        color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
+        fontFamily = pretendard,
+        fontWeight = if(isCorrect) FontWeight.SemiBold else FontWeight.Bold,
+        fontSize = 14.sp
+    )
+}
+
+@Composable
 fun AnswerInputField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -157,8 +154,8 @@ fun AnswerInputField(
         val indicator = when {
             submitted && isCorrect == true -> Color(0xFF00A80B) // 정답: 초록
             submitted && isCorrect == false -> Color(0xFFD00000) // 오답: 빨강
-            hasInput || focused -> Color(0xFF5A5A5A)         // 입력 시작 라인 표시
-            else -> Color(0xFFC3C3C3)                       // 아무 입력 전엔 라인 숨김
+            hasInput || focused -> Color(0xFF5A5A5A)
+            else -> Color(0xFFC3C3C3)
         }
 
         OutlinedTextField(

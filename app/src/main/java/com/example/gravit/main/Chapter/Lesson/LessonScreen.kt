@@ -1,10 +1,5 @@
 package com.example.gravit.main.Chapter.Lesson
 
-import android.R.attr.fontFamily
-import android.R.attr.fontWeight
-import android.R.attr.strokeWidth
-import android.R.attr.text
-import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,13 +21,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
@@ -44,7 +43,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,31 +52,38 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.ImageLoader
-import coil.compose.AsyncImage
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
-import coil.request.ImageRequest
 import com.example.gravit.R
 import com.example.gravit.api.ProblemResultItem
 import com.example.gravit.api.Problems
 import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.main.navigateTo
+import com.example.gravit.main.toLessonCompleted
 import com.example.gravit.ui.theme.pretendard
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,6 +117,7 @@ fun LessonScreen(
 
     val resultsMap = remember { mutableStateMapOf<Int, ProblemResultItem>() }
     val wrongAttempts = remember { mutableStateMapOf<Int, Int>() }
+    var resultNext by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     val context = LocalContext.current
     val vm: LessonViewModel = viewModel(
@@ -122,81 +128,66 @@ fun LessonScreen(
         resultsMap.clear()
         wrongAttempts.clear()
         vm.load(lessonId)
+        vm.resetSubmit()
     }
 
     val ui by vm.state.collectAsState()
+    val submit by vm.submit.collectAsState()
 
+    var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(ui) {
-        if (ui is LessonViewModel.UiState.SessionExpired) {
-            onSessionExpired()   // 여기서 네비게이션 실행
-        }
-    }
-    when (ui) {
-        LessonViewModel.UiState.Failed -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("문제를 불러오지 못했습니다.", fontFamily = pretendard)
-            }
-        }
-        LessonViewModel.UiState.Loading -> {
-            val context = LocalContext.current
-            val imageLoader = remember {
-                ImageLoader.Builder(context)
-                    .components {
-                        if (Build.VERSION.SDK_INT >= 28) {
-                            add(ImageDecoderDecoder.Factory())
-                        } else {
-                            add(GifDecoder.Factory())
-                        }
-                    }
-                    .build()
-            }
-            Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                AsyncImage(
-                    model = ImageRequest
-                        .Builder(LocalContext.current)
-                        .data(R.drawable.loading)
-                        .build(),
-                    imageLoader = imageLoader,
-                    contentDescription = "Loading GIF",
-                    modifier = Modifier.padding(bottom = 131.dp)
-                )
-                Column (
-                    modifier = Modifier.padding(top = 320.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Loading....",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = pretendard,
-                        color = Color(0xFF383838),
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(61.dp))
-                    Text(
-                        text = "알고 게셨나요?",
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = pretendard,
-                        fontSize = 15.sp,
-                        color = Color(0xFF494949),
-                    )
-                    Text(
-                        text ="문제가 이상이 있는 경우\n우측 상단의 신고 버튼으로 접수할 수 있어요.",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = pretendard,
-                        color = Color(0xFF6D6D6D),
-                        textAlign = TextAlign.Center
-                    )
+        when (ui) {
+            LessonViewModel.UiState.SessionExpired ->  {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
                 }
             }
-            return
+            LessonViewModel.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LessonViewModel.UiState.Failed -> {
+                navigated = true
+                onSessionExpired()
+            }
+            else -> Unit
         }
-        else -> Unit
     }
+
+    LaunchedEffect(submit) {
+        when (submit) {
+            LessonViewModel.SubmitState.SessionExpired ->  {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LessonViewModel.SubmitState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            LessonViewModel.SubmitState.Failed -> {
+                navigated = true
+                onSessionExpired()
+            }
+            else -> Unit
+        }
+    }
+    var showLoading by rememberSaveable { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(2000)
+        showLoading = false
+    }
+    if (showLoading) {
+        LoadingScreen()
+        return
+    }
+
     val s = ui as? LessonViewModel.UiState.Success?: return
     val problems = s.data.problems
     val declaredTotal = s.data.totalProblems
@@ -208,14 +199,12 @@ fun LessonScreen(
 
     //기록
     fun recordResult(problemId: Int, isCorrect: Boolean) {
-        val prevWrong = wrongAttempts[problemId] ?: 0
-        val newWrong = if (isCorrect) prevWrong else prevWrong + 1
-        if (!isCorrect) wrongAttempts[problemId] = newWrong
+        val wrongAttempts = if (isCorrect) 0 else 1
 
         resultsMap[problemId] = ProblemResultItem(
             problemId = problemId,
             isCorrect = isCorrect,
-            incorrectCounts = newWrong
+            incorrectCounts = wrongAttempts
         )
     }
     var submitting by remember { mutableStateOf(false) }
@@ -225,15 +214,22 @@ fun LessonScreen(
         swVm.pause()
         if (submitting) return
         submitting = true
+
         val payload = resultsMap.values.toList()
         if (payload.isEmpty()) {
             submitting = false
             return
         }
+        val learningTime = (swVm.state.value.elapsedMillis / 1000).toInt()
+        val correctCount = payload.count { it.isCorrect }
+        val accuracy: Int = if(total > 0) { ((correctCount.toDouble()/total) * 100).roundToInt() } else 0
+
+        resultNext = accuracy to learningTime
+
         vm.submitResults(
-            chapterId = chapterId,
-            unitId = unitId,
             lessonId = lessonId,
+            learningTime = learningTime,
+            accuracy = accuracy,
             results = payload
         ) { ok ->
             submitting = false
@@ -356,7 +352,7 @@ fun LessonScreen(
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        ReportDialog()
+                        ReportDialog(navController = navController, problemId = current.problemId)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
@@ -394,15 +390,14 @@ fun LessonScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 16.dp)
             ) {
                 if(current.problemType == "SUBJECTIVE") {
                     ShortAnswer(
                         submitted = submitted,
                         problemId = current.problemId,
                         text = shortText,
+                        answer = current.answer,
                         onTextChange = { shortText = it },
-                        modifier = Modifier.fillMaxSize(),
                         isCorrect = lastCorrect,
                         onSubmit = {
                             val correct = isAnswerCorrect(shortText, current.answer)
@@ -411,47 +406,6 @@ fun LessonScreen(
                             recordResult(current.problemId, correct)
                             if (isLast) {
                                 finishLesson()
-                                navController.navigateTo(
-                                    chapterId = chapterId,
-                                    chapterName = chapterName,
-                                    unitId = unitId,
-                                    lessonId = lessonId,
-                                    togo = "lesson/complete"
-                                )
-                            }
-                        },
-                        isLast = isLast,
-                        onNext = {
-                            if (!isLast) {
-                                index++
-                                submitted = false
-                                shortText = ""
-                                lastCorrect = null
-                            }
-                        }
-                    )
-                } else{
-                    MultipleChoice(
-                        options = current.options,
-                        problemNum = current.problemId,
-                        selectedIndex = selectedIndex,
-                        submitted = submitted,
-                        isCorrect = lastCorrect,
-                        onSelect = { selectedIndex = it },
-                        onSubmit = { selectedAnswerStr ->
-                            val correct = isAnswerCorrect(selectedAnswerStr, current.answer)
-                            lastCorrect = correct
-                            submitted = true
-                            recordResult(current.problemId, correct)
-                            if (isLast) {
-                                finishLesson()
-                                navController.navigateTo(
-                                    chapterId = chapterId,
-                                    chapterName = chapterName,
-                                    unitId = unitId,
-                                    lessonId = lessonId,
-                                    togo = "lesson/complete"
-                                )
                             }
                         },
                         isLast = isLast,
@@ -462,6 +416,62 @@ fun LessonScreen(
                                 selectedIndex = null
                                 shortText = ""
                                 lastCorrect = null
+                            } else{
+                                when (submit) {
+                                    is LessonViewModel.SubmitState.Success -> {
+                                        navController.toLessonCompleted(
+                                            chapterId = chapterId,
+                                            chapterName = chapterName,
+                                            unitId = unitId,
+                                            lessonId = lessonId,
+                                            accuracy = resultNext?.first ?: 0,
+                                            learningTime = resultNext?.second ?: 0
+                                        )
+                                    }
+                                    else ->  Unit
+                                }
+                            }
+                        },
+                    )
+                } else{
+                    MultipleChoice(
+                        options = current.options,
+                        problemNum = current.problemId,
+                        selectedIndex = selectedIndex,
+                        submitted = submitted,
+                        isCorrect = lastCorrect,
+                        onSelect = { selectedIndex = it },
+                        onSubmit = { selectedIdx ->
+                            val correct = current.options.getOrNull(selectedIdx)?.isAnswer == true
+                            lastCorrect = correct
+                            submitted = true
+                            recordResult(current.problemId, correct)
+                            if (isLast) {
+                                finishLesson()
+                            }
+                        },
+                        isLast = isLast,
+                        onNext = {
+                            if (!isLast) {
+                                index++
+                                submitted = false
+                                selectedIndex = null
+                                shortText = ""
+                                lastCorrect = null
+                            } else{
+                                when (submit) {
+                                    is LessonViewModel.SubmitState.Success -> {
+                                        navController.toLessonCompleted(
+                                            chapterId = chapterId,
+                                            chapterName = chapterName,
+                                            unitId = unitId,
+                                            lessonId = lessonId,
+                                            accuracy = resultNext?.first ?: 0,
+                                            learningTime = resultNext?.second ?: 0
+                                        )
+                                    }
+                                    else ->  Unit
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -487,6 +497,16 @@ fun LessonScreen(
                     }
                 }
             )
+        }
+        if (ui is LessonViewModel.UiState.Loading || submit is LessonViewModel.SubmitState.Loading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         }
     }
 }
@@ -523,6 +543,71 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
     return norm(correctAnswer) == userN
 }
 
+@Composable
+fun InlineUnderlineText(
+    raw: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 16.sp,
+    fontFamily: FontFamily? = null,
+    color: Color = Color.Black,
+    strokeWidth: Dp = 2.dp
+) {
+
+    val matches = remember(raw) { Regex("_+").findAll(raw).toList() }
+
+    val annotated = remember(raw) {
+        buildAnnotatedString {
+            var cur = 0
+            matches.forEachIndexed { i, m ->
+                if (cur < m.range.first) append(raw.substring(cur, m.range.first))
+                appendInlineContent("blank$i", "[blank]")
+                cur = m.range.last + 1
+            }
+            if (cur < raw.length) append(raw.substring(cur))
+        }
+    }
+
+    val inline = remember(raw, fontSize, strokeWidth) {
+        matches.mapIndexed { i, m ->
+            val count = m.value.length
+            "blank$i" to InlineTextContent(
+                Placeholder(
+                    width = count * fontSize * 0.60f,
+                    height = fontSize,
+                    placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
+                )
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            val y = size.height - strokeWidth.toPx() / 2f
+                            drawLine(
+                                color = color,
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = strokeWidth.toPx()
+                            )
+                        }
+                )
+            }
+        }.toMap()
+    }
+
+    Text(
+        modifier = modifier,
+        text = annotated,
+        inlineContent = inline,
+        fontSize = fontSize,
+        fontFamily = fontFamily,
+        fontWeight = FontWeight.Medium,
+        color = color,
+        lineHeight = fontSize * 1.3f,
+        style = LocalTextStyle.current.copy(
+            platformStyle = PlatformTextStyle(includeFontPadding = false)
+        )
+    )
+=======
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfirmBottomSheet(

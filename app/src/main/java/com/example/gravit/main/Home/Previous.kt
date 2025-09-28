@@ -91,12 +91,12 @@ fun PreviousButton(
                 CustomText(
                     text = chapterName,
                     fontWeight = FontWeight.Medium,
-                    fontSize = Responsive.spH(18f),
+                    fontSize = Responsive.spH(16f),
                     fontFamily = mbc1961,
                     color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(Responsive.h(23f)))
+                Spacer(modifier = Modifier.height(Responsive.h(13f)))
 
                 RoundedGauge(
                     height = Responsive.h(10f),

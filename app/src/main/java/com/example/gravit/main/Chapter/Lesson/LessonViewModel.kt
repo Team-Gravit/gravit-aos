@@ -1,6 +1,7 @@
 package com.example.gravit.main.Chapter.Lesson
 
 import android.content.Context
+import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -8,7 +9,10 @@ import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
 import com.example.gravit.api.LessonResponse
 import com.example.gravit.api.LessonResultRequest
+import com.example.gravit.api.LessonResultResponse
 import com.example.gravit.api.ProblemResultItem
+import com.example.gravit.error.handleApiFailure
+import com.example.gravit.login.OnboardingViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,6 +28,7 @@ class LessonViewModel(
         data class Success(val data: LessonResponse) : UiState
         data object Failed : UiState
         data object SessionExpired : UiState
+        data object NotFound : UiState
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
@@ -45,43 +50,61 @@ class LessonViewModel(
         }.onSuccess { res ->
             _state.value = UiState.Success(res)
         }.onFailure { e ->
-            val code = (e as? retrofit2.HttpException)?.code()
-            if (code == 401) {
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-            } else {
-                _state.value = UiState.Failed
-            }
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _state.value = it },
+                unauthorizedState = UiState.SessionExpired,
+                notFoundState = UiState.NotFound,
+                failedState = UiState.Failed
+            )
         }
     }
+    sealed interface SubmitState{
+        data object Idle : SubmitState
+        data object Loading : SubmitState
+        data class Success(val data: LessonResultResponse) : SubmitState
+        data object Failed : SubmitState
+        data object SessionExpired : SubmitState
+        data object NotFound : SubmitState
+    }
+    private val _submit = MutableStateFlow<SubmitState>(SubmitState.Idle)
+    val submit = _submit.asStateFlow()
     fun submitResults(
-        chapterId: Int,
-        unitId: Int,
         lessonId: Int,
+        learningTime: Int,
+        accuracy: Int,
         results: List<ProblemResultItem>,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
         val session = AuthPrefs.load(appContext)
         if (session == null || AuthPrefs.isExpired(session)) {
             AuthPrefs.clear(appContext)
-            _state.value = UiState.SessionExpired
+            _submit.value = SubmitState.SessionExpired
             onDone(false)
             return@launch
         }
         val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.sendResults(
-                LessonResultRequest(
-                    chapterId = chapterId,
-                    unitId = unitId,
-                    lessonId = lessonId,
-                    problemResults = results
-                ),
-                auth,
+            val request = LessonResultRequest(lessonId, learningTime, accuracy, results)
+           api.sendResults(request, auth)
+        }.onSuccess { response ->
+            _submit.value = SubmitState.Success(response)
+            onDone(true)
+        }.onFailure { e ->
+            onDone(false)
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _submit.value = it },
+                unauthorizedState = SubmitState.SessionExpired,
+                notFoundState = SubmitState.NotFound,
+                failedState = SubmitState.Failed
             )
-        }.onSuccess { onDone(true) }
-            .onFailure { onDone(false) }
+        }
     }
+
+    fun resetSubmit() { _submit.value = SubmitState.Idle }
 }
 
 @Suppress("UNCHECKED_CAST")

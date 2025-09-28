@@ -1,5 +1,6 @@
 package com.example.gravit.main.Chapter.Lesson
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,14 +20,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.example.gravit.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,12 +49,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Home.HomeVMFactory
 import com.example.gravit.main.Home.HomeViewModel
@@ -63,8 +64,12 @@ fun LessonComplete(
     chapterId: Int,
     chapterName: String,
     unitId: Int,
-    lessonId: Int
+    lessonId: Int,
+    accuracy: Int,
+    learningTime: Int,
+    onSessionExpired: () -> Unit
 ){
+    Log.d("LessonComplete", "화면 진입")
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel(
         factory = HomeVMFactory(RetrofitInstance.api, context)
@@ -72,36 +77,49 @@ fun LessonComplete(
     val ui by vm.state.collectAsState()
 
     LaunchedEffect(Unit) { vm.load() }
-    when (ui) {
-        HomeViewModel.UiState.SessionExpired -> {
-            navController.navigate("login choice") {
-                popUpTo(0)
-                launchSingleTop = true
-                restoreState = false
-            }
-        }
 
-        else -> Unit
+    var navigated by remember { mutableStateOf(false) }
+    LaunchedEffect(ui) {
+        when (ui) {
+            HomeViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            HomeViewModel.UiState.NotFound ->  {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            HomeViewModel.UiState.Failed ->  {
+                navigated = true
+                onSessionExpired()
+            }
+
+            else -> Unit
+        }
     }
-    val league = (ui as? HomeViewModel.UiState.Success)?.data?.leagueName?: "Bronze 1"
+    val league = (ui as? HomeViewModel.UiState.Success)?.data?.leagueName?: "브론즈 1"
     val lv = (ui as? HomeViewModel.UiState.Success)?.data?.level?: 1
     val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp?: 0
-    val planetConquestRate = (ui as? HomeViewModel.UiState.Success)?.data?.planetConquestRate?: 0
 
     Box(modifier = Modifier
         .fillMaxSize()
         .padding(WindowInsets.statusBars.asPaddingValues())
-        .background(Color(0xFFF2F2F2))) {
+        .background(Color(0xFFF2F2F2))
+    ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(Responsive.h(80f))
                     .background(Color.White)
             ) {
                 Text(
                     text = chapterName,
-                    fontSize = 20.sp,
+                    fontSize = Responsive.spH(20f),
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
@@ -114,16 +132,16 @@ fun LessonComplete(
                     contentDescription = "닫기",
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .padding(start = 16.dp)
-                        .clickable {
-                        },
+                        .padding(start = Responsive.w(16f))
+                        .size(Responsive.w(24f), Responsive.h(24f))
+                        .clickable { navController.navigate("units/${chapterId}")},
                     tint = Color(0xFF4D4D4D)
                 )
             }
             Box(modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 16.dp),
+                .height(Responsive.h(60f))
+                .padding(horizontal = Responsive.w(16f)),
                 contentAlignment = Alignment.Center
                 ){
                 Row (modifier = Modifier.fillMaxWidth(),
@@ -131,15 +149,10 @@ fun LessonComplete(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     PillShape(
-                        modifier = Modifier.border(
-                            width = 1.dp,
-                            color = Color(0xFFDCDCDC),
-                            shape = RoundedCornerShape(16.dp)
-                        ),
                         img = R.drawable.rank_cup,
                         league = league
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(Responsive.w(8f)))
                     LevelGauge(
                         lv = lv,
                         xp = xp,
@@ -152,18 +165,15 @@ fun LessonComplete(
                 Box(modifier = Modifier
                     .weight(3f)
                     .fillMaxWidth()
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                    )
+                    .padding(horizontal = Responsive.w(16f))
                     .background(
                         color = Color.White,
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(Responsive.w(16f))
                     )
                     .border(
                         width = 1.dp,
                         color = Color(0xFFDCDCDC),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(Responsive.w(16f))
                     ),
                     contentAlignment = Alignment.Center
                 ){
@@ -174,89 +184,89 @@ fun LessonComplete(
                             text = "${planetName[chapterId].toString()}에 한발 더 가까워졌어요!",
                             fontFamily = pretendard,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 20.sp,
+                            fontSize = Responsive.spH(20f),
                             color = Color(0xFF030303)
 
                         )
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(Responsive.h(8f)))
                         Text(
                             text = "${chapterName}의 ${unitId}번째 단계를 학습을 완료했어요",
                             fontFamily = pretendard,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
+                            fontSize = Responsive.spH(16f),
                             color = Color(0xFF6D6D6D)
                         )
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(Responsive.h(16f)))
                         Image(
                             painter = painterResource(id = R.drawable.tokki),
                             contentDescription = null,
-                            modifier = Modifier.size(156.dp, 196.dp)
+                            modifier = Modifier.size(Responsive.w(156f), Responsive.h(196f))
                         )
                     }
                 }
             }
 
             Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .weight(0.6f)
+                modifier = Modifier.weight(0.6f)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = Responsive.w(20f) , vertical = Responsive.h(16f))
                         .weight(1f)
                 ) {
                     RoundBox(
-                        title = "행성 정복률",
-                        value = "${planetConquestRate}%",
+                        title = "정답률",
+                        value = "${accuracy}%",
                         img = R.drawable.books,
-                        modifier = Modifier
-                            .weight(1f)
-                            .border(
-                                width = 1.dp,
-                                color = Color(0xFFDCDCDC),
-                                shape = RoundedCornerShape(16.dp)
-                            )
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Responsive.w(16f)))
 
                     RoundBox(
-                        title = "연속 학습일",
-                        value = "보류",
+                        title = "풀이시간",
+                        value = FormatSeconds(learningTime),
                         img = R.drawable.play_button,
-                        modifier = Modifier
-                            .weight(1f)
-                            .border(
-                                width = 1.dp,
-                                color = Color(0xFFDCDCDC),
-                                shape = RoundedCornerShape(16.dp)
-                            )
+                        modifier = Modifier.weight(1f)
                     )
                 }
-                Spacer(Modifier.height(16.dp))
 
-                Box(modifier = Modifier.weight(1f)) {
+                Box(modifier = Modifier
+                    .padding(horizontal = Responsive.w(20f))
+                    .weight(1f)
+                ) {
                     Button(
                         onClick = {
-                            navController.navigate("home")
+                            navController.navigate("units/${chapterId}")
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(60.dp),
+                            .height(Responsive.h(60f)),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF8100B3),
                             contentColor = Color.White
                         ),
-                        shape = RoundedCornerShape(100.dp)
+                        shape = RoundedCornerShape(Responsive.w(10f))
                     ) {
                         Text(
                             "계속하기",
-                            fontSize = 16.sp,
+                            fontSize = Responsive.spH(16f),
                             fontFamily = pretendard,
                             fontWeight = FontWeight.Bold
                         )
                     }
+                    Spacer(Modifier.height(Responsive.h(25f)))
                 }
+            }
+        }
+        if (ui is HomeViewModel.UiState.Loading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }
@@ -286,19 +296,19 @@ fun RoundBox(
             .fillMaxSize()
             .background(
                 color = Color.White,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(Responsive.w(16f))
             )
     ){
         Row (
-            modifier= Modifier.padding(start = 8.dp),
+            modifier= Modifier.padding(start = Responsive.w(8f)),
             verticalAlignment = Alignment.CenterVertically
         ){
             Image(
                 painter = painterResource(id = img),
                 contentDescription = null,
-                modifier = Modifier.size(50.dp)
+                modifier = Modifier.size(Responsive.w(50f), Responsive.h(50f))
                 )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Responsive.w(8f)))
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxHeight()
@@ -306,14 +316,14 @@ fun RoundBox(
                 Text(
                     text = title,
                     fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
+                    fontSize = Responsive.spH(14f),
                     fontFamily = pretendard,
                     color = Color.Black
                 )
                 Text(
                     text = value,
                     fontFamily = pretendard,
-                    fontSize = 20.sp,
+                    fontSize = Responsive.spH(20f),
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
                 )
@@ -331,7 +341,7 @@ fun PillShape(
 ){
     Box(modifier = modifier
         .wrapContentWidth()
-        .height(30.dp)
+        .height(Responsive.h(30f))
         .background(
             color = Color.White,
             shape = RoundedCornerShape(50)
@@ -345,16 +355,16 @@ fun PillShape(
         ) {
             Image(
                 painter = painterResource(id = img),
-                contentDescription = "rank mark",
-                modifier = Modifier.size(16.dp)
+                contentDescription = null,
+                modifier = Modifier.size(Responsive.w(16f))
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(Responsive.w(4f)))
             if(league != "") {
                 Text(
                     text = league,
                     style = TextStyle(
                         fontFamily = pretendard,
-                        fontSize = 14.sp,
+                        fontSize = Responsive.spH(14f),
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF8100B3),
                         platformStyle = PlatformTextStyle(includeFontPadding = false)
@@ -376,7 +386,7 @@ fun PillShape(
                     },
                     style = TextStyle(
                         fontFamily = pretendard,
-                        fontSize = 14.sp,
+                        fontSize = Responsive.spH(14f),
                         color = Color(0xFF8100B3),
                         platformStyle = PlatformTextStyle(includeFontPadding = false)
                     ),
@@ -384,11 +394,4 @@ fun PillShape(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun StudyCompletePreview() {
-    val navController = rememberNavController()
-    LessonComplete(navController, chapterId = 1, chapterName = "자료구조", unitId = 1, lessonId = 1)
 }

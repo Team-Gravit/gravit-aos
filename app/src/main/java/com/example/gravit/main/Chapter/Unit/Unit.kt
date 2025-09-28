@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,9 +49,12 @@ import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.api.UnitPageResponse
-import com.example.gravit.main.navigateTo
+import com.example.gravit.api.UnitDetails
+import com.example.gravit.main.Home.HomeViewModel
+import com.example.gravit.main.toLesson
 import com.example.gravit.ui.theme.pretendard
+import kotlin.collections.forEachIndexed
+import kotlin.collections.getOrNull
 
 data class PlanetState(
     val name: String,
@@ -62,29 +66,48 @@ data class PlanetState(
 fun Unit(
     navController: NavController,
     chapterId: Int,
-    initialName: String,
-    initialDesc: String,
-    initialTotalUnits: Int,
-    initialCompletedUnits: Int,
+    onSessionExpired: () -> Unit
 ){
     val context = LocalContext.current
     val vm: UnitViewModel = viewModel(
         factory = UnitVMFactory(RetrofitInstance.api, context)
     )
-
-    // 진입 시 유닛만 로드
+    val ui by vm.state.collectAsState()
     LaunchedEffect(chapterId) { vm.load(chapterId) }
 
-    val ui by vm.state.collectAsState()
-    when (ui) {
-        UnitViewModel.UiState.SessionExpired -> {
-            navController.navigate("login choice") {
-                popUpTo(0)
-                launchSingleTop = true
-                restoreState = false
+
+    var navigated by remember { mutableStateOf(false) }
+    LaunchedEffect(ui) {
+        when (ui) {
+            UnitViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
             }
+            UnitViewModel.UiState.NotFound ->  {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            UnitViewModel.UiState.Failed ->  {
+                navigated = true
+                onSessionExpired()
+            }
+
+            else -> Unit
         }
-        else -> Unit
+    }
+
+    val success = ui as? UnitViewModel.UiState.Success
+    val units = success?.data?.unitDetails.orEmpty()
+    val chapterName = success?.data?.chapterName
+    val chapterDescription = success?.data?.chapterDescription
+
+    val unitSlots: List<UnitDetails?> = remember(units) {
+        val count = units.size
+        List(count) { idx -> units.getOrNull(idx) }   // nullable 리스트
     }
 
     val background: Map<Int, Int> = mapOf(
@@ -127,7 +150,7 @@ fun Unit(
                     verticalArrangement = Arrangement.Center,
                 ){ //설명 텍스트
                     Text(
-                        text = initialName,
+                        text = "$chapterName",
                         color = Color.White,
                         fontFamily = pretendard,
                         fontSize = Responsive.spH(20f),
@@ -135,7 +158,7 @@ fun Unit(
                     )
                     Spacer(Modifier.height(Responsive.h(8f)))
                     Text(
-                        text = initialDesc,
+                        text = "$chapterDescription",
                         color = Color.White,
                         fontFamily = pretendard,
                         fontSize = Responsive.spH(16f),
@@ -181,11 +204,6 @@ fun Unit(
                     val top   = Responsive.w(y)
                     return start to top
                 }
-                val unitSlots: List<UnitPageResponse?> = remember(ui, initialTotalUnits) {
-                    List(initialTotalUnits) { idx ->
-                        (ui as? UnitViewModel.UiState.Success)?.data?.getOrNull(idx)
-                    }
-                }
 
                 val positions: Map<Int, Modifier> =
                     (1..unitSlots.size).associateWith { idx ->
@@ -197,46 +215,42 @@ fun Unit(
 
                 //행성 생성
                 Box {
-                    unitSlots.forEachIndexed { index, unit ->
-                        val index = index + 1
+                    unitSlots.forEachIndexed { i, unit ->
+                        val displayIndex = i + 1
                         val detail = unit?.unitProgressDetailResponse
-                        val prevDetail = unitSlots.getOrNull(index - 1)?.unitProgressDetailResponse
+                        val prevDetail = unitSlots.getOrNull(i - 1)?.unitProgressDetailResponse
                         val prevDone = (prevDetail?.completedLesson ?: 0) >= (prevDetail?.totalLesson ?: 3)
 
-                        val isUnlocked = when {
-                            index == 1 -> true                       // 유닛 1은 무조건 보라
-                            prevDetail != null -> prevDone           // 이전 유닛을 다 끝냈다면 언락
-                            else -> false                            // 이전 정보가 없으면 잠금 유지
-                        }
+                        val isUnlocked = if (i == 0) true else prevDone
 
                         val completedLesson = detail?.completedLesson ?: 0
                         val totalLesson = detail?.totalLesson ?: 3
 
                         Planet(
                             state = PlanetState(
-                                name = detail?.name ?: index.toString(),
+                                name = detail?.name ?: displayIndex.toString(),
                                 isUnlocked = isUnlocked,
                                 progress = completedLesson
                             ),
                             totalLesson = totalLesson,
-                            modifier = positions[index] ?: Modifier,
-                            onClick = { selectedUnitIndex = index }
+                            modifier = positions[displayIndex] ?: Modifier,
+                            onClick = { selectedUnitIndex = displayIndex }
                         )
                     }
                 }
 
-                selectedUnitIndex?.let { idx ->
-                    val (anchorStart, anchorTop) = anchorMap[idx] ?: (0.dp to 0.dp)
+                selectedUnitIndex?.let { displayIdx ->
+                    val zeroIdx = displayIdx - 1
+                    val newUnitId = displayIdx
+                    val (anchorStart, anchorTop) = anchorMap[displayIdx] ?: (0.dp to 0.dp)
                     val triangleTop = anchorTop + Responsive.w(100f)
 
+                    val unit = unitSlots.getOrNull(zeroIdx)
+                    val unitName = unit?.unitProgressDetailResponse?.name ?: ""
 
-                    val prevDetail = unitSlots.getOrNull(idx - 2)?.unitProgressDetailResponse
+                    val prevDetail = unitSlots.getOrNull(zeroIdx - 1)?.unitProgressDetailResponse
                     val prevDone  = (prevDetail?.completedLesson ?: 0) >= (prevDetail?.totalLesson ?: 3)
-                    val isUnlocked = when {
-                        idx == 1      -> true
-                        prevDetail != null -> prevDone
-                        else          -> false
-                    }
+                    val isUnlocked = if (zeroIdx == 0) true else prevDone
 
                     val popupBg = if (isUnlocked) Color(0xFFFFB608) else Color(0xFFA8A8A8)
 
@@ -284,12 +298,8 @@ fun Unit(
                                         ),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    val unit = unitSlots.getOrNull(idx)
-                                    val unitName = unit?.unitProgressDetailResponse?.name
-                                        ?: "${idx + 1}번 유닛"
-
                                     Text(
-                                        text = "$initialName: $unitName",
+                                        text = "$chapterName: $unitName",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = Responsive.spH(20f),
                                         fontFamily = pretendard,
@@ -317,11 +327,11 @@ fun Unit(
                                                 ?: 1
                                             val togo = "lesson"
 
-                                            navController.navigateTo(
+                                            navController.toLesson(
                                                 chapterId = chapterId,
-                                                unitId = unitId,
+                                                unitId = newUnitId,
                                                 lessonId = nextLessonId,
-                                                chapterName = initialName,
+                                                chapterName = "$chapterName",
                                                 togo = togo
                                             )
                                         },
@@ -359,6 +369,16 @@ fun Unit(
                         }
                     }
                 }
+            }
+        }
+        if (ui is UnitViewModel.UiState.Loading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }
@@ -438,3 +458,11 @@ fun Planet(
     }
 }
 
+fun UnitIdforUi(
+   preUnitCounts: Int,
+    unitId: Int
+) : Int {
+
+    val newId = unitId - preUnitCounts
+    return newId
+}

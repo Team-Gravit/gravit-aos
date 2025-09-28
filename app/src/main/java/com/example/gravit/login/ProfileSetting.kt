@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -71,15 +72,29 @@ fun ProfileSetting(navController: NavController) {
 
     var nickname by remember { mutableStateOf("") }
     var profileNo by remember { mutableIntStateOf(ProfilePalette.DEFAULT_ID) }
+    var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(ui) {
         when (ui) {
             OnboardingViewModel.UiState.Success -> {
+                navigated = true
                 navController.navigate("profile finish") {
                     popUpTo(0); launchSingleTop = true; restoreState = false
                 }
             }
             OnboardingViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            OnboardingViewModel.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            OnboardingViewModel.UiState.Failed -> {
                 navController.navigate("login choice") {
                     popUpTo(0); launchSingleTop = true; restoreState = false
                 }
@@ -174,6 +189,13 @@ fun ProfileSetting(navController: NavController) {
                     )
                     .height(Responsive.h(60f))
             )
+
+            if (ui is OnboardingViewModel.UiState.Loading) {
+                Box(
+                    Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
+            }
         }
     }
 }

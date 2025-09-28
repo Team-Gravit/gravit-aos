@@ -8,7 +8,9 @@ import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
 import com.example.gravit.api.LeagueItem
 import com.example.gravit.api.MyLeague
+import com.example.gravit.api.RetrofitInstance.api
 import com.example.gravit.api.SeasonPopupResponse
+import com.example.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -37,12 +39,17 @@ class LeagueViewModel(
     val state = _ui.asStateFlow()
     private val _sessionExpired = MutableStateFlow(false)
     val sessionExpired = _sessionExpired.asStateFlow()
+    private val _notFound = MutableStateFlow(false)
+    val notFound = _notFound.asStateFlow()
+
     sealed class MyLeagueState{
         data object Idle : MyLeagueState()
         data object Loading : MyLeagueState()
         data object SessionExpired : MyLeagueState()
         data class Success(val data: MyLeague) : MyLeagueState()
         data object Failed : MyLeagueState()
+        data object NotFound : MyLeagueState()
+
     }
     private val _myLeague = MutableStateFlow<MyLeagueState>(MyLeagueState.Idle)
     val myLeague = _myLeague.asStateFlow()
@@ -64,15 +71,15 @@ class LeagueViewModel(
         }.onSuccess { res ->
             _myLeague.value = MyLeagueState.Success(res)
         }.onFailure { e ->
-                val code = (e as? retrofit2.HttpException)?.code()
-                if (code == 401) {
-                    AuthPrefs.clear(appContext)
-                    _myLeague.value = MyLeagueState.SessionExpired
-                    _sessionExpired.value = true
-                } else {
-                    _myLeague.value = MyLeagueState.Failed
-                }
-            }
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _myLeague.value = it },
+                unauthorizedState = MyLeagueState.SessionExpired,
+                notFoundState = MyLeagueState.NotFound,
+                failedState = MyLeagueState.Failed
+            )
+        }
     }
 
     fun refreshL() {
@@ -112,11 +119,16 @@ class LeagueViewModel(
             }
         }.getOrElse { e ->
             val code = (e as? retrofit2.HttpException)?.code()
-            if (code == 401) {
-                AuthPrefs.clear(appContext)
-                _sessionExpired.value = true
-            } else {
-                _ui.update { it.copy(isLoading = false, error = e.message ?: "불러오기 실패") }
+            when (code) {
+                401 -> {
+                    _sessionExpired.value = true
+                }
+                404 -> {
+                    _notFound.value = true
+                }
+                else -> {
+                    _ui.update { it.copy(isLoading = false, error = e.message ?: "불러오기 실패") }
+                }
             }
             return@launch
         }
@@ -141,7 +153,8 @@ class LeagueViewModel(
             val data: SeasonPopupResponse,
             val show: Boolean
         ) : SeasonPopupState()
-        data class Failed(val message: String? = null) : SeasonPopupState()
+        data object Failed : SeasonPopupState()
+        data object NotFound : SeasonPopupState()
     }
 
     private val _seasonPopup = MutableStateFlow<SeasonPopupState>(SeasonPopupState.Loading)
@@ -176,24 +189,25 @@ class LeagueViewModel(
         }
 
         val auth = "Bearer ${session.accessToken}"
-        val res = runCatching { api.getLeagueHome(auth) }
-            .getOrElse { e ->
-                val code = (e as? retrofit2.HttpException)?.code()
-                if (code == 401) {
-                    AuthPrefs.clear(appContext)
-                    _sessionExpired.value = true
-                    _seasonPopup.value = SeasonPopupState.SessionExpired
-                } else {
-                    _seasonPopup.value = SeasonPopupState.Failed(e.message)
-                }
-                return@launch
+        runCatching { api.getLeagueHome(auth) }
+            .onSuccess { res ->
+                val seasonId = res.currentSeason.nowSeason
+                val shouldShow = res.containsPopup && lastShownSeason() != seasonId
+                _seasonPopup.value = SeasonPopupState.Ready(
+                    data = res,
+                    show = shouldShow
+                )
             }
-        val seasonId = res.currentSeason.nowSeason
-        val shouldShow = res.containsPopup && lastShownSeason() != seasonId
-        _seasonPopup.value = SeasonPopupState.Ready(
-            data = res,
-            show = shouldShow
-        )
+            .onFailure { e ->
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { st -> _seasonPopup.value = st },
+                    unauthorizedState = SeasonPopupState.SessionExpired,
+                    notFoundState = SeasonPopupState.NotFound,
+                    failedState = SeasonPopupState.Failed
+                )
+            }
     }
 }
 
