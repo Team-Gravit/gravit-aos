@@ -45,8 +45,14 @@ data class MainPageResponse(
 
 // 유닛
 data class UnitPageResponse(
-    val unitProgressDetailResponse: UnitProgressDetailResponse? = null,
-    val lessonProgressSummaryResponses: List<LessonProgressSummaryResponses> = emptyList()
+    val chapterId: Int,
+    val chapterName: String,
+    val chapterDescription: String,
+    val unitDetails: List<UnitDetails>
+)
+data class UnitDetails(
+    val unitProgressDetailResponse: UnitProgressDetailResponse,
+    val lessonProgressSummaryResponses: List<LessonProgressSummaryResponses>
 )
 data class UnitProgressDetailResponse(
     val unitId: Int,
@@ -86,10 +92,21 @@ data class ProblemResultItem(
     val incorrectCounts: Int
 )
 data class LessonResultRequest(
-    val chapterId: Int,
-    val unitId: Int,
     val lessonId: Int,
+    val learningTime: Int,
+    val accuracy: Int,
     val problemResults: List<ProblemResultItem>
+)
+data class LessonResultResponse(
+    val currentLevel: Int,
+    val nextLevel: Int,
+    val xp: Int
+)
+//신고
+data class ReportRequest(
+    val reportType: String,
+    val content: String,
+    val problemId: Int
 )
 
 //사용자
@@ -170,7 +187,7 @@ interface ApiService {
         @Body token: IdTokenRequest
     ): AuthTokenResponse
 
-    @POST("api/v1/users/me/onboarding")
+    @POST("api/v1/users/onboarding")
     suspend fun completeOnboarding(
         @Body body: OnboardingRequest,
         @Header("Authorization") auth: String
@@ -190,7 +207,7 @@ interface ApiService {
     suspend fun getUnitPage(
         @Header("Authorization") auth: String,
         @Path("chapterId") chapterId: Int
-    ): List<UnitPageResponse>
+    ): UnitPageResponse
 
     @GET("api/v1/learning/{lessonId}")
     suspend fun getLesson(
@@ -202,7 +219,7 @@ interface ApiService {
     suspend fun sendResults(
         @Body body: LessonResultRequest,
         @Header("Authorization") auth: String
-    )
+    ) : LessonResultResponse
 
     @GET("api/v1/users/my-page")
     suspend fun getUser(
@@ -260,5 +277,11 @@ interface ApiService {
         @Query("queryText") queryText: String,
         @Query("page") page: Int = 0
     ) : FriendSearchResponse
+
+    @POST("api/v1/learning/reports")
+    suspend fun sendReport(
+        @Body body: ReportRequest,
+        @Header("Authorization") auth: String,
+    ) : ReportRequest
 }
 

@@ -1,10 +1,10 @@
 package com.example.gravit.login
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -25,14 +25,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 import androidx.navigation.NavController
@@ -142,21 +140,6 @@ fun LoginScreen (
                         .padding(horizontal = Responsive.w(25f)),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Responsive.h(1f))
-                            .align(Alignment.CenterHorizontally)
-                    ) {
-                        drawLine(
-                            color = Color(0xffC3C3C3),
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, 0f),
-                            strokeWidth = 3f,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
-                            cap = StrokeCap.Butt
-                        )
-                    }
                     Spacer(modifier = Modifier.height(Responsive.h(30f)))
 
                     SocialLoginButton(
@@ -168,7 +151,12 @@ fun LoginScreen (
                             loginWithAuth0(context, "google-oauth2") { idToken ->
                                 viewModel.sendIdTokenToServer(idToken)
                             }
-                        }
+                        },
+                        modifier = Modifier.border(
+                            width = Responsive.w(0.5f),
+                            color = Color(0xFF868686),
+                            shape = RoundedCornerShape(Responsive.h(10f))
+                        )
                     )
                     Spacer(modifier = Modifier.height(Responsive.h(8f)))
 
@@ -209,30 +197,35 @@ fun SocialLoginButton(
     backgroundColor: Color,
     contentColor: Color,
     logoResId: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(Responsive.h(50f)),
-        shape = RoundedCornerShape(Responsive.h(8f)),
+        shape = RoundedCornerShape(Responsive.h(10f)),
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
             contentColor = contentColor
-        )
+        ),
+        contentPadding = PaddingValues(0.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             Image(
                 painter = painterResource(id = logoResId),
                 contentDescription = "$text logo",
-                modifier = Modifier.size(Responsive.w(40f))
+                modifier = Modifier
+                    .padding(start = Responsive.w(10f))
+                    .size(Responsive.w(35f))
+                    .align(Alignment.CenterStart)
             )
             Text(
                 text = text,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .background(backgroundColor),
                 fontSize = Responsive.spH(16f),
                 fontFamily = pretendard,
                 fontWeight = FontWeight.Medium,
