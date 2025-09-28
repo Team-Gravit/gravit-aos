@@ -2,220 +2,141 @@ package com.example.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
+import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.login.CustomButton
+import com.example.gravit.login.NameInputFiled
+import com.example.gravit.login.ProfileSwitcher
+import com.example.gravit.login.isValidNickname
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
 fun Account(
     navController: NavController,
-    nickname: String,
-    onLogout: () -> Unit
-){
+) {
     val context = LocalContext.current
-    val vm: LogoutViewModel = viewModel(factory = LogoutVMFactory(context))
+    val vm: AccountVM = viewModel(
+        factory = AccountVMFactory(RetrofitInstance.api, context)
+    )
+    val ui by vm.state.collectAsState()
+
+    LaunchedEffect(Unit) { vm.loadUserInfo() }
+
+    val nicknameValid = isValidNickname(ui.nickname)
+    val canSave = nicknameValid && !ui.isSaving
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
-            .background(Color(0xFFDCDCDC))
+            .statusBarsPadding()
+            .background(Color.White)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+        Column(Modifier.fillMaxSize()) {
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    .background(Color.White)
             ) {
-                Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "닫기",
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .align (Alignment.CenterStart)
-                    .clickable { navController.popBackStack() },
-                tint = Color(0xFF4D4D4D) ) }
-
-            HorizontalDivider(
-                color = Color.Black.copy(alpha = 0.1f),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(90.dp)
-                    .background(Color.White)
-            ) {
-                Column (
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 16.dp, end = 16.dp),
-                    verticalArrangement = Arrangement.Center
+                Row(
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBackIosNew,
+                        contentDescription = "뒤로가기",
+                        modifier = Modifier
+                            .padding(start = 18.dp)
+                            .size(20.dp)
+                            .clickable { navController.popBackStack() },
+                        tint = Color.Black
+                    )
+                    Spacer(Modifier.width(18.dp))
+                    Text(
+                        text = "내 정보 수정",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        fontFamily = pretendard,
+                        color = Color.Black
+                    )
+                }
+                if (ui.isLoading) {
+                    LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "계정 정보",
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = pretendard
-                            ),
-                            color = Color(0xFF4E4E4E),
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Column {
-                            Text(
-                                text = "내 이름",
-                                style = TextStyle(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = pretendard
-                                ),
-                                color = Color(0xFF4E4E4E),)
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = nickname,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = pretendard
-                                ),
-                                color = Color(0xFF222222),)
-                        }
-
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
-                            contentDescription = "account info",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .align(Alignment.CenterEnd)
-                                .clickable { }
-                        )
-                    }
+                            .align(Alignment.BottomCenter),
+                        color = Color(0xFF8100B3)
+                    )
                 }
             }
-            HorizontalDivider(
-                color = Color.Black.copy(alpha = 0.1f),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(90.dp)
-                    .background(Color.White)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 16.dp, end = 16.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "로그아웃",
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = pretendard
-                            ),
-                            color = Color(0xFF222222),
-                        )
 
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
-                            contentDescription = "account info",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .align(Alignment.CenterEnd)
-                                .clickable {
-                                    vm.logout { onLogout() }
-                                }
-                        )
-                    }
+            Divider(color = Color.Black.copy(alpha = 0.1f))
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "탈퇴하기",
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = pretendard
-                            ),
-                            color = Color(0xFF222222),
-                        )
+            Spacer(Modifier.height(24.dp))
+            key(ui.profileId) {
+                ProfileSwitcher(
+                    selectedId = ui.profileId,
+                    onProfileSelected = vm::onProfileChange
+                )
+            }
 
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
-                            contentDescription = "account info",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .align(Alignment.CenterEnd)
-                                .clickable {
-                                    //탈퇴
-                                }
-                        )
-                    }
+            Spacer(Modifier.height(24.dp))
+            Column(Modifier.padding(horizontal = 24.dp)) {
+                Text(
+                    text = "닉네임 설정",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = pretendard,
+                    color = Color.Black
+                )
+                Spacer(Modifier.height(12.dp))
+                NameInputFiled(
+                    text = ui.nickname,
+                    onTextChange = vm::onNicknameChange
+                )
+                if (ui.errorMsg != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = ui.errorMsg ?: "",
+                        color = Color(0xFFFF0000),
+                        fontFamily = pretendard,
+                        fontSize = 13.sp
+                    )
                 }
             }
+
+            Spacer(Modifier.weight(1f))
+
+            CustomButton(
+                text = if (ui.isSaving) "저장 중..." else "수정하기",
+                onClick = {
+                    vm.save {
+                        navController.popBackStack()
+                    }
+                },
+                enabled = canSave,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .height(56.dp)
+            )
         }
     }
 }

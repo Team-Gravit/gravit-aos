@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.gravit.main.User.Notice
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
