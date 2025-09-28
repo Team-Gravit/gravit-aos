@@ -27,8 +27,8 @@ import com.example.gravit.main.User.Setting.Account
 import com.example.gravit.main.User.AddFriend
 import com.example.gravit.main.User.FollowList
 import com.example.gravit.main.User.Setting
-import com.example.gravit.main.User.Notice
-import com.example.gravit.main.User.NoticeDetail
+import com.example.gravit.main.User.Notice.Notice
+import com.example.gravit.main.User.Notice.NoticeDetail
 import com.example.gravit.main.User.Setting.PrivacyPolicy
 import com.example.gravit.main.User.UserScreen
 

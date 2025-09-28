@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.example.gravit.main.User.Notice
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -64,7 +64,7 @@ class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
                     loading = false,
                     error = null
                 )
-                android.util.Log.d("NoticeListVM", "loadFirst: size=${res.content.size}, hasNext=${res.hasNext}")
+                Log.d("NoticeListVM", "loadFirst: size=${res.content.size}, hasNext=${res.hasNext}")
             }.onFailure { e ->
                 _state.value = _state.value.copy(loading = false, error = e.message ?: "로드 실패")
             }

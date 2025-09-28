@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.example.gravit.main.User.Notice
 
 import android.content.Context
 import com.example.gravit.api.AuthPrefs
