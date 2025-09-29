@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.example.gravit.main.User.Notice
 
 import android.os.Build
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter
 fun formatIsoToYmd(iso: String): String {
     return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val odt = OffsetDateTime.parse(iso) // e.g. 2025-09-28T08:57:51.644Z
+            val odt = OffsetDateTime.parse(iso)
             odt.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
         } else {
             val inFmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {

@@ -66,9 +66,14 @@ object AuthPrefs {
     }
 
 
-    fun isExpired(session: Session, now: Long = System.currentTimeMillis(), leewaySec: Long = 30): Boolean {
-        return now >= (session.expiresAtMillis - leewaySec * 1000)
-    } //만료됐는지 확인
+    fun isExpired(
+        session: Session?,
+        now: Long = System.currentTimeMillis(),
+        leewaySec: Long = 30
+    ): Boolean {
+        return session == null || now >= (session.expiresAtMillis - leewaySec * 1000)
+    }
+
 
 
     fun setOnboarded(context: Context, value: Boolean) {

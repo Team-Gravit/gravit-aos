@@ -8,6 +8,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.Response
 
 //로그인
 data class IdTokenRequest(val idToken: String)
@@ -180,20 +181,17 @@ data class LastSeasonPopupDto(
     val leagueName: String,
     val profileImgNumber: Int
 )
-//친구
+
+data class SlicePage<T>(
+    val hasNextPage: Boolean,
+    val contents: List<T>
+)
+
 data class FriendItem(
-    val id: Int,
+    val id: Long,
     val nickname: String,
     val profileImgNumber: Int,
     val handle: String
-)
-
-data class FriendSearchResponse(
-    val page: Int,
-    val size: Int,
-    val total: Int,
-    val hasNext: Boolean,
-    val searchUsers: List<FriendUser>
 )
 
 data class FriendUser(
@@ -201,8 +199,14 @@ data class FriendUser(
     val profileImgNumber: Int,
     val nickname: String,
     val handle: String,
-    val isFollowing: Boolean
+    val isFollowing: Boolean = false
 )
+
+data class FollowActionResponse(
+    val followeeId: Long,
+    val followerId: Long
+)
+
 
 interface ApiService {
     @POST("api/v1/oauth/android")
@@ -210,7 +214,7 @@ interface ApiService {
         @Body token: IdTokenRequest
     ): AuthTokenResponse
 
-    @POST("api/v1/users/me/onboarding")
+    @POST("api/v1/users/onboarding")
     suspend fun completeOnboarding(
         @Body body: OnboardingRequest,
         @Header("Authorization") auth: String
@@ -272,35 +276,6 @@ interface ApiService {
         @Header("Authorization") auth: String,
     ) : SeasonPopupResponse
 
-    @GET("api/v1/friends/follower")
-    suspend fun getFollower(
-        @Header("Authorization") auth: String
-    ) : List<FriendItem>
-
-    @GET("api/v1/friends/following")
-    suspend fun getFollowing(
-        @Header("Authorization") auth: String
-    ) : List<FriendItem>
-
-    @POST("api/v1/friends/following/{followeeId}")
-    suspend fun sendFolloweeId (
-        @Header("Authorization") auth: String,
-        @Path("followeeId") followeeId: Long
-    )
-
-    @POST("api/v1/friends/unfollowing/{followeeId}")
-    suspend fun sendUnFolloweeId (
-        @Header("Authorization") auth: String,
-        @Path("followeeId") followeeId: Long
-    )
-
-    @GET("api/v1/friends/search")
-    suspend fun getFriends(
-        @Header("Authorization") auth: String,
-        @Query("queryText") queryText: String,
-        @Query("page") page: Int = 0
-    ) : FriendSearchResponse
-
     @GET("api/v1/users")
     suspend fun userInfo(
         @Header("Authorization") auth: String
@@ -321,7 +296,44 @@ interface ApiService {
     @GET("api/v1/notice/summaries/{page}")
     suspend fun getNoticeSummaries(
         @Header("Authorization") auth: String,
-        @Path("page") page: Int // 1부터 시작
+        @Path("page") page: Int
     ): NoticeSummaryPageResponse
+
+    @POST("api/v1/users/deletion/request")
+    suspend fun requestDeletionMail(
+        @Header("Authorization") auth: String,
+        @Query("dest") dest: String,
+    ): Response<Unit>
+
+    @GET("api/v1/friends/following")
+    suspend fun getFollowing(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int = 0
+    ): SlicePage<FriendItem>
+
+    @GET("api/v1/friends/follower")
+    suspend fun getFollower(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int = 0
+    ): SlicePage<FriendItem>
+
+    @POST("api/v1/friends/following/{followeeId}")
+    suspend fun sendFolloweeId(
+        @Header("Authorization") auth: String,
+        @Path("followeeId") followeeId: Long
+    ): retrofit2.Response<FollowActionResponse>
+
+    @POST("api/v1/friends/unfollowing/{followeeId}")
+    suspend fun sendUnFolloweeId(
+        @Header("Authorization") auth: String,
+        @Path("followeeId") followeeId: Long
+    ): retrofit2.Response<Unit>
+
+    @GET("api/v1/friends/search")
+    suspend fun getFriends(
+        @Header("Authorization") auth: String,
+        @Query("queryText") queryText: String,
+        @Query("page") page: Int = 0
+    ): SlicePage<FriendUser>
 }
 

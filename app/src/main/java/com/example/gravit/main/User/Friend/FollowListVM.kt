@@ -1,10 +1,6 @@
-package com.example.gravit.main.User
+package com.example.gravit.main.User.Friend
 
 import android.content.Context
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,16 +10,19 @@ import com.example.gravit.api.FriendItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
-class FollowViewModel(
+class FollowListVM(
     private val api: ApiService,
     private val appContext: Context
-) : ViewModel()  {
+) : ViewModel() {
 
-    sealed interface UiState{
+    enum class Tab { Followers, Following }
+
+    sealed interface UiState {
         data object Loading : UiState
         data class Success(val data: List<FriendItem>) : UiState
-        data object Failed : UiState
+        data class Failed(val message: String? = null) : UiState
         data object SessionExpired : UiState
     }
 
@@ -35,7 +34,8 @@ class FollowViewModel(
 
     private val _followingCount = MutableStateFlow(0)
     val followingCount = _followingCount.asStateFlow()
-    fun loadFollower() = viewModelScope.launch {
+
+    fun loadFollower(page: Int = 0) = viewModelScope.launch {
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -47,22 +47,23 @@ class FollowViewModel(
 
         val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getFollower(auth)
+            api.getFollower(auth = auth, page = page)
         }.onSuccess { res ->
-            _followerCount.value = res.size
-            _state.value = UiState.Success(res)
+            val list = res.contents
+            _followerCount.value = list.size
+            _state.value = UiState.Success(list)
         }.onFailure { e ->
-            val code = (e as? retrofit2.HttpException)?.code()
+            val code = (e as? HttpException)?.code()
             if (code == 401) {
                 AuthPrefs.clear(appContext)
                 _state.value = UiState.SessionExpired
             } else {
-                _state.value = UiState.Failed
+                _state.value = UiState.Failed(e.message)
             }
         }
     }
 
-    fun loadFollowing() = viewModelScope.launch {
+    fun loadFollowing(page: Int = 0) = viewModelScope.launch {
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -74,28 +75,29 @@ class FollowViewModel(
 
         val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getFollowing(auth)
+            api.getFollowing(auth = auth, page = page)
         }.onSuccess { res ->
-            _followingCount.value = res.size
-            _state.value = UiState.Success(res)
+            val list = res.contents
+            _followingCount.value = list.size
+            _state.value = UiState.Success(list)
         }.onFailure { e ->
-            val code = (e as? retrofit2.HttpException)?.code()
+            val code = (e as? HttpException)?.code()
             if (code == 401) {
                 AuthPrefs.clear(appContext)
                 _state.value = UiState.SessionExpired
             } else {
-                _state.value = UiState.Failed
+                _state.value = UiState.Failed(e.message)
             }
         }
     }
 }
 
 @Suppress("UNCHECKED_CAST")
-class FollowVMFactory(
+class FollowListVMFactory(
     private val api: ApiService,
     private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return FollowViewModel(api, context.applicationContext) as T
+        return FollowListVM(api, context.applicationContext) as T
     }
 }

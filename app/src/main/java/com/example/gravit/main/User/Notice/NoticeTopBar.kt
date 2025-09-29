@@ -27,7 +27,7 @@ fun NoticeTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
-            .statusBarsPadding()   // 안전 영역 보장
+            .statusBarsPadding()
     ) {
         Box(
             modifier = Modifier

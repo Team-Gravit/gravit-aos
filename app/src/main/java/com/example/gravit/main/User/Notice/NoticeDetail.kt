@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.main.User.formatIsoToYmd
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -34,7 +33,7 @@ fun NoticeDetail(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        NoticeTopBar(navController)  // 공용 헤더
+        NoticeTopBar(navController)
 
         when {
             ui.loading -> {

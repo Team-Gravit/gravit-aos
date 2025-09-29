@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.main.User.formatIsoToYmd
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -33,7 +32,7 @@ fun Notice(navController: NavController) {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        NoticeTopBar(navController)  // 공용 헤더
+        NoticeTopBar(navController)
 
         if (ui.loading && ui.items.isEmpty()) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -72,7 +71,6 @@ fun Notice(navController: NavController) {
 
                 Divider(color = Color.Black.copy(alpha = 0.06f))
 
-                // 마지막 아이템이면 다음 페이지 로드
                 if (index == ui.items.lastIndex && ui.hasNext && !ui.loading) {
                     vm.loadNext()
                 }

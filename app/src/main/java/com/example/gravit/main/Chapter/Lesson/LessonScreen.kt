@@ -75,6 +75,7 @@ import com.example.gravit.R
 import com.example.gravit.api.ProblemResultItem
 import com.example.gravit.api.Problems
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.ConfirmBottomSheet
 import com.example.gravit.main.navigateTo
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.launch
@@ -521,112 +522,4 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
     }
 
     return norm(correctAnswer) == userN
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ConfirmBottomSheet(
-    onDismiss: () -> Unit,
-    imageRes: Int? = null,   // 🔥 여기서 imageRes를 옵션으로 추가
-    titleText: String,
-    descriptionText: String,
-    confirmButtonText: String,
-    cancelText: String,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-
-    ModalBottomSheet(
-        onDismissRequest = {
-            scope.launch {
-                sheetState.hide()
-                onDismiss()
-            }
-        },
-        sheetState = sheetState
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // 🔥 imageRes가 null이 아닐 때만 보여줌
-            imageRes?.let {
-                Image(
-                    painter = painterResource(id = it),
-                    contentDescription = null,
-                    modifier = Modifier.padding(20.dp)
-                )
-            }
-
-            Text(
-                text = titleText,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = pretendard,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Text(
-                text = descriptionText,
-                fontSize = 16.sp,
-                fontFamily = pretendard,
-                color = Color(0xFF6D6D6D),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    onConfirm()
-                    scope.launch {
-                        sheetState.hide()
-                        onDismiss()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8100B3),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(100.dp)
-            ) {
-                Text(
-                    confirmButtonText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = pretendard
-                )
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            Text(
-                text = cancelText,
-                color = Color(0xFF6D6D6D),
-                fontFamily = pretendard,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onCancel()
-                        scope.launch {
-                            sheetState.hide()
-                            onDismiss()
-                        }
-                    },
-                textAlign = TextAlign.Center,
-                fontSize = 16.sp
-            )
-
-            Spacer(Modifier.height(16.dp))
-        }
-    }
 }
