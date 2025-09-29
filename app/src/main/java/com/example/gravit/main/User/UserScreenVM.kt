@@ -6,9 +6,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
+import com.example.gravit.api.Badges
 import com.example.gravit.api.UserPageResponse
 import com.example.gravit.error.handleApiFailure
 import com.example.gravit.main.Home.HomeViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -20,11 +23,15 @@ class UserScreenVM (
 
     sealed interface UiState {
         data object Loading : UiState
-        data class Success(val data: UserPageResponse ) : UiState
+        data class Success(val data: User) : UiState
         data object Failed : UiState
         data object SessionExpired : UiState
         data object NotFound : UiState
     }
+    data class User(
+        val user: UserPageResponse,
+        val badges: Badges
+    )
 
     private val _state = MutableStateFlow<UiState>(UiState.Loading)
     val state = _state.asStateFlow()
@@ -41,7 +48,11 @@ class UserScreenVM (
 
         val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getUser(auth)
+            coroutineScope {
+                val u = async { api.getUser(auth) }
+                val b = async { api.getBadges(auth) }
+                User(u.await(), b.await())
+            }
         }.onSuccess { res ->
             _state.value = UiState.Success(res)
         }.onFailure { e ->
@@ -55,6 +66,7 @@ class UserScreenVM (
             )
         }
     }
+
 }
 
 @Suppress("UNCHECKED_CAST")

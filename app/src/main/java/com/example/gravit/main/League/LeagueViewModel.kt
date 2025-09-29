@@ -8,13 +8,15 @@ import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
 import com.example.gravit.api.LeagueItem
 import com.example.gravit.api.MyLeague
-import com.example.gravit.api.RetrofitInstance.api
 import com.example.gravit.api.SeasonPopupResponse
 import com.example.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import retrofit2.HttpException
+
 class LeagueViewModel(
     private val api: ApiService,
     private val appContext: Context
@@ -155,6 +157,7 @@ class LeagueViewModel(
         ) : SeasonPopupState()
         data object Failed : SeasonPopupState()
         data object NotFound : SeasonPopupState()
+        data class Inspection(val message: String) : SeasonPopupState()
     }
 
     private val _seasonPopup = MutableStateFlow<SeasonPopupState>(SeasonPopupState.Loading)
@@ -199,6 +202,14 @@ class LeagueViewModel(
                 )
             }
             .onFailure { e ->
+                extractErrorCodeAndMessage(e)?.let { (code, msg) ->
+                    if (code == "SEASON_4041") {
+                        _seasonPopup.value = SeasonPopupState.Inspection(
+                            message = msg ?: "ACTIVE 시즌이 없습니다."
+                        )
+                        return@onFailure
+                    }
+                }
                 handleApiFailure(
                     e = e,
                     appContext = appContext,
@@ -208,6 +219,15 @@ class LeagueViewModel(
                     failedState = SeasonPopupState.Failed
                 )
             }
+    }
+
+    private fun extractErrorCodeAndMessage(e: Throwable): Pair<String, String?>? {
+        val http = e as? HttpException ?: return null
+        val body = http.response()?.errorBody()?.string() ?: return null
+        return runCatching {
+            val obj = JSONObject(body)
+            obj.optString("error") to obj.optString("message")
+        }.getOrNull()
     }
 }
 

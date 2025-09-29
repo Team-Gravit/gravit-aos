@@ -1,6 +1,7 @@
 package com.example.gravit.main.Chapter.Lesson
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -41,7 +42,9 @@ fun LoadingScreen(){
             .build()
     }
     Box(
-        Modifier.fillMaxSize(),
+        Modifier
+            .fillMaxSize()
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
         AsyncImage(

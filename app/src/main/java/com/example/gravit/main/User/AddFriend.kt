@@ -104,7 +104,8 @@ fun AddFriend(navController: NavController) {
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF222222)
                 )
             }
 
