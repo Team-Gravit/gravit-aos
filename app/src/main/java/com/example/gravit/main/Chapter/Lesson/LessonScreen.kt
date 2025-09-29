@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -631,7 +632,13 @@ fun ConfirmBottomSheet(
                 onDismiss()
             }
         },
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = Color.White,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = Color.White
+            )
+        },
     ) {
         Column(
             modifier = Modifier
@@ -653,7 +660,8 @@ fun ConfirmBottomSheet(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = pretendard,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = Color.Black
             )
 
             Spacer(Modifier.height(16.dp))
@@ -688,7 +696,7 @@ fun ConfirmBottomSheet(
                 Text(
                     confirmButtonText,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontFamily = pretendard
                 )
             }
@@ -709,7 +717,8 @@ fun ConfirmBottomSheet(
                         }
                     },
                 textAlign = TextAlign.Center,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
 
             Spacer(Modifier.height(16.dp))

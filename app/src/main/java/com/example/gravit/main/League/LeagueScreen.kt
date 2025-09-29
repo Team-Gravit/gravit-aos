@@ -97,7 +97,6 @@ fun LeagueScreen(
 ) {
     val context = LocalContext.current
     val vm: LeagueViewModel = viewModel(factory = LeagueVMFactory(RetrofitInstance.api, context))
-    val source by vm.source.collectAsState()
     val ui by vm.state.collectAsState()
     val myLeagueState by vm.myLeague.collectAsState()
     val seasonState by vm.seasonPopup.collectAsState()
@@ -112,63 +111,37 @@ fun LeagueScreen(
     val notFound by vm.notFound.collectAsState()
     var navigated by remember { mutableStateOf(false) }
     //세션 만료
-    LaunchedEffect(sessionExpired) {
-        if (sessionExpired) {
-            navigated = true
-            navController.navigate("error/401") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
-            }
-        }
-    }
-    LaunchedEffect(notFound) {
-        if (notFound) {
-            navigated = true
-            navController.navigate("error/404") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
-            }
-        }
-    }
+    val navTarget: String? = when {
+        sessionExpired -> "401"
+        notFound -> "404"
 
-    LaunchedEffect(seasonState) {
-        when (seasonState) {
-            LeagueViewModel.SeasonPopupState.SessionExpired ->  {
-                navigated = true
-                navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            LeagueViewModel.SeasonPopupState.NotFound -> {
-                navigated = true
-                navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            LeagueViewModel.SeasonPopupState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
-        }
+        seasonState is LeagueViewModel.SeasonPopupState.SessionExpired -> "401"
+        seasonState is LeagueViewModel.SeasonPopupState.NotFound      -> "404"
+        seasonState is LeagueViewModel.SeasonPopupState.Failed        -> "FAILED"
+
+        myLeagueState is LeagueViewModel.MyLeagueState.SessionExpired -> "401"
+        myLeagueState is LeagueViewModel.MyLeagueState.NotFound       -> "404"
+        myLeagueState is LeagueViewModel.MyLeagueState.Failed         -> "FAILED"
+
+        else -> null
     }
-    LaunchedEffect(myLeagueState) {
-        when (myLeagueState) {
-            LeagueViewModel.MyLeagueState.SessionExpired ->  {
-                navigated = true
+    LaunchedEffect(navTarget) {
+        if (navTarget == null || navigated) return@LaunchedEffect
+        navigated = true
+        when (navTarget) {
+            "401" -> {
                 navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true; restoreState = false
                 }
             }
-            LeagueViewModel.MyLeagueState.NotFound -> {
-                navigated = true
+            "404" -> {
                 navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true; restoreState = false
                 }
             }
-            LeagueViewModel.MyLeagueState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
+            "FAILED" -> onSessionExpired()
         }
     }
 
@@ -188,14 +161,8 @@ fun LeagueScreen(
             }
     }
     val my = (myLeagueState as? LeagueViewModel.MyLeagueState.Success)?.data
-    val listLeagueId: Int = when (val s = source) {
-        is LeagueViewModel.Source.Tier -> s.leagueId
-        LeagueViewModel.Source.UserLeague -> my?.leagueName?.let { tierIdFromName(it) } ?: -1
-    }
     val myLeagueId = my?.leagueId
-    val myLeagueNmae = my?.leagueName?.let {tierIdFromName(it)}
     val season = (seasonState as? LeagueViewModel.SeasonPopupState.Ready)?.data
-
     val shadow = with(LocalDensity.current) {
         Shadow(
             color = Color.Black.copy(alpha = 0.25f),
@@ -331,108 +298,111 @@ fun LeagueScreen(
                     }
                 }
             }
-
-            //티어 선택
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                val seasonName = season?.currentSeason?.nowSeason
-                Column {
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        text = "${seasonName}",
-                        color = Color(0xFF8A00B8),
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        style = TextStyle(
-                            fontWeight = FontWeight.Medium,
-                            fontFamily = mbc1961,
-                            fontSize = 24.sp,
-                            shadow = shadow
-                        )
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .size(192.dp, 28.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ){
-                        Row (modifier = Modifier.align(Alignment.CenterStart)) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.outline_timer_24),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 10.dp)
-                                    .align(Alignment.CenterVertically)
-                                    .size(15.dp),
-                                tint = Color.Black
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            WeeklyCountdown()
-                        }
-                    }
-                    Spacer(Modifier.height(20.dp))
-                    TierSelector(vm = vm, initialLeagueId = myLeagueId)
-                    Spacer(Modifier.height(20.dp))
-                }
-            }
-
-            HorizontalDivider(
-                color = Color(0xFFDCDCDC),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(16.dp))
-
-            //랭킹
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize()
-            ) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            if(seasonState is LeagueViewModel.SeasonPopupState.Inspection)(
+                    SeasonFinish(season?.currentSeason?.nowSeason)
+            )else{
+                //티어 선택
+                Box(
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(ui.items, key = { it.userId }) { item ->
-                        RankCell(item = item)
+                    val seasonName = season?.currentSeason?.nowSeason
+                    Column {
+                        Spacer(Modifier.height(24.dp))
+                        Text(
+                            text = "${seasonName}",
+                            color = Color(0xFF8A00B8),
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            style = TextStyle(
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = mbc1961,
+                                fontSize = 24.sp,
+                                shadow = shadow
+                            )
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .size(192.dp, 28.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ){
+                            Row (modifier = Modifier.align(Alignment.CenterStart)) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.outline_timer_24),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(start = 10.dp)
+                                        .align(Alignment.CenterVertically)
+                                        .size(15.dp),
+                                    tint = Color.Black
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                WeeklyCountdown()
+                            }
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        TierSelector(vm = vm, initialLeagueId = myLeagueId)
+                        Spacer(Modifier.height(20.dp))
                     }
+                }
 
-                    item {
-                        when {
-                            ui.isLoading -> {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
+                HorizontalDivider(
+                    color = Color(0xFFDCDCDC),
+                    thickness = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+
+                //랭킹
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                ) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(ui.items, key = { it.userId }) { item ->
+                            RankCell(item = item)
+                        }
+
+                        item {
+                            when {
+                                ui.isLoading -> {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
                                 }
-                            }
-                            ui.endReached -> {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("마지막입니다.")
+                                ui.endReached -> {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("마지막입니다.")
+                                    }
                                 }
-                            }
-                            ui.error != null -> {
-                                Column(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(ui.error!!)
-                                    Spacer(Modifier.height(8.dp))
-                                    OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
+                                ui.error != null -> {
+                                    Column(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(ui.error!!)
+                                        Spacer(Modifier.height(8.dp))
+                                        OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
+                                    }
                                 }
                             }
                         }
@@ -441,11 +411,12 @@ fun LeagueScreen(
             }
         }
     }
-    val seasonPopup = season?.lastSeasonPopupDto
-    if (season?.containsPopup == true && seasonPopup != null) {
+    val ready = seasonState as? LeagueViewModel.SeasonPopupState.Ready
+    val seasonPopup = ready?.data?.lastSeasonPopupDto
+    if (ready?.show == true && seasonPopup != null) {
         SeasonCompleted(
             popupDetail = seasonPopup,
-            onConfirm = { vm.confirmSeasonPopup(season.currentSeason.nowSeason) }
+            onConfirm = { vm.confirmSeasonPopup(ready.data.currentSeason.nowSeason) }
         )
     }
 }

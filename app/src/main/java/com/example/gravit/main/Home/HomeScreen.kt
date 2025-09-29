@@ -266,7 +266,14 @@ fun HomeScreen(
                                                         Responsive.w(128f),
                                                         Responsive.h(39f)
                                                     ),
-                                                    onClick = {navController.navigate("chapter") {
+                                                    onClick = {
+                                                        var route: String
+                                                        if(mission == "새로운 친구 팔로우하기"){
+                                                            route = "user"
+                                                        }else{
+                                                            route = "chapter"
+                                                        }
+                                                        navController.navigate(route) {
                                                         launchSingleTop = true
                                                     }},
                                                     shape = RoundedCornerShape(12.dp),
@@ -337,8 +344,14 @@ fun HomeScreen(
                             backgroundImg = bgResId,
                             totalUnits = totalUnits,
                             onClick = {
-                                navController.navigate("chapter") {
-                                    launchSingleTop = true
+                                if(chapterId == 0) {
+                                    navController.navigate("chapter"){
+                                        launchSingleTop = true
+                                    }
+                                }else {
+                                    navController.navigate("units/$chapterId") {
+                                        launchSingleTop = true
+                                    }
                                 }
                             }
                         )

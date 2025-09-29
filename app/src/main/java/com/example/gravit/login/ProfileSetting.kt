@@ -326,7 +326,7 @@ fun NameInputFiled(
 
         if (isEmpty) {
             Text(
-                text = "*글자수 2~8자\n*공백, 특수문자, 제외",
+                text = "*글자수 2~8자\n*공백, 특수문자 제외",
                 color = Color(0xFF868686),
                 style = TextStyle(
                     fontFamily = pretendard,

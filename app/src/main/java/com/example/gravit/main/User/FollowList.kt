@@ -97,26 +97,27 @@ fun FollowList(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.CenterStart
             ) {
-                Text(
-                    text = "팔로잉/팔로우",
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF222222)
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.arrow_left),
-                    contentDescription = "setting",
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .size(24.dp)
-                        .align(Alignment.CenterStart)
-                        .clickable { navController.popBackStack() },
-                    colorFilter = ColorFilter.tint(color = Color.Black)
-                )
+                Row {
+                    Image(
+                        painter = painterResource(id = R.drawable.arrow_left),
+                        contentDescription = "back",
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .size(24.dp)
+                            .clickable { navController.popBackStack() },
+                        colorFilter = ColorFilter.tint(color = Color.Black)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        text = "팔로우/팔로잉",
+                        fontSize = 16.sp,
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF222222)
+                    )
+                }
 
             }
             FollowTabBar(

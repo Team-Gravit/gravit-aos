@@ -64,9 +64,6 @@ fun NavController.toLessonCompleted(
         launchSingleTop = true
     }
 }
-fun NavController.navigateToAccount(nickname: String) {
-    navigate("user/account?nickname=${Uri.encode(nickname)}")
-}
 
 enum class FollowTab { Followers, Following }
 
@@ -77,7 +74,10 @@ fun MainScreen(rootNavController: NavController) {
     val backStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
 
-    val hideBottomBar = currentRoute.startsWith("lesson/")
+    val hideBottomBar = currentRoute.startsWith("lesson/") ||
+                        currentRoute.startsWith("user/notice") ||
+                        currentRoute.startsWith("user/account") ||
+                        currentRoute.startsWith("user/privacypolicy")
 
     val goToLoginChoice: () -> Unit = {
         rootNavController.navigate("login choice") {
@@ -183,10 +183,7 @@ fun MainScreen(rootNavController: NavController) {
             }
 
             composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
-
             composable("user/addfriend") { AddFriend(innerNavController) }
-
-            //account 화면에 닉네임 인자 전달
             composable("user/account") {Account(innerNavController)}
 
             composable(

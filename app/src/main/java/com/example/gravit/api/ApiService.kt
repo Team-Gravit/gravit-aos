@@ -221,6 +221,28 @@ data class FriendUser(
     val isFollowing: Boolean
 )
 
+data class Badges(
+    val earnedCount: Int,
+    val totalCount: Int,
+    val badgeCategoryResponses: List<BadgeCategoryResponses>
+)
+data class BadgeCategoryResponses(
+    val categoryId: Int,
+    val categoryName: String,
+    val order: Int,
+    val categoryDescription: String,
+    val badgeResponses: List<BadgeResponses>
+)
+data class BadgeResponses(
+    val badgeId: Int,
+    val code: String,
+    val name: String,
+    val description: String,
+    val order: Int,
+    val iconId: Int,
+    val earned: Boolean
+)
+
 interface ApiService {
     @POST("api/v1/oauth/android")
     suspend fun sendCode(
@@ -346,5 +368,10 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Path("page") page: Int // 1부터 시작
     ): NoticeSummaryPageResponse
+
+    @GET("api/v1/badges/me")
+    suspend fun getBadges(
+        @Header("Authorization") auth: String,
+    ) : Badges
 }
 

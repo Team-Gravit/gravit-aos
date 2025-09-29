@@ -225,7 +225,7 @@ private fun OptionCell(
                 fontSize = 16.sp,
                 color = when {
                     isRight -> Color(0xFF00A80B)
-                    isWrong -> Color(0xFFFF0000)
+                    isWrong -> Color(0xFFD00000)
                     else -> Color(0xFF6D6D6D)
                 }
             )
@@ -248,7 +248,8 @@ private fun OptionCell(
                 modifier = Modifier
                     .padding(end = 4.dp)
                     .size(24.dp)
-                    .clickable { isShown = !isShown }
+                    .clickable { isShown = !isShown },
+                tint = Color(0xFF6D6D6D)
             )
         }
     }

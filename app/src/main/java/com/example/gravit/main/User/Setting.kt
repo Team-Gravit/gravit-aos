@@ -155,7 +155,8 @@ fun Setting(
                                 .align(Alignment.CenterEnd)
                                 .clickable {
                                     navController.navigate("user/account")
-                                }
+                                },
+                            tint = Color(0xFF222222)
                         )
                     }
                 }
@@ -251,7 +252,8 @@ fun Setting(
                                 .align(Alignment.CenterEnd)
                                 .clickable {
                                     navController.navigate("user/privacypolicy")
-                                }
+                                },
+                            tint = Color(0xFF222222)
                         )
                     }
                 }
@@ -291,13 +293,14 @@ fun Setting(
 
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
-                            contentDescription = "account info",
+                            contentDescription = "logout",
                             modifier = Modifier
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
                                     vm.logout { onLogout()}
-                                }
+                                },
+                            tint = Color(0xFF222222)
                         )
                     }
                     Box(
@@ -324,7 +327,8 @@ fun Setting(
                                 .align(Alignment.CenterEnd)
                                 .clickable {
                                     showDeleteSheet = true
-                                }
+                                },
+                            tint = Color(0xFF222222)
                         )
 
                         if (showDeleteSheet) {
