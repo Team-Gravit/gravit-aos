@@ -51,10 +51,11 @@ fun AddFriend(navController: NavController) {
     ) {
         Column {
             // 헤더
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(80.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Filled.ChevronLeft,
@@ -63,15 +64,15 @@ fun AddFriend(navController: NavController) {
                     modifier = Modifier
                         .padding(start = 16.dp)
                         .size(30.dp)
-                        .align(Alignment.CenterStart)
                         .clickable { navController.popBackStack() }
                 )
+                Spacer(Modifier.width(16.dp))
                 Text(
                     text = "친구추가",
                     fontSize = 20.sp,
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.Center)
+                    color = Color(0xFF222124)
                 )
             }
 
@@ -81,7 +82,12 @@ fun AddFriend(navController: NavController) {
             TextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("친구 검색하기", fontFamily = pretendard) },
+                placeholder = { Text(
+                    "친구 검색하기",
+                    fontFamily = pretendard,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF222222).copy(alpha = 0.6f)
+                ) },
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = {

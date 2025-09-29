@@ -47,8 +47,14 @@ data class MainPageResponse(
 
 // 유닛
 data class UnitPageResponse(
-    val unitProgressDetailResponse: UnitProgressDetailResponse? = null,
-    val lessonProgressSummaryResponses: List<LessonProgressSummaryResponses> = emptyList()
+    val chapterId: Int,
+    val chapterName: String,
+    val chapterDescription: String,
+    val unitDetails: List<UnitDetails>
+)
+data class UnitDetails(
+    val unitProgressDetailResponse: UnitProgressDetailResponse,
+    val lessonProgressSummaryResponses: List<LessonProgressSummaryResponses>
 )
 data class UnitProgressDetailResponse(
     val unitId: Int,
@@ -88,10 +94,21 @@ data class ProblemResultItem(
     val incorrectCounts: Int
 )
 data class LessonResultRequest(
-    val chapterId: Int,
-    val unitId: Int,
     val lessonId: Int,
+    val learningTime: Int,
+    val accuracy: Int,
     val problemResults: List<ProblemResultItem>
+)
+data class LessonResultResponse(
+    val currentLevel: Int,
+    val nextLevel: Int,
+    val xp: Int
+)
+//신고
+data class ReportRequest(
+    val reportType: String,
+    val content: String,
+    val problemId: Int
 )
 
 //사용자
@@ -208,6 +225,28 @@ data class FollowActionResponse(
 )
 
 
+data class Badges(
+    val earnedCount: Int,
+    val totalCount: Int,
+    val badgeCategoryResponses: List<BadgeCategoryResponses>
+)
+data class BadgeCategoryResponses(
+    val categoryId: Int,
+    val categoryName: String,
+    val order: Int,
+    val categoryDescription: String,
+    val badgeResponses: List<BadgeResponses>
+)
+data class BadgeResponses(
+    val badgeId: Int,
+    val code: String,
+    val name: String,
+    val description: String,
+    val order: Int,
+    val iconId: Int,
+    val earned: Boolean
+)
+
 interface ApiService {
     @POST("api/v1/oauth/android")
     suspend fun sendCode(
@@ -234,7 +273,7 @@ interface ApiService {
     suspend fun getUnitPage(
         @Header("Authorization") auth: String,
         @Path("chapterId") chapterId: Int
-    ): List<UnitPageResponse>
+    ): UnitPageResponse
 
     @GET("api/v1/learning/{lessonId}")
     suspend fun getLesson(
@@ -246,7 +285,7 @@ interface ApiService {
     suspend fun sendResults(
         @Body body: LessonResultRequest,
         @Header("Authorization") auth: String
-    )
+    ) : LessonResultResponse
 
     @GET("api/v1/users/my-page")
     suspend fun getUser(
@@ -276,16 +315,32 @@ interface ApiService {
         @Header("Authorization") auth: String,
     ) : SeasonPopupResponse
 
+    @GET("api/v1/friends/follower")
+    suspend fun getFollower(
+        @Header("Authorization") auth: String
+    ) : List<FriendItem>
+
+    @GET("api/v1/friends/following")
+    suspend fun getFollowing(
+        @Header("Authorization") auth: String
+    ) : List<FriendItem>
+
+    @POST("api/v1/learning/reports")
+    suspend fun sendReport(
+        @Body body: ReportRequest,
+        @Header("Authorization") auth: String,
+    ) : ReportRequest
+
     @GET("api/v1/users")
     suspend fun userInfo(
         @Header("Authorization") auth: String
-    ): retrofit2.Response<UserInfoResponse>
+    ): Response<UserInfoResponse>
 
     @PATCH("api/v1/users")
     suspend fun updateUserInfo(
         @Header("Authorization") auth: String,
         @Body body: UpdateUserInfoRequest
-    ): retrofit2.Response<UserInfoResponse>
+    ): Response<UserInfoResponse>
 
     @GET("api/v1/notice/{noticeId}")
     suspend fun getNoticeDetail(
@@ -298,6 +353,11 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Path("page") page: Int
     ): NoticeSummaryPageResponse
+
+    @GET("api/v1/badges/me")
+    suspend fun getBadges(
+        @Header("Authorization") auth: String,
+    ) : Badges
 
     @POST("api/v1/users/deletion/request")
     suspend fun requestDeletionMail(

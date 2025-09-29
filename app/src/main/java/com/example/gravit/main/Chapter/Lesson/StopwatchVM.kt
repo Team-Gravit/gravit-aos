@@ -84,6 +84,12 @@ fun Format(ms: Long): String {
     return "%02d:%02d".format(minutes, seconds)
 }
 
+fun FormatSeconds(seconds: Int): String {
+    val minutes = seconds / 60
+    val sec = seconds % 60
+    return "%02d:%02d".format(minutes, sec)
+}
+
 @Composable
 fun Stopwatch(
     vm: StopwatchViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),

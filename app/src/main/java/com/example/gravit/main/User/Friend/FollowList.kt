@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,26 +55,28 @@ fun FollowList(
             .background(Color.White)
     ) {
         Column {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "팔로잉/팔로워",
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    color = Color(0xFF222222)
-                )
                 Icon(
                     painter = painterResource(id = R.drawable.arrow_left),
                     contentDescription = "뒤로가기",
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
                         .padding(start = 16.dp)
                         .size(30.dp)
-                        .clickable { navController.popBackStack() }
+                        .clickable { navController.popBackStack() },
+                    tint = Color.Black
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    "팔로워/팔로잉",
+                    fontSize = 16.sp,
+                    fontFamily = pretendard,
+                    color = Color(0xFF222124),
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -173,7 +176,8 @@ fun FollowTabBar(
                 text = "$followerCount 팔로워",
                 fontSize = 14.sp,
                 fontFamily = pretendard,
-                color = if (tab == FollowTab.Followers) Color.Black else Color(0xFFCCCCCC)
+                color = if (tab == FollowTab.Followers) Color(0xFF030303) else Color(0xFFCCCCCC),
+                fontWeight = FontWeight.SemiBold
             )
         }
         Tab(
@@ -185,7 +189,8 @@ fun FollowTabBar(
                 text = "$followingCount 팔로잉",
                 fontSize = 14.sp,
                 fontFamily = pretendard,
-                color = if (tab == FollowTab.Following) Color.Black else Color(0xFFCCCCCC)
+                color = if (tab == FollowTab.Following) Color(0xFF030303) else Color(0xFFCCCCCC),
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

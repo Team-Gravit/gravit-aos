@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
 import com.example.gravit.api.UnitPageResponse
+import com.example.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -19,9 +20,10 @@ class UnitViewModel(
     sealed interface UiState{
         data object Idle : UiState
         data object Loading : UiState
-        data class Success(val data: List<UnitPageResponse>) : UiState
+        data class Success(val data: UnitPageResponse) : UiState
         data object Failed : UiState
         data object SessionExpired : UiState
+        data object NotFound : UiState
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
@@ -43,13 +45,14 @@ class UnitViewModel(
         }.onSuccess { res ->
             _state.value = UiState.Success(res)
         }.onFailure { e ->
-            val code = (e as? retrofit2.HttpException)?.code()
-            if (code == 401) {
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-            } else {
-                _state.value = UiState.Failed
-            }
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _state.value = it },
+                unauthorizedState = UiState.SessionExpired,
+                notFoundState = UiState.NotFound,
+                failedState = UiState.Failed
+            )
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.gravit.main.Chapter
 
-import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -61,17 +61,22 @@ import com.example.gravit.main.Home.RoundedGauge
 
 
 @Composable
-fun ChapterScreen(navController: NavController){
+fun ChapterScreen(
+    navController: NavController,
+    onSessionExpired: () -> Unit
+){
     val context = LocalContext.current
     val vm: ChapterViewModel = viewModel(
         factory = ChapterVMFactory(RetrofitInstance.api, context)
     )
     val ui by vm.state.collectAsState()
 
+    var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
     when (ui) {
         ChapterViewModel.UiState.SessionExpired -> {
-            navController.navigate("login choice") {
+            navigated = true
+            navController.navigate("error/401") {
                 popUpTo(0); launchSingleTop = true; restoreState = false
             }
         }
@@ -79,6 +84,16 @@ fun ChapterScreen(navController: NavController){
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
+        }
+        ChapterViewModel.UiState.NotFound -> {
+            navigated = true
+            navController.navigate("error/404") {
+                popUpTo(0); launchSingleTop = true; restoreState = false
+            }
+        }
+        ChapterViewModel.UiState.Failed -> {
+            navigated = true
+            onSessionExpired()
         }
         else -> Unit
     }
@@ -112,8 +127,7 @@ fun ChapterScreen(navController: NavController){
                 )
             }
 
-            val chapters: List<ChapterPageResponse> =
-                (ui as? ChapterViewModel.UiState.Success)?.data ?: emptyList()
+            val chapters: List<ChapterPageResponse> = (ui as? ChapterViewModel.UiState.Success)?.data ?: emptyList()
             val buttons = remember(chapters) { mapToButtons(chapters) }
 
             Column(
@@ -136,7 +150,10 @@ fun ChapterScreen(navController: NavController){
                                 planet = data.planetRes,
                                 completedUnits = data.completedUnits,
                                 totalUnits = data.totalUnits,
-                                onClick = { navController.navigate(buildUnitsRoute(data)) },
+                                onClick = {
+                                    val chapterId = data.id
+                                    navController.navigate("units/${chapterId}")
+                                          },
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(160f / 166f)
@@ -160,16 +177,6 @@ fun ChapterScreen(navController: NavController){
                 }
             }
         }
-    }
-}
-
-private fun buildUnitsRoute(ui: ChapterButtonUI): String {
-    return buildString {
-        append("units/${ui.id}")
-        append("?name=${Uri.encode(ui.name)}")
-        append("&desc=${Uri.encode(ui.description)}")
-        append("&total=${ui.totalUnits}")
-        append("&completed=${ui.completedUnits}")
     }
 }
 
@@ -322,7 +329,8 @@ fun Popup(
                       // 팁 본문 박스
                       Box(
                           modifier = Modifier
-                              .size(Responsive.w(257f), Responsive.h(88f))
+                              .width(Responsive.w(257f))
+                              .wrapContentHeight()
                               .background(Color(0xFF222124))
                       ) {
                           Row(
@@ -370,14 +378,5 @@ private fun TriangleUpTip(
         }
         drawPath(path, color = color)
     }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun Preview() {
-    val navController = rememberNavController()
-    ChapterScreen(navController)
 }
 

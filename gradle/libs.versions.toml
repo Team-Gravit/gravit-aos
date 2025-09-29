@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.0"
+agp = "8.12.2"
 auth0 = "3.8.0"
 auth0Version = "2.12.0"
 browserVersion = "1.5.0"

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +41,7 @@ fun LevelGauge(
     xp: Int,
     modifier: Modifier = Modifier
         .fillMaxWidth()
-        .height(30.dp)
+        .height(Responsive.h(30f))
 ) {
     val levelRanges = listOf(
         0 to 99,
@@ -69,7 +70,7 @@ fun LevelGauge(
     }
 
     val textColor = if (progress < 0.3f) Color.Black else Color.White
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(Responsive.w(16f))
 
     Box(
         modifier = modifier
@@ -102,11 +103,11 @@ fun LevelGauge(
                     append("${lv}")
                 }
             },
-            fontSize = 14.sp,
+            fontSize = Responsive.spH(14f),
             fontFamily = pretendard,
             color = textColor,
             modifier = Modifier
-                .padding(start = 15.dp)
+                .padding(start = Responsive.w(15f))
                 .align(Alignment.CenterStart),
 
             )
@@ -164,7 +165,12 @@ fun RoundedGauge(
     } else {
         0f
     }
-    Column(modifier = Modifier.size(width, height * 3)) {
+
+    Column(
+        modifier = modifier
+            .width(width)
+            .wrapContentHeight()
+    ) {
         Box(
             modifier = modifier
                 .fillMaxWidth()

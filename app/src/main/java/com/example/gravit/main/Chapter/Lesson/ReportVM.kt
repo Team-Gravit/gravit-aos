@@ -1,4 +1,4 @@
-package com.example.gravit.login
+package com.example.gravit.main.Chapter.Lesson
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.OnboardingRequest
+import com.example.gravit.api.ReportRequest
 import com.example.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class OnboardingViewModel(
+class ReportVM(
     private val api: ApiService,
     private val appContext: Context
 ) : ViewModel() {
@@ -29,22 +29,21 @@ class OnboardingViewModel(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun submit(nickname: String, profileNumber: Int) {
+    fun submit(reportType: String, content: String, problemId: Int) {
         viewModelScope.launch {
             _state.value = UiState.Loading
 
-            val session = AuthPrefs.load(appContext) //토큰 확인
+            val session = AuthPrefs.load(appContext)
             if (session == null || AuthPrefs.isExpired(session)) {
-                AuthPrefs.clear(appContext) //토큰 만료거나 없으면 재로그인
+                AuthPrefs.clear(appContext)
                 _state.value = UiState.SessionExpired
                 return@launch
             }
 
-            val authHeader = "Bearer ${session.accessToken}"
+            val auth = "Bearer ${session.accessToken}"
             runCatching {
-                api.completeOnboarding(OnboardingRequest(nickname, profileNumber), authHeader)
+                api.sendReport(ReportRequest(reportType, content, problemId), auth)
             }.onSuccess {
-                //성공이면 온보딩 true
                 AuthPrefs.setOnboarded(appContext, true)
                 _state.value = UiState.Success
             }.onFailure { e ->
@@ -63,8 +62,8 @@ class OnboardingViewModel(
 }
 
 @Suppress("UNCHECKED_CAST")
-class OnboardingVMFactory(private val api: ApiService, private val context: Context) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T { //Activity를 Application로 바꿔서 넘김
-        return OnboardingViewModel(api, context.applicationContext) as T
+class ReportVMFactory(private val api: ApiService, private val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return ReportVM(api, context.applicationContext) as T
     }
 }
