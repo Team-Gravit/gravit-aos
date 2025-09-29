@@ -207,6 +207,14 @@ data class FollowActionResponse(
     val followerId: Long
 )
 
+data class FriendSearchResponse(
+    val page: Int,
+    val size: Int,
+    val total: Int,
+    val hasNext: Boolean,
+    @SerializedName("contents")
+    val contents: List<FriendUser>
+)
 
 interface ApiService {
     @POST("api/v1/oauth/android")

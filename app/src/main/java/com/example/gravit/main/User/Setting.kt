@@ -1,40 +1,20 @@
 package com.example.gravit.main.User
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -49,6 +29,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
@@ -66,22 +53,36 @@ fun Setting(
     navController: NavController,
     onLogout: () -> Unit
 ) {
-    var isChecked by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
 
-    // 로그아웃 VM
     val logoutVM: LogoutViewModel = viewModel(factory = LogoutVMFactory(context))
 
-    // 탈퇴 메일 요청 VM
     val deleteVM: DeleteAccountVM = viewModel(
         factory = DeleteAccountVMFactory(RetrofitInstance.api, context)
     )
     val deleteUi by deleteVM.state.collectAsState()
 
-    // 모달/다이얼로그 표시 상태
     var showDeleteSheet by remember { mutableStateOf(false) }
     var showSentDialog by remember { mutableStateOf(false) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var notificationsEnabled by remember { mutableStateOf(areNotificationsEnabled(context)) }
+
+    val requestNotifPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+            notificationsEnabled = areNotificationsEnabled(context)
+            if (!notificationsEnabled) openAppNotificationSettings(context)
+        }
+
+    DisposableEffect(lifecycleOwner) {
+        val obs = LifecycleEventObserver { _, e ->
+            if (e == Lifecycle.Event.ON_RESUME) {
+                notificationsEnabled = areNotificationsEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
 
     Box(
         modifier = Modifier
@@ -90,7 +91,6 @@ fun Setting(
             .background(Color.White)
     ) {
         Column {
-            // 상단바
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -114,7 +114,6 @@ fun Setting(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 계정 정보 섹션
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,22 +141,20 @@ fun Setting(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 사용자 설정 섹션
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .height(140.dp),
+                    .height(IntrinsicSize.Min),
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 16.dp, end = 16.dp),
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     RowItem(title = "사용자 설정", titleColor = 0xCC222222)
 
-                    // 마케팅/이벤트 알림 스위치
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -165,7 +162,7 @@ fun Setting(
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Text(
-                            text = "마케팅/ 이벤트 알림",
+                            text = "앱 알림",
                             style = TextStyle(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium,
@@ -175,8 +172,30 @@ fun Setting(
                         )
 
                         Switch(
-                            checked = isChecked,
-                            onCheckedChange = { isChecked = it },
+                            checked = notificationsEnabled,
+                            onCheckedChange = { wantEnable ->
+                                if (wantEnable) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        val hasPerm = ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.POST_NOTIFICATIONS
+                                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        if (!hasPerm) {
+                                            requestNotifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            if (!areNotificationsEnabled(context)) {
+                                                openAppNotificationSettings(context)
+                                            }
+                                        }
+                                    } else {
+                                        if (!areNotificationsEnabled(context)) {
+                                            openAppNotificationSettings(context)
+                                        }
+                                    }
+                                } else {
+                                    openAppNotificationSettings(context)
+                                }
+                            },
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .scale(0.8f),
@@ -192,7 +211,6 @@ fun Setting(
                             )
                         )
                     }
-
                     RowNavigableItem(
                         title = "개인정보 처리방침",
                         onClick = { navController.navigate("user/privacypolicy") }
@@ -205,8 +223,6 @@ fun Setting(
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-
-            // 로그아웃/탈퇴 섹션
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -219,13 +235,11 @@ fun Setting(
                         .padding(start = 16.dp, end = 16.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // 로그아웃
                     RowNavigableItem(
                         title = "로그아웃",
                         onClick = { logoutVM.logout { onLogout() } }
                     )
 
-                    // 탈퇴하기
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -248,7 +262,6 @@ fun Setting(
                                 .size(18.dp)
                                 .align(Alignment.CenterEnd)
                                 .clickable {
-                                    // 모달만 띄운다 (여기서 바로 API 호출하지 않음)
                                     showDeleteSheet = true
                                 },
                             tint = Color.Unspecified
@@ -404,5 +417,31 @@ fun WithdrawalSentDialog(
                 )
             }
         }
+    }
+}
+private fun areNotificationsEnabled(context: Context): Boolean {
+    return NotificationManagerCompat.from(context).areNotificationsEnabled()
+}
+
+private fun openAppNotificationSettings(context: Context) {
+    try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            }
+            context.startActivity(intent)
+        } else {
+            val intent = Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", context.packageName, null)
+            )
+            context.startActivity(intent)
+        }
+    } catch (_: Exception) {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        )
+        context.startActivity(intent)
     }
 }

@@ -1,5 +1,6 @@
 package com.example.gravit.main.User.Friend
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,14 +9,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,10 +41,12 @@ fun FollowList(
     navController: NavController,
     initialTab: FollowTab
 ) {
-    var tab by remember { mutableStateOf(initialTab) }
+    var tab by rememberSaveable { mutableStateOf(initialTab) }
 
     val context = LocalContext.current
-    val vm: FollowListVM = viewModel(factory = FollowListVMFactory(RetrofitInstance.api, context))
+    val vm: FollowListVM = viewModel(
+        factory = FollowListVMFactory(RetrofitInstance.api, context)
+    )
     val ui by vm.state.collectAsState()
     val followerCount by vm.followerCount.collectAsState()
     val followingCount by vm.followingCount.collectAsState()
@@ -61,19 +72,21 @@ fun FollowList(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "팔로잉/팔로워",
+                    text = "팔로잉/팔로워",
                     fontSize = 16.sp,
                     fontFamily = pretendard,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF222222)
                 )
-                Icon(
+                Image(
                     painter = painterResource(id = R.drawable.arrow_left),
-                    contentDescription = "뒤로가기",
+                    contentDescription = "back",
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
                         .padding(start = 16.dp)
-                        .size(30.dp)
-                        .clickable { navController.popBackStack() }
+                        .size(24.dp)
+                        .align(Alignment.CenterStart)
+                        .clickable { navController.popBackStack() },
+                    colorFilter = ColorFilter.tint(Color.Black)
                 )
             }
 
@@ -84,21 +97,25 @@ fun FollowList(
                 followingCount = followingCount
             )
 
-            when (val s = ui) {
-                is FollowListVM.UiState.Success -> {
-                    FriendList(s.data)
-                }
+            when (ui) {
                 is FollowListVM.UiState.Loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
+                is FollowListVM.UiState.Success -> {
+                    val data = (ui as FollowListVM.UiState.Success).data
+                    FriendList(
+                        users = data,
+                        tab = tab,
+                        vm = vm
+                    )
+                }
                 is FollowListVM.UiState.Failed -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(s.message ?: "불러오지 못했습니다.")
-                    }
+                    // TODO 에러 UI 원하면 추가
                 }
                 is FollowListVM.UiState.SessionExpired -> {
+                    // TODO 세션만료 처리 필요시 추가
                 }
             }
         }
@@ -106,43 +123,70 @@ fun FollowList(
 }
 
 @Composable
-fun FriendList(users: List<FriendItem>) {
-    LazyColumn {
-        items(users) { user ->
+fun FriendList(
+    users: List<FriendItem>,
+    tab: FollowTab,
+    vm: FollowListVM
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(users, key = { it.id }) { user ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(ProfilePalette.idToColor(user.profileImgNumber)),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(ProfilePalette.idToColor(user.profileImgNumber)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    Image(
                         painter = painterResource(id = R.drawable.profile_logo),
-                        contentDescription = "profile logo",
-                        tint = Color.White,
+                        contentDescription = "profile",
                         modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text(
-                        user.nickname,
-                        fontFamily = pretendard
+                        text = user.nickname,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = pretendard,
+                        fontSize = 14.sp,
+                        color = Color(0xFF222222)
                     )
                     Text(
-                        text = if (user.handle.startsWith("@")) user.handle else "@${user.handle}",
+                        text = "@${user.handle.removePrefix("@")}",
+                        fontWeight = FontWeight.Medium,
                         fontFamily = pretendard,
-                        color = Color.Gray
+                        fontSize = 14.sp,
+                        color = Color(0xFF888888)
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                Icon(Icons.Default.Close, contentDescription = null)
+
+                if (tab == FollowTab.Following) {
+                    FollowButton(
+                        isFollowing = true,
+                        inUndo = false,
+                        loading = false,
+                        onClick = { vm.unfollow(user.id) }
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "disabled",
+                        tint = Color(0xFF494949),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,15 +198,7 @@ fun FollowTabBar(
 ) {
     PrimaryTabRow(
         selectedTabIndex = tab.ordinal,
-        containerColor = Color.White,
-        indicator = {
-            Box(
-                Modifier
-                    .tabIndicatorOffset(tab.ordinal, matchContentSize = false)
-                    .height(2.dp)
-                    .background(Color.Black)
-            )
-        }
+        containerColor = Color.White
     ) {
         Tab(
             selected = tab == FollowTab.Followers,
@@ -173,9 +209,11 @@ fun FollowTabBar(
                 text = "$followerCount 팔로워",
                 fontSize = 14.sp,
                 fontFamily = pretendard,
+                fontWeight = FontWeight.SemiBold,
                 color = if (tab == FollowTab.Followers) Color.Black else Color(0xFFCCCCCC)
             )
         }
+
         Tab(
             selected = tab == FollowTab.Following,
             onClick = { onTabChange(FollowTab.Following) },
@@ -185,6 +223,7 @@ fun FollowTabBar(
                 text = "$followingCount 팔로잉",
                 fontSize = 14.sp,
                 fontFamily = pretendard,
+                fontWeight = FontWeight.SemiBold,
                 color = if (tab == FollowTab.Following) Color.Black else Color(0xFFCCCCCC)
             )
         }

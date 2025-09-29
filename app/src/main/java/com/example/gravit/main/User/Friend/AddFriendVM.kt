@@ -10,6 +10,7 @@ import com.example.gravit.api.FriendUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import java.text.Normalizer
 import java.util.Locale
 
@@ -33,12 +34,6 @@ class AddFriendVM(
     val state = _state.asStateFlow()
 
     fun search(rawQuery: String) = viewModelScope.launch {
-        val q = rawQuery.trim()
-        if (q.isEmpty()) {
-            _state.value = UiState.Success(results = emptyList())
-            return@launch
-        }
-
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -49,24 +44,21 @@ class AddFriendVM(
         }
         val auth = "Bearer ${session.accessToken}"
 
-        val queryText = if (q.startsWith("@")) q.drop(1) else q
+        val nq = normalizeQuery(rawQuery)
 
         runCatching {
-            api.getFriends(auth = auth, queryText = queryText, page = 0)
+            api.getFriends(auth = auth, queryText = nq, page = 0)
         }.onSuccess { res ->
-            _state.value = UiState.Success(results = res.contents)
+            _state.value = UiState.Success(res.contents)
         }.onFailure { e ->
-            val code = (e as? retrofit2.HttpException)?.code()
-            _state.value = when (code) {
-                401 -> {
-                    AuthPrefs.clear(appContext)
-                    UiState.SessionExpired
-                }
-                else -> UiState.Failed(e.message ?: "검색 실패")
+            if ((e as? HttpException)?.code() == 401) {
+                AuthPrefs.clear(appContext)
+                _state.value = UiState.SessionExpired
+            } else {
+                _state.value = UiState.Failed(e.message)
             }
         }
     }
-
 
     fun toggleFollow(userId: Long) = viewModelScope.launch {
         val cur = _state.value as? UiState.Success ?: return@launch
@@ -84,15 +76,24 @@ class AddFriendVM(
             if (willFollow) api.sendFolloweeId(auth, userId)
             else api.sendUnFolloweeId(auth, userId)
         }.onSuccess {
-            val updated = cur.results.map { if (it.userId == userId) it.copy(isFollowing = willFollow) else it }
+            val updated = cur.results.map {
+                if (it.userId == userId) it.copy(isFollowing = willFollow) else it
+            }
             _state.value = cur.copy(results = updated)
         }
     }
 
-    private fun normalizeHandle(raw: String): String {
+    private fun normalizeQuery(raw: String): String {
         var q = raw.trim()
-        if (q.startsWith("@")) q = q.drop(1)
         q = Normalizer.normalize(q, Normalizer.Form.NFKC)
+
+        if (q.any { it.isLetter() && it.code > 128 }) {
+            return q
+        }
+
+        if (!q.startsWith("@")) {
+            q = "@$q"
+        }
         return q.lowercase(Locale.ROOT)
     }
 }
