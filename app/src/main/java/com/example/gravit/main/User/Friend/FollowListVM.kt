@@ -90,6 +90,26 @@ class FollowListVM(
             }
         }
     }
+
+    fun unfollow(userId: Long) = viewModelScope.launch {
+        val cur = _state.value as? UiState.Success ?: return@launch
+
+        val session = AuthPrefs.load(appContext)
+        if (session == null || AuthPrefs.isExpired(session)) {
+            AuthPrefs.clear(appContext)
+            _state.value = UiState.SessionExpired
+            return@launch
+        }
+        val auth = "Bearer ${session.accessToken}"
+
+        _state.value = cur.copy(data = cur.data.filterNot { it.id == userId })
+
+        runCatching {
+            api.sendUnFolloweeId(auth, userId)
+        }.onFailure {
+            _state.value = cur
+        }
+    }
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -101,3 +121,5 @@ class FollowListVMFactory(
         return FollowListVM(api, context.applicationContext) as T
     }
 }
+
+

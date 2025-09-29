@@ -33,7 +33,6 @@ import com.example.gravit.api.FriendUser
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.pretendard
-import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun AddFriend(navController: NavController) {
@@ -78,7 +77,6 @@ fun AddFriend(navController: NavController) {
 
             Divider(color = Color.Black.copy(alpha = 0.1f))
 
-            // 검색창
             TextField(
                 value = query,
                 onValueChange = { query = it },
@@ -112,7 +110,6 @@ fun AddFriend(navController: NavController) {
                     .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(50))
             )
 
-            // 결과 리스트
             when (val s = ui) {
                 is AddFriendVM.UiState.Success -> {
                     val listState = rememberLazyListState()
@@ -188,33 +185,34 @@ fun FollowButton(
     loading: Boolean,
     onClick: () -> Unit
 ) {
-    val (bg, fg, borderColor, label, fontSize) = when {
-        // 아직 팔로우 안 한 상태
-        !isFollowing -> arrayOf(
-            Color(0xFF8100B3),   // 배경 보라색
-            Color.White,         // 글자색 흰색
-            null,                // 테두리 없음
-            "팔로우",             // 텍스트
-            15.sp                // 글자 크기
-        )
+    val bg: Color
+    val fg: Color
+    val borderColor: Color?
+    val label: String
+    val fontSize: TextUnit
 
-        // 팔로우 취소 확인 상태 (inUndo)
-        inUndo -> arrayOf(
-            Color.White,          // 배경 흰색
-            Color(0xFF4E4E4E),    // 글자색 진회색
-            Color(0xFFE6E6E6),    // 테두리 연회색
-            "팔로우 취소",        // 텍스트
-            15.sp                 // 글자 크기
-        )
-
-        // 이미 팔로우 상태
-        else -> arrayOf(
-            Color.White,          // 배경 흰색
-            Color(0xFF4E4E4E),    // 글자색 진회색
-            Color(0xFFE6E6E6),    // 테두리 연회색
-            "팔로우 취소",             // 텍스트
-            15.sp                 // 글자 크기
-        )
+    when {
+        !isFollowing -> {
+            bg = Color(0xFF8100B3)
+            fg = Color.White
+            borderColor = null
+            label = "팔로우"
+            fontSize = 15.sp
+        }
+        inUndo -> {
+            bg = Color.White
+            fg = Color(0xFF4E4E4E)
+            borderColor = Color(0xFFE6E6E6)
+            label = "팔로우 취소"
+            fontSize = 15.sp
+        }
+        else -> {
+            bg = Color.White
+            fg = Color(0xFF4E4E4E)
+            borderColor = Color(0xFFE6E6E6)
+            label = "팔로우 취소"
+            fontSize = 15.sp
+        }
     }
 
     Box(
@@ -222,9 +220,10 @@ fun FollowButton(
             .height(36.dp)
             .defaultMinSize(minWidth = 96.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(bg as Color)
+            .background(bg)
             .then(
-                if (borderColor != null) Modifier.border(1.dp, borderColor as Color, RoundedCornerShape(10.dp))
+                if (borderColor != null)
+                    Modifier.border(1.dp, borderColor, RoundedCornerShape(10.dp))
                 else Modifier
             )
             .clickable(enabled = !loading) { onClick() }
@@ -232,14 +231,17 @@ fun FollowButton(
         contentAlignment = Alignment.Center
     ) {
         if (loading) {
-            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                modifier = Modifier.size(18.dp)
+            )
         } else {
             Text(
-                text = label as String,
-                color = fg as Color,
+                text = label,
+                color = fg,
                 fontFamily = pretendard,
                 fontWeight = FontWeight.Medium,
-                fontSize = fontSize as TextUnit
+                fontSize = fontSize
             )
         }
     }
