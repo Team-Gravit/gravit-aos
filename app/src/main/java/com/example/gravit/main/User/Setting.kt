@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -36,6 +35,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
@@ -305,7 +305,7 @@ fun Setting(
                     showDeleteSheet = false
                 },
                 onCancel = {
-                        deleteVM.requestDeletionMail(dest = "ANDROID") {
+                        deleteVM.requestDeletionMail(dest = "prod") {
                             showDeleteSheet = false
                             showSentDialog = true
                     }
@@ -319,6 +319,16 @@ fun Setting(
                     showSentDialog = false
                 }
             )
+        }
+        if (deleteState is DeleteAccountVM.DeletionState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         }
     }
 }
@@ -386,7 +396,10 @@ fun WithdrawalSentDialog(
                 .background(Color.White, shape = RoundedCornerShape(20.dp)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.check),
                     contentDescription = null,
