@@ -61,6 +61,7 @@ fun Setting(
         factory = DeleteAccountVMFactory(RetrofitInstance.api, context)
     )
     val deleteUi by deleteVM.state.collectAsState()
+    val deleteState by deleteVM.state.collectAsState()
 
     var showDeleteSheet by remember { mutableStateOf(false) }
     var showSentDialog by remember { mutableStateOf(false) }
@@ -78,11 +79,32 @@ fun Setting(
         val obs = LifecycleEventObserver { _, e ->
             if (e == Lifecycle.Event.ON_RESUME) {
                 notificationsEnabled = areNotificationsEnabled(context)
+                deleteVM.checkIfDeleted()
             }
         }
         lifecycleOwner.lifecycle.addObserver(obs)
         onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
     }
+
+    LaunchedEffect(deleteState) {
+        when (deleteState) {
+            DeleteAccountVM.DeletionState.Confirmed -> {
+                navController.navigate("user/deletion-complete") {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            DeleteAccountVM.DeletionState.SessionExpired -> {
+                navController.navigate("error/401") {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true; restoreState = false
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    var sending by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -278,16 +300,14 @@ fun Setting(
                 titleText = "정말 탈퇴하실건가요?",
                 descriptionText = "계정을 삭제하면 저장된\n 모든 데이터가 사라져요.\n 정말로 계정을 삭제하실건가요?",
                 confirmButtonText = "돌아가기",
-                cancelText = if (deleteUi.requesting) "전송 중..." else "탈퇴하기",
+                cancelText = "탈퇴하기",
                 onConfirm = {
                     showDeleteSheet = false
                 },
                 onCancel = {
-                    if (!deleteUi.requesting) {
                         deleteVM.requestDeletionMail(dest = "ANDROID") {
                             showDeleteSheet = false
                             showSentDialog = true
-                        }
                     }
                 }
             )
@@ -297,10 +317,6 @@ fun Setting(
             WithdrawalSentDialog(
                 onConfirm = {
                     showSentDialog = false
-                    navController.navigate("user/deletion-complete") {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
                 }
             )
         }

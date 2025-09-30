@@ -209,7 +209,7 @@ fun FollowTabBar(
                 text = "$followerCount 팔로워",
                 fontSize = 14.sp,
                 fontFamily = pretendard,
-                color = if (tab == FollowTab.Following) Color(0xFF030303) else Color(0xFFCCCCCC),
+                color = if (tab == FollowTab.Followers) Color(0xFF030303) else Color(0xFFCCCCCC),
                 fontWeight = FontWeight.SemiBold
             )
         }

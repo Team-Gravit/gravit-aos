@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
+import com.example.gravit.main.Home.HomeViewModel.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
@@ -16,49 +18,84 @@ class DeleteAccountVM(
     private val appContext: Context
 ) : ViewModel() {
 
-    data class UiState(
-        val requesting: Boolean = false,
-        val error: String? = null
+    private val prefs = appContext.getSharedPreferences("acct_del", Context.MODE_PRIVATE)
+    private fun isPending(): Boolean = prefs.getBoolean("pending", false)
+    private fun markPending() { prefs.edit().putBoolean("pending", true).apply() }
+    private fun clearPending() { prefs.edit().putBoolean("pending", false).apply() }
+
+    // 2) sealed class 올바른 선언
+    sealed class DeletionState {
+        data object Idle : DeletionState()
+        data object Loading : DeletionState()
+        data object Pending : DeletionState()
+        data object Confirmed : DeletionState()
+        data object SessionExpired : DeletionState()
+    }
+
+    private val _state = MutableStateFlow<DeletionState>(
+        if (isPending()) DeletionState.Pending else DeletionState.Idle
     )
+    val state = _state.asStateFlow()
 
-    private val _state = MutableStateFlow(UiState())
-    val state: StateFlow<UiState> = _state
+    fun requestDeletionMail(dest: String, onDone: () -> Unit) = viewModelScope.launch {
+        _state.value = DeletionState.Loading
 
-    private fun bearerOrNull(): String? =
-        AuthPrefs.load(appContext)?.accessToken?.let { "Bearer $it" }
-
-    /**
-     * 메일 전송 요청 (202 Accepted 기대)
-     */
-    fun requestDeletionMail(dest: String = "ANDROID", onAccepted: () -> Unit) {
-        val token = bearerOrNull()
-        if (token == null) {
-            _state.value = UiState(requesting = false, error = "세션이 만료되었습니다.")
-            return
+        val session = AuthPrefs.load(appContext)
+        if (session == null || AuthPrefs.isExpired(session)) {
+            AuthPrefs.clear(appContext)
+            _state.value = DeletionState.SessionExpired
+            return@launch
         }
 
-        viewModelScope.launch {
-            _state.value = UiState(requesting = true, error = null)
-            try {
-                val res: Response<Unit> = api.requestDeletionMail(token, dest)
-                if (res.code() == 202) {
-                    _state.value = UiState(requesting = false, error = null)
-                    onAccepted()
+        val auth = "Bearer ${session.accessToken}"
+
+        val resp = runCatching { api.requestDeletionMail(auth, dest) }
+            .getOrElse { e ->
+                val code = (e as? retrofit2.HttpException)?.code()
+                if (code == 401) {
+                    AuthPrefs.clear(appContext)
+                    _state.value = DeletionState.SessionExpired
                 } else {
-                    val raw = res.errorBody()?.string().orEmpty()
-                    val msg = when {
-                        "USER_4041" in raw -> "존재하지 않는 유저입니다."
-                        "MAIL_4002" in raw -> "메일 전송에 실패했습니다."
-                        "GLOBAL_5001" in raw -> "예기치 못한 오류가 발생했습니다."
-                        res.code() == 401 -> "세션이 만료되었습니다."
-                        else -> "요청 실패 (${res.code()})"
-                    }
-                    _state.value = UiState(requesting = false, error = msg)
+                    _state.value = DeletionState.Idle
                 }
-            } catch (e: Exception) {
-                _state.value = UiState(requesting = false, error = e.message ?: "네트워크 오류")
+                return@launch
+            }
+
+        // 202 Accepted일 때만 pending 처리 + 콜백 호출
+        if (resp.isSuccessful && resp.code() == 202) {
+            markPending()
+            _state.value = DeletionState.Pending
+            onDone()
+        } else {
+            if (resp.code() == 401) {
+                AuthPrefs.clear(appContext)
+                _state.value = DeletionState.SessionExpired
+            } else {
+                _state.value = DeletionState.Idle
             }
         }
+    }
+
+    fun checkIfDeleted() = viewModelScope.launch {
+        if (!isPending()) return@launch
+        val session = AuthPrefs.load(appContext)
+        if (session == null || AuthPrefs.isExpired(session)) {
+            AuthPrefs.clear(appContext); _state.value = DeletionState.SessionExpired; return@launch
+        }
+
+        runCatching { api.getUser("Bearer ${session.accessToken}") }
+            .onSuccess { _state.value = DeletionState.Pending } // 아직 존재
+            .onFailure { e ->
+                val http = e as? retrofit2.HttpException
+                val code = http?.code()
+                val body = http?.response()?.errorBody()?.string().orEmpty()
+                val deleted = (code == 404 && body.contains("\"error\":\"USER_4041\"")) || code == 410
+                when {
+                    deleted -> { AuthPrefs.clear(appContext); clearPending(); _state.value = DeletionState.Confirmed }
+                    code == 401 -> { AuthPrefs.clear(appContext); _state.value = DeletionState.SessionExpired }
+                    else -> _state.value = DeletionState.Pending
+                }
+            }
     }
 }
 
