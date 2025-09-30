@@ -11,6 +11,7 @@ import com.example.gravit.login.LoginViewModel
 import com.example.gravit.login.ProfileFinish
 import com.example.gravit.login.ProfileSetting
 import com.example.gravit.main.MainScreen
+import com.example.gravit.main.User.Setting.DeletionGuard
 import com.example.gravit.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)

@@ -40,9 +40,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.error.isDeletionPending
 import com.example.gravit.main.ConfirmBottomSheet
 import com.example.gravit.main.User.Setting.DeleteAccountVM
 import com.example.gravit.main.User.Setting.DeleteAccountVMFactory
+import com.example.gravit.main.User.Setting.DeletionComplete
 import com.example.gravit.main.User.Setting.LogoutVMFactory
 import com.example.gravit.main.User.Setting.LogoutViewModel
 import com.example.gravit.ui.theme.pretendard
@@ -88,10 +90,11 @@ fun Setting(
 
     LaunchedEffect(deleteState) {
         when (deleteState) {
-            DeleteAccountVM.DeletionState.Confirmed -> {
-                navController.navigate("user/deletion-complete") {
-                    popUpTo(0) { inclusive = true }
-                    launchSingleTop = true
+            DeleteAccountVM.DeletionState.NotFound -> {
+                if (isDeletionPending(context)) return@LaunchedEffect
+                navController.navigate("error/404") {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true; restoreState = false
                 }
             }
             DeleteAccountVM.DeletionState.SessionExpired -> {
@@ -103,9 +106,6 @@ fun Setting(
             else -> Unit
         }
     }
-
-    var sending by remember { mutableStateOf(false) }
-
     Box(
         modifier = Modifier
             .fillMaxSize()

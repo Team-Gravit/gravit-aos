@@ -67,6 +67,9 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import com.example.gravit.Responsive
 import com.example.gravit.api.BadgeResponses
+import com.example.gravit.error.isDeletionPending
+import com.example.gravit.main.User.Setting.DeleteAccountVM
+import com.example.gravit.main.User.Setting.DeleteAccountVMFactory
 
 @Composable
 fun UserScreen(
@@ -78,33 +81,36 @@ fun UserScreen(
     val vm: UserScreenVM = viewModel(
         factory = UserVMFactory(RetrofitInstance.api, context)
     )
+    val deleteVM: DeleteAccountVM = viewModel(
+        factory = DeleteAccountVMFactory(RetrofitInstance.api, context)
+    )
+    val delState by deleteVM.state.collectAsState()
+
     val ui by vm.state.collectAsState()
 
     LaunchedEffect(Unit) { vm.load() }
     var navigated by remember { mutableStateOf(false) }
-    when (ui) {
-        UserScreenVM.UiState.SessionExpired -> {
-            navigated = true
-            navController.navigate("error/401") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
+    LaunchedEffect(ui) {
+        when (ui) {
+            UserScreenVM.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
             }
-        }
-        UserScreenVM.UiState.NotFound -> {
-            navigated = true
-            navController.navigate("error/404") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
+            UserScreenVM.UiState.NotFound -> {
+                if (isDeletionPending(context)) return@LaunchedEffect
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
             }
-        }
-        UserScreenVM.UiState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            UserScreenVM.UiState.Failed -> {
+                navigated = true
+                onSessionExpired()
             }
+            else -> Unit
         }
-        UserScreenVM.UiState.Failed -> {
-            navigated = true
-            onSessionExpired()
-        }
-        else -> Unit
     }
 
     val s = (ui as? UserScreenVM.UiState.Success)?.data

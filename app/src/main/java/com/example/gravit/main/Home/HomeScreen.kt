@@ -50,6 +50,7 @@ import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.error.isDeletionPending
 import com.example.gravit.main.Chapter.Lesson.PillShape
 import com.example.gravit.main.Chapter.Lesson.RoundBox
 import com.example.gravit.ui.theme.pretendard
@@ -65,29 +66,27 @@ fun HomeScreen(
 
     var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
-    when (ui) {
-        HomeViewModel.UiState.SessionExpired -> {
-            navigated = true
-            navController.navigate("error/401") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
+    LaunchedEffect(ui) {
+        when (ui) {
+            HomeViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
             }
-        }
-        HomeViewModel.UiState.NotFound -> {
-            navigated = true
-            navController.navigate("error/404") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
+            HomeViewModel.UiState.NotFound -> {
+                if (isDeletionPending(context)) return@LaunchedEffect
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
             }
-        }
-        HomeViewModel.UiState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            HomeViewModel.UiState.Failed -> {
+                navigated = true
+                onSessionExpired()
             }
+            else -> Unit
         }
-        HomeViewModel.UiState.Failed -> {
-            navigated = true
-            onSessionExpired()
-        }
-        else -> Unit
     }
     val home = (ui as? HomeViewModel.UiState.Success)?.data
     Box(
@@ -148,7 +147,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.height(Responsive.h(12f)))
                 CustomText(
-                    text = if (nickname.isNullOrBlank()) "" else "$nickname!님",
+                    text = if (nickname.isNullOrBlank()) "" else "${nickname}님!",
                     fontWeight = FontWeight.Bold,
                     fontSize = Responsive.spH(28f),
                     color = Color.White,

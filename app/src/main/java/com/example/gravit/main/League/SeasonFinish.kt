@@ -80,6 +80,7 @@ fun SeasonFinish(
         Image(
             painter = painterResource(id = R.drawable.rabbit),
             contentDescription = null,
+            modifier = Modifier.size(163.dp, 216.dp)
         )
     }
 }

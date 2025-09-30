@@ -30,6 +30,7 @@ class DeleteAccountVM(
         data object Pending : DeletionState()
         data object Confirmed : DeletionState()
         data object SessionExpired : DeletionState()
+        data object NotFound :  DeletionState()
     }
 
     private val _state = MutableStateFlow<DeletionState>(
@@ -78,25 +79,47 @@ class DeleteAccountVM(
 
     fun checkIfDeleted() = viewModelScope.launch {
         if (!isPending()) return@launch
+
         val session = AuthPrefs.load(appContext)
         if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext); _state.value = DeletionState.SessionExpired; return@launch
+            AuthPrefs.clear(appContext)
+            _state.value = DeletionState.SessionExpired
+            return@launch
         }
 
         runCatching { api.getUser("Bearer ${session.accessToken}") }
-            .onSuccess { _state.value = DeletionState.Pending } // 아직 존재
+            .onSuccess {
+                _state.value = DeletionState.Pending
+            }
             .onFailure { e ->
                 val http = e as? retrofit2.HttpException
-                val code = http?.code()
-                val body = http?.response()?.errorBody()?.string().orEmpty()
-                val deleted = (code == 404 && body.contains("\"error\":\"USER_4041\"")) || code == 410
-                when {
-                    deleted -> { AuthPrefs.clear(appContext); clearPending(); _state.value = DeletionState.Confirmed }
-                    code == 401 -> { AuthPrefs.clear(appContext); _state.value = DeletionState.SessionExpired }
-                    else -> _state.value = DeletionState.Pending
+                if (http == null) {
+                    _state.value = DeletionState.Pending
+                    return@onFailure
+                }
+
+                when (http.code()) {
+                    401 -> {
+                        AuthPrefs.clear(appContext)
+                        _state.value = DeletionState.SessionExpired
+                    }
+                    404 -> {
+                        val body = safeErrorBody(http).orEmpty()
+                        val isUser4041 = body.contains("\"error\":\"USER_4041\"")
+                        if (isUser4041) {
+                            AuthPrefs.clear(appContext)
+                            clearPending()
+                            _state.value = DeletionState.Confirmed
+                        } else {
+                            _state.value = DeletionState.NotFound
+                        }
+                    }
+                    else ->  Unit
                 }
             }
     }
+    private fun safeErrorBody(http: retrofit2.HttpException): String? =
+        try { http.response()?.errorBody()?.string() } catch (_: Throwable) { null }
 }
 
 @Suppress("UNCHECKED_CAST")

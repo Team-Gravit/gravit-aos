@@ -76,6 +76,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
+import com.example.gravit.Responsive
 import com.example.gravit.api.LastSeasonPopupDto
 import com.example.gravit.api.LeagueItem
 import com.example.gravit.api.RetrofitInstance
@@ -493,8 +494,15 @@ fun SeasonCompleted(
                             modifier = Modifier
                                 .matchParentSize()
                                 .clip(CircleShape)
-                                .background(ProfilePalette.idToColor(popupDetail.profileImgNumber))
-                        )
+                                .background(ProfilePalette.idToColor(popupDetail.profileImgNumber)),
+                            contentAlignment = Alignment.Center
+                        ){
+                            Image(
+                                painter = painterResource(id = R.drawable.profile_logo),
+                                contentDescription = "profile logo",
+                                modifier = Modifier.size(44.dp, 62.dp)
+                            )
+                        }
                         Box(
                             modifier = Modifier
                                 .matchParentSize()

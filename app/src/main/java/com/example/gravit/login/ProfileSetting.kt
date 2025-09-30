@@ -56,6 +56,7 @@ import com.example.gravit.LocalDesignSpec
 import com.example.gravit.R
 import com.example.gravit.Responsive
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.error.isDeletionPending
 import com.example.gravit.ui.theme.pretendard
 import com.example.gravit.ui.theme.ProfilePalette
 
@@ -89,6 +90,7 @@ fun ProfileSetting(navController: NavController) {
                 }
             }
             OnboardingViewModel.UiState.NotFound -> {
+                if (isDeletionPending(context)) return@LaunchedEffect
                 navigated = true
                 navController.navigate("error/404") {
                     popUpTo(0); launchSingleTop = true; restoreState = false
