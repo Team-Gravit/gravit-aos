@@ -51,11 +51,9 @@ fun FollowList(
     val followerCount by vm.followerCount.collectAsState()
     val followingCount by vm.followingCount.collectAsState()
 
-    LaunchedEffect(tab) {
-        when (tab) {
-            FollowTab.Followers -> vm.loadFollower()
-            FollowTab.Following -> vm.loadFollowing()
-        }
+    LaunchedEffect(Unit) {
+       vm.loadFollower()
+       vm.loadFollowing()
     }
 
     Box(

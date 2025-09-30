@@ -160,8 +160,13 @@ fun RoundedGauge(
     height: Dp,
     modifier: Modifier = Modifier
 ) {
-    val ratio = if (totalUnits != null && completedUnits != null && totalUnits > 0) {
-        completedUnits.toFloat() / totalUnits
+    val ratio =
+        if (totalUnits != null && completedUnits != null && totalUnits > 0) {
+            if(completedUnits == 0){
+                0.05f
+            }else{
+                completedUnits.toFloat() / totalUnits
+            }
     } else {
         0f
     }

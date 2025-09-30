@@ -585,8 +585,9 @@ private fun RankCell(
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
             .height(54.dp)
+            .background(Color(0xFFFFFFFF), RoundedCornerShape(16.dp))
             .border(1.dp, Color(0xFFDCDCDC), RoundedCornerShape(16.dp))
-            .background(Color(0xFFFFFFFF), RoundedCornerShape(16.dp)),
+            .clip(RoundedCornerShape(16.dp)),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

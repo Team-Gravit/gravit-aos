@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -106,21 +107,21 @@ fun Unit(
     val chapterDescription = success?.data?.chapterDescription
 
     val unitSlots: List<UnitDetails?> = remember(units) {
-        val count = units.size
+        val count = units.size + 1
         List(count) { idx -> units.getOrNull(idx) }   // nullable 리스트
     }
 
-    val background: Map<Int, Int> = mapOf(
-        1 to R.drawable.data_structure_unit,
-        2 to R.drawable.algorithm_unit,
-        3 to R.drawable.computer_network_unit,
-        4 to R.drawable.operating_system_unit,
-        5 to R.drawable.database_unit,
-        6 to R.drawable.computer_security_unit,
-        7 to R.drawable.software_engineering_unit,
-        8 to R.drawable.programming_language_unit
+    val planet: Map<Int, Int> = mapOf(
+        1 to R.drawable.data_structure_planet,
+        2 to R.drawable.algorithm_planet,
+        3 to R.drawable.computer_network_planet,
+        4 to R.drawable.operating_system_planet,
+        5 to R.drawable.database_planet,
+        6 to R.drawable.computer_security_planet,
+        7 to R.drawable.software_engineering_planet,
+        8 to R.drawable.programming_language_planet
     )
-    val img = background[chapterId] ?: 1
+    val img = planet[chapterId] ?: 1
 
     var selectedUnitIndex by remember { mutableStateOf<Int?>(null) }
 
@@ -133,7 +134,7 @@ fun Unit(
             modifier = Modifier.fillMaxSize()
         ) {
             Image( //베경 이미지
-                painter = painterResource(id = img),
+                painter = painterResource(id = R.drawable.unitback),
                 contentDescription = "background",
                 modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
                 contentScale = ContentScale.FillWidth
@@ -145,7 +146,7 @@ fun Unit(
             ) {
                 Column (modifier = Modifier
                     .fillMaxWidth()
-                    .height(Responsive.h(116f))
+                    .wrapContentHeight()
                     .padding(start = Responsive.w(20f), end = Responsive.w(20f), top = Responsive.h(40f)),
                     verticalArrangement = Arrangement.Center,
                 ){ //설명 텍스트
@@ -234,8 +235,12 @@ fun Unit(
                             ),
                             totalLesson = totalLesson,
                             modifier = positions[displayIndex] ?: Modifier,
-                            onClick = { selectedUnitIndex = displayIndex }
+                            onClick = { selectedUnitIndex = displayIndex },
+                            index = displayIndex,
+                            total = unitSlots.size,
+                            img = img
                         )
+
                     }
                 }
 
@@ -391,12 +396,14 @@ fun Planet(
     selectedPlanetImage: Int = R.drawable.color_moon,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    totalLesson: Int
+    totalLesson: Int,
+    index: Int,
+    total: Int,
+    img: Int
 ) {
     val enabled = state.isUnlocked
 
     val segmentCount = totalLesson.coerceAtLeast(1)
-    val progress = state.progress.coerceIn(0, segmentCount)
     val strokeWidthDp = Responsive.w(9f)
     val isSingle = segmentCount <= 1
     val rotation = when (segmentCount) {
@@ -409,60 +416,60 @@ fun Planet(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(Responsive.w(90f))
     ) {
-        // 바깥 테두리 게이지
-        if (enabled) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .rotate(rotation)
-            ) {
-                val strokeWidth = strokeWidthDp.toPx()
-                val padding = strokeWidth / 2
-                val arcDiameter = size.minDimension - strokeWidth
-                val topLeftOffset = Offset(padding, padding)
+        if(index == total) {
+            Image(
+                painter = painterResource(id = img),
+                contentDescription = null,
+                modifier = Modifier.size(Responsive.w(110f))
+            )
+        } else {
+            // 바깥 테두리 게이지
+            if (enabled) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .rotate(rotation)
+                ) {
+                    val strokeWidth = strokeWidthDp.toPx()
+                    val padding = strokeWidth / 2
+                    val arcDiameter = size.minDimension - strokeWidth
+                    val topLeftOffset = Offset(padding, padding)
 
-                val totalSweep = 360f
-                val gapAngle = if (isSingle) 0f else 20f.coerceAtLeast(12f - (segmentCount - 3))
-                val segmentSweep = if (isSingle) 360f else (totalSweep - (gapAngle * segmentCount)) / segmentCount
+                    val totalSweep = 360f
+                    val gapAngle = if (isSingle) 0f else 20f.coerceAtLeast(12f - (segmentCount - 3))
+                    val segmentSweep = if (isSingle) 360f else (totalSweep - (gapAngle * segmentCount)) / segmentCount
 
-                repeat(segmentCount) { i ->
-                    val startAngle = -90f + i * (segmentSweep + gapAngle)
-                    drawArc(
-                        color = if (i < state.progress) Color(0xFF81DACD) else Color.White.copy(alpha = 0.6f),
-                        startAngle = startAngle,
-                        sweepAngle = segmentSweep,
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                        topLeft = topLeftOffset,
-                        size = Size(arcDiameter, arcDiameter)
-                    )
+                    repeat(segmentCount) { i ->
+                        val startAngle = -90f + i * (segmentSweep + gapAngle)
+                        drawArc(
+                            color = if (i < state.progress) Color(0xFF81DACD) else Color.White.copy(alpha = 0.6f),
+                            startAngle = startAngle,
+                            sweepAngle = segmentSweep,
+                            useCenter = false,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                            topLeft = topLeftOffset,
+                            size = Size(arcDiameter, arcDiameter)
+                        )
+                    }
                 }
             }
-        }
 
-        Box(
-            modifier = Modifier
-                .size(Responsive.w(58f))
-                .clip(CircleShape)
-                .clickable{ onClick() }
-        ) {
-            Image( //enable 조건을 넣어서 이미지 변경
-                painter = painterResource(id = if (enabled) selectedPlanetImage else planetImage),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .size(Responsive.w(58f))
                     .clip(CircleShape)
-            )
+                    .clickable{ onClick() }
+            ) {
+                Image( //enable 조건을 넣어서 이미지 변경
+                    painter = painterResource(id = if (enabled) selectedPlanetImage else planetImage),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                )
+            }
         }
     }
-}
 
-fun UnitIdforUi(
-   preUnitCounts: Int,
-    unitId: Int
-) : Int {
-
-    val newId = unitId - preUnitCounts
-    return newId
 }

@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,17 +33,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.ui.theme.mbc1961
@@ -54,10 +49,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import com.example.gravit.api.ChapterPageResponse
 import com.example.gravit.Responsive
 import com.example.gravit.main.Home.RoundedGauge
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.*
 
 
 @Composable
@@ -275,7 +281,7 @@ fun ChapterButton(
                                 isShowing = showTooltip,
                                 text = description,
                                 isRight = isRight,
-                                onDismiss = { showTooltip = false }
+                                onDismiss = { showTooltip = false },
                             )
                         }
                     }
@@ -298,70 +304,96 @@ fun Popup(
     isShowing: Boolean,
     text: String,
     isRight: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
-    val x = if (isRight) -Responsive.w(180f) else -Responsive.w(20f)
-    val t_x = if (isRight) 199f else 134f
-    val tipWidth = Responsive.w(42f)
-    val tipHeight = Responsive.h(20f)
+    if(isShowing) {
 
-    if (isShowing) {
-        DropdownMenu(
-            expanded = isShowing,
+        val density = LocalDensity.current
+        val sideMarginPx = with(density) { 8.dp.roundToPx() }
+        val bottomMarginPx = with(density) { 8.dp.roundToPx() }
+        val yGapPx = with(density) { Responsive.h(6f).roundToPx() }
+
+        val tipStartDp = if (isRight) Responsive.w(205f) else Responsive.w(125f)
+        val tipWidthDp = Responsive.w(42f)
+        val tipHeight = Responsive.h(20f)
+
+        val tipCenterOffsetPx = with(density) { (tipStartDp + tipWidthDp / 2).roundToPx() }
+
+        val provider = object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize
+            ): IntOffset {
+                val anchorCenterX = (anchorBounds.left + anchorBounds.right) / 2
+                val desiredLeft = anchorCenterX - tipCenterOffsetPx
+                val minX = sideMarginPx
+                val maxX = windowSize.width - popupContentSize.width - sideMarginPx
+                val x = desiredLeft.coerceIn(minX, maxX)
+
+                val desiredTop = anchorBounds.bottom + yGapPx
+                val maxY = windowSize.height - popupContentSize.height - bottomMarginPx
+                val y = desiredTop.coerceAtMost(maxY)
+
+                return IntOffset(x, y)
+            }
+        }
+        Popup(
+            popupPositionProvider = provider,
             onDismissRequest = onDismiss,
-            offset = DpOffset(x, 0.dp),
-            containerColor = Color.Transparent,
-            shadowElevation = 0.dp,
-            tonalElevation = 0.dp,
+            properties = PopupProperties(
+                focusable = true,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
         ) {
-          Column {
-              TriangleUpTip(
-                  modifier = Modifier
-                      .padding(start = Responsive.w(t_x))
-                      .size(tipWidth, tipHeight)
-                     ,
-                  color = Color(0xFF222124)
-              )
-              Surface(
-                  modifier = Modifier.clip(RoundedCornerShape(Responsive.w(8f)))
-              ) {
-                  Column{
-                      // 팁 본문 박스
-                      Box(
-                          modifier = Modifier
-                              .width(Responsive.w(257f))
-                              .wrapContentHeight()
-                              .background(Color(0xFF222124))
-                      ) {
-                          Row(
-                              modifier = Modifier.padding(
-                                  horizontal = Responsive.w(10f),
-                                  vertical = Responsive.h(10f)
-                              )
-                          ) {
-                              Icon(
-                                  painter = painterResource(R.drawable.info),
-                                  contentDescription = null,
-                                  tint = Color.White,
-                                  modifier = Modifier.size(Responsive.h(24f))
-                              )
-                              Spacer(Modifier.width(Responsive.w(10f)))
-                              Text(
-                                  text = text,
-                                  fontFamily = pretendard,
-                                  fontSize = Responsive.spH(16f),
-                                  fontWeight = FontWeight.Normal,
-                                  color = Color.White,
-                                  lineHeight = Responsive.spH(22f)
-                              )
-                          }
-                      }
-                  }
-              }
-          }
+            Column {
+                TriangleUpTip(
+                    modifier = Modifier
+                        .padding(start = tipStartDp)
+                        .size(tipWidthDp, tipHeight),
+                    color = Color(0xFF222124)
+                )
+                Surface(
+                    modifier = Modifier.clip(RoundedCornerShape(Responsive.w(8f)))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(Responsive.w(257f))
+                            .wrapContentHeight()
+                            .background(Color(0xFF222124))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = Responsive.w(10f),
+                                vertical = Responsive.h(10f)
+                            )
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.info),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(Responsive.h(24f))
+                            )
+                            Spacer(Modifier.width(Responsive.w(10f)))
+                            Text(
+                                text = text,
+                                fontFamily = pretendard,
+                                fontSize = Responsive.spH(16f),
+                                fontWeight = FontWeight.Normal,
+                                color = Color.White,
+                                lineHeight = Responsive.spH(22f)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+
 @Composable
 private fun TriangleUpTip(
     modifier: Modifier = Modifier,
