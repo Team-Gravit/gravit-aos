@@ -49,7 +49,6 @@ fun AddFriend(navController: NavController) {
             .background(Color.White)
     ) {
         Column {
-            // 헤더
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -291,6 +291,16 @@ fun Setting(
                     }
                 }
             }
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White))
+            {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "앱센터 로고",
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
         }
 
         if (showDeleteSheet) {
