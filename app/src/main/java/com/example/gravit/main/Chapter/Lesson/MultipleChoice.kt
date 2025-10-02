@@ -1,5 +1,6 @@
 package com.example.gravit.main.Chapter.Lesson
 
+import android.media.Image
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -202,18 +203,25 @@ private fun OptionCell(
                     .border(1.dp, Color(0xFF6D6D6D), RoundedCornerShape(50)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = when {
-                        isWrong -> "X"
-                        isRight -> "V"
-                        else -> num
-                    },
-                    color = when {
-                        isRight || isWrong -> Color.White
-                        isSelected -> Color.Black
-                        else -> Color(0xFF6D6D6D)
-                    }
-                )
+                if(isWrong){
+                    Image(painter = painterResource(id = R.drawable.xicon),
+                        contentDescription = null,
+                        modifier = Modifier.background(Color(0xFFFF3B2F), shape = RoundedCornerShape(50)))
+                }
+                else if(isRight){
+                    Image(painter = painterResource(id = R.drawable.checkicon),
+                        contentDescription = null,
+                        modifier = Modifier.background(Color(0xFF00A80B), shape = RoundedCornerShape(50)))
+                } else{
+                    Text(
+                        text = num,
+                        color= when {
+                            isSelected -> Color.Black
+                            else -> Color(0xFF6D6D6D)
+                        }
+                    )
+                }
+
             }
         }
         Spacer(Modifier.width(16.dp))
