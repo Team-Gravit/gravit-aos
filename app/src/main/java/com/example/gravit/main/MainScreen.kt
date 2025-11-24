@@ -3,7 +3,6 @@ package com.example.gravit.main
 import BottomNavigationBar
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
@@ -23,11 +22,9 @@ import com.example.gravit.error.UnauthorizedScreen
 import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.Chapter.ChapterScreen
 import com.example.gravit.main.Chapter.Lesson.LessonComplete
-import com.example.gravit.main.Chapter.Lesson.LessonScreen
+import com.example.gravit.main.Chapter.Lesson.ProblemScreen
 import com.example.gravit.main.Chapter.Unit.Unit
-import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.League.LeagueScreen
-import com.example.gravit.main.User.Friend.AddFriend
 import com.example.gravit.main.User.Notice.Notice
 import com.example.gravit.main.User.Notice.NoticeDetail
 import com.example.gravit.main.User.Setting
@@ -117,6 +114,7 @@ fun MainScreen(rootNavController: NavController) {
                         onSessionExpired = goToLoginChoice
                     )
                 }
+
                 composable(
                     route = "lesson/{chapterId}/{unitId}/{lessonId}/{chapterName}",
                     arguments = listOf(
@@ -131,7 +129,7 @@ fun MainScreen(rootNavController: NavController) {
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
                     val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
 
-                    LessonScreen(
+                    ProblemScreen(
                         navController = innerNavController,
                         chapterId = chapterId,
                         chapterName = chapterName,   // 헤더 표시용

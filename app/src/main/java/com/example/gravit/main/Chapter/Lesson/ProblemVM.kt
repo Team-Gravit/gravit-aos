@@ -1,7 +1,6 @@
 package com.example.gravit.main.Chapter.Lesson
 
 import android.content.Context
-import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -12,7 +11,6 @@ import com.example.gravit.api.LessonResultRequest
 import com.example.gravit.api.LessonResultResponse
 import com.example.gravit.api.ProblemResultItem
 import com.example.gravit.error.handleApiFailure
-import com.example.gravit.login.OnboardingViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
