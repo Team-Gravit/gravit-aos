@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.ui.theme.pretendard
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import com.example.gravit.Responsive
 
@@ -68,8 +70,6 @@ fun LevelGauge(
         }
         else -> 0f
     }
-
-    val textColor = if (progress < 0.3f) Color.Black else Color.White
     val shape = RoundedCornerShape(Responsive.w(16f))
 
     Box(
@@ -87,30 +87,65 @@ fun LevelGauge(
                         colors = listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
                     ),
                     shape = shape
-                ),
-        )
+                )
 
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(
-                    fontWeight = FontWeight.Normal
-                )){
-                    append("LV")
-                }
-                withStyle(SpanStyle(
-                    fontWeight = FontWeight.Bold
-                )){
-                    append("${lv}")
-                }
-            },
-            fontSize = Responsive.spH(14f),
-            fontFamily = pretendard,
-            color = textColor,
+        )
+        Box (
             modifier = Modifier
                 .padding(start = Responsive.w(15f))
                 .align(Alignment.CenterStart),
+        ){
+            if (progress < 0.23f) {
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Normal,
 
+                            )) {
+                            append("LV")
+                        }
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Bold)) {
+                            append("$lv")
+                        }
+                    },
+                    fontSize = Responsive.spH(14f),
+                    fontFamily = pretendard,
+                    color = Color.Transparent,
+                    style = TextStyle(
+                        drawStyle = Stroke(width = 8f, join = StrokeJoin.Round),
+                        brush = Brush.linearGradient(
+                            listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
+                        )
+                    ),
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    letterSpacing = 0.5.sp
+                )
+            }
+            Text(
+                buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(
+                            fontWeight = FontWeight.Normal
+                        )
+                    ) {
+                        append("LV")
+                    }
+                    withStyle(
+                        SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append("${lv}")
+                    }
+                },
+                fontSize = Responsive.spH(14f),
+                fontFamily = pretendard,
+                color = Color.White,
             )
+        }
+
+
     }
 }
 

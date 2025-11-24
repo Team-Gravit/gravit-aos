@@ -15,6 +15,15 @@ object ProfilePalette {
         Color(0xFF3F50B5), // 8
         Color(0xFF808081), // 9
         Color(0xFF000000), // 10
+        Color(0xFFFF9900),
+        Color(0xFFFE9370),
+        Color(0xFFFBC6DC),
+        Color(0xFFA4ECAD),
+        Color(0xFF6DD6CA),
+        Color(0xFF2989C3),
+        Color(0xFF1430E5),
+        Color(0xFF340D91),
+        Color(0xFF8138C5)
     )
 
     const val DEFAULT_ID = 1
