@@ -102,8 +102,8 @@ fun LessonComplete(
         }
     }
     val league = (ui as? HomeViewModel.UiState.Success)?.data?.leagueName?: "브론즈 1"
-    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.level?: 1
-    val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp?: 0
+    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.userLevelDetail?.level ?: 1
+    val xp = (ui as? HomeViewModel.UiState.Success)?.data?.userLevelDetail?.xp ?: 0
 
     Box(modifier = Modifier
         .fillMaxSize()

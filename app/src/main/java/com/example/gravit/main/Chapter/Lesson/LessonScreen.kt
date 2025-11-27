@@ -2,6 +2,7 @@ package com.example.gravit.main.Chapter.Lesson
 
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,11 +16,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,26 +30,19 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,23 +65,62 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.Responsive
 import com.example.gravit.ui.theme.pretendard
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.gravit.api.RetrofitInstance
 import kotlin.math.abs
 
 @Composable
 fun LessonScreen(
-    chapterId: Int,
+    chapter: String,
+    unit: String,
     onSessionExpired: () -> Unit,
     navController: NavController
 ) {
+    LaunchedEffect(Unit) {
+        Log.d("LessonScreen", "=== LessonScreen 진입 === chapterId = $chapter, unitId = $unit")
+    }
+    val context = LocalContext.current
+    val vm: NoteVM = viewModel(
+        factory = NoteVMFactory(RetrofitInstance.api, context)
+    )
+    val ui by vm.state.collectAsState()
+
+    var navigated by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { vm.load(chapter, unit) }
+    LaunchedEffect(ui) {
+        when (ui) {
+            NoteVM.UiState.SessionExpired ->  {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            NoteVM.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(0); launchSingleTop = true; restoreState = false
+                }
+            }
+            NoteVM.UiState.Failed -> {
+                navigated = true
+                onSessionExpired()
+            }
+            else -> Unit
+        }
+    }
+
     var showSheet by remember { mutableStateOf(false) }
+
+    val noteText = (ui as? NoteVM.UiState.Success)
+        ?.data
+        ?: "개념노트를 불러오지 못했습니다."
+
+    Log.d("LessonScreen", "noteText = $noteText")
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -141,7 +172,7 @@ fun LessonScreen(
                         )
                 ) {
                     Button(
-                        onClick = { showSheet = true},
+                        onClick = { showSheet = true },
                         shape = RoundedCornerShape(Responsive.w(9f)),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFC52AFF),
@@ -210,7 +241,9 @@ fun LessonScreen(
         }
         if(showSheet){
             NoteSheet(
-                onDismiss = { showSheet = false }
+                onDismiss = { showSheet = false },
+                "배열(Array)",
+                noteText
             )
         }
     }
@@ -445,99 +478,10 @@ fun Modifier.glow(
     }
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NoteSheet(
-    onDismiss: () -> Unit,
-){
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    val scope = rememberCoroutineScope()
-
-    ModalBottomSheet(
-        onDismissRequest = {
-            scope.launch {
-                sheetState.hide()
-                onDismiss()
-            }
-        },
-        sheetState = sheetState,
-        containerColor = Color.White
-    ) {
-        val isExpanded = sheetState.currentValue == SheetValue.Expanded
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = LocalConfiguration.current.screenHeightDp.dp * 0.9f)
-        ) {
-            Text(
-                text = "개념노트",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = pretendard,
-                color = Color(0xFF222124),
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Text(
-                text = "배열(Array)",
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
-                color = Color(0xFF6D6D6D),
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider(
-                color = Color(0xFFA8A8A8),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .let {
-                        if (isExpanded) {
-                            // 확장 모드 → 본문 높이를 늘려서 시트에 맞게 전체 표시됨
-                            it
-                                .fillMaxHeight(0.8f)
-                                .verticalScroll(rememberScrollState())
-                        } else {
-                            // 부분 모드 → 고정된 작은 height
-                            it
-                                .height(252.dp)
-                                .verticalScroll(rememberScrollState())
-                        }
-                    }
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                // 모든 드래그 제스처 소비해서 bottom sheet 로 전달 안 함
-                                awaitPointerEvent(PointerEventPass.Initial)
-                            }
-                        }
-                    }
-            ) {
-                Text(
-                    text = "줄을 서요. 먼저 온 사람이 먼저 들어가요.\n버스를 기다릴 때도, 식당 대기표를 뽑을 때도,\n은행 창구 앞에서도 우리는 줄을 서죠.\n그리고 먼저 온 사람은 먼저 처리되고,\n나중에 온 사람은 그 뒤를 따르게 됩니다.\n이런 구조는 자료구조에서도 그대로 쓰여요.\n이 구조에서는 데이터를 넣으면 맨 뒤로 가고,\n꺼낼 땐 맨 앞에서부터 꺼내야 해요.\n그러니까 가장 먼저 들어온 게 가장 먼저 나가죠.\n이걸 우리는 _______구조라고 부릅니다.\n" +
-                            "\n" +
-                            "스크롤로 내용 계속 쓰시면 됩니다.아ㅣㄴ어ㅏ너ㅏ머ㅏ어나렅츠쿠챀ㅇ라뫙\n \n \n \n \n \n \n \n\n\n\niosdujkfhjdkfhjskhfkjhekjh",
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = pretendard,
-                    fontSize = 14.sp,
-                    color = Color(0xFF383838),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-            }
-            Spacer(Modifier.height(37.dp))
-
-        }
-    }
-}
 
 @Preview
 @Composable
 fun Preview(){
     val navController = rememberNavController()
-    LessonScreen(1, {}, navController)
+    LessonScreen("algorithm", "algorithm",{}, navController)
 }
