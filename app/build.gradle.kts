@@ -79,6 +79,7 @@ dependencies {
     implementation("io.coil-kt:coil-gif:2.7.0")
     implementation(libs.generativeai)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.graphics)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
