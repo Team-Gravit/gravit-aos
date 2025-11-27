@@ -38,9 +38,8 @@ fun PreviousButton(
     chapterId: Int,
     backgroundImg: Int,
     chapterName: String?,
-    completedUnits: Int?,
-    totalUnits: Int?,
     onClick: () -> Unit,
+    progressRate: Float
 ) {
     Box(
         modifier = Modifier
@@ -101,8 +100,7 @@ fun PreviousButton(
                 RoundedGauge(
                     height = Responsive.h(10f),
                     width = Responsive.w(271f),
-                    completedUnits = completedUnits,
-                    totalUnits = totalUnits
+                    rate = progressRate
                 )
             }
         }
