@@ -74,7 +74,7 @@ fun ProfileFinish(navController: NavController) {
                     painter = painterResource(id = R.drawable.greeting),
                     contentDescription = "finish",
                     modifier = Modifier
-                        .padding(top = Responsive.h(20f))
+                        .padding(top = Responsive.h(60f))
                         .size(Responsive.w(216f))
                         .align(Alignment.CenterHorizontally)
                 )

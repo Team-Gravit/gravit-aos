@@ -135,7 +135,8 @@ fun MainScreen(rootNavController: NavController) {
                         chapterName = chapterName,   // 헤더 표시용
                         unitId = unitId,
                         lessonId = lessonId,
-                        onSessionExpired = goToLoginChoice
+                        onSessionExpired = goToLoginChoice,
+                        onClick = { println("클릭됨!") } //api연동 후 고칠거임ㅡㅡ
                     )
                 }
 

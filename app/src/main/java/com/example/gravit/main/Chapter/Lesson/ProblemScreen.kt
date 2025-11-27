@@ -86,11 +86,14 @@ fun ProblemScreen(
     chapterName: String,
     unitId: Int,
     lessonId: Int,
-    onSessionExpired: () -> Unit
+    onSessionExpired: () -> Unit,
+    onClick: () -> Unit
 ) {
     //스톱워치
     val swVm: StopwatchViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    var bookmark by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner) {
         // 앱이 백그라운드로 가면 멈춤
@@ -332,9 +335,16 @@ fun ProblemScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.clipboard),
-                            contentDescription = "clipboard",
-                            modifier = Modifier.size(32.dp)
+                            painter = painterResource(
+                                if (bookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(25.dp)
+                                .clickable {
+                                    bookmark = !bookmark
+                                    onClick()
+                                }
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
