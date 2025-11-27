@@ -87,4 +87,14 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("io.coil-kt:coil:2.7.0")
+    implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:image:4.6.2")
+    implementation("io.noties.markwon:image-coil:4.6.2")
+    implementation("io.coil-kt:coil-svg:2.7.0")
+    implementation("io.noties.markwon:html:4.6.2")
+    implementation("io.noties.markwon:ext-tables:4.6.2")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
