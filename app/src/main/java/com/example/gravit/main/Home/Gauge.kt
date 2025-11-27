@@ -35,7 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 
 @Composable
 fun LevelGauge(
@@ -189,22 +189,12 @@ fun LeagueGauge(
 
 @Composable
 fun RoundedGauge(
-    totalUnits: Int?,
-    completedUnits: Int?,
+    rate: Float,
     width: Dp,
     height: Dp,
     modifier: Modifier = Modifier
 ) {
-    val ratio =
-        if (totalUnits != null && completedUnits != null && totalUnits > 0) {
-            if(completedUnits == 0){
-                0.05f
-            }else{
-                completedUnits.toFloat() / totalUnits
-            }
-    } else {
-        0f
-    }
+    val ratio = rate
 
     Column(
         modifier = modifier
@@ -228,7 +218,7 @@ fun RoundedGauge(
         }
         Spacer(modifier = Modifier.height(Responsive.h(3f)))
         Text(
-            text = "$completedUnits/$totalUnits",
+            text = "$rate%",
             fontSize = Responsive.spH(15f),
             fontFamily = pretendard,
             fontWeight = FontWeight.Normal,

@@ -64,7 +64,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.BadgeResponses
 import com.example.gravit.error.isDeletionPending
 import com.example.gravit.main.User.Setting.DeleteAccountVM

@@ -1,6 +1,5 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Problem
 
-import android.media.Image
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.R
 import com.example.gravit.api.OptionDto
-import com.example.gravit.api.Problems
 import com.example.gravit.ui.theme.pretendard
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank

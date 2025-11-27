@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Problem
 
 import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -92,7 +93,7 @@ fun FormatSeconds(seconds: Int): String {
 
 @Composable
 fun Stopwatch(
-    vm: StopwatchViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    vm: StopwatchViewModel = viewModel(),
     autoStart: Boolean = true,
     modifier: Modifier = Modifier
 ) {

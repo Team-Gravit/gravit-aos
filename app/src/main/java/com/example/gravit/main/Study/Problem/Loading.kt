@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Problem
 
 import android.os.Build
 import androidx.compose.foundation.background

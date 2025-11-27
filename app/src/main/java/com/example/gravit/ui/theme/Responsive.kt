@@ -1,4 +1,4 @@
-package com.example.gravit
+package com.example.gravit.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration

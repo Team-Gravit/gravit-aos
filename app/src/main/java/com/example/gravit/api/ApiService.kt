@@ -1,6 +1,7 @@
 package com.example.gravit.api
 
 import com.google.gson.annotations.SerializedName
+import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -20,27 +21,38 @@ data class OnboardingResponse(val userId: Int, val profileImgNumber: Int, val ni
 
 //챕터
 data class ChapterPageResponse(
+    val chapterSummary: ChapterSummary,
+    val chapterProgressRate: String
+)
+data class ChapterSummary(
     val chapterId: Int,
-    val name: String,
+    val title: String,
     val description: String,
-    val totalUnits: Int,
-    val completedUnits: Int
 )
 
 //홈
 data class MainPageResponse(
     val nickname: String,
     val leagueName: String,
+    val userLevelDetail: UserLevelDetail,
+    val learningDetail: LearningDetail,
+    val missionDetail: MissionDetail
+)
+data class UserLevelDetail(
     val xp: Int,
     val level: Int,
-    val planetConquestRate: Int,
-    val consecutiveDays: Int,
-    val chapterId: Int,
-    val chapterName: String,
-    val chapterDescription: String,
-    val totalUnits: Int,
-    val completedUnits: Int,
-    val missionName: String,
+    val levelRate: Float
+)
+data class LearningDetail(
+    val consecutiveSolvedDays: Int,
+    val planetConquestRate: Float,
+    val recentSolvedChapterId: Int,
+    val recentSolvedChapterTitle: String,
+    val recentSolvedChapterDescription: String,
+    val recentSolvedChapterProgressRate: String
+)
+data class MissionDetail(
+    val missionDescription: String,
     val awardXp: Int,
     val isCompleted: Boolean
 )
@@ -104,6 +116,7 @@ data class LessonResultResponse(
     val nextLevel: Int,
     val xp: Int
 )
+
 //신고
 data class ReportRequest(
     val reportType: String,
@@ -267,7 +280,7 @@ interface ApiService {
         @Header("Authorization") auth: String
     ): OnboardingResponse
 
-    @GET("api/v1/main")
+    @GET("api/v1/users/main-page")
     suspend fun getMainPage(
         @Header("Authorization") auth: String,
     ): MainPageResponse
@@ -403,5 +416,12 @@ interface ApiService {
         @Query("queryText") queryText: String,
         @Query("page") page: Int = 0
     ): SlicePage<FriendUser>
+
+    @GET("api/v1/cs-notes/{chapter}/{unit}")
+    suspend fun getNotes(
+        @Header("Authorization") auth: String,
+        @Path("chapter") chapter: String,
+        @Path("unit") unit: String
+    ): ResponseBody
 }
 

@@ -51,10 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.DesignSpec
-import com.example.gravit.LocalDesignSpec
+import com.example.gravit.ui.theme.DesignSpec
+import com.example.gravit.ui.theme.LocalDesignSpec
 import com.example.gravit.R
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.error.isDeletionPending
 import com.example.gravit.ui.theme.pretendard

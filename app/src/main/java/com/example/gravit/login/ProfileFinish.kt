@@ -23,10 +23,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
-import com.example.gravit.DesignSpec
-import com.example.gravit.LocalDesignSpec
+import com.example.gravit.ui.theme.DesignSpec
+import com.example.gravit.ui.theme.LocalDesignSpec
 import com.example.gravit.R
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -74,7 +74,7 @@ fun ProfileFinish(navController: NavController) {
                     painter = painterResource(id = R.drawable.greeting),
                     contentDescription = "finish",
                     modifier = Modifier
-                        .padding(top = Responsive.h(20f))
+                        .padding(top = Responsive.h(60f))
                         .size(Responsive.w(216f))
                         .align(Alignment.CenterHorizontally)
                 )

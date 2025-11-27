@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,11 +47,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.error.isDeletionPending
-import com.example.gravit.main.Chapter.Lesson.PillShape
-import com.example.gravit.main.Chapter.Lesson.RoundBox
+import com.example.gravit.main.Study.Lesson.PillShape
+import com.example.gravit.main.Study.Lesson.RoundBox
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -164,8 +163,8 @@ fun HomeScreen(
                 ) {
                     Column {
                         Row (verticalAlignment = Alignment.CenterVertically){
-                            val level = home?.level ?: 1
-                            val xp = home?.xp ?: 0
+                            val level = home?.userLevelDetail?.level ?: 1
+                            val xp = home?.userLevelDetail?.xp ?: 0
                             val league = home?.leagueName ?: "Bronze 1"
                             PillShape(img = R.drawable.rank_cup, league = league)
 
@@ -228,9 +227,9 @@ fun HomeScreen(
                                         }
                                         Spacer(modifier = Modifier.height(Responsive.h(12f)))
 
-                                        val mission = home?.missionName
-                                        val missionXp = home?.awardXp
-                                        val isCompleted = home?.isCompleted
+                                        val mission = home?.missionDetail?.missionDescription
+                                        val missionXp = home?.missionDetail?.awardXp
+                                        val isCompleted = home?.missionDetail?.isCompleted
                                         isCompleted?.let {
                                             if(!it){
                                                 Row{
@@ -312,14 +311,14 @@ fun HomeScreen(
                                 Column {
                                     RoundBox(
                                         title = "행성 정복률",
-                                        value = "${home?.planetConquestRate}%",
+                                        value = "${home?.learningDetail?.planetConquestRate}%",
                                         img = R.drawable.rocket_main,
                                         modifier = Modifier.weight(1f)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     RoundBox(
                                         title = "연속 학습일",
-                                        value = "${home?.consecutiveDays}일",
+                                        value = "${home?.learningDetail?.consecutiveSolvedDays}일",
                                         img = R.drawable.fire,
                                         modifier = Modifier.weight(1f)
                                     )
@@ -329,19 +328,18 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.height(Responsive.h(16f)))
 
-                        val chapterId = home?.chapterId ?: 0
-                        val chapterName = home?.chapterName
-                        val chapterDescription = home?.chapterDescription
-                        val totalUnits = home?.totalUnits
-                        val completedUnits = home?.completedUnits
+                        val chapterId = home?.learningDetail?.recentSolvedChapterId ?: 0
+                        val chapterName = home?.learningDetail?.recentSolvedChapterTitle
+                        val chapterDescription = home?.learningDetail?.recentSolvedChapterDescription
+                        val progressRate = home?.learningDetail?.recentSolvedChapterProgressRate
+                        val rate = progressRate?.toFloatOrNull() ?: 0f
                         val bgResId = previousImg[chapterId] ?: 0
 
                         PreviousButton(
                             chapterId = chapterId,
                             chapterName = chapterName,
-                            completedUnits = completedUnits,
+                            progressRate = rate,
                             backgroundImg = bgResId,
-                            totalUnits = totalUnits,
                             onClick = {
                                 if(chapterId == 0) {
                                     navController.navigate("chapter"){

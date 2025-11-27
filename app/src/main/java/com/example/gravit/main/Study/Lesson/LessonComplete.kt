@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Lesson
 
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -52,8 +52,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.Study.Problem.FormatSeconds
 import com.example.gravit.main.Home.HomeVMFactory
 import com.example.gravit.main.Home.HomeViewModel
 import com.example.gravit.main.Home.LevelGauge
@@ -102,8 +103,8 @@ fun LessonComplete(
         }
     }
     val league = (ui as? HomeViewModel.UiState.Success)?.data?.leagueName?: "브론즈 1"
-    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.level?: 1
-    val xp = (ui as? HomeViewModel.UiState.Success)?.data?.xp?: 0
+    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.userLevelDetail?.level ?: 1
+    val xp = (ui as? HomeViewModel.UiState.Success)?.data?.userLevelDetail?.xp ?: 0
 
     Box(modifier = Modifier
         .fillMaxSize()

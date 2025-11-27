@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter
+package com.example.gravit.main.Study.Chapter
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
@@ -49,8 +49,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -59,7 +57,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.example.gravit.api.ChapterPageResponse
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.main.Home.RoundedGauge
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -152,13 +150,11 @@ fun ChapterScreen(
                         pair.forEachIndexed { index, data ->
                             ChapterButton(
                                 description = data.description,
-                                text = data.name,
+                                text = data.title,
                                 planet = data.planetRes,
-                                completedUnits = data.completedUnits,
-                                totalUnits = data.totalUnits,
+                                rate = data.rate,
                                 onClick = {
-                                    val chapterId = data.id
-                                    navController.navigate("units/${chapterId}")
+                                    navController.navigate("unit/${data.chapterId}")
                                           },
                                 modifier = Modifier
                                     .weight(1f)
@@ -187,14 +183,21 @@ fun ChapterScreen(
 }
 
 data class ChapterButtonUI(
-    val id: Int,
-    val name: String,
+    val chapterId: Int,
+    val title: String,
     val description: String,
-    val completedUnits: Int,
-    val totalUnits: Int,
+    val rate: Float,
     val planetRes: Int,
 )
 
+private val csChapterName = mapOf(
+    1 to "data-structure",
+    2 to "algorithm",
+    3 to "network"
+)
+private fun toChaterName(id: Int): String{
+    return csChapterName[id] ?: ""
+}
 private val planetById = mapOf(
     1 to R.drawable.data_structure_chapter,
     2 to R.drawable.algorithm_chapter,
@@ -211,25 +214,23 @@ private fun resolvePlanetRes(id: Int): Int {
 fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonUI> {
     return chapters.map { c ->
         ChapterButtonUI(
-            id = c.chapterId,
-            name = c.name,
-            description = c.description,
-            completedUnits = c.completedUnits,
-            totalUnits = c.totalUnits,
-            planetRes = resolvePlanetRes(c.chapterId),
+            chapterId = c.chapterSummary.chapterId,
+            title = c.chapterSummary.title,
+            description = c.chapterSummary.description,
+            rate = c.chapterProgressRate?.toFloatOrNull() ?: 0f,
+            planetRes = resolvePlanetRes(c.chapterSummary.chapterId),
         )
     }
 }
 @Composable
 fun ChapterButton(
     description: String,
-    totalUnits: Int,
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    completedUnits: Int,
     planet: Int,
     isRight: Boolean,
+    rate: Float
 ) {
     var showTooltip by remember { mutableStateOf(false) }
 
@@ -287,8 +288,7 @@ fun ChapterButton(
                     }
                     Spacer(modifier = Modifier.height(Responsive.h(12f)))
                     RoundedGauge(
-                        totalUnits = totalUnits,
-                        completedUnits = completedUnits,
+                        rate = rate,
                         width = Responsive.w(140f),
                         height = Responsive.h(10f)
                     )

@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Problem
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -71,7 +71,7 @@ import com.example.gravit.api.ProblemResultItem
 import com.example.gravit.api.Problems
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.ConfirmBottomSheet
-import com.example.gravit.main.toLessonCompleted
+import com.example.gravit.navigation.toLessonCompleted
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -86,11 +86,14 @@ fun ProblemScreen(
     chapterName: String,
     unitId: Int,
     lessonId: Int,
-    onSessionExpired: () -> Unit
+    onSessionExpired: () -> Unit,
+    onClick: () -> Unit
 ) {
     //스톱워치
     val swVm: StopwatchViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    var bookmark by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner) {
         // 앱이 백그라운드로 가면 멈춤
@@ -114,7 +117,10 @@ fun ProblemScreen(
 
     val context = LocalContext.current
     val vm: LessonViewModel = viewModel(
-        factory = LessonVMFactory(RetrofitInstance.api, context)
+        factory = LessonVMFactory(
+            RetrofitInstance.api,
+            context
+        )
     )
 
     LaunchedEffect(lessonId) {
@@ -332,9 +338,16 @@ fun ProblemScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.clipboard),
-                            contentDescription = "clipboard",
-                            modifier = Modifier.size(32.dp)
+                            painter = painterResource(
+                                if (bookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(25.dp)
+                                .clickable {
+                                    bookmark = !bookmark
+                                    onClick()
+                                }
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
@@ -345,7 +358,10 @@ fun ProblemScreen(
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        ReportDialog(navController = navController, problemId = current.problemId)
+                        ReportDialog(
+                            navController = navController,
+                            problemId = current.problemId
+                        )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
@@ -409,7 +425,7 @@ fun ProblemScreen(
                                 selectedIndex = null
                                 shortText = ""
                                 lastCorrect = null
-                            } else{
+                            } else {
                                 when (submit) {
                                     is LessonViewModel.SubmitState.Success -> {
                                         navController.toLessonCompleted(
@@ -421,7 +437,8 @@ fun ProblemScreen(
                                             learningTime = resultNext?.second ?: 0
                                         )
                                     }
-                                    else ->  Unit
+
+                                    else -> Unit
                                 }
                             }
                         },
@@ -451,7 +468,7 @@ fun ProblemScreen(
                                 selectedIndex = null
                                 shortText = ""
                                 lastCorrect = null
-                            } else{
+                            } else {
                                 when (submit) {
                                     is LessonViewModel.SubmitState.Success -> {
                                         navController.toLessonCompleted(
@@ -463,7 +480,8 @@ fun ProblemScreen(
                                             learningTime = resultNext?.second ?: 0
                                         )
                                     }
-                                    else ->  Unit
+
+                                    else -> Unit
                                 }
                             }
                         },
