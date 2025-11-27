@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Lesson
 
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
@@ -63,7 +63,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.ui.theme.pretendard
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -76,14 +76,11 @@ import kotlin.math.abs
 
 @Composable
 fun LessonList(
-    chapter: String,
-    unit: String,
+    unitId: Int,
     onSessionExpired: () -> Unit,
     navController: NavController
 ) {
-    LaunchedEffect(Unit) {
-        Log.d("LessonScreen", "=== LessonScreen 진입 === chapterId = $chapter, unitId = $unit")
-    }
+
     val context = LocalContext.current
     val vm: NoteVM = viewModel(
         factory = NoteVMFactory(RetrofitInstance.api, context)
@@ -91,7 +88,7 @@ fun LessonList(
     val ui by vm.state.collectAsState()
 
     var navigated by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { vm.load(chapter, unit) }
+    //LaunchedEffect(Unit) { vm.load(chapter, unit) }
     LaunchedEffect(ui) {
         when (ui) {
             NoteVM.UiState.SessionExpired ->  {
@@ -483,5 +480,5 @@ fun Modifier.glow(
 @Composable
 fun Preview(){
     val navController = rememberNavController()
-    LessonList("algorithm", "algorithm",{}, navController)
+    LessonList(1,{}, navController)
 }
