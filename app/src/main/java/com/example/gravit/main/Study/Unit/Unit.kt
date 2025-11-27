@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Unit
+package com.example.gravit.main.Study.Unit
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -48,11 +48,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.api.UnitDetails
-import com.example.gravit.main.Home.HomeViewModel
-import com.example.gravit.main.toLesson
+import com.example.gravit.navigation.toLesson
 import com.example.gravit.ui.theme.pretendard
 import kotlin.collections.forEachIndexed
 import kotlin.collections.getOrNull

@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter.Lesson
+package com.example.gravit.main.Study.Unit
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,10 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,12 +32,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.Navigator
+import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 
 
 @Composable
 fun UnitList(
+    chapterId: Int, //api 연동할 때 쓰셈
+    navController: NavController,
+    onSessionExpired: () -> Unit //세션 만료 함수
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -182,5 +184,6 @@ fun UnitList(
 @Preview(showBackground = true)
 @Composable
 fun UnitListPreview() {
-    UnitList()
+    val navController = rememberNavController()
+    UnitList(1, navController, {})
 }

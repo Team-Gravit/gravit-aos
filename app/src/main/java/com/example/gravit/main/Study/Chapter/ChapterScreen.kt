@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter
+package com.example.gravit.main.Study.Chapter
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
@@ -57,7 +57,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.example.gravit.api.ChapterPageResponse
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.main.Home.RoundedGauge
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -148,15 +148,13 @@ fun ChapterScreen(
                 buttons.chunked(2).forEach { pair ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         pair.forEachIndexed { index, data ->
-                            val unit = "unit01"
                             ChapterButton(
                                 description = data.description,
                                 text = data.title,
                                 planet = data.planetRes,
                                 rate = data.rate,
                                 onClick = {
-                                    val chapter = toChaterName(data.chapterId)
-                                    navController.navigate("test/${chapter}/${unit}")
+                                    navController.navigate("unit/${data.chapterId}")
                                           },
                                 modifier = Modifier
                                     .weight(1f)

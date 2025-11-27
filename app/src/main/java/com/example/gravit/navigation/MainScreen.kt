@@ -1,4 +1,4 @@
-package com.example.gravit.main
+package com.example.gravit.navigation
 
 import BottomNavigationBar
 import android.net.Uri
@@ -17,14 +17,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.gravit.api.RetrofitInstance.api
 import com.example.gravit.error.NotFoundScreen
 import com.example.gravit.error.UnauthorizedScreen
 import com.example.gravit.main.Home.HomeScreen
-import com.example.gravit.main.Chapter.ChapterScreen
-import com.example.gravit.main.Chapter.Lesson.LessonComplete
-import com.example.gravit.main.Chapter.Lesson.ProblemScreen
-import com.example.gravit.main.Chapter.Unit.Unit
+import com.example.gravit.main.Study.Chapter.ChapterScreen
+import com.example.gravit.main.Study.Lesson.LessonComplete
+import com.example.gravit.main.Study.Problem.ProblemScreen
+import com.example.gravit.main.Study.Unit.Unit
 import com.example.gravit.main.League.LeagueScreen
+import com.example.gravit.main.Study.Lesson.LessonList
+import com.example.gravit.main.User.Friend.AddFriend
+import com.example.gravit.main.User.Friend.FollowList
 import com.example.gravit.main.User.Notice.Notice
 import com.example.gravit.main.User.Notice.NoticeDetail
 import com.example.gravit.main.User.Setting
@@ -103,7 +107,7 @@ fun MainScreen(rootNavController: NavController) {
                 //chapter
                 composable("chapter") { ChapterScreen(innerNavController, goToLoginChoice) }
 
-                composable(
+                """composable(
                     route = "units/{chapterId}",
                     arguments = listOf(navArgument("chapterId") { type = NavType.IntType })
                 ) { backStackEntry ->
@@ -113,9 +117,30 @@ fun MainScreen(rootNavController: NavController) {
                         chapterId = chapterId,
                         onSessionExpired = goToLoginChoice
                     )
-                }
+                } """ //안 쓰는 거 일단 주석(참고용)
+
+                """
+                    유닛 네비 여기에 ㄱㄱ 그리고 api 연결 때문에 chapterId가 필요할 거야
+                    챕터->유닛 넘어갈 때 Id도 같이 넘기게 수정해놨음
+                    
+                    레슨리스트로 이동할 때 유닛Id 넘겨주세용
+                """
 
                 composable(
+                    route = "lesson/{unitId}",
+                    arguments = listOf(
+                        navArgument("unit") { type = NavType.IntType; defaultValue = "" }
+                    )
+                ) { backStackEntry ->
+                    val unitId = backStackEntry.arguments!!.getInt("unit")
+                    LessonList(
+                        navController = innerNavController,
+                        onSessionExpired = goToLoginChoice,
+                        unitId = unitId
+                    )
+                }
+
+                composable( //이거 이제 문제집 네비
                     route = "lesson/{chapterId}/{unitId}/{lessonId}/{chapterName}",
                     arguments = listOf(
                         navArgument("chapterId") { type = NavType.IntType },
@@ -140,7 +165,7 @@ fun MainScreen(rootNavController: NavController) {
                     )
                 }
 
-                composable(
+                composable(//이거 나중에 수정할 거임
                     route = "lesson/complete/{chapterId}/{unitId}/{lessonId}?chapterName={chapterName}&accuracy={accuracy}&learningTime={learningTime}",
                     arguments = listOf(
                         navArgument("chapterId") { type = NavType.IntType },
@@ -210,7 +235,7 @@ fun MainScreen(rootNavController: NavController) {
 
                 // 친구 추가(검색)
                 composable("user/addfriend") {
-                    com.example.gravit.main.User.Friend.AddFriend(innerNavController)
+                    AddFriend(innerNavController)
                 }
 
                 // 팔로워/팔로잉
@@ -226,7 +251,7 @@ fun MainScreen(rootNavController: NavController) {
                     else
                         FollowTab.Followers
 
-                    com.example.gravit.main.User.Friend.FollowList(
+                    FollowList(
                         navController = innerNavController,
                         initialTab = tab
                     )

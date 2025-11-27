@@ -1,4 +1,4 @@
-package com.example.gravit.main.Chapter
+package com.example.gravit.main.Study.Chapter
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
