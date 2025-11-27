@@ -18,7 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import com.example.gravit.R
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.ui.theme.mbc1961
 
 val previousImg: Map<Int, Int> = mapOf(

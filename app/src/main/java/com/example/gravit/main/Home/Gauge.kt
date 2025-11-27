@@ -35,7 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 
 @Composable
 fun LevelGauge(

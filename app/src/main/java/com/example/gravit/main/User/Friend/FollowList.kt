@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,7 +31,7 @@ import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.api.FriendItem
 import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.main.FollowTab
+import com.example.gravit.navigation.FollowTab
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.pretendard
 

@@ -76,7 +76,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.Responsive
 import com.example.gravit.api.LastSeasonPopupDto
 import com.example.gravit.api.LeagueItem
 import com.example.gravit.api.RetrofitInstance

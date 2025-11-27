@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.R
-import com.example.gravit.main.Chapter.Lesson.ReportButton
+import com.example.gravit.main.Study.Problem.ReportButton
 import com.example.gravit.ui.theme.pretendard
 
 @Composable

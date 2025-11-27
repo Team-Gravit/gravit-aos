@@ -47,11 +47,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.error.isDeletionPending
-import com.example.gravit.main.Chapter.Lesson.PillShape
-import com.example.gravit.main.Chapter.Lesson.RoundBox
+import com.example.gravit.main.Study.Lesson.PillShape
+import com.example.gravit.main.Study.Lesson.RoundBox
 import com.example.gravit.ui.theme.pretendard
 
 @Composable

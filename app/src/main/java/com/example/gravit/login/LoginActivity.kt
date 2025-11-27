@@ -34,9 +34,9 @@ import androidx.compose.ui.unit.dp
 import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 import androidx.navigation.NavController
-import com.example.gravit.DesignSpec
-import com.example.gravit.LocalDesignSpec
-import com.example.gravit.Responsive
+import com.example.gravit.ui.theme.DesignSpec
+import com.example.gravit.ui.theme.LocalDesignSpec
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.AuthPrefs
 
 @Composable
