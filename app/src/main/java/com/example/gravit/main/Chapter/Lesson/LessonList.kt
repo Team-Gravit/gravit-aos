@@ -75,7 +75,7 @@ import com.example.gravit.api.RetrofitInstance
 import kotlin.math.abs
 
 @Composable
-fun LessonScreen(
+fun LessonList(
     chapter: String,
     unit: String,
     onSessionExpired: () -> Unit,
@@ -483,5 +483,5 @@ fun Modifier.glow(
 @Composable
 fun Preview(){
     val navController = rememberNavController()
-    LessonScreen("algorithm", "algorithm",{}, navController)
+    LessonList("algorithm", "algorithm",{}, navController)
 }
