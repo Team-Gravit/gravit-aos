@@ -143,10 +143,10 @@ private fun UnitListContent(
         modifier = Modifier.fillMaxSize()
     ) {
         Image(
-            painter = painterResource(id = R.drawable.unitlist_back),
+            painter = painterResource(id = R.drawable.unitlesson_back),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
+            contentScale = ContentScale.Crop
         )
         Column(
             modifier = Modifier
@@ -249,7 +249,7 @@ private fun UnitItemBox(
                 )
             )
             .clickable {
-                navController.navigate("lesson/${unit.unitId}")
+                navController.navigate("lessonList/${unit.unitId}/${unit.orderText}/${unit.title}")
             }
             .padding(10.dp)
     ) {

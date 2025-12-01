@@ -98,11 +98,6 @@ data class ProblemResponse(
     val problems: List<Problems>,
     val totalProblems: Int
 )
-data class UnitSummary(
-    val unitId: Int,
-    val title: String,
-    val description: String
-)
 data class Problems(
     val problemId: Int,
     val problemType: String,

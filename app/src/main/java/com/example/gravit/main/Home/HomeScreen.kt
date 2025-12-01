@@ -346,7 +346,7 @@ fun HomeScreen(
                                         launchSingleTop = true
                                     }
                                 }else {
-                                    navController.navigate("units/$chapterId") {
+                                    navController.navigate("unit/$chapterId") {
                                         launchSingleTop = true
                                     }
                                 }
