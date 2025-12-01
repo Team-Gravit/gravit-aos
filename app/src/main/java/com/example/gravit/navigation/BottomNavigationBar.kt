@@ -30,7 +30,9 @@ fun BottomNavigationBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route.orEmpty()
 
-    val inLearnStack = currentRoute.startsWith("chapter") || currentRoute.startsWith("units")
+    val inLearnStack = currentRoute.startsWith("chapter")
+            || currentRoute.startsWith("units")
+            || currentRoute.startsWith("lessonList")
     val inUserStack = currentRoute.startsWith("user")
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp

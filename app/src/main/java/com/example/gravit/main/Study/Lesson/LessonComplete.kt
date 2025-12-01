@@ -1,6 +1,5 @@
 package com.example.gravit.main.Study.Lesson
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,59 +51,58 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.ui.theme.Responsive
+import com.example.gravit.api.LessonSubmissionSaveRequest
+import com.example.gravit.api.ProblemSubmissionRequests
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.main.Study.Problem.FormatSeconds
-import com.example.gravit.main.Home.HomeVMFactory
-import com.example.gravit.main.Home.HomeViewModel
 import com.example.gravit.main.Home.LevelGauge
+import com.example.gravit.main.Study.Problem.LessonVMFactory
+import com.example.gravit.main.Study.Problem.LessonViewModel
 import com.example.gravit.ui.theme.pretendard
 @Composable
 fun LessonComplete(
     navController: NavController,
-    chapterId: Int,
     chapterName: String,
-    unitId: Int,
-    lessonId: Int,
-    accuracy: Int,
+    accuracy: Float,
     learningTime: Int,
-    onSessionExpired: () -> Unit
+    lessonId: Int
 ){
-    Log.d("LessonComplete", "화면 진입")
+    val entry = navController.previousBackStackEntry
+    val problemList = entry?.savedStateHandle?.get<List<ProblemSubmissionRequests>>("problemList")
+    val lessonSubmission = LessonSubmissionSaveRequest(lessonId, learningTime, accuracy)
     val context = LocalContext.current
-    val vm: HomeViewModel = viewModel(
-        factory = HomeVMFactory(RetrofitInstance.api, context)
+    val vm: LessonViewModel = viewModel(
+        factory = LessonVMFactory(RetrofitInstance.api, context)
     )
-    val ui by vm.state.collectAsState()
 
-    LaunchedEffect(Unit) { vm.load() }
+    LaunchedEffect(Unit) {
+       vm.submitResults(lessonSubmission, problemList)
+    }
+
+    val submit by vm.submit.collectAsState()
 
     var navigated by remember { mutableStateOf(false) }
-    LaunchedEffect(ui) {
-        when (ui) {
-            HomeViewModel.UiState.SessionExpired -> {
+    LaunchedEffect(submit) {
+        when (submit) {
+            LessonViewModel.SubmitState.SessionExpired ->  {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    launchSingleTop = true; restoreState = false
                 }
             }
-            HomeViewModel.UiState.NotFound ->  {
+            LessonViewModel.SubmitState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                   launchSingleTop = true; restoreState = false
                 }
             }
-            HomeViewModel.UiState.Failed ->  {
-                navigated = true
-                onSessionExpired()
-            }
-
             else -> Unit
         }
     }
-    val league = (ui as? HomeViewModel.UiState.Success)?.data?.leagueName?: "브론즈 1"
-    val lv = (ui as? HomeViewModel.UiState.Success)?.data?.userLevelDetail?.level ?: 1
-    val xp = (ui as? HomeViewModel.UiState.Success)?.data?.userLevelDetail?.xp ?: 0
+    val s = (submit as? LessonViewModel.SubmitState.Success)?.data
+    val userLevelResponse = s?.userLevelResponse
+    val unitSummary = s?.unitSummary
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -135,7 +133,7 @@ fun LessonComplete(
                         .align(Alignment.CenterStart)
                         .padding(start = Responsive.w(16f))
                         .size(Responsive.w(24f), Responsive.h(24f))
-                        .clickable { navController.navigate("units/${chapterId}")},
+                        .clickable { navController.navigate("home")},
                     tint = Color(0xFF4D4D4D)
                 )
             }
@@ -151,12 +149,12 @@ fun LessonComplete(
                 ) {
                     PillShape(
                         img = R.drawable.rank_cup,
-                        league = league
+                        league = s?.leagueName ?: "Bronze1"
                     )
                     Spacer(Modifier.width(Responsive.w(8f)))
                     LevelGauge(
-                        lv = lv,
-                        xp = xp,
+                        lv = userLevelResponse?.currentLevel ?: 1,
+                        xp = userLevelResponse?.xp ?: 0,
                     )
                 }
             }
@@ -182,7 +180,7 @@ fun LessonComplete(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "${planetName[chapterId].toString()}에 한발 더 가까워졌어요!",
+                            text = "${unitSummary?.title ?: ""} 학습을 완료했어요!",
                             fontFamily = pretendard,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = Responsive.spH(20f),
@@ -191,7 +189,7 @@ fun LessonComplete(
                         )
                         Spacer(Modifier.height(Responsive.h(8f)))
                         Text(
-                            text = "${chapterName}의 ${unitId}번째 단계를 학습을 완료했어요",
+                            text = "다음 레슨을 풀러 가볼까요?",
                             fontFamily = pretendard,
                             fontWeight = FontWeight.Normal,
                             fontSize = Responsive.spH(16f),
@@ -218,7 +216,7 @@ fun LessonComplete(
                 ) {
                     RoundBox(
                         title = "정답률",
-                        value = "${accuracy}%",
+                        value = "${lessonSubmission.accuracy}%",
                         img = R.drawable.books,
                         modifier = Modifier.weight(1f)
                     )
@@ -226,7 +224,7 @@ fun LessonComplete(
 
                     RoundBox(
                         title = "풀이시간",
-                        value = FormatSeconds(learningTime),
+                        value = FormatSeconds(lessonSubmission.learningTime),
                         img = R.drawable.play_button,
                         modifier = Modifier.weight(1f)
                     )
@@ -238,7 +236,7 @@ fun LessonComplete(
                 ) {
                     Button(
                         onClick = {
-                            navController.navigate("units/${chapterId}")
+                            navController.navigate("lessonList/${unitSummary?.unitId}")
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -260,7 +258,7 @@ fun LessonComplete(
                 }
             }
         }
-        if (ui is HomeViewModel.UiState.Loading) {
+        if (submit is LessonViewModel.SubmitState.Loading) {
             Box(
                 Modifier
                     .fillMaxSize()
@@ -272,18 +270,6 @@ fun LessonComplete(
         }
     }
 }
-
-
-private val planetName = mapOf(
-    1 to "지구",
-    2 to "수성",
-    3 to "금성",
-    4 to "화성",
-    5 to "목성",
-    6 to "토성",
-    7 to "천왕성",
-    8 to "해왕성",
-)
 
 @Composable
 fun RoundBox(

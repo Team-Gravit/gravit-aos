@@ -2,7 +2,6 @@ package com.example.gravit.main.Study.Lesson
 
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +32,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,6 +72,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.api.RetrofitInstance
+import java.net.URLEncoder
 import kotlin.math.abs
 
 @Composable
@@ -80,44 +81,38 @@ fun LessonList(
     onSessionExpired: () -> Unit,
     navController: NavController
 ) {
-
     val context = LocalContext.current
-    val vm: NoteVM = viewModel(
-        factory = NoteVMFactory(RetrofitInstance.api, context)
-    )
+    val vm: LessonListVM = viewModel(factory = LessonListVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
 
     var navigated by remember { mutableStateOf(false) }
-    //LaunchedEffect(Unit) { vm.load(chapter, unit) }
-    LaunchedEffect(ui) {
-        when (ui) {
-            NoteVM.UiState.SessionExpired ->  {
-                navigated = true
-                navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
+    LaunchedEffect(Unit) { vm.load(unitId) }
+    when (ui) {
+        LessonListVM.UiState.SessionExpired -> {
+            navigated = true
+            navController.navigate("error/401") {
+                launchSingleTop = true; restoreState = false
             }
-            NoteVM.UiState.NotFound -> {
-                navigated = true
-                navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            NoteVM.UiState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
         }
+        LessonListVM.UiState.Loading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        LessonListVM.UiState.NotFound -> {
+            navigated = true
+            navController.navigate("error/404") {
+                launchSingleTop = true; restoreState = false
+            }
+        }
+        else -> Unit
     }
-
     var showSheet by remember { mutableStateOf(false) }
 
-    val noteText = (ui as? NoteVM.UiState.Success)
-        ?.data
-        ?: "개념노트를 불러오지 못했습니다."
-
-    Log.d("LessonScreen", "noteText = $noteText")
+    val s = (ui as? LessonListVM.UiState.Success)?.data
+    val chapterSummary = s?.chapterSummary
+    val chapterName = chapterSummary?.title ?: ""
+    val lessonSummaries = s?.lessonSummaries ?: emptyList()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -147,7 +142,7 @@ fun LessonList(
                 )
                 Spacer(Modifier.width(Responsive.w(16f)))
                 Text(
-                    text = "자료구조",
+                    text = chapterSummary?.title ?: "",
                     fontWeight = FontWeight.Bold,
                     fontFamily = pretendard,
                     fontSize = Responsive.spW(20f),
@@ -204,7 +199,7 @@ fun LessonList(
                 modifier = Modifier.padding(start = Responsive.w(16f))
             )
             Spacer(Modifier.height(Responsive.w(16f)))
-            Selector()
+            Selector(unitId, chapterName, navController)
             Spacer(Modifier.height(Responsive.w(20f)))
             Text(
                 text = "문제 리스트",
@@ -222,16 +217,19 @@ fun LessonList(
                 verticalArrangement = Arrangement.spacedBy(Responsive.h(8f)),
                 horizontalArrangement = Arrangement.spacedBy(Responsive.w(8f)),
             ) {
-                itemsIndexed(List(12) { it }) { index, _ ->
+                itemsIndexed(lessonSummaries) { index, lesson ->
 
-                    val isLastRow = index >= 12 - 3   // 총 12개, 마지막 3개가 마지막 행
+                    val columnCount = 3
+                    val isLastRow = index >= lessonSummaries.size - columnCount
 
                     LessonBox(
-                        title = "Lesson01",
-                        completed = false,
+                        title = if((index+1) < 10) "Lesson0${index+1}" else "Lesson${index+1}",
+                        completed = lesson.isSolved,
                         modifier = Modifier.padding(
                             bottom = if (isLastRow) 20.dp else 0.dp
-                        )
+                        ),
+                        totalProblem = lesson.totalProblem,
+                        onClick = { navController.navigate("lesson/${lesson.lessonId}/${URLEncoder.encode(chapterName)}") }
                     )
                 }
             }
@@ -239,20 +237,35 @@ fun LessonList(
         if(showSheet){
             NoteSheet(
                 onDismiss = { showSheet = false },
-                "배열(Array)",
-                noteText
+                "배열(Array)"
             )
         }
     }
 
 }
 
+data class SelectorItem(
+    val title: String,
+    val desc: String,
+    val type: String
+)
 @Composable
 fun Selector(
+    unitId: Int,
+    chapterName: String,
+    navController: NavController
 ){
     val items = listOf(
-        "북마크" to "즐겨찾기로 등록해놓은 문제를 풀어요.",
-        "오답노트" to "틀린 문제를 복습해요.",
+        SelectorItem(
+            title = "북마크",
+            desc = "즐겨찾기로 등록해놓은 문제를 풀어요.",
+            type = "bookmarks"
+        ),
+        SelectorItem(
+            title = "오답노트",
+            desc = "틀린 문제를 복습해요.",
+            type = "wrong-answered-notes"
+        )
     )
 
     val listState = rememberLazyListState()
@@ -298,12 +311,13 @@ fun Selector(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ){
-        itemsIndexed(items) { index, (title, desc) ->
+        itemsIndexed(items) { index, item ->
             val selected = index == centerIndex
             ProblemBox(
-                title = title,
-                context = desc,
+                title = item.title,
+                context = item.desc,
                 selected = selected,
+                onClick = {navController.navigate("problem/$unitId/${URLEncoder.encode(chapterName)}/${item.type}")}
             )
         }
     }
@@ -314,6 +328,7 @@ fun ProblemBox(
     title: String,
     context: String,
     selected: Boolean,
+    onClick: () -> Unit
 )
 {
     Box (modifier = Modifier.size(Responsive.h(229f), Responsive.h(112f))) {
@@ -339,6 +354,7 @@ fun ProblemBox(
                 )
                 .border(1.dp, Color(0xFF6D6D6D), RoundedCornerShape(8.dp))
                 .padding(10.dp)
+                .clickable{onClick()}
         ) {
             Column(modifier = Modifier.padding(Responsive.w(8f))) {
                 Text(
@@ -389,7 +405,7 @@ fun ProblemBox(
                 modifier = Modifier
                     .size(18.dp)
                     .align(Alignment.TopEnd)
-                    .offset(x = (-12).dp, y = -4.dp)   // 모서리에서 살짝 안쪽으로
+                    .offset(x = (-12).dp, y = -4.dp)
             )
         }
     }
@@ -398,7 +414,9 @@ fun ProblemBox(
 fun LessonBox(
     title: String,
     completed: Boolean,
-    modifier: Modifier
+    modifier: Modifier,
+    totalProblem: Int,
+    onClick: () -> Unit
 ){
     Box(
         modifier = modifier
@@ -416,7 +434,8 @@ fun LessonBox(
                 ),
                 shape = RoundedCornerShape(Responsive.h(8f))
             )
-            .padding(horizontal = Responsive.w(10f), vertical = Responsive.w(10f)),
+            .padding(horizontal = Responsive.w(10f), vertical = Responsive.w(10f))
+            .clickable{onClick()},
         contentAlignment = Alignment.Center,
     ){
         Column (modifier = Modifier.padding(horizontal = Responsive.w(10f), vertical = Responsive.w(10f))) {
@@ -438,7 +457,7 @@ fun LessonBox(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "10문제",
+                text = "${totalProblem}문제",
                 fontSize = Responsive.spW(12f),
                 fontWeight = FontWeight.Medium,
                 fontFamily = pretendard,

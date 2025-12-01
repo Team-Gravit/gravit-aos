@@ -80,7 +80,7 @@ fun LevelGauge(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(progress)
+                .fillMaxWidth(if(progress == 0f) 0.05f else progress)
                 .fillMaxHeight()
                 .background(
                     brush = Brush.horizontalGradient(
@@ -194,7 +194,8 @@ fun RoundedGauge(
     height: Dp,
     modifier: Modifier = Modifier
 ) {
-    val ratio = rate
+    val percentage = rate.coerceIn(0f, 100f)
+    val ratio = percentage / 100f
 
     Column(
         modifier = modifier
@@ -211,7 +212,7 @@ fun RoundedGauge(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(width * ratio)
+                    .fillMaxWidth(if(ratio <0.05f) 0.05f else ratio)
                     .clip(RoundedCornerShape(50))
                     .background(Color(0xFFBA00FF))
             )

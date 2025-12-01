@@ -1,6 +1,8 @@
 package com.example.gravit.api
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -10,6 +12,8 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.Response
+import retrofit2.http.DELETE
+import retrofit2.http.HTTP
 
 //로그인
 data class IdTokenRequest(val idToken: String)
@@ -80,18 +84,42 @@ data class LessonProgressSummaryResponses(
     val isCompleted: Boolean
 )
 
-//레슨
-data class LessonResponse(
-    val problems: List<Problems> = emptyList(),
+//레슨리스트
+data class LessonListResponse(
+    val chapterSummary: ChapterSummary,
+    val unitId: Int,
+    val lessonSummaries: List<LessonSummaries>
+)
+data class LessonSummaries(
+    val lessonId: Int,
+    val title: String,
+    val totalProblem: Int,
+    val isSolved: Boolean
+)
+
+//문제
+data class ProblemResponse(
+    val unitSummary: UnitSummary,
+    val problems: List<Problems>,
     val totalProblems: Int
+)
+data class UnitSummary(
+    val unitId: Int,
+    val title: String,
+    val description: String
 )
 data class Problems(
     val problemId: Int,
     val problemType: String,
-    val question: String,
+    val instruction: String,
     val content: String,
-    val answer: String,
+    val answerResponse: AnswerResponse,
     val options: List<OptionDto>,
+    val isBookmarked: Boolean,
+)
+data class AnswerResponse(
+    val content: String,
+    val explanation: String
 )
 data class OptionDto(
     val optionId: Int,
@@ -100,18 +128,31 @@ data class OptionDto(
     val isAnswer: Boolean,
     val problemId: Int
 )
-data class ProblemResultItem(
-    val problemId: Int,
-    val isCorrect: Boolean,
-    val incorrectCounts: Int
-)
+
+//제출
 data class LessonResultRequest(
+    val lessonSubmissionSaveRequest: LessonSubmissionSaveRequest?,
+    val problemSubmissionRequests: List<ProblemSubmissionRequests>?
+)
+data class LessonSubmissionSaveRequest(
     val lessonId: Int,
     val learningTime: Int,
-    val accuracy: Int,
-    val problemResults: List<ProblemResultItem>
+    val accuracy: Float
 )
+@Parcelize
+data class ProblemSubmissionRequests(
+    val problemId: Int,
+    val isCorrect: Boolean
+) : Parcelable
+
+//제출 결과
 data class LessonResultResponse(
+    val leagueName: String,
+    val userLevelResponse: UserLevelResponse,
+    val unitSummary: UnitSummary
+
+)
+data class UserLevelResponse(
     val currentLevel: Int,
     val nextLevel: Int,
     val xp: Int
@@ -268,6 +309,10 @@ data class BadgeResponses(
     val earned: Boolean
 )
 
+//북마크
+data class BookmarksRequest(
+    val problemId: Int
+)
 interface ApiService {
     @POST("api/v1/oauth/android")
     suspend fun sendCode(
@@ -300,13 +345,31 @@ interface ApiService {
     suspend fun getLesson(
         @Header("Authorization") auth: String,
         @Path("lessonId") lessonId: Int
-    ) : LessonResponse
+    ) : ProblemResponse
 
-    @POST("api/v1/learning/results")
-    suspend fun sendResults(
+    @GET("api/v1/learning/{unitId}/bookmarks")
+    suspend fun getBookmarks(
+        @Header("Authorization") auth: String,
+        @Path("unitId") unitId: Int
+    ) : ProblemResponse
+
+    @GET("api/v1/learning/{unitId}/wrong-answered-notes")
+    suspend fun getWrongAnswered(
+        @Header("Authorization") auth: String,
+        @Path("unitId") unitId: Int
+    ) : ProblemResponse
+
+    @POST("api/v1/learning/lessons/results")
+    suspend fun sendLessonResults(
         @Body body: LessonResultRequest,
         @Header("Authorization") auth: String
     ) : LessonResultResponse
+
+    @POST("api/v1/learning/problems/results")
+    suspend fun sendProblemResults(
+        @Body body: ProblemSubmissionRequests,
+        @Header("Authorization") auth: String
+    )
 
     @GET("api/v1/users/my-page")
     suspend fun getUser(
@@ -423,5 +486,37 @@ interface ApiService {
         @Path("chapter") chapter: String,
         @Path("unit") unit: String
     ): ResponseBody
+
+    @GET("api/v1/learning/{unitId}/lessons")
+    suspend fun getLessonList(
+        @Header("Authorization") auth: String,
+        @Path("unitId") unit: Int
+    ) : LessonListResponse
+
+    @POST("api/v1/learning/bookmarks")
+    suspend fun addBookmark(
+        @Header("Authorization") auth: String,
+        @Body request: BookmarksRequest
+    )
+
+    @HTTP(
+        method = "DELETE",
+        path = "api/v1/learning/bookmarks",
+        hasBody = true
+    )
+    suspend fun removeBookmark(
+        @Header("Authorization") auth: String,
+        @Body request: BookmarksRequest
+    )
+
+    @HTTP(
+        method = "DELETE",
+        path = "api/v1/learning/wrong-answered-notes",
+        hasBody = true
+    )
+    suspend fun removeWrongAnswered(
+        @Header("Authorization") auth: String,
+        @Body request: BookmarksRequest
+    )
 }
 

@@ -94,14 +94,14 @@ fun UserScreen(
             UserScreenVM.UiState.SessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    launchSingleTop = true; restoreState = false
                 }
             }
             UserScreenVM.UiState.NotFound -> {
                 if (isDeletionPending(context)) return@LaunchedEffect
                 navigated = true
                 navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    launchSingleTop = true; restoreState = false
                 }
             }
             UserScreenVM.UiState.Failed -> {

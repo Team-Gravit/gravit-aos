@@ -82,7 +82,6 @@ import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Home.LeagueGauge
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.TierPalette
-import com.example.gravit.ui.theme.gmarketsans
 import com.example.gravit.ui.theme.mbc1961
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -131,13 +130,11 @@ fun LeagueScreen(
         when (navTarget) {
             "401" -> {
                 navController.navigate("error/401") {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     launchSingleTop = true; restoreState = false
                 }
             }
             "404" -> {
                 navController.navigate("error/404") {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     launchSingleTop = true; restoreState = false
                 }
             }
@@ -793,6 +790,17 @@ private fun tierIdFromName(name: String?): Int = when (name) {
     "Diamond 3" -> 15
     else -> -1 // Unranked나 매칭 안 될 때
 }
+
+fun TextColor(tierId: Int) : Color =
+    when(tierId) {
+        1, 2 ,3 -> Color(0xFF6C3F00)
+        4, 5, 6 -> Color(0xFF818181)
+        7, 8, 9 -> Color(0xFFE29F00)
+        10, 11, 12 -> Color(0xFF00B399)
+        13, 14, 15 -> Color(0xFF00AFC3)
+    else -> Color(0xFF6C3F00)
+
+}
 @Composable
 private fun TierDot( //티어 (아직 로고 안 넣음)
     tierId: Int,
@@ -842,21 +850,14 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
         Spacer(Modifier.height(7.dp))
         if (selected) {
             val density = LocalDensity.current
-            val shadow = with(density) {
-                Shadow(
-                    Color.Black.copy(alpha = 0.25f),
-                    offset = Offset(0f, (1.46).dp.toPx()),
-                    blurRadius = 10.dp.toPx()
-                )
-            }
+
             Text(
                 text = label,
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = gmarketsans,
-                    color = Color(0xFF8A00B8),
-                    shadow = shadow
+                    fontFamily = pretendard,
+                    color = TextColor(tierId),
 
                 )
             )

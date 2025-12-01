@@ -4,9 +4,11 @@ package com.example.gravit.main.Study.Problem
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,9 +21,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.R
+import com.example.gravit.api.AnswerResponse
 import com.example.gravit.ui.theme.pretendard
 
 enum class FabState { HIDDEN, SUBMIT, NEXT }
@@ -29,7 +33,7 @@ enum class FabState { HIDDEN, SUBMIT, NEXT }
 @Composable
 fun ShortAnswer(
     submitted: Boolean,      // 제출 여부(부모 상태; 정오답 색상 표시용)
-    answer: String,
+    answer: AnswerResponse,
     problemId: Int,
     onTextChange: (String) -> Unit,
     text: String,
@@ -37,6 +41,8 @@ fun ShortAnswer(
     onSubmit: () -> Unit,
     isLast: Boolean,             //마지막 문제인지
     onNext: () -> Unit,          //다음 문제로
+    showRemoveFromWrongNote: Boolean = false,
+    onRemoveFromWrongNote: () -> Unit = {}
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -55,7 +61,7 @@ fun ShortAnswer(
         .fillMaxSize()
         .padding(horizontal = 16.dp)
     ) {
-        Column {
+        Column (modifier = Modifier.verticalScroll(rememberScrollState())){
             AnswerInputField(
                 value = text,
                 onValueChange = onTextChange,
@@ -74,7 +80,23 @@ fun ShortAnswer(
             }
             if (submitted && isCorrect != null) {
                 Spacer(Modifier.height(12.dp))
-                FeedbackSubjective(isCorrect = isCorrect, answer = answer)
+                Row (verticalAlignment = Alignment.CenterVertically) {
+                    FeedbackSubjective(isCorrect = isCorrect, answer = answer)
+                    if (showRemoveFromWrongNote && isCorrect) {
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = "오답노트에서 제외하기",
+                            fontSize = 15.sp,
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFA8A8A8),
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier.clickable { onRemoveFromWrongNote() }
+                        )
+                    }
+                }
+
+
             }
 
         }
@@ -120,15 +142,27 @@ fun ShortAnswer(
 @Composable
 fun FeedbackSubjective(
     isCorrect: Boolean,
-    answer: String
+    answer: AnswerResponse
 ) {
-    Text(
-        text = if (isCorrect) "정답입니다!" else "정답: $answer",
-        color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
-        fontFamily = pretendard,
-        fontWeight = if(isCorrect) FontWeight.SemiBold else FontWeight.Bold,
-        fontSize = 14.sp
-    )
+    Column{
+        Text(
+            text = if (isCorrect) "정답입니다!" else "정답: ${answer.content}",
+            color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
+            fontFamily = pretendard,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp
+        )
+        Spacer(Modifier.height(10.dp))
+        if (!isCorrect) {
+            Text(
+                text = answer.explanation,
+                fontFamily = pretendard,
+                fontWeight = FontWeight.Normal,
+                fontSize = 14.sp,
+                color = Color(0xFFD00000)
+            )
+        }
+    }
 }
 
 @Composable
