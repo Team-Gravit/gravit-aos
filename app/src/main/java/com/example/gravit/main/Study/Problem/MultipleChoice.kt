@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.R
@@ -36,7 +38,9 @@ fun MultipleChoice(
     isLast: Boolean,
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
-    isCorrect: Boolean?
+    isCorrect: Boolean?,
+    showRemoveFromWrongNote: Boolean = false,
+    onRemoveFromWrongNote: () -> Unit = {}
 ) {
     var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
     var readyToSubmit     by remember(problemNum) { mutableStateOf(false) }
@@ -74,23 +78,45 @@ fun MultipleChoice(
         displayOptions.indexOfFirst { it.isAnswer }.takeIf { it >= 0 }
     }
     Box(modifier = modifier.fillMaxSize()) {
+
         val isMyAnswerCorrect = submitted && selectedIndex == correctIdx
         val useScroll = submitted && !isMyAnswerCorrect
 
         val columnModifier = if (useScroll) {
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         } else {
             Modifier.fillMaxSize()
         }
 
         Column(columnModifier) {
+            if (submitted && isCorrect == true && showRemoveFromWrongNote) {
+                Row (
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ){
+                    Text(
+                        text = "오답노트에서 제외하기",
+                        fontSize = 15.sp,
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFA8A8A8),
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .clickable { onRemoveFromWrongNote() }
+                    )
+                }
+            }
             displayOptions.forEachIndexed { idx, opt ->
                 val isSelected = selectedIndex == idx
                 val enabled = !submitted && opt.text.isNotBlank()
                 val isRight = submitted && idx == correctIdx
                 val isWrong = submitted && isSelected && idx != correctIdx
                 val explanationToShow = if (isWrong) opt.explanation else null
-
                 OptionCell(
                     num = opt.badge,
                     answer = opt.text,

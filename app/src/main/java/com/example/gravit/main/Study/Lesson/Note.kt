@@ -18,6 +18,8 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,7 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
+import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.ui.theme.pretendard
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
@@ -92,8 +96,17 @@ fun MarkdownText(content: String, modifier: Modifier = Modifier) {
 fun NoteSheet(
     onDismiss: () -> Unit,
     title: String,
-    noteText: String
 ){
+    val context = LocalContext.current
+    val vm: NoteVM = viewModel(
+        factory = NoteVMFactory(RetrofitInstance.api, context)
+    )
+    val ui by vm.state.collectAsState()
+
+    val noteText = (ui as? NoteVM.UiState.Success)
+        ?.data
+        ?: "개념노트를 불러오지 못했습니다."
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
 

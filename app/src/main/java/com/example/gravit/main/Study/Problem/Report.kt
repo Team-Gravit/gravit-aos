@@ -143,12 +143,12 @@ fun ReportDialog(
                                 Text(
                                     text = "어떤 부분에 문제가 있었는지 최대한 자세하게 작성해 주세요.\n유형이 두 개 이상인 경우, 기타를 선택하고 자세하게 작성해 주세요.",
                                     color = Color(0xFF868686),
-                                    fontFamily = pretendard
+                                    fontFamily = pretendard,
+                                    modifier = Modifier.verticalScroll(rememberScrollState())
                                 )
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
                                 .height(102.dp),
                             shape = RoundedCornerShape(10.dp),
                         )

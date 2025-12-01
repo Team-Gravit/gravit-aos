@@ -1,6 +1,7 @@
 package com.example.gravit.navigation
 
 import BottomNavigationBar
+import android.R.attr.type
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -17,7 +18,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.gravit.api.RetrofitInstance.api
 import com.example.gravit.error.NotFoundScreen
 import com.example.gravit.error.UnauthorizedScreen
 import com.example.gravit.main.Home.HomeScreen
@@ -25,7 +25,9 @@ import com.example.gravit.main.Study.Chapter.ChapterScreen
 import com.example.gravit.main.Study.Lesson.LessonComplete
 import com.example.gravit.main.Study.Problem.ProblemScreen
 import com.example.gravit.main.League.LeagueScreen
+import com.example.gravit.main.Study.Lesson.BookWrongScreen
 import com.example.gravit.main.Study.Lesson.LessonList
+import com.example.gravit.main.Study.Lesson.LessonScreen
 import com.example.gravit.main.Study.Unit.UnitList
 import com.example.gravit.main.User.Friend.AddFriend
 import com.example.gravit.main.User.Friend.FollowList
@@ -78,6 +80,7 @@ fun MainScreen(rootNavController: NavController) {
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
 
     val hideBottomBar = currentRoute.startsWith("lesson/") ||
+                        currentRoute.startsWith("problem/") ||
                         currentRoute.startsWith("user/notice") ||
                         currentRoute.startsWith("user/account") ||
                         currentRoute.startsWith("user/privacypolicy") ||
@@ -123,70 +126,79 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lesson/{unitId}",
+                    route = "lessonList/{unitId}",
                     arguments = listOf(
-                        navArgument("unit") { type = NavType.IntType; defaultValue = 0 }
+
+                        navArgument("unitId") { type = NavType.IntType }
+           
                     )
                 ) { backStackEntry ->
-                    val unitId = backStackEntry.arguments!!.getInt("unit")
+                    val unitId = backStackEntry.arguments!!.getInt("unitId")
                     LessonList(
                         navController = innerNavController,
                         onSessionExpired = goToLoginChoice,
-                        unitId = unitId
+                        unitId = unitId,
                     )
                 }
 
                 composable( //이거 이제 문제집 네비
-                    route = "lesson/{chapterId}/{unitId}/{lessonId}/{chapterName}",
+                    route = "lesson/{lessonId}/{chapterName}",
                     arguments = listOf(
-                        navArgument("chapterId") { type = NavType.IntType },
-                        navArgument("unitId") { type = NavType.IntType },
                         navArgument("lessonId") { type = NavType.IntType },
-                        navArgument("chapterName") { type = NavType.StringType; defaultValue = "" }
+                        navArgument("chapterName") { type = NavType.StringType},
                     )
                 ) { backStackEntry ->
-                    val chapterId = backStackEntry.arguments!!.getInt("chapterId")
-                    val unitId = backStackEntry.arguments!!.getInt("unitId")
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
                     val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
 
-                    ProblemScreen(
+                    LessonScreen(
                         navController = innerNavController,
-                        chapterId = chapterId,
                         chapterName = chapterName,   // 헤더 표시용
-                        unitId = unitId,
                         lessonId = lessonId,
-                        onSessionExpired = goToLoginChoice,
-                        onClick = { println("클릭됨!") } //api연동 후 고칠거임ㅡㅡ
+                        onSessionExpired = goToLoginChoice
                     )
                 }
 
-                composable(//이거 나중에 수정할 거임
-                    route = "lesson/complete/{chapterId}/{unitId}/{lessonId}?chapterName={chapterName}&accuracy={accuracy}&learningTime={learningTime}",
+                composable(
+                    route = "problem/{unitId}/{chapterName}/{type}",
                     arguments = listOf(
-                        navArgument("chapterId") { type = NavType.IntType },
                         navArgument("unitId") { type = NavType.IntType },
-                        navArgument("lessonId") { type = NavType.IntType },
                         navArgument("chapterName") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("accuracy") { type = NavType.IntType; defaultValue = 0 },
-                        navArgument("learningTime") { type = NavType.IntType; defaultValue = 0 }
+                        navArgument("type") { type = NavType.StringType; defaultValue = "" },
+                    )
+                ) {  backStackEntry ->
+                    val unitId = backStackEntry.arguments!!.getInt("lessonId")
+                    val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
+                    val type = backStackEntry.arguments!!.getString("type").orEmpty()
+
+                    BookWrongScreen(
+                        navController = innerNavController,
+                        chapterName = chapterName,
+                        unitId = unitId,
+                        onSessionExpired = goToLoginChoice,
+                        type = type
+                    )
+                }
+
+                composable(
+                    route = "lesson/complete/{chapterName}/{accuracy}/{learningTime}/{lessonId}",
+                    arguments = listOf(
+                        navArgument("chapterName") { type = NavType.StringType },
+                        navArgument("accuracy") { type = NavType.FloatType },
+                        navArgument("learningTime") { type = NavType.IntType },
+                        navArgument("lessonId") { type = NavType.IntType }
                     )
                 ) { backStackEntry ->
-                    val chapterId = backStackEntry.arguments!!.getInt("chapterId")
-                    val unitId = backStackEntry.arguments!!.getInt("unitId")
-                    val lessonId = backStackEntry.arguments!!.getInt("lessonId")
-                    val chapterName = backStackEntry.arguments?.getString("chapterName").orEmpty()
-                    val accuracy = backStackEntry.arguments!!.getInt("accuracy")
+                    val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
+                    val accuracy = backStackEntry.arguments!!.getFloat("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
+                    val lessonId = backStackEntry.arguments!!.getInt("lessonId")
                     LessonComplete(
                         navController = innerNavController,
-                        chapterId = chapterId,
-                        unitId = unitId,
-                        lessonId = lessonId,
                         chapterName = chapterName,
                         accuracy = accuracy,
                         learningTime = learningTime,
-                        onSessionExpired = goToLoginChoice
+                        lessonId = lessonId
                     )
                 }
 

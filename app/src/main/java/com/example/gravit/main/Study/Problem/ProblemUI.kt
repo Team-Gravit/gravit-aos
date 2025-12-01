@@ -1,5 +1,7 @@
 package com.example.gravit.main.Study.Problem
 
+import android.text.TextUtils.replace
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +26,8 @@ import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -56,6 +60,7 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -67,7 +72,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.api.ProblemResultItem
+import com.example.gravit.api.AnswerResponse
+import com.example.gravit.api.LessonSubmissionSaveRequest
+import com.example.gravit.api.ProblemSubmissionRequests
 import com.example.gravit.api.Problems
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.ConfirmBottomSheet
@@ -80,166 +87,33 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProblemScreen(
+fun ProblemUI(
     navController: NavController,
-    chapterId: Int,
     chapterName: String,
-    unitId: Int,
-    lessonId: Int,
-    onSessionExpired: () -> Unit,
-    onClick: () -> Unit
+    problems: List<Problems>,
+    total: Int,
+    swVm: StopwatchViewModel,
+    bookmarkMap: Map<Int, Boolean>,
+    onBookmarkToggle: (Int) -> Unit,
+    onRecordResult: (problemId: Int, isCorrect: Boolean) -> Unit,
+    onFinishLesson: () -> Unit,
+    type: String = "normal",
+    onRemoveWrongNote: (Int) -> Unit = {},
 ) {
-    //스톱워치
-    val swVm: StopwatchViewModel = viewModel()
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    var bookmark by remember { mutableStateOf(false) }
-
-    DisposableEffect(lifecycleOwner) {
-        // 앱이 백그라운드로 가면 멈춤
-        val obs = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                swVm.pause()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(obs)
-
-        // 컴포저블이 사라질 때(네비게이션 이동 등)도 멈춤
-        onDispose {
-            swVm.pause()
-            lifecycleOwner.lifecycle.removeObserver(obs)
-        }
-    }
-
-    val resultsMap = remember { mutableStateMapOf<Int, ProblemResultItem>() }
-    val wrongAttempts = remember { mutableStateMapOf<Int, Int>() }
-    var resultNext by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-
-    val context = LocalContext.current
-    val vm: LessonViewModel = viewModel(
-        factory = LessonVMFactory(
-            RetrofitInstance.api,
-            context
-        )
-    )
-
-    LaunchedEffect(lessonId) {
-        resultsMap.clear()
-        wrongAttempts.clear()
-        vm.load(lessonId)
-        vm.resetSubmit()
-    }
-
-    val ui by vm.state.collectAsState()
-    val submit by vm.submit.collectAsState()
-
-    var navigated by remember { mutableStateOf(false) }
-    LaunchedEffect(ui) {
-        when (ui) {
-            LessonViewModel.UiState.SessionExpired ->  {
-                navigated = true
-                navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            LessonViewModel.UiState.NotFound -> {
-                navigated = true
-                navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            LessonViewModel.UiState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
-        }
-    }
-
-    LaunchedEffect(submit) {
-        when (submit) {
-            LessonViewModel.SubmitState.SessionExpired ->  {
-                navigated = true
-                navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            LessonViewModel.SubmitState.NotFound -> {
-                navigated = true
-                navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            LessonViewModel.SubmitState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
-        }
-    }
-    var showLoading by rememberSaveable { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        delay(2000)
-        showLoading = false
-    }
-    if (showLoading) {
-        LoadingScreen()
-        return
-    }
-
-    val s = ui as? LessonViewModel.UiState.Success?: return
-    val problems = s.data.problems
-    val declaredTotal = s.data.totalProblems
-    val total = if (declaredTotal > 0) min(declaredTotal, problems.size) else problems.size
-
-    val problemSlots: List<Problems> = remember(problems, total) {
-        List(total) { idx -> problems[idx] }
-    }
-
-    //기록
-    fun recordResult(problemId: Int, isCorrect: Boolean) {
-        val wrongAttempts = if (isCorrect) 0 else 1
-
-        resultsMap[problemId] = ProblemResultItem(
-            problemId = problemId,
-            isCorrect = isCorrect,
-            incorrectCounts = wrongAttempts
-        )
-    }
-    var submitting by remember { mutableStateOf(false) }
-
-    //제출
-    fun finishLesson() {
-        swVm.pause()
-        if (submitting) return
-        submitting = true
-
-        val payload = resultsMap.values.toList()
-        if (payload.isEmpty()) {
-            submitting = false
-            return
-        }
-        val learningTime = (swVm.state.value.elapsedMillis / 1000).toInt()
-        val correctCount = payload.count { it.isCorrect }
-        val accuracy: Int = if(total > 0) { ((correctCount.toDouble()/total) * 100).roundToInt() } else 0
-
-        resultNext = accuracy to learningTime
-
-        vm.submitResults(
-            lessonId = lessonId,
-            learningTime = learningTime,
-            accuracy = accuracy,
-            results = payload
-        ) { ok ->
-            submitting = false
-        }
-    }
-
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = false
     )
     val coroutineScope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
+
+    var bookmarkSnackBar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(bookmarkSnackBar) {
+        if (bookmarkSnackBar) {
+            delay(2000)
+            bookmarkSnackBar = false
+        }
+    }
 
     var index by rememberSaveable(total) { mutableStateOf(0) }
     var submitted by remember(index) { mutableStateOf(false) }
@@ -247,8 +121,9 @@ fun ProblemScreen(
     var shortText by remember(index) { mutableStateOf("") }
     var lastCorrect by remember(index) { mutableStateOf<Boolean?>(null) }
 
-    val current = problemSlots[index]
+    val current = problems[index]
     val isLast = index == total - 1
+    val isBookmark = bookmarkMap[current.problemId] ?: false
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
@@ -256,6 +131,7 @@ fun ProblemScreen(
             .padding(WindowInsets.safeDrawing.asPaddingValues())
             .background(Color(0xFFF2F2F2))
         ) {
+            //헤더
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -309,6 +185,7 @@ fun ProblemScreen(
                     }
                 }
             }
+            //진행도 바
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -326,6 +203,8 @@ fun ProblemScreen(
                 )
             }
             Spacer(modifier = Modifier.height(25.dp))
+
+            //문제 설명
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -339,14 +218,16 @@ fun ProblemScreen(
                     ) {
                         Image(
                             painter = painterResource(
-                                if (bookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
+                                if (isBookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
                             ),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(25.dp)
                                 .clickable {
-                                    bookmark = !bookmark
-                                    onClick()
+                                    if(!isBookmark){
+                                        bookmarkSnackBar = true
+                                    }
+                                    onBookmarkToggle(current.problemId)
                                 }
                         )
                         Spacer(Modifier.width(8.dp))
@@ -365,7 +246,7 @@ fun ProblemScreen(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = current.question,
+                        text = current.instruction,
                         fontSize = 16.sp,
                         fontFamily = pretendard,
                         fontWeight = FontWeight.SemiBold,
@@ -395,6 +276,8 @@ fun ProblemScreen(
                 }
             }
             Spacer(modifier=Modifier.height(30.dp))
+
+            //객관식, 주관식
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -405,18 +288,17 @@ fun ProblemScreen(
                         submitted = submitted,
                         problemId = current.problemId,
                         text = shortText,
-                        answer = current.answer,
+                        answer = current.answerResponse,
                         onTextChange = { shortText = it },
                         isCorrect = lastCorrect,
                         onSubmit = {
-                            val correct = isAnswerCorrect(shortText, current.answer)
+                            val correct = isAnswerCorrect(shortText, current.answerResponse)
                             lastCorrect = correct
                             submitted = true
-                            recordResult(current.problemId, correct)
-                            if (isLast) {
-                                finishLesson()
-                            }
+
+                            onRecordResult(current.problemId, correct)
                         },
+
                         isLast = isLast,
                         onNext = {
                             if (!isLast) {
@@ -426,22 +308,13 @@ fun ProblemScreen(
                                 shortText = ""
                                 lastCorrect = null
                             } else {
-                                when (submit) {
-                                    is LessonViewModel.SubmitState.Success -> {
-                                        navController.toLessonCompleted(
-                                            chapterId = chapterId,
-                                            chapterName = chapterName,
-                                            unitId = unitId,
-                                            lessonId = lessonId,
-                                            accuracy = resultNext?.first ?: 0,
-                                            learningTime = resultNext?.second ?: 0
-                                        )
-                                    }
-
-                                    else -> Unit
-                                }
+                                onFinishLesson()
                             }
                         },
+                        showRemoveFromWrongNote = (type == "wrong-answered-notes"),
+                        onRemoveFromWrongNote = {
+                            onRemoveWrongNote(current.problemId)
+                        }
                     )
                 } else{
                     MultipleChoice(
@@ -452,13 +325,12 @@ fun ProblemScreen(
                         isCorrect = lastCorrect,
                         onSelect = { selectedIndex = it },
                         onSubmit = { selectedIdx ->
-                            val correct = current.options.getOrNull(selectedIdx)?.isAnswer == true
+                            val correct =
+                                current.options.getOrNull(selectedIdx)?.isAnswer == true
                             lastCorrect = correct
                             submitted = true
-                            recordResult(current.problemId, correct)
-                            if (isLast) {
-                                finishLesson()
-                            }
+
+                            onRecordResult(current.problemId, correct)
                         },
                         isLast = isLast,
                         onNext = {
@@ -469,28 +341,28 @@ fun ProblemScreen(
                                 shortText = ""
                                 lastCorrect = null
                             } else {
-                                when (submit) {
-                                    is LessonViewModel.SubmitState.Success -> {
-                                        navController.toLessonCompleted(
-                                            chapterId = chapterId,
-                                            chapterName = chapterName,
-                                            unitId = unitId,
-                                            lessonId = lessonId,
-                                            accuracy = resultNext?.first ?: 0,
-                                            learningTime = resultNext?.second ?: 0
-                                        )
-                                    }
-
-                                    else -> Unit
-                                }
+                                onFinishLesson()
                             }
+                        },
+                        showRemoveFromWrongNote = (type == "wrong-answered-notes"),
+                        onRemoveFromWrongNote = {
+                            onRemoveWrongNote(current.problemId)
                         },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
             }
         }
-
+        if(bookmarkSnackBar){
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 19.dp),
+                contentAlignment = Alignment.BottomCenter
+            ){
+                CustomSnackBar()
+            }
+        }
         if (showSheet) {
             ConfirmBottomSheet(
                 onDismiss = { showSheet = false },
@@ -509,26 +381,17 @@ fun ProblemScreen(
                 }
             )
         }
-        if (ui is LessonViewModel.UiState.Loading || submit is LessonViewModel.SubmitState.Loading) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.25f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+
     }
 }
 
-fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
-    if (correctAnswer.isNullOrBlank()) return false
+fun isAnswerCorrect(userAnswer: String?, correctAnswer: AnswerResponse): Boolean {
+    if (correctAnswer.content.isBlank()) return false
     if (userAnswer.isNullOrBlank()) return false
 
     //숫자 비교
     val userNum = userAnswer.replace(",", "").toBigDecimalOrNull()
-    val corrNum = correctAnswer.replace(",", "").toBigDecimalOrNull()
+    val corrNum = correctAnswer.content.replace(",", "").toBigDecimalOrNull()
     if (userNum != null && corrNum != null) {
         return userNum.compareTo(corrNum) == 0
     }
@@ -540,7 +403,7 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
         .replace(Regex("[.,]"), "")   // 쉼표/마침표 무시
 
     //중복 답 분리
-    val candidates = correctAnswer
+    val candidates = correctAnswer.content
         .split(',')
         .map { it.trim() }
         .filter { it.isNotEmpty() }
@@ -551,7 +414,7 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: String?): Boolean {
         return candidates.any { norm(it) == userN }
     }
 
-    return norm(correctAnswer) == userN
+    return norm(correctAnswer.content) == userN
 }
 
 @Composable
@@ -618,4 +481,28 @@ fun InlineUnderlineText(
             platformStyle = PlatformTextStyle(includeFontPadding = false)
         )
     )
+}
+
+@Composable
+fun CustomSnackBar(){
+    Card(
+        shape = RoundedCornerShape(100.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Black.copy(alpha = 0.6f),
+            contentColor = Color.White
+        ),
+    ){
+        Box(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "북마크에 추가되었어요.",
+                fontFamily = pretendard,
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
 }

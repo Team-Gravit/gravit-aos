@@ -61,6 +61,8 @@ import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.main.Home.RoundedGauge
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.unit.*
 
 
@@ -81,7 +83,7 @@ fun ChapterScreen(
         ChapterViewModel.UiState.SessionExpired -> {
             navigated = true
             navController.navigate("error/401") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
+                launchSingleTop = true; restoreState = false
             }
         }
         ChapterViewModel.UiState.Loading -> {
@@ -92,7 +94,7 @@ fun ChapterScreen(
         ChapterViewModel.UiState.NotFound -> {
             navigated = true
             navController.navigate("error/404") {
-                popUpTo(0); launchSingleTop = true; restoreState = false
+                launchSingleTop = true; restoreState = false
             }
         }
         ChapterViewModel.UiState.Failed -> {
@@ -148,19 +150,24 @@ fun ChapterScreen(
                 buttons.chunked(2).forEach { pair ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         pair.forEachIndexed { index, data ->
+
+                            val enabled = data.chapterId < 4  //안 쓰는 챕터 막아두라 하셨음
                             ChapterButton(
                                 description = data.description,
                                 text = data.title,
                                 planet = data.planetRes,
                                 rate = data.rate,
                                 onClick = {
-                                    navController.navigate("unit/${data.chapterId}")
+                                    if(enabled) {
+                                        navController.navigate("lessonList/${data.chapterId}")
+                                    }
                                           },
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(160f / 166f)
                                     .shadow(Responsive.h(4f), RoundedCornerShape(Responsive.h(10f))),
-                                isRight = (index == 1)
+                                isRight = (index == 1),
+                                enabled = enabled
                             )
                             if (index == 0 && pair.size > 1) {
                                 Spacer(modifier = Modifier.width(Responsive.w(8f)))
@@ -230,15 +237,27 @@ fun ChapterButton(
     modifier: Modifier = Modifier,
     planet: Int,
     isRight: Boolean,
-    rate: Float
+    rate: Float,
+    enabled: Boolean
 ) {
     var showTooltip by remember { mutableStateOf(false) }
+    val grayFilter = ColorFilter.colorMatrix(
+        ColorMatrix(
+            floatArrayOf(
+                0.3f, 0.3f, 0.3f, 0f, 0f,
+                0.3f, 0.3f, 0.3f, 0f, 0f,
+                0.3f, 0.3f, 0.3f, 0f, 0f,
+                0f, 0f, 0f, 1f, 0f
+            )
+        )
+    )
 
     Button(
         modifier = modifier,
         onClick = onClick,
         shape = RoundedCornerShape(Responsive.h(10f)),
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(0.dp),
+        enabled = enabled
     ) {
         Box(Modifier.fillMaxSize()) {
             Image(
@@ -246,6 +265,7 @@ fun ChapterButton(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize(),
+                colorFilter = if (enabled) null else grayFilter
             )
             Box(
                 modifier = Modifier

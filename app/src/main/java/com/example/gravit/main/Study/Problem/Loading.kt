@@ -41,6 +41,15 @@ fun LoadingScreen(){
             }
             .build()
     }
+    val tips = listOf(
+        "문제가 이상이 있는 경우\n우측 상단의 신고 버튼으로 접수할 수 있어요.",
+        "북마크하고 싶은 문제가 있다면,\n화면 좌측 상단에 있는 책갈피 모양 아이콘을 눌러\n쉽게 북마크할 수 있어요.",
+        "마스코드 그래빗은 원래 흰색 토끼였지만,\n태양풍을 맞아 노랗게 변했답니다.",
+        "같은 레슨을 반복해서 풀면,\nXP와 LP는 추가로 지급되지 않으니 참고해주세요.",
+        "리그는 매주 일요일 자정에 초기화되어\n새로운 순위 경쟁이 시작돼요."
+    )
+    val randomTip = remember { tips.random() }
+
     Box(
         Modifier
             .fillMaxSize()
@@ -76,8 +85,9 @@ fun LoadingScreen(){
                 fontSize = 15.sp,
                 color = Color(0xFF494949),
             )
+            Spacer(Modifier.height(8.dp))
             Text(
-                text ="문제가 이상이 있는 경우\n우측 상단의 신고 버튼으로 접수할 수 있어요.",
+                text = randomTip,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Normal,
                 fontFamily = pretendard,
