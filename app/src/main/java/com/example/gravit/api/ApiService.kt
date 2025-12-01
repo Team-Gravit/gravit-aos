@@ -59,25 +59,20 @@ data class MissionDetail(
 
 // 유닛
 data class UnitPageResponse(
-    val chapterId: Int,
-    val chapterName: String,
-    val chapterDescription: String,
-    val unitDetails: List<UnitDetails>
+    val chapterSummary: ChapterSummary,
+    val unitDetails: List<UnitDetail>
 )
-data class UnitDetails(
-    val unitProgressDetailResponse: UnitProgressDetailResponse,
-    val lessonProgressSummaryResponses: List<LessonProgressSummaryResponses>
+
+data class UnitDetail(
+    @SerializedName("unitSummaries")
+    val unitSummary: UnitSummary,
+    val progressRate: Double
 )
-data class UnitProgressDetailResponse(
+
+data class UnitSummary(
     val unitId: Int,
-    val name: String,
-    val totalLesson: Int,
-    val completedLesson: Int
-)
-data class LessonProgressSummaryResponses(
-    val lessonId: Int,
-    val name: String,
-    val isCompleted: Boolean
+    val title: String,
+    val description: String
 )
 
 //레슨

@@ -24,9 +24,9 @@ import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.Study.Chapter.ChapterScreen
 import com.example.gravit.main.Study.Lesson.LessonComplete
 import com.example.gravit.main.Study.Problem.ProblemScreen
-import com.example.gravit.main.Study.Unit.Unit
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Study.Lesson.LessonList
+import com.example.gravit.main.Study.Unit.UnitList
 import com.example.gravit.main.User.Friend.AddFriend
 import com.example.gravit.main.User.Friend.FollowList
 import com.example.gravit.main.User.Notice.Notice
@@ -107,29 +107,25 @@ fun MainScreen(rootNavController: NavController) {
                 //chapter
                 composable("chapter") { ChapterScreen(innerNavController, goToLoginChoice) }
 
-                """composable(
-                    route = "units/{chapterId}",
-                    arguments = listOf(navArgument("chapterId") { type = NavType.IntType })
+                composable(
+                    route = "unit/{chapterId}",
+                    arguments = listOf(
+                        navArgument("chapterId") { type = NavType.IntType }
+                    )
                 ) { backStackEntry ->
                     val chapterId = backStackEntry.arguments!!.getInt("chapterId")
-                    Unit(
-                        navController = innerNavController,
+
+                    UnitList(
                         chapterId = chapterId,
+                        navController = innerNavController,
                         onSessionExpired = goToLoginChoice
                     )
-                } """ //안 쓰는 거 일단 주석(참고용)
-
-                """
-                    유닛 네비 여기에 ㄱㄱ 그리고 api 연결 때문에 chapterId가 필요할 거야
-                    챕터->유닛 넘어갈 때 Id도 같이 넘기게 수정해놨음
-                    
-                    레슨리스트로 이동할 때 유닛Id 넘겨주세용
-                """
+                }
 
                 composable(
                     route = "lesson/{unitId}",
                     arguments = listOf(
-                        navArgument("unit") { type = NavType.IntType; defaultValue = "" }
+                        navArgument("unit") { type = NavType.IntType; defaultValue = 0 }
                     )
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getInt("unit")
