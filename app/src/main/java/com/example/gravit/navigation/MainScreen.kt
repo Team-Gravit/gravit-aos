@@ -268,7 +268,7 @@ fun MainScreen(rootNavController: NavController) {
                     )
                 }
                 //에러
-                composable("error/401") { UnauthorizedScreen(navController = innerNavController) }
+                composable("error/401") { UnauthorizedScreen(navController = innerNavController, onSessionExpired = goToLoginChoice) }
                 composable("error/404") { NotFoundScreen(navController = innerNavController) }
             }
         }

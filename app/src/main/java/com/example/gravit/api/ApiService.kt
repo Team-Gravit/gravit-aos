@@ -83,7 +83,9 @@ data class UnitSummary(
 data class LessonListResponse(
     val chapterSummary: ChapterSummary,
     val unitId: Int,
-    val lessonSummaries: List<LessonSummaries>
+    val lessonSummaries: List<LessonSummaries>,
+    val bookmarkAccessible: Boolean,
+    val wrongAnsweredNoteAccessible: Boolean
 )
 data class LessonSummaries(
     val lessonId: Int,
