@@ -2,6 +2,7 @@ package com.example.gravit.main.Study.Lesson
 
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,7 +90,7 @@ fun LessonList(
     unitId: Int,
     onSessionExpired: () -> Unit,
     navController: NavController,
-    unit: String,
+    unitOderText: String,
     unitTitle: String
 ) {
     val context = LocalContext.current
@@ -108,6 +109,7 @@ fun LessonList(
     val s = (ui as? LessonListVM.UiState.Success)?.data
     val chapterSummary = s?.chapterSummary
     val chapterName = chapterSummary?.title ?: ""
+    val chapterId = chapterSummary?.chapterId ?: 1
     val lessonSummaries = s?.lessonSummaries ?: emptyList()
     val bookmarkAccessible = s?.bookmarkAccessible ?: false
     val wrongAnsweredNoteAccessible = s?.wrongAnsweredNoteAccessible ?: false
@@ -132,6 +134,7 @@ fun LessonList(
         }
         else -> Unit
     }
+    Log.d("DEBUG", "NoteSheetM2 chapterId = $chapterId, eng = ${replaceEng(chapterId)}")
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -145,8 +148,8 @@ fun LessonList(
                 onDismiss = {
                     scope.launch { scaffoldState.bottomSheetState.collapse() }
                 },
-                chapter = "자료구조",
-                unit = unit,
+                chapter = replaceEng(chapterId),
+                unit = unitOderText,
                 title = unitTitle
             )
         },
@@ -280,7 +283,7 @@ fun LessonList(
                             totalProblem = lesson.totalProblem,
                             onClick = {
                                 navController.navigate(
-                                    "lesson/${lesson.lessonId}/${URLEncoder.encode(chapterName)}"
+                                    "lesson/${lesson.lessonId}/${URLEncoder.encode(chapterName)}/${unitOderText}"
                                 )
                             }
                         )

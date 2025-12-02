@@ -1,5 +1,6 @@
 package com.example.gravit.main.Study.Lesson
 
+import android.text.TextUtils.split
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -66,7 +67,8 @@ fun LessonComplete(
     chapterName: String,
     accuracy: Float,
     learningTime: Int,
-    lessonId: Int
+    lessonId: Int,
+    unitOderText: String
 ){
     val entry = navController.previousBackStackEntry
     val problemList = entry?.savedStateHandle?.get<List<ProblemSubmissionRequests>>("problemList")
@@ -180,7 +182,7 @@ fun LessonComplete(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "${unitSummary?.title ?: ""} 학습을 완료했어요!",
+                            text = "${unitSummary?.title} 학습을 완료했어요!",
                             fontFamily = pretendard,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = Responsive.spH(20f),
@@ -236,7 +238,7 @@ fun LessonComplete(
                 ) {
                     Button(
                         onClick = {
-                            navController.navigate("lessonList/${unitSummary?.unitId}")
+                            navController.navigate("lessonList/${unitSummary?.unitId}/${unitOderText}/${unitSummary?.title}")
                         },
                         modifier = Modifier
                             .fillMaxWidth()

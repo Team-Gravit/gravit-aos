@@ -104,10 +104,10 @@ fun MarkdownText(content: String, modifier: Modifier = Modifier) {
     )
 }
 
-private fun replaceEng(chapter: String): String = when(chapter){
-    "자료구조" -> "data-structure"
-    "알고리즘" -> "algorithm"
-    "네트워크" -> "network"
+fun replaceEng(chapterId: Int): String = when(chapterId){
+    1 -> "data-structure"
+    2 -> "algorithm"
+    3 -> "network"
     else -> "unknown"
 }
 enum class SheetLevel { Hidden, Half, Full }
@@ -126,8 +126,8 @@ fun NoteSheetM2(
     )
     val ui by vm.state.collectAsState()
 
-    LaunchedEffect(Unit) {
-        vm.load(replaceEng(chapter), unit.lowercase().replace(" ", ""))
+    LaunchedEffect(chapter) {
+        vm.load(chapter, unit.lowercase().replace(" ", ""))
     }
 
     val noteText = (ui as? NoteVM.UiState.Success)?.data
