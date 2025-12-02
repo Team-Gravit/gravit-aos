@@ -42,7 +42,6 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-// UI용 모델
 data class UnitUi(
     val unitId: Int,
     val orderText: String,
@@ -50,7 +49,6 @@ data class UnitUi(
     val progressRate: Float
 )
 
-// API → UI 변환
 fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
     return dto.unitDetails.mapIndexed { index, detail: UnitDetail ->
         val summary = detail.unitSummary
@@ -301,7 +299,7 @@ private fun UnitItemBox(
                                         Color(0xFFDD00FF)
                                     ),
                                     start = Offset(0f, 0f),
-                                    end = Offset(endX * 100f, endY * 100f) //그라데이션 좀 더 언구하겠음
+                                    end = Offset(endX * 5f, endY * 100f)
 
                                 )
                             )
