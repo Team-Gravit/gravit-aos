@@ -17,7 +17,18 @@ import retrofit2.http.HTTP
 
 //로그인
 data class IdTokenRequest(val idToken: String)
-data class AuthTokenResponse(val accessToken: String, val isOnboarded : Boolean)
+data class AuthTokenResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val isOnboarded : Boolean
+)
+//리프레시
+data class RefreshTokenRequest(
+    val refreshToken: String
+)
+data class RefreshTokenResponse(
+    val accessToken: String
+)
 
 //온보딩
 data class OnboardingRequest(val nickname: String, val profilePhotoNumber: Int)
@@ -83,7 +94,9 @@ data class UnitSummary(
 data class LessonListResponse(
     val chapterSummary: ChapterSummary,
     val unitId: Int,
-    val lessonSummaries: List<LessonSummaries>
+    val lessonSummaries: List<LessonSummaries>,
+    val bookmarkAccessible: Boolean,
+    val wrongAnsweredNoteAccessible: Boolean
 )
 data class LessonSummaries(
     val lessonId: Int,
@@ -508,5 +521,10 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Body request: BookmarksRequest
     )
+
+    @POST("api/v1/auth/reissue")
+    suspend fun sendRefreshToken(
+        @Body token: RefreshTokenRequest
+    ) : RefreshTokenResponse
 }
 

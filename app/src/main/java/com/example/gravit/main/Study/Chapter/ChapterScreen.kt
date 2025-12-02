@@ -64,6 +64,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.unit.*
+import com.example.gravit.error.NotFoundScreen
+import com.example.gravit.error.UnauthorizedScreen
 
 
 @Composable
@@ -81,29 +83,36 @@ fun ChapterScreen(
     LaunchedEffect(Unit) { vm.load() }
     when (ui) {
         ChapterViewModel.UiState.SessionExpired -> {
-            navigated = true
-            navController.navigate("error/401") {
-                launchSingleTop = true; restoreState = false
-            }
+            UnauthorizedScreen(
+                navController = navController,
+                onSessionExpired = onSessionExpired
+            )
         }
         ChapterViewModel.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
-        ChapterViewModel.UiState.NotFound -> {
-            navigated = true
-            navController.navigate("error/404") {
-                launchSingleTop = true; restoreState = false
-            }
+        is ChapterViewModel.UiState.Success -> {
+            val chapters = (ui as ChapterViewModel.UiState.Success).data
+            ChapterUI(
+                navController = navController,
+                chapters = chapters
+            )
         }
-        ChapterViewModel.UiState.Failed -> {
-            navigated = true
-            onSessionExpired()
+
+        else -> {
+            NotFoundScreen(navController = navController)
         }
-        else -> Unit
     }
 
+}
+
+@Composable
+private fun ChapterUI(
+    navController: NavController,
+    chapters: List<ChapterPageResponse>
+){
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -133,7 +142,6 @@ fun ChapterScreen(
                 )
             }
 
-            val chapters: List<ChapterPageResponse> = (ui as? ChapterViewModel.UiState.Success)?.data ?: emptyList()
             val buttons = remember(chapters) { mapToButtons(chapters) }
 
             Column(
@@ -161,7 +169,7 @@ fun ChapterScreen(
                                     if(enabled) {
                                         navController.navigate("unit/${data.chapterId}")
                                     }
-                                          },
+                                },
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(160f / 166f)
@@ -188,7 +196,6 @@ fun ChapterScreen(
         }
     }
 }
-
 data class ChapterButtonUI(
     val chapterId: Int,
     val title: String,

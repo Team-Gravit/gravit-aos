@@ -89,6 +89,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("androidx.compose.material:material:1.6.0")
 
     implementation("io.coil-kt:coil:2.7.0")
     implementation("io.noties.markwon:core:4.6.2")
