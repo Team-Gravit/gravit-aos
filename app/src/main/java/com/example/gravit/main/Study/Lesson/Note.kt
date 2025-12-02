@@ -18,6 +18,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,6 +43,7 @@ import io.noties.markwon.image.ImagesPlugin
 import io.noties.markwon.image.coil.CoilImagesPlugin
 import io.noties.markwon.image.network.NetworkSchemeHandler
 import kotlinx.coroutines.launch
+import java.lang.ProcessBuilder.Redirect.to
 
 @Composable
 fun MarkdownText(content: String, modifier: Modifier = Modifier) {
@@ -91,10 +93,18 @@ fun MarkdownText(content: String, modifier: Modifier = Modifier) {
     )
 }
 
+private fun replaceEng(chapter: String): String = when(chapter){
+    "자료구조" -> "data-structure"
+    "알고리즘" -> "algorithm"
+    "네트워크" -> "network"
+    else -> "unknown"
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteSheet(
     onDismiss: () -> Unit,
+    chapter: String,
+    unit: String,
     title: String,
 ){
     val context = LocalContext.current
@@ -102,6 +112,10 @@ fun NoteSheet(
         factory = NoteVMFactory(RetrofitInstance.api, context)
     )
     val ui by vm.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        vm.load(replaceEng(chapter), unit.lowercase().replace(" ", ""))
+    }
 
     val noteText = (ui as? NoteVM.UiState.Success)
         ?.data

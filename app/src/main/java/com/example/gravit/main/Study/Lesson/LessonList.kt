@@ -79,7 +79,9 @@ import kotlin.math.abs
 fun LessonList(
     unitId: Int,
     onSessionExpired: () -> Unit,
-    navController: NavController
+    navController: NavController,
+    unit: String,
+    unitTitle: String
 ) {
     val context = LocalContext.current
     val vm: LessonListVM = viewModel(factory = LessonListVMFactory(RetrofitInstance.api, context))
@@ -237,7 +239,9 @@ fun LessonList(
         if(showSheet){
             NoteSheet(
                 onDismiss = { showSheet = false },
-                "배열(Array)"
+                chapter = chapterName,
+                unit = unit,
+                title = unitTitle
             )
         }
     }
@@ -493,11 +497,3 @@ fun Modifier.glow(
         }
     }
 )
-
-
-@Preview
-@Composable
-fun Preview(){
-    val navController = rememberNavController()
-    LessonList(1,{}, navController)
-}

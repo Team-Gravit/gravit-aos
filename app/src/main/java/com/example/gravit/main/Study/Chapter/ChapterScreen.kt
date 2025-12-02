@@ -159,7 +159,7 @@ fun ChapterScreen(
                                 rate = data.rate,
                                 onClick = {
                                     if(enabled) {
-                                        navController.navigate("lessonList/${data.chapterId}")
+                                        navController.navigate("unit/${data.chapterId}")
                                     }
                                           },
                                 modifier = Modifier

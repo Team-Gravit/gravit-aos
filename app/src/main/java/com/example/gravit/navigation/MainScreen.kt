@@ -23,7 +23,6 @@ import com.example.gravit.error.UnauthorizedScreen
 import com.example.gravit.main.Home.HomeScreen
 import com.example.gravit.main.Study.Chapter.ChapterScreen
 import com.example.gravit.main.Study.Lesson.LessonComplete
-import com.example.gravit.main.Study.Problem.ProblemScreen
 import com.example.gravit.main.League.LeagueScreen
 import com.example.gravit.main.Study.Lesson.BookWrongScreen
 import com.example.gravit.main.Study.Lesson.LessonList
@@ -126,18 +125,22 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lessonList/{unitId}",
+                    route = "lessonList/{unitId}/{unit}/{unitTitle}",
                     arguments = listOf(
-
-                        navArgument("unitId") { type = NavType.IntType }
-           
+                        navArgument("unitId") { type = NavType.IntType },
+                        navArgument("unit") { type = NavType.StringType },
+                        navArgument("unitTitle") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getInt("unitId")
+                    val unit = backStackEntry.arguments!!.getString("unit").orEmpty()
+                    val unitTitle = backStackEntry.arguments!!.getString("unitTitle").orEmpty()
                     LessonList(
                         navController = innerNavController,
                         onSessionExpired = goToLoginChoice,
                         unitId = unitId,
+                        unit = unit,
+                        unitTitle = unitTitle
                     )
                 }
 
