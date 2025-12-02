@@ -125,40 +125,43 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lessonList/{unitId}/{unit}/{unitTitle}",
+                    route = "lessonList/{unitId}/{unitOderText}/{unitTitle}",
                     arguments = listOf(
                         navArgument("unitId") { type = NavType.IntType },
-                        navArgument("unit") { type = NavType.StringType },
+                        navArgument("unitOderText") { type = NavType.StringType },
                         navArgument("unitTitle") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getInt("unitId")
-                    val unit = backStackEntry.arguments!!.getString("unit").orEmpty()
+                    val unitOderText = backStackEntry.arguments!!.getString("unitOderText").orEmpty()
                     val unitTitle = backStackEntry.arguments!!.getString("unitTitle").orEmpty()
                     LessonList(
                         navController = innerNavController,
                         onSessionExpired = goToLoginChoice,
                         unitId = unitId,
-                        unit = unit,
+                        unitOderText = unitOderText,
                         unitTitle = unitTitle
                     )
                 }
 
                 composable( //이거 이제 문제집 네비
-                    route = "lesson/{lessonId}/{chapterName}",
+                    route = "lesson/{lessonId}/{chapterName}/{unitOderText}",
                     arguments = listOf(
                         navArgument("lessonId") { type = NavType.IntType },
                         navArgument("chapterName") { type = NavType.StringType},
+                        navArgument("unitOderText") { type = NavType.StringType },
                     )
                 ) { backStackEntry ->
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
                     val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
+                    val unitOderText = backStackEntry.arguments!!.getString("unitOderText").orEmpty()
 
                     LessonScreen(
                         navController = innerNavController,
                         chapterName = chapterName,   // 헤더 표시용
                         lessonId = lessonId,
-                        onSessionExpired = goToLoginChoice
+                        onSessionExpired = goToLoginChoice,
+                        unitOderText = unitOderText
                     )
                 }
 
@@ -184,24 +187,28 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lesson/complete/{chapterName}/{accuracy}/{learningTime}/{lessonId}",
+                    route = "lesson/complete/{chapterName}/{accuracy}/{learningTime}/{lessonId}/{unitOderText}",
                     arguments = listOf(
                         navArgument("chapterName") { type = NavType.StringType },
                         navArgument("accuracy") { type = NavType.FloatType },
                         navArgument("learningTime") { type = NavType.IntType },
-                        navArgument("lessonId") { type = NavType.IntType }
+                        navArgument("lessonId") { type = NavType.IntType },
+                        navArgument("unitOderText") { type = NavType.StringType },
                     )
                 ) { backStackEntry ->
                     val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
                     val accuracy = backStackEntry.arguments!!.getFloat("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
+                    val unitOderText = backStackEntry.arguments!!.getString("unitOderText").orEmpty()
+
                     LessonComplete(
                         navController = innerNavController,
                         chapterName = chapterName,
                         accuracy = accuracy,
                         learningTime = learningTime,
-                        lessonId = lessonId
+                        lessonId = lessonId,
+                        unitOderText = unitOderText
                     )
                 }
 
@@ -268,7 +275,7 @@ fun MainScreen(rootNavController: NavController) {
                     )
                 }
                 //에러
-                composable("error/401") { UnauthorizedScreen(navController = innerNavController) }
+                composable("error/401") { UnauthorizedScreen(navController = innerNavController, onSessionExpired = goToLoginChoice) }
                 composable("error/404") { NotFoundScreen(navController = innerNavController) }
             }
         }

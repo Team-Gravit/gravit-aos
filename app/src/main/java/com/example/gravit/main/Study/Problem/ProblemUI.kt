@@ -360,7 +360,7 @@ fun ProblemUI(
                     .padding(bottom = 19.dp),
                 contentAlignment = Alignment.BottomCenter
             ){
-                CustomSnackBar()
+                CustomSnackBar("북마크에 추가되었어요.")
             }
         }
         if (showSheet) {
@@ -484,7 +484,9 @@ fun InlineUnderlineText(
 }
 
 @Composable
-fun CustomSnackBar(){
+fun CustomSnackBar(
+    text: String
+){
     Card(
         shape = RoundedCornerShape(100.dp),
         colors = CardDefaults.cardColors(
@@ -497,7 +499,7 @@ fun CustomSnackBar(){
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "북마크에 추가되었어요.",
+                text = text,
                 fontFamily = pretendard,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,

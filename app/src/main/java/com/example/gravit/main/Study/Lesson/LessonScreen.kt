@@ -36,6 +36,7 @@ fun LessonScreen(
     chapterName: String,
     lessonId: Int,
     onSessionExpired: () -> Unit,
+    unitOderText: String
 ){
     //스톱워치
     val swVm: StopwatchViewModel = viewModel()
@@ -144,7 +145,7 @@ fun LessonScreen(
 
 
         navController.currentBackStackEntry?.savedStateHandle?.set("problemList", problemSubmissionRequests)
-        navController.navigate("lesson/complete/${chapterName}/${accuracy}/${learningTime}/${lessonId}")
+        navController.navigate("lesson/complete/${chapterName}/${accuracy}/${learningTime}/${lessonId}/${unitOderText}")
 
     }
     val bookmarkMap by vm.bookmark.collectAsState()
