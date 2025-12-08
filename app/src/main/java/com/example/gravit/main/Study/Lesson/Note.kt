@@ -155,26 +155,6 @@ fun NoteSheetCustom(
                     ) { onStateChange(SheetState.Hidden) }
             )
         }
-
-        if ((sheetState != SheetState.Hidden) && (sheetState != SheetState.Full)) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .offset(y = 55.dp -sheetHeightDp)
-                    .height(40.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.4f)
-                            )
-                        ),
-
-                        )
-            )
-        }
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
