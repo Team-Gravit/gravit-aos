@@ -42,10 +42,9 @@ class LessonListVM(
                 return@launch
             }
 
-            val auth = "Bearer ${session.accessToken}"
 
             runCatching {
-                api.getLessonList(auth, unitId)
+                api.getLessonList("Bearer ${session.accessToken}", unitId)
             }.onSuccess { res ->
                 _state.value = UiState.Success(res)
             }.onFailure { e ->

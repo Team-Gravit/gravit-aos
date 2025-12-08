@@ -29,7 +29,7 @@ class NoteVM(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun load(chapter: String, unit: String) = viewModelScope.launch {
+    fun load(unitId: Int) = viewModelScope.launch {
         try {
             _state.value = UiState.Loading
 
@@ -41,10 +41,8 @@ class NoteVM(
                 return@launch
             }
 
-            val auth = "Bearer ${session.accessToken}"
-
             runCatching {
-                api.getNotes(auth, chapter, unit).string()
+                api.getNotes("Bearer ${session.accessToken}",  unitId).string()
             }.onSuccess { res ->
                 _state.value = UiState.Success(res)
             }.onFailure { e ->

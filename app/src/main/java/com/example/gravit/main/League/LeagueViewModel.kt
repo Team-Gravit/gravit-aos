@@ -1,6 +1,8 @@
 package com.example.gravit.main.League
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,13 +16,29 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import retrofit2.HttpException
 
 class LeagueViewModel(
     private val api: ApiService,
     private val appContext: Context
 ) : ViewModel() {
+
+    private val _checkLeague = MutableStateFlow(false)
+    val checkLeague = _checkLeague.asStateFlow()
+
+    private fun isCheckLeague(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+
+        val now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul"))
+        val day = now.dayOfWeek
+        if (day != java.time.DayOfWeek.MONDAY) return false
+
+        val time = now.toLocalTime()
+        val start = java.time.LocalTime.of(0, 0)
+        val end   = java.time.LocalTime.of(0, 5)
+
+        return !time.isBefore(start) && time.isBefore(end)
+    }
 
     sealed class Source {
         data object UserLeague : Source()
@@ -37,39 +55,46 @@ class LeagueViewModel(
         val endReached: Boolean = false,
         val error: String? = null
     )
+
     private val _ui = MutableStateFlow(PagingUi())
     val state = _ui.asStateFlow()
+
     private val _sessionExpired = MutableStateFlow(false)
     val sessionExpired = _sessionExpired.asStateFlow()
+
     private val _notFound = MutableStateFlow(false)
     val notFound = _notFound.asStateFlow()
 
-    sealed class MyLeagueState{
+    sealed class MyLeagueState {
         data object Idle : MyLeagueState()
         data object Loading : MyLeagueState()
         data object SessionExpired : MyLeagueState()
         data class Success(val data: MyLeague) : MyLeagueState()
         data object Failed : MyLeagueState()
         data object NotFound : MyLeagueState()
-
     }
+
     private val _myLeague = MutableStateFlow<MyLeagueState>(MyLeagueState.Idle)
     val myLeague = _myLeague.asStateFlow()
 
     fun loadMyLeague() = viewModelScope.launch {
-        _myLeague.value = MyLeagueState.Loading
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext)
-            _myLeague.value = MyLeagueState.SessionExpired
-            _sessionExpired.value = true
+        if (isCheckLeague()) {
+            _checkLeague.value = true
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
+        _myLeague.value = MyLeagueState.Loading
+
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            // 세션 없음 → 재로그인 유도
+            _myLeague.value = MyLeagueState.SessionExpired
+            return@launch
+        }
+
         runCatching {
-            api.getMyLeague(auth)
+            api.getMyLeague("Bearer ${session.accessToken}")
         }.onSuccess { res ->
             _myLeague.value = MyLeagueState.Success(res)
         }.onFailure { e ->
@@ -101,26 +126,31 @@ class LeagueViewModel(
 
     // 페이징 로드 (끝 근처에서 호출)
     fun loadNextL() = viewModelScope.launch {
+        if (isCheckLeague()) {
+            _checkLeague.value = true
+            return@launch
+        }
+
         val curr = _ui.value
         if (curr.isLoading || curr.endReached) return@launch
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext); _sessionExpired.value = true; return@launch
+        if (session == null) {
+            _sessionExpired.value = true
+            return@launch
         }
 
         _ui.update { it.copy(isLoading = true, error = null) }
 
-        val auth = "Bearer ${session.accessToken}"
         val nextPage = curr.page
 
         val pageResp = runCatching {
             when (val s = _source.value) {
-                Source.UserLeague -> api.getLeagues_league(auth, nextPage)
-                is Source.Tier -> api.getLeagues_tier(auth, s.leagueId, nextPage)
+                Source.UserLeague -> api.getLeagues_league("Bearer ${session.accessToken}", nextPage)
+                is Source.Tier    -> api.getLeagues_tier("Bearer ${session.accessToken}", s.leagueId, nextPage)
             }
         }.getOrElse { e ->
-            val code = (e as? retrofit2.HttpException)?.code()
+            val code = (e as? HttpException)?.code()
             when (code) {
                 401 -> {
                     _sessionExpired.value = true
@@ -141,7 +171,7 @@ class LeagueViewModel(
         _ui.update {
             it.copy(
                 items = it.items + newItems,
-                page = if (hasNext) nextPage + 1 else nextPage, // 다음 페이지 있을 때만 증가
+                page = if (hasNext) nextPage + 1 else nextPage,
                 isLoading = false,
                 endReached = !hasNext
             )
@@ -157,22 +187,23 @@ class LeagueViewModel(
         ) : SeasonPopupState()
         data object Failed : SeasonPopupState()
         data object NotFound : SeasonPopupState()
-        data class Inspection(val message: String) : SeasonPopupState()
     }
 
     private val _seasonPopup = MutableStateFlow<SeasonPopupState>(SeasonPopupState.Loading)
     val seasonPopup = _seasonPopup.asStateFlow()
 
-    //시즌 팝업
+    // 시즌 팝업
     private val seasonPrefs by lazy {
         appContext.getSharedPreferences("season_popup", Context.MODE_PRIVATE)
     }
+
     private fun lastShownSeason(): String? =
         seasonPrefs.getString("last_shown_season", null)
 
     private fun markShownSeason(seasonId: String) {
         seasonPrefs.edit().putString("last_shown_season", seasonId).apply()
     }
+
     fun confirmSeasonPopup(seasonId: String) {
         markShownSeason(seasonId)
         val cur = _seasonPopup.value
@@ -180,19 +211,23 @@ class LeagueViewModel(
             _seasonPopup.value = cur.copy(show = false)
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     fun loadSeasonPopup() = viewModelScope.launch {
+        if (isCheckLeague()) {
+            _checkLeague.value = true
+            return@launch
+        }
+
         _seasonPopup.value = SeasonPopupState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext)
+        if (session == null) {
             _sessionExpired.value = true
             _seasonPopup.value = SeasonPopupState.SessionExpired
             return@launch
         }
-
-        val auth = "Bearer ${session.accessToken}"
-        runCatching { api.getLeagueHome(auth) }
+        runCatching { api.getLeagueHome("Bearer ${session.accessToken}") }
             .onSuccess { res ->
                 val seasonId = res.currentSeason.nowSeason
                 val shouldShow = res.containsPopup && lastShownSeason() != seasonId
@@ -202,14 +237,6 @@ class LeagueViewModel(
                 )
             }
             .onFailure { e ->
-                extractErrorCodeAndMessage(e)?.let { (code, msg) ->
-                    if (code == "SEASON_4041") {
-                        _seasonPopup.value = SeasonPopupState.Inspection(
-                            message = msg ?: "ACTIVE 시즌이 없습니다."
-                        )
-                        return@onFailure
-                    }
-                }
                 handleApiFailure(
                     e = e,
                     appContext = appContext,
@@ -219,15 +246,6 @@ class LeagueViewModel(
                     failedState = SeasonPopupState.Failed
                 )
             }
-    }
-
-    private fun extractErrorCodeAndMessage(e: Throwable): Pair<String, String?>? {
-        val http = e as? HttpException ?: return null
-        val body = http.response()?.errorBody()?.string() ?: return null
-        return runCatching {
-            val obj = JSONObject(body)
-            obj.optString("error") to obj.optString("message")
-        }.getOrNull()
     }
 }
 

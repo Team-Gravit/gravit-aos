@@ -47,7 +47,7 @@ fun SplashScreen(navController: NavController) {
         delay(300)
 
         val session = AuthPrefs.load(context)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(context)
             navController.navigate("login choice") {
                 popUpTo(0)

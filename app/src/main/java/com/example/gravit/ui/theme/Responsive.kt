@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.compositionLocalOf
 
 
-// 디자인 기준 사이즈를 담는 데이터 클래스
+// 디자인 기준 사이즈를 담는 클래스
 data class DesignSpec(val width: Float, val height: Float)
 
-// 기본 아트보드 = 360 x 740
+// 디자인  360 x 740
 val LocalDesignSpec = compositionLocalOf { DesignSpec(360f, 740f) }
 
 object Responsive {

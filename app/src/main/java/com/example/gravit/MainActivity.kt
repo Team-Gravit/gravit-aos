@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
 import com.auth0.android.provider.WebAuthProvider
+import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.navigation.AppNavigation
 import com.example.gravit.ui.theme.GravitTheme
 
@@ -19,6 +20,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WebAuthProvider.resume(intent)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        RetrofitInstance.init(applicationContext)
         setContent {
             GravitTheme {
                 AppNavigation()
@@ -32,6 +34,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun AppNavigationPreview() {

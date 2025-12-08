@@ -154,7 +154,6 @@ class FriendListVM(
             }
             return
         }
-
         val body = res.body()!!
         _state.update { prev ->
             prev.copy(
@@ -286,7 +285,6 @@ class FriendListVM(
                 _state.update { it.copy(sessionExpired = true) }
                 return@launch
             }
-
             if (!res.isSuccessful) {
                 _state.update {
                     it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")

@@ -103,48 +103,6 @@ class AddFriendVM(
                 return@launch
             }
 
-            handleSearchResponse(res, reset = true, page = 0)
-        }
-    }
-
-    fun loadNext() {
-        val cur = state.value
-        if (cur.loading || !cur.hasNext) return
-
-        val raw = cur.query.trim()
-        if (raw.isEmpty()) return
-
-        val normalized = normalizeQuery(raw)
-        if (normalized.isEmpty()) return
-
-        viewModelScope.launch {
-            val token = AuthPrefs.load(appContext)?.accessToken
-            if (token.isNullOrBlank()) {
-                _state.update { it.copy(sessionExpired = true) }
-                return@launch
-            }
-
-            val nextPage = cur.page + 1
-
-            _state.update { it.copy(loading = true, error = null) }
-
-            val res: Response<FriendSearchResponse>
-            try {
-                res = api.getFriends(
-                    auth = "Bearer $token",
-                    queryText = normalized,
-                    page = nextPage
-                )
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        error = "네트워크 오류가 발생했어요."
-                    )
-                }
-                return@launch
-            }
-
             handleSearchResponse(res, reset = false, page = nextPage)
         }
     }
@@ -163,28 +121,6 @@ class AddFriendVM(
             }
             return
         }
-
-        if (!res.isSuccessful) {
-            _state.update {
-                it.copy(
-                    loading = false,
-                    error = "검색에 실패했어요. (${res.code()})"
-                )
-            }
-            return
-        }
-
-        val body = res.body()
-        if (body == null) {
-            _state.update {
-                it.copy(
-                    loading = false,
-                    error = "응답이 비어 있어요."
-                )
-            }
-            return
-        }
-
         _state.update { prev ->
             prev.copy(
                 loading = false,

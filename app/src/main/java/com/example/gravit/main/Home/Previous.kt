@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,10 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.gravit.R
-import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.ui.theme.mbc1961
 
 val previousImg: Map<Int, Int> = mapOf(
@@ -41,11 +44,22 @@ fun PreviousButton(
     onClick: () -> Unit,
     progressRate: Float
 ) {
+
+    val config = LocalConfiguration.current
+    val designWidth = 360f
+    val designHeight = 740f
+
+    val scaleW = config.screenWidthDp.toFloat() / designWidth
+    val scaleH = config.screenHeightDp.toFloat() / designHeight
+
+    fun dw(v: Float) = (v * scaleW).dp
+    fun dh(v: Float) = (v * scaleH).dp
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(Responsive.h(131f))
-            .clip(RoundedCornerShape(Responsive.h(16f)))
+            .height(dh(131f))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
     ) {
         Image(
@@ -55,52 +69,57 @@ fun PreviousButton(
             contentScale = ContentScale.Crop
         )
         Column(
-            modifier = Modifier.padding(
-                horizontal = Responsive.w(16f),
-                vertical = Responsive.h(16f)
-            )
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = dw(16f),
+                    vertical = dh(16f)
+                ),
         ) {
             if (chapterId == 0) {
                 Row {
                     CustomText(
                         text = "새로운 학습을 시작하기",
-                        fontSize = Responsive.spH(24f),
-                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight(600),
                         color = Color.White,
                         modifier = Modifier.weight(1f)
                     )
                 }
-                Spacer(modifier = Modifier.height(Responsive.h(8f)))
+                Spacer(modifier = Modifier.height(dh(8f)))
                 CustomText(
                     text = "최근에 진행한 학습 정보가 없습니다.",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = Responsive.spH(15f),
+                    fontWeight = FontWeight(500),
+                    fontSize = 14.sp,
                     color = Color.White
                 )
             } else {
                 CustomText(
                     text = "직전학습 이어서 하기",
-                    fontSize = Responsive.spH(24f),
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight(600),
                     color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(Responsive.h(8f)))
+                Spacer(modifier = Modifier.height(dh(8f)))
 
                 CustomText(
                     text = chapterName,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = Responsive.spH(16f),
+                    fontWeight = FontWeight(400),
+                    fontSize = 16.sp,
                     fontFamily = mbc1961,
                     color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(Responsive.h(13f)))
+                Spacer(modifier = Modifier.height(dh(13f)))
 
                 RoundedGauge(
-                    height = Responsive.h(10f),
-                    width = Responsive.w(271f),
-                    rate = progressRate
+                    height = dh(10f),
+                    width = 0.dp,
+                    rate = progressRate,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = dw(25f))
                 )
             }
         }

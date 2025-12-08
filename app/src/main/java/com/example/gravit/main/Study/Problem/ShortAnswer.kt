@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.gravit.R
 import com.example.gravit.api.AnswerResponse
 import com.example.gravit.ui.theme.pretendard
+import kotlinx.coroutines.delay
 
 enum class FabState { HIDDEN, SUBMIT, NEXT }
 
@@ -44,6 +45,16 @@ fun ShortAnswer(
     showRemoveFromWrongNote: Boolean = false,
     onRemoveFromWrongNote: () -> Unit = {}
 ) {
+    var removeSnackBarText by remember { mutableStateOf<String?>(null) }
+    var removedFromWrongNote by remember { mutableStateOf(false) }
+
+    LaunchedEffect(removeSnackBarText) {
+        if (removeSnackBarText != null) {
+            delay(1500)
+            removeSnackBarText = null
+        }
+    }
+
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
@@ -82,7 +93,7 @@ fun ShortAnswer(
                 Spacer(Modifier.height(12.dp))
                 Row (verticalAlignment = Alignment.CenterVertically) {
                     FeedbackSubjective(isCorrect = isCorrect, answer = answer)
-                    if (showRemoveFromWrongNote && isCorrect) {
+                    if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
                         Spacer(Modifier.weight(1f))
                         Text(
                             text = "오답노트에서 제외하기",
@@ -91,7 +102,11 @@ fun ShortAnswer(
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFA8A8A8),
                             textDecoration = TextDecoration.Underline,
-                            modifier = Modifier.clickable { onRemoveFromWrongNote() }
+                            modifier = Modifier.clickable {
+                                removedFromWrongNote = true
+                                onRemoveFromWrongNote()
+                                removeSnackBarText = "오답노트에서 제거되었아요."
+                            }
                         )
                     }
                 }
@@ -133,6 +148,16 @@ fun ShortAnswer(
                     }
                     else -> Unit
                 }
+            }
+        }
+        if (removeSnackBarText != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 45.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(removeSnackBarText!!)
             }
         }
     }
@@ -222,7 +247,7 @@ fun AnswerInputField(
                 disabledTextColor = indicator,
                 cursorColor = Color.Black
             ),
-            maxLines = 5,
+            maxLines = 1,
             minLines = 1,
 
             enabled = !submitted, //수정 불가

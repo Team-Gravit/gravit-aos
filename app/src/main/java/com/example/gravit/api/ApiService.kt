@@ -12,7 +12,6 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.Response
-import retrofit2.http.DELETE
 import retrofit2.http.HTTP
 
 //로그인
@@ -451,11 +450,10 @@ interface ApiService {
         @Query("dest") dest: String,
     ): Response<Unit>
 
-    @GET("api/v1/cs-notes/{chapter}/{unit}")
+    @GET("api/v1/cs-notes/{unitId}")
     suspend fun getNotes(
         @Header("Authorization") auth: String,
-        @Path("chapter") chapter: String,
-        @Path("unit") unit: String
+        @Path("unitId") unitId: Int
     ): ResponseBody
 
     @GET("api/v1/learning/{unitId}/lessons")
