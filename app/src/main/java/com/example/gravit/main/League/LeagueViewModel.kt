@@ -78,12 +78,6 @@ class LeagueViewModel(
     val myLeague = _myLeague.asStateFlow()
 
     fun loadMyLeague() = viewModelScope.launch {
-
-        if (isCheckLeague()) {
-            _checkLeague.value = true
-            return@launch
-        }
-
         _myLeague.value = MyLeagueState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -211,11 +205,6 @@ class LeagueViewModel(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadSeasonPopup() = viewModelScope.launch {
-        if (isCheckLeague()) {
-            _checkLeague.value = true
-            return@launch
-        }
-
         _seasonPopup.value = SeasonPopupState.Loading
 
         val session = AuthPrefs.load(appContext)
