@@ -1,6 +1,7 @@
 package com.example.gravit.main
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -47,12 +48,14 @@ fun ConfirmBottomSheet(
                 onDismiss()
             }
         },
-        sheetState = sheetState
+        sheetState = sheetState,
+        dragHandle = {},
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .background(Color.White)
+                .padding(horizontal = 28.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -62,8 +65,8 @@ fun ConfirmBottomSheet(
                     painter = painterResource(id = it),
                     contentDescription = null,
                     modifier = Modifier
-                        .padding(20.dp)
-                        .size(120.dp)
+                        .padding(top = 40.dp, bottom = 20.dp)
+                        .size(145.dp, 164.dp)
                 )
             }
 
@@ -77,7 +80,7 @@ fun ConfirmBottomSheet(
                 color = Color(0xFF222222)
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
 
             // 설명
             Text(
@@ -88,7 +91,7 @@ fun ConfirmBottomSheet(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(32.dp))
 
             // 보라색 버튼
             Button(
@@ -115,9 +118,6 @@ fun ConfirmBottomSheet(
                     fontFamily = pretendard
                 )
             }
-
-            Spacer(Modifier.height(10.dp))
-
             // 회색 텍스트 버튼
             Text(
                 text = cancelText,
@@ -134,7 +134,8 @@ fun ConfirmBottomSheet(
                             onDismiss()
                         }
                     }
-                    .padding(vertical = 12.dp)
+                    .padding(vertical = 16.dp),
+                fontWeight = FontWeight.SemiBold
             )
 
             Spacer(Modifier.height(12.dp))

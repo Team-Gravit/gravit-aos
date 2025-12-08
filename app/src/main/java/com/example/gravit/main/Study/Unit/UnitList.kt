@@ -166,7 +166,7 @@ private fun UnitListContent(
                         modifier = Modifier
                             .padding(start = 18.dp)
                             .size(20.dp)
-                            .clickable { navController.popBackStack() },
+                            .clickable { navController.navigate("chapter") },
                         tint = Color.White
                     )
 
@@ -236,22 +236,21 @@ private fun UnitItemBox(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .border(width = 1.dp, color = Color(0xFF8B69FF))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.4f),
-                        Color.White.copy(alpha = 0.1f)
-                    )
-                )
-            )
+            .clip(RoundedCornerShape(8.dp))
+            .border(width = 1.dp, color = Color(0xFF8B69FF), RoundedCornerShape(8.dp))
             .clickable {
                 navController.navigate("lessonList/${unit.unitId}/${unit.title}")
             }
-            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp)
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Image(
+            painter = painterResource(id = R.drawable.unit_glass),
+            contentDescription = "back",
+            contentScale = ContentScale.Crop
+        )
+        Column(modifier = Modifier
+            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp)
+            .padding(10.dp)
+        ) {
             Text(
                 text = "${unit.orderText} - ${unit.title}",
                 fontWeight = FontWeight.Bold,
