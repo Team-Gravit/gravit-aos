@@ -133,8 +133,7 @@ private fun FriendTabBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
-            .padding(horizontal = 20.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         FriendTabItem(
@@ -202,6 +201,8 @@ private fun FollowerListContent(
         ) {
             items(items) { user ->
                 FollowerRow(user = user, onReject = { onReject(user.id) })
+            }
+            item {
                 Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
             }
         }
@@ -250,6 +251,8 @@ private fun FollowingListContent(
         ) {
             items(items) { user ->
                 FollowingRow(user = user, onUnfollow = { onUnfollow(user.id) })
+            }
+            item {
                 Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
             }
         }
@@ -331,15 +334,14 @@ private fun FollowerRow(
             modifier = Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(Color(0xFFEDEDED))
                 .clickable { onReject() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.close),
                 contentDescription = "팔로워 삭제",
-                tint = Color(0xFF666666),
-                modifier = Modifier.size(16.dp)
+                tint = Color(0xFF494949),
+                modifier = Modifier.size(24.dp)
             )
         }
     }

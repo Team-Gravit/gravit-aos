@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.TopBar
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.login.CustomButton
 import com.example.gravit.login.NameInputFiled
@@ -44,49 +45,11 @@ fun Account(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .background(Color.White)
     ) {
-        Column(Modifier.fillMaxSize()) {
+        Column {
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-            ) {
-                Row(
-                    modifier = Modifier.align(Alignment.CenterStart),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "뒤로가기",
-                        modifier = Modifier
-                            .padding(start = 18.dp)
-                            .size(20.dp)
-                            .clickable { navController.popBackStack() },
-                        tint = Color.Black
-                    )
-                    Spacer(Modifier.width(18.dp))
-                    Text(
-                        text = "내 정보 수정",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        fontFamily = pretendard,
-                        color = Color.Black
-                    )
-                }
-                if (ui.isLoading) {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter),
-                        color = Color(0xFF8100B3)
-                    )
-                }
-            }
-
-            Divider(color = Color.Black.copy(alpha = 0.1f))
+            TopBar(navController, title = "내 정보 수정")
 
             Spacer(Modifier.height(24.dp))
             key(ui.profileId) {
