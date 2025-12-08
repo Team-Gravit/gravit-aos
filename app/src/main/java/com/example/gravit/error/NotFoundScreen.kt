@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -96,19 +97,23 @@ fun ErrorScreen(
         Row (
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 20.dp)
+                .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
         ){
             ReportButton(
                 text = "이전으로",
                 bgC = Color(0xFFA8A8A8),
-                modifier = Modifier.size(156.dp, 53.dp),
+                modifier = Modifier
+                    .height(50.dp)
+                    .weight(1f),
                 onClick = onClick2,
             )
             Spacer(Modifier.width(8.dp))
             ReportButton(
                 text = "메인으로",
                 bgC = Color(0xFF8100B3),
-                modifier = Modifier.size(156.dp, 53.dp),
+                modifier = Modifier
+                    .height(50.dp)
+                    .weight(1f),
                 onClick = onClick1,
             )
         }

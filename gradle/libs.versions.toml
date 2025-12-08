@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.2"
+agp = "8.13.1"
 auth0 = "3.8.0"
 auth0Version = "2.12.0"
 browserVersion = "1.5.0"
@@ -29,6 +29,9 @@ foundationLayout = "1.9.0"
 generativeai = "0.9.0"
 material3 = "1.4.0"
 uiGraphics = "1.9.5"
+foundationLayoutVersion = "1.10.0"
+uiText = "1.10.0"
+foundation = "1.10.0"
 
 
 [libraries]
@@ -67,6 +70,9 @@ androidx-foundation-layout = { group = "androidx.compose.foundation", name = "fo
 generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayoutVersion" }
+androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

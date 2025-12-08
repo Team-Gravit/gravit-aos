@@ -1,20 +1,25 @@
 package com.example.gravit.main.User.Friend
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.Divider
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,225 +27,278 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.api.FriendUser
+import com.example.gravit.TopBar
+import com.example.gravit.api.FriendItem
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
 fun AddFriend(navController: NavController) {
-    val context = LocalContext.current
-    val vm: AddFriendVM = viewModel(factory = AddFriendVMFactory(RetrofitInstance.api, context))
+    val ctx = LocalContext.current
+    val vm: AddFriendVM = viewModel(
+        factory = AddFriendVMFactory(
+            api = RetrofitInstance.api,
+            appContext = ctx.applicationContext
+        )
+    )
     val ui by vm.state.collectAsState()
 
-    var query by rememberSaveable { mutableStateOf("") }
+    if (ui.sessionExpired) {
+        navController.navigate("error/404")
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
             .background(Color.White)
     ) {
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ChevronLeft,
-                    contentDescription = "뒤로가기",
-                    tint = Color.Black,
+            TopBar(navController, title = "친구 추가")
+
+            FriendSearchBar(
+                query = ui.query,
+                onQueryChange = vm::onQueryChange
+            )
+
+            if (ui.loading && ui.items.isEmpty()) {
+                Box(
                     modifier = Modifier
-                        .padding(start = 16.dp)
-                        .size(30.dp)
-                        .clickable { navController.popBackStack() }
-                )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    text = "친구추가",
-                    fontSize = 20.sp,
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF222124)
+                        .fillMaxWidth()
+                        .padding(top = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFBA00FF),)
+                }
+            } else {
+                FriendResultList(
+                    items = ui.items,
+                    hasNext = ui.hasNext,
+                    loadingMore = ui.loading && ui.items.isNotEmpty(),
+                    onLoadNext = { vm.loadNext() },
+                    onToggleFollow = { friend ->
+                        vm.toggleFollow(
+                            targetUserId = friend.userId,
+                            currentlyFollowing = friend.isFollowing
+                        )
+                    }
                 )
             }
 
-            Divider(color = Color.Black.copy(alpha = 0.1f))
-
-            TextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text(
-                    "친구 검색하기",
+            if (ui.error != null) {
+                Text(
+                    text = ui.error ?: "",
+                    color = Color.Red,
                     fontFamily = pretendard,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF222222).copy(alpha = 0.6f)
-                ) },
-                singleLine = true,
-                trailingIcon = {
-                    IconButton(onClick = {
-                        val q = query.trim()
-                        if (q.isNotEmpty()) vm.search(q)
-                    }) {
-                        Icon(Icons.Filled.Search, contentDescription = "검색", tint = Color.Gray)
-                    }
-                },
-                shape = RoundedCornerShape(50),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(85.dp)
-                    .padding(16.dp)
-                    .shadow(4.dp, RoundedCornerShape(50))
-                    .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(50))
-            )
-
-            when (val s = ui) {
-                is AddFriendVM.UiState.Success -> {
-                    val listState = rememberLazyListState()
-                    LazyColumn(state = listState) {
-                        items(s.results, key = { it.userId }) { user: FriendUser ->
-                            FriendCell(
-                                result = user,
-                                inUndo = s.showUndo.contains(user.userId),
-                                loading = s.itemLoading.contains(user.userId),
-                                onToggleFollow = { vm.toggleFollow(user.userId) }
-                            )
-                        }
-                    }
-                }
-                is AddFriendVM.UiState.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                else -> {}
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-fun FriendCell(
-    result: FriendUser,
-    inUndo: Boolean,
-    loading: Boolean,
-    onToggleFollow: () -> Unit
+fun FriendSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit
 ) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 30.dp, end = 30.dp, top = 20.dp, bottom = 20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(50.dp),
+                    clip = false
+                )
+                .clip(RoundedCornerShape(50.dp))
+                .background(Color.White)
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFF000000).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(50.dp)
+                )
+                .height(50.dp)
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = TextStyle(
+                    fontSize = 15.sp,
+                    fontFamily = pretendard,
+                    color = Color(0xFF222124)
+                ),
+                decorationBox = { innerTextField ->
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "친구 검색하기",
+                            fontSize = 15.sp,
+                            fontFamily = pretendard,
+                            color = Color(0xFF222222).copy(alpha = 0.6f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            Spacer(Modifier.width(10.dp))
+
+            Icon(
+                painter = painterResource(id = R.drawable.search),
+                contentDescription = "검색",
+                tint = Color(0xFF5E5E5E),
+                modifier = Modifier
+                    .width(20.dp)
+                    .height(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun FriendResultList(
+    items: List<FriendItem>,
+    hasNext: Boolean,
+    loadingMore: Boolean,
+    onLoadNext: () -> Unit,
+    onToggleFollow: (FriendItem) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            items(items) { friend ->
+                FriendRow(
+                    friend = friend,
+                    onToggleFollow = onToggleFollow
+                )
+                Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+            }
+        }
+
+        if (hasNext || loadingMore) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (loadingMore) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFBA00FF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(
+                        text = "더 보기",
+                        fontSize = 14.sp,
+                        fontFamily = pretendard,
+                        color = Color(0xFFBA00FF),
+                        modifier = Modifier.clickable { onLoadNext() }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FriendRow(
+    friend: FriendItem,
+    onToggleFollow: (FriendItem) -> Unit
+) {
+    val isFollowing = friend.isFollowing
+
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(38.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .background(ProfilePalette.idToColor(result.profileImgNumber)),
+                .background(
+                    ProfilePalette.idToColor(friend.profileImgNumber)
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            Image(
                 painter = painterResource(id = R.drawable.profile_logo),
                 contentDescription = "profile logo",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp, 25.dp)
             )
         }
-        Spacer(Modifier.width(16.dp))
-        Column {
+
+        Spacer(Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Text(
-                result.nickname,
+                text = friend.nickname,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = pretendard,
+                color = Color(0xFF222222).copy(alpha = 0.8f)
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = friend.handle,
+                fontSize = 14.sp,
+                fontFamily = pretendard,
+                color = Color(0xFF222222).copy(alpha = 0.8f)
+            )
+        }
+
+        val border =
+            if (isFollowing) BorderStroke(1.dp, Color(0xFF000000).copy(alpha = 0.1f)) else null
+        val buttonWidth = if (isFollowing) 120.dp else 90.dp
+        val buttonHeight = 40.dp
+
+        Button(
+            onClick = { onToggleFollow(friend) },
+            modifier = Modifier
+                .width(buttonWidth)
+                .height(buttonHeight),
+            shape = RoundedCornerShape(10.dp),
+            border = border,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isFollowing) Color.White else Color(0xFF8100B3),
+                contentColor = if (isFollowing) Color(0xFF222222).copy(alpha = 0.8f) else Color.White
+            ),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = if (isFollowing) "팔로우 취소" else "팔로우",
+                fontSize = 15.sp,
                 fontFamily = pretendard
-            )
-            Text(
-                text = if (result.handle.startsWith("@")) result.handle else "@${result.handle}",
-                fontFamily = pretendard,
-                color = Color.Gray
-            )
-        }
-        Spacer(Modifier.weight(1f))
-        FollowButton(result.isFollowing, inUndo, loading, onToggleFollow)
-    }
-}
-
-@Composable
-fun FollowButton(
-    isFollowing: Boolean,
-    inUndo: Boolean,
-    loading: Boolean,
-    onClick: () -> Unit
-) {
-    val bg: Color
-    val fg: Color
-    val borderColor: Color?
-    val label: String
-    val fontSize: TextUnit
-
-    when {
-        !isFollowing -> {
-            bg = Color(0xFF8100B3)
-            fg = Color.White
-            borderColor = null
-            label = "팔로우"
-            fontSize = 15.sp
-        }
-        inUndo -> {
-            bg = Color.White
-            fg = Color(0xFF4E4E4E)
-            borderColor = Color(0xFFE6E6E6)
-            label = "팔로우 취소"
-            fontSize = 15.sp
-        }
-        else -> {
-            bg = Color.White
-            fg = Color(0xFF4E4E4E)
-            borderColor = Color(0xFFE6E6E6)
-            label = "팔로우 취소"
-            fontSize = 15.sp
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .height(36.dp)
-            .defaultMinSize(minWidth = 96.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg)
-            .then(
-                if (borderColor != null)
-                    Modifier.border(1.dp, borderColor, RoundedCornerShape(10.dp))
-                else Modifier
-            )
-            .clickable(enabled = !loading) { onClick() }
-            .padding(horizontal = 14.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        if (loading) {
-            CircularProgressIndicator(
-                strokeWidth = 2.dp,
-                modifier = Modifier.size(18.dp)
-            )
-        } else {
-            Text(
-                text = label,
-                color = fg,
-                fontFamily = pretendard,
-                fontWeight = FontWeight.Medium,
-                fontSize = fontSize
             )
         }
     }
