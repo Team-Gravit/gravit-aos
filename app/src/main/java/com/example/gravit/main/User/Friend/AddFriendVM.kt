@@ -6,104 +6,269 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.FriendUser
+import com.example.gravit.api.FriendItem
+import com.example.gravit.api.FriendSearchResponse
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
+import retrofit2.Response
 import java.text.Normalizer
-import java.util.Locale
 
 class AddFriendVM(
     private val api: ApiService,
     private val appContext: Context
 ) : ViewModel() {
 
-    sealed interface UiState {
-        object Loading : UiState
-        data class Success(
-            val results: List<FriendUser>,
-            val itemLoading: Set<Long> = emptySet(),
-            val showUndo: Set<Long> = emptySet()
-        ) : UiState
-        data class Failed(val message: String? = null) : UiState
-        object SessionExpired : UiState
+    data class UiState(
+        val query: String = "",
+        val loading: Boolean = false,
+        val items: List<FriendItem> = emptyList(),
+        val hasNext: Boolean = false,
+        val page: Int = 0,
+        val error: String? = null,
+        val sessionExpired: Boolean = false
+    )
+
+    private val _state = MutableStateFlow(UiState())
+    val state: StateFlow<UiState> = _state.asStateFlow()
+
+    private var searchJob: Job? = null
+
+    fun onQueryChange(newQuery: String) {
+        _state.update { it.copy(query = newQuery) }
+
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(300)
+            searchFirst()
+        }
     }
 
-    private val _state = MutableStateFlow<UiState>(UiState.Success(emptyList()))
-    val state = _state.asStateFlow()
-
-    fun search(rawQuery: String) = viewModelScope.launch {
-        _state.value = UiState.Loading
-
-        val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext)
-            _state.value = UiState.SessionExpired
-            return@launch
+    fun searchFirst() {
+        val raw = state.value.query.trim()
+        if (raw.isEmpty()) {
+            _state.update {
+                it.copy(
+                    items = emptyList(),
+                    hasNext = false,
+                    page = 0,
+                    error = null,
+                    loading = false
+                )
+            }
+            return
         }
-        val auth = "Bearer ${session.accessToken}"
 
-        val nq = normalizeQuery(rawQuery)
+        val normalized = normalizeQuery(raw)
+        if (normalized.isEmpty()) {
+            _state.update {
+                it.copy(
+                    items = emptyList(),
+                    hasNext = false,
+                    page = 0,
+                    error = null,
+                    loading = false
+                )
+            }
+            return
+        }
 
-        runCatching {
-            api.getFriends(auth = auth, queryText = nq, page = 0)
-        }.onSuccess { res ->
-            _state.value = UiState.Success(res.contents)
-        }.onFailure { e ->
-            if ((e as? HttpException)?.code() == 401) {
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-            } else {
-                _state.value = UiState.Failed(e.message)
+        viewModelScope.launch {
+            val token = AuthPrefs.load(appContext)?.accessToken
+            if (token.isNullOrBlank()) {
+                _state.update { it.copy(sessionExpired = true) }
+                return@launch
+            }
+
+            _state.update { it.copy(loading = true, error = null, page = 0) }
+
+            val res: Response<FriendSearchResponse>
+            try {
+                res = api.getFriends(
+                    auth = "Bearer $token",
+                    queryText = normalized,
+                    page = 0
+                )
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        error = "네트워크 오류가 발생했어요."
+                    )
+                }
+                return@launch
+            }
+
+            handleSearchResponse(res, reset = true, page = 0)
+        }
+    }
+
+    fun loadNext() {
+        val cur = state.value
+        if (cur.loading || !cur.hasNext) return
+
+        val raw = cur.query.trim()
+        if (raw.isEmpty()) return
+
+        val normalized = normalizeQuery(raw)
+        if (normalized.isEmpty()) return
+
+        viewModelScope.launch {
+            val token = AuthPrefs.load(appContext)?.accessToken
+            if (token.isNullOrBlank()) {
+                _state.update { it.copy(sessionExpired = true) }
+                return@launch
+            }
+
+            val nextPage = cur.page + 1
+
+            _state.update { it.copy(loading = true, error = null) }
+
+            val res: Response<FriendSearchResponse>
+            try {
+                res = api.getFriends(
+                    auth = "Bearer $token",
+                    queryText = normalized,
+                    page = nextPage
+                )
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        error = "네트워크 오류가 발생했어요."
+                    )
+                }
+                return@launch
+            }
+
+            handleSearchResponse(res, reset = false, page = nextPage)
+        }
+    }
+
+    private fun handleSearchResponse(
+        res: Response<FriendSearchResponse>,
+        reset: Boolean,
+        page: Int
+    ) {
+        if (res.code() == 401) {
+            _state.update {
+                it.copy(
+                    loading = false,
+                    sessionExpired = true
+                )
+            }
+            return
+        }
+
+        if (!res.isSuccessful) {
+            _state.update {
+                it.copy(
+                    loading = false,
+                    error = "검색에 실패했어요. (${res.code()})"
+                )
+            }
+            return
+        }
+
+        val body = res.body()
+        if (body == null) {
+            _state.update {
+                it.copy(
+                    loading = false,
+                    error = "응답이 비어 있어요."
+                )
+            }
+            return
+        }
+
+        _state.update { prev ->
+            prev.copy(
+                loading = false,
+                items = if (reset) body.contents else prev.items + body.contents,
+                hasNext = body.hasNextPage,
+                page = page,
+                error = null
+            )
+        }
+    }
+
+    fun toggleFollow(targetUserId: Long, currentlyFollowing: Boolean) {
+        viewModelScope.launch {
+            val token = AuthPrefs.load(appContext)?.accessToken
+            if (token.isNullOrBlank()) {
+                _state.update { it.copy(sessionExpired = true) }
+                return@launch
+            }
+
+            val auth = "Bearer $token"
+            _state.update { it.copy(error = null) }
+
+            val res: Response<*>
+            try {
+                res = if (currentlyFollowing) {
+                    api.unfollow(auth = auth, followeeId = targetUserId)
+                } else {
+                    api.follow(auth = auth, followeeId = targetUserId)
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(error = "팔로우 요청 중 네트워크 오류가 발생했어요.")
+                }
+                return@launch
+            }
+
+            if (res.code() == 401) {
+                _state.update {
+                    it.copy(sessionExpired = true)
+                }
+                return@launch
+            }
+
+            if (!res.isSuccessful) {
+                val msg = when (res.code()) {
+                    400 -> "자기 자신은 팔로우할 수 없어요."
+                    404 -> "팔로우 내역이 존재하지 않아요."
+                    409 -> "이미 팔로우한 유저예요."
+                    else -> "팔로우 요청에 실패했어요. (${res.code()})"
+                }
+                _state.update { it.copy(error = msg) }
+                return@launch
+            }
+
+            _state.update { prev ->
+                prev.copy(
+                    items = prev.items.map { item ->
+                        if (item.userId == targetUserId) {
+                            item.copy(isFollowing = !currentlyFollowing)
+                        } else {
+                            item
+                        }
+                    }
+                )
             }
         }
     }
 
-    fun toggleFollow(userId: Long) = viewModelScope.launch {
-        val cur = _state.value as? UiState.Success ?: return@launch
-        val willFollow = !(cur.results.find { it.userId == userId }?.isFollowing ?: false)
+    private fun normalizeQuery(input: String): String {
+        val trimmed = input.trim()
+        if (trimmed.isEmpty()) return ""
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext)
-            _state.value = UiState.SessionExpired
-            return@launch
-        }
-        val auth = "Bearer ${session.accessToken}"
-
-        runCatching {
-            if (willFollow) api.sendFolloweeId(auth, userId)
-            else api.sendUnFolloweeId(auth, userId)
-        }.onSuccess {
-            val updated = cur.results.map {
-                if (it.userId == userId) it.copy(isFollowing = willFollow) else it
-            }
-            _state.value = cur.copy(results = updated)
-        }
-    }
-
-    private fun normalizeQuery(raw: String): String {
-        var q = raw.trim()
-        q = Normalizer.normalize(q, Normalizer.Form.NFKC)
-
-        if (q.any { it.isLetter() && it.code > 128 }) {
-            return q
-        }
-
-        if (!q.startsWith("@")) {
-            q = "@$q"
-        }
-        return q.lowercase(Locale.ROOT)
+        val nfkc = Normalizer.normalize(trimmed, Normalizer.Form.NFKC)
+        return nfkc
     }
 }
 
-@Suppress("UNCHECKED_CAST")
 class AddFriendVMFactory(
     private val api: ApiService,
-    private val context: Context
+    private val appContext: Context
 ) : ViewModelProvider.Factory {
+
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return AddFriendVM(api, context.applicationContext) as T
+        return AddFriendVM(api, appContext) as T
     }
 }

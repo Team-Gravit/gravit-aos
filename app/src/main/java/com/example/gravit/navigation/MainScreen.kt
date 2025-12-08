@@ -251,30 +251,34 @@ fun MainScreen(rootNavController: NavController) {
                     DeletionComplete(innerNavController)
                 }
 
-                // 친구 추가(검색)
                 composable("user/addfriend") {
                     AddFriend(innerNavController)
                 }
 
-                // 팔로워/팔로잉
                 composable(
                     route = "user/followList?tab={tab}",
                     arguments = listOf(
-                        navArgument("tab") { type = NavType.StringType; defaultValue = "followers" }
+                        navArgument("tab") {
+                            type = NavType.StringType
+                            defaultValue = "followers"
+                        }
                     )
                 ) { backStackEntry ->
                     val tabArg = backStackEntry.arguments?.getString("tab") ?: "followers"
-                    val tab = if (tabArg.equals("following", true))
+
+                    val initialTab = if (tabArg.equals("following", true)) {
                         FollowTab.Following
-                    else
+                    } else {
                         FollowTab.Followers
+                    }
 
                     FollowList(
                         navController = innerNavController,
-                        initialTab = tab
+                        initialTab = initialTab
                     )
                 }
-                //에러
+
+
                 composable("error/401") { UnauthorizedScreen(navController = innerNavController, onSessionExpired = goToLoginChoice) }
                 composable("error/404") { NotFoundScreen(navController = innerNavController) }
             }

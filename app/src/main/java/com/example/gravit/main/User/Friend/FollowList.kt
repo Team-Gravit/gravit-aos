@@ -1,22 +1,22 @@
 package com.example.gravit.main.User.Friend
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +29,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.api.FriendItem
+import com.example.gravit.TopBar
+import com.example.gravit.api.FriendUserSummary
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.navigation.FollowTab
 import com.example.gravit.ui.theme.ProfilePalette
@@ -40,144 +41,191 @@ fun FollowList(
     navController: NavController,
     initialTab: FollowTab
 ) {
-    var tab by rememberSaveable { mutableStateOf(initialTab) }
-
-    val context = LocalContext.current
-    val vm: FollowListVM = viewModel(
-        factory = FollowListVMFactory(RetrofitInstance.api, context)
+    val ctx = LocalContext.current
+    val vm: FriendListVM = viewModel(
+        factory = FriendListVMFactory(
+            api = RetrofitInstance.api,
+            appContext = ctx.applicationContext
+        )
     )
     val ui by vm.state.collectAsState()
-    val followerCount by vm.followerCount.collectAsState()
-    val followingCount by vm.followingCount.collectAsState()
 
-    LaunchedEffect(Unit) {
-       vm.loadFollower()
-       vm.loadFollowing()
+    LaunchedEffect(initialTab) {
+        vm.init()
+
+        val mappedTab = when (initialTab) {
+            FollowTab.Followers -> FriendTab.Follower
+            FollowTab.Following -> FriendTab.Following
+        }
+
+        vm.setTab(mappedTab)
     }
 
-    Box(
+    if (ui.sessionExpired) {
+        navController.navigate("error/404")
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
             .background(Color.White)
     ) {
-        Column {
-            Row(
+        TopBar(navController, title = "팔로우 / 팔로잉")
+
+        FriendTabBar(
+            selectedTab = ui.selectedTab,
+            followerCount = ui.followerCount,
+            followingCount = ui.followingCount,
+            onTabSelected = vm::setTab
+        )
+
+        if (ui.loading && ui.followerItems.isEmpty() && ui.followingItems.isEmpty()) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(top = 40.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.arrow_left),
-                    contentDescription = "뒤로가기",
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .size(30.dp)
-                        .clickable { navController.popBackStack() },
-                    tint = Color.Black
-                )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    "팔로워/팔로잉",
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    color = Color(0xFF222124),
-                    fontWeight = FontWeight.SemiBold
-                )
+                CircularProgressIndicator(color = Color(0xFFBA00FF))
             }
-
-            FollowTabBar(
-                tab = tab,
-                onTabChange = { tab = it },
-                followerCount = followerCount,
-                followingCount = followingCount
-            )
-
-            when (ui) {
-                is FollowListVM.UiState.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is FollowListVM.UiState.Success -> {
-                    val data = (ui as FollowListVM.UiState.Success).data
-                    FriendList(
-                        users = data,
-                        tab = tab,
-                        vm = vm
+        } else {
+            when (ui.selectedTab) {
+                FriendTab.Follower -> {
+                    FollowerListContent(
+                        items = ui.followerItems,
+                        hasNext = ui.followerHasNext,
+                        loadingMore = ui.loading,
+                        onLoadNext = { vm.loadFollowerNext() },
+                        onReject = { vm.rejectFollower(it) }
                     )
                 }
-                is FollowListVM.UiState.Failed -> {
-                    // TODO 에러 UI 원하면 추가
-                }
-                is FollowListVM.UiState.SessionExpired -> {
-                    // TODO 세션만료 처리 필요시 추가
+                FriendTab.Following -> {
+                    FollowingListContent(
+                        items = ui.followingItems,
+                        hasNext = ui.followingHasNext,
+                        loadingMore = ui.loading,
+                        onLoadNext = { vm.loadFollowingNext() },
+                        onUnfollow = { vm.unfollowFromFollowing(it) }
+                    )
                 }
             }
+        }
+
+        if (ui.error != null) {
+            Text(
+                text = ui.error ?: "",
+                color = Color.Red,
+                fontFamily = pretendard,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+            )
         }
     }
 }
 
 @Composable
-fun FriendList(
-    users: List<FriendItem>,
-    tab: FollowTab,
-    vm: FollowListVM
+private fun FriendTabBar(
+    selectedTab: FriendTab,
+    followerCount: Int,
+    followingCount: Int,
+    onTabSelected: (FriendTab) -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(users, key = { it.id }) { user ->
-            Row(
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FriendTabItem(
+            text = "${followerCount} 팔로워",
+            selected = selectedTab == FriendTab.Follower,
+            onClick = { onTabSelected(FriendTab.Follower) },
+            modifier = Modifier.weight(1f)
+        )
+        FriendTabItem(
+            text = "${followingCount} 팔로잉",
+            selected = selectedTab == FriendTab.Following,
+            onClick = { onTabSelected(FriendTab.Following) },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun FriendTabItem(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = text,
+            fontFamily = pretendard,
+            fontSize = 15.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) Color(0xFF222222) else Color(0xFF222222).copy(alpha = 0.4f)
+        )
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .height(2.dp)
+                //.width(60.dp)
+                .fillMaxWidth()
+                .background(
+                    if (selected) Color.Black else Color.Transparent
+                )
+        )
+    }
+}
+
+@Composable
+private fun FollowerListContent(
+    items: List<FriendUserSummary>,
+    hasNext: Boolean,
+    loadingMore: Boolean,
+    onLoadNext: () -> Unit,
+    onReject: (Long) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            items(items) { user ->
+                FollowerRow(user = user, onReject = { onReject(user.id) })
+                Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+            }
+        }
+
+        if (hasNext || loadingMore) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(ProfilePalette.idToColor(user.profileImgNumber)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.profile_logo),
-                        contentDescription = "profile",
+                if (loadingMore) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFBA00FF),
                         modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = user.nickname,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = pretendard,
-                        fontSize = 14.sp,
-                        color = Color(0xFF222222)
-                    )
-                    Text(
-                        text = "@${user.handle.removePrefix("@")}",
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = pretendard,
-                        fontSize = 14.sp,
-                        color = Color(0xFF888888)
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-
-                if (tab == FollowTab.Following) {
-                    FollowButton(
-                        isFollowing = true,
-                        inUndo = false,
-                        loading = false,
-                        onClick = { vm.unfollow(user.id) }
                     )
                 } else {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "disabled",
-                        tint = Color(0xFF494949),
-                        modifier = Modifier.size(20.dp)
+                    Text(
+                        text = "더 보기",
+                        fontSize = 14.sp,
+                        fontFamily = pretendard,
+                        color = Color(0xFFBA00FF),
+                        modifier = Modifier.clickable { onLoadNext() }
                     )
                 }
             }
@@ -185,43 +233,183 @@ fun FriendList(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FollowTabBar(
-    tab: FollowTab,
-    onTabChange: (FollowTab) -> Unit,
-    followerCount: Int,
-    followingCount: Int
+private fun FollowingListContent(
+    items: List<FriendUserSummary>,
+    hasNext: Boolean,
+    loadingMore: Boolean,
+    onLoadNext: () -> Unit,
+    onUnfollow: (Long) -> Unit
 ) {
-    PrimaryTabRow(
-        selectedTabIndex = tab.ordinal,
-        containerColor = Color.White
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Tab(
-            selected = tab == FollowTab.Followers,
-            onClick = { onTabChange(FollowTab.Followers) },
-            modifier = Modifier.height(41.dp)
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
-            Text(
-                text = "$followerCount 팔로워",
-                fontSize = 14.sp,
-                fontFamily = pretendard,
-                color = if (tab == FollowTab.Followers) Color(0xFF030303) else Color(0xFFCCCCCC),
-                fontWeight = FontWeight.SemiBold
+            items(items) { user ->
+                FollowingRow(user = user, onUnfollow = { onUnfollow(user.id) })
+                Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+            }
+        }
+
+        if (hasNext || loadingMore) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (loadingMore) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFBA00FF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(
+                        text = "더 보기",
+                        fontSize = 14.sp,
+                        fontFamily = pretendard,
+                        color = Color(0xFFBA00FF),
+                        modifier = Modifier.clickable { onLoadNext() }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FollowerRow(
+    user: FriendUserSummary,
+    onReject: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(ProfilePalette.idToColor(user.profileImgNumber)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.profile_logo),
+                contentDescription = "profile",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp, 25.dp)
             )
         }
 
-        Tab(
-            selected = tab == FollowTab.Following,
-            onClick = { onTabChange(FollowTab.Following) },
-            modifier = Modifier.height(41.dp)
+        Spacer(Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = "$followingCount 팔로잉",
+                text = user.nickname,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = pretendard,
+                color = Color(0xFF222124)
+            )
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = "@" + user.handle,
                 fontSize = 14.sp,
                 fontFamily = pretendard,
-                color = if (tab == FollowTab.Following) Color(0xFF030303) else Color(0xFFCCCCCC),
-                fontWeight = FontWeight.SemiBold
+                color = Color(0xFF494949)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color(0xFFEDEDED))
+                .clickable { onReject() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.close),
+                contentDescription = "팔로워 삭제",
+                tint = Color(0xFF666666),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun FollowingRow(
+    user: FriendUserSummary,
+    onUnfollow: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(ProfilePalette.idToColor(user.profileImgNumber)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.profile_logo),
+                contentDescription = "profile",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp, 25.dp)
+            )
+        }
+
+        Spacer(Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = user.nickname,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = pretendard,
+                color = Color(0xFF222124)
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "@" + user.handle,
+                fontSize = 14.sp,
+                fontFamily = pretendard,
+                color = Color(0xFF494949)
+            )
+        }
+
+        Button(
+            onClick = onUnfollow,
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF222222).copy(alpha = 0.8f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                Color(0xFF000000).copy(alpha = 0.1f)
+            ),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = "팔로우 취소",
+                fontSize = 15.sp,
+                fontFamily = pretendard
             )
         }
     }

@@ -57,7 +57,7 @@ fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
 
         UnitUi(
             unitId = summary.unitId,
-            orderText = "UNIT %02d".format(index + 1),
+            orderText = "Unit%02d".format(index + 1),
             title = summary.title,
             progressRate = rate
         )
@@ -249,13 +249,13 @@ private fun UnitItemBox(
             .clickable {
                 navController.navigate("lessonList/${unit.unitId}/${unit.orderText}/${unit.title}")
             }
-            .padding(10.dp)
+            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp)
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Text(
                 text = "${unit.orderText} - ${unit.title}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontFamily = pretendard,
                 textAlign = TextAlign.Start,
                 color = Color.White,
@@ -270,7 +270,7 @@ private fun UnitItemBox(
                 Text(
                     text = "${percent}%",
                     fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     fontFamily = pretendard,
                     color = Color.White,
                     textAlign = TextAlign.End,
