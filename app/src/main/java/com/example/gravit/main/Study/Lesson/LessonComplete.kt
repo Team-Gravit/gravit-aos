@@ -339,20 +339,20 @@ fun PillShape(
     val scaleW = config.screenWidthDp.toFloat() / designWidth
     val scaleH = config.screenHeightDp.toFloat() / designHeight
 
-    fun dw(v: Float) = (v * scaleW).dp   // 가로용
-    fun dh(v: Float) = (v * scaleH).dp   // 세로용
+    fun dw(v: Float) = (v * scaleW).dp
+    fun dh(v: Float) = (v * scaleH).dp
 
     Box(
         modifier = modifier
             .wrapContentWidth()
-            .height(dh(25f)) // 25.dp → 디자인 기준 25를 세로 비율로 스케일
+            .height(dh(25f))
             .background(
                 color = Color.White,
                 shape = RoundedCornerShape(50)
             )
             .padding(
                 horizontal = dw(6f),
-                vertical = dh(4f) // 세로 여유 조금 주기
+                vertical = dh(4f)
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -363,7 +363,7 @@ fun PillShape(
             Image(
                 painter = painterResource(id = img),
                 contentDescription = null,
-                modifier = Modifier.size(dh(16f)) // 아이콘도 세로 비율 기준
+                modifier = Modifier.size(dh(16f))
             )
             Spacer(Modifier.width(dw(4f)))
             if (league.isNotEmpty()) {
@@ -371,7 +371,7 @@ fun PillShape(
                     text = league,
                     style = TextStyle(
                         fontFamily = pretendard,
-                        fontSize = 14.sp, // 글자 크기는 sp 유지 (가독성)
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF8100B3),
                         platformStyle = PlatformTextStyle(includeFontPadding = false)

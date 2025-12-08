@@ -56,7 +56,6 @@ fun MultipleChoice(
     var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
     var readyToSubmit     by remember(problemNum) { mutableStateOf(false) }
 
-    // 선택 해제되면 버튼 숨김
     LaunchedEffect(selectedIndex, submitted) {
         if (selectedIndex == null || submitted) {
             showCompleteButton = false
@@ -163,7 +162,7 @@ fun MultipleChoice(
         if (fabState != FabState.HIDDEN || removeSnackBarText != null) {
             Row(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter) // 전체를 아래에 붙이고
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 20.dp),
                 verticalAlignment = Alignment.CenterVertically

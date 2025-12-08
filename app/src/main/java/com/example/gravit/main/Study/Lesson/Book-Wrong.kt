@@ -32,14 +32,11 @@ fun BookWrongScreen(
     onSessionExpired: () -> Unit,
     type: String
 ){
-
-    //스톱워치
     val swVm: StopwatchViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
 
 
     DisposableEffect(lifecycleOwner) {
-        // 앱이 백그라운드로 가면 멈춤
         val obs = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 swVm.pause()
@@ -47,7 +44,6 @@ fun BookWrongScreen(
         }
         lifecycleOwner.lifecycle.addObserver(obs)
 
-        // 컴포저블이 사라질 때(네비게이션 이동 등)도 멈춤
         onDispose {
             swVm.pause()
             lifecycleOwner.lifecycle.removeObserver(obs)
@@ -136,7 +132,6 @@ fun BookWrongScreen(
         vm.initBookmarks(problems)
     }
 
-    //제출
     fun submitSingleProblem(problemId: Int, isCorrect: Boolean) {
         vm.submitProblemResults(
             ProblemSubmissionRequests(problemId, isCorrect)

@@ -55,7 +55,7 @@ class LoginViewModel : ViewModel() {
             }.onSuccess { res ->
                 Log.d("AuthFlow", "Server access = ${maskToken(res.accessToken)}")
                 Log.d("AuthFlow", "isOnboarded = ${res.isOnboarded}")
-                _jwtToken.value = res //응답 저장
+                _jwtToken.value = res
             }.onFailure { e ->
                 Log.e("LoginViewModel", "sendAccessToken failed", e)
                 _jwtToken.value = null

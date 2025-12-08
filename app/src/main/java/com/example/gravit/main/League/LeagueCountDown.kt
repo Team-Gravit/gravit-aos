@@ -24,7 +24,6 @@ import java.util.TimeZone
 fun WeeklyCountdown() {
     var remainingMillis by remember { mutableStateOf(getMillisUntilNextMonday()) }
 
-    // 1초마다 갱신
     LaunchedEffect(Unit) {
         while (true) {
             remainingMillis = getMillisUntilNextMonday()
@@ -33,11 +32,10 @@ fun WeeklyCountdown() {
     }
 
     val totalSeconds = remainingMillis / 1000
-    val hours = totalSeconds / 3600        // 남은 총 시
+    val hours = totalSeconds / 3600
     val minutes = (totalSeconds / 60) % 60
     val seconds = totalSeconds % 60
 
-    // HH:MM:SS 포맷
     val timeText = String.format("%02d시간 %02d분 %02d초", hours, minutes, seconds)
 
     Text(
@@ -54,18 +52,16 @@ fun getMillisUntilNextMonday(tz: TimeZone = TimeZone.getTimeZone("Asia/Seoul")):
     val now = Calendar.getInstance(tz)
     val nowMs = now.timeInMillis
 
-    // 오늘 00:00으로 맞추기
     val next = now.clone() as Calendar
     next.set(Calendar.HOUR_OF_DAY, 0)
     next.set(Calendar.MINUTE, 0)
     next.set(Calendar.SECOND, 0)
     next.set(Calendar.MILLISECOND, 0)
 
-    // 다음 월요일 00:00 구하기
-    val dayOfWeek = next.get(Calendar.DAY_OF_WEEK)    // SUN=1, MON=2, ...
-    val monday = Calendar.MONDAY                      // =2
+    val dayOfWeek = next.get(Calendar.DAY_OF_WEEK)
+    val monday = Calendar.MONDAY
     var daysToAdd = (monday - dayOfWeek + 7) % 7
-    if (daysToAdd == 0) daysToAdd = 7                // 오늘이 월요일이면 '다음' 월요일로
+    if (daysToAdd == 0) daysToAdd = 7
     next.add(Calendar.DAY_OF_YEAR, daysToAdd)
 
     return next.timeInMillis - nowMs

@@ -54,7 +54,7 @@ fun LoginScreen (
             //저장
             AuthPrefs.save(context, token.accessToken, token.refreshToken,token.isOnboarded)
 
-            val s = AuthPrefs.load(context) //저장이 실패됐는지 다시 확인
+            val s = AuthPrefs.load(context)
             if (s == null) {
                 navController.navigate("login choice") {
                     popUpTo("login choice") { inclusive = true }
@@ -64,7 +64,6 @@ fun LoginScreen (
                 return@LaunchedEffect
             }
 
-            //온보딩 여부 확인
             val target = if (s.isOnboarded) "main" else "profile setting"
             navController.navigate(target) {
                 if (target == "profile setting") {

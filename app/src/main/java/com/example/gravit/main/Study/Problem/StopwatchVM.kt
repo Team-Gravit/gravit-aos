@@ -36,8 +36,8 @@ class StopwatchViewModel : ViewModel() {
     val state = _state.asStateFlow()
 
     private var ticker: Job? = null
-    private var baseRealtime: Long = 0L   // start 기준점
-    private var accumulated: Long = 0L    // 일시정지까지의 누적
+    private var baseRealtime: Long = 0L
+    private var accumulated: Long = 0L
 
     fun start() {
         if (_state.value.running) return
