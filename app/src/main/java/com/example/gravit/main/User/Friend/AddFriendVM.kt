@@ -38,6 +38,10 @@ class AddFriendVM(
 
     private var searchJob: Job? = null
 
+    private suspend fun <T> safeCall(block: suspend () -> T): Result<T> {
+        return runCatching { block() }
+    }
+
     fun onQueryChange(newQuery: String) {
         _state.update { it.copy(query = newQuery) }
 
@@ -86,24 +90,27 @@ class AddFriendVM(
 
             _state.update { it.copy(loading = true, error = null, page = 0) }
 
-            val res: Response<FriendSearchResponse>
-            try {
-                res = api.getFriends(
+            val result: Result<Response<FriendSearchResponse>> = safeCall {
+                api.getFriends(
                     auth = "Bearer $token",
                     queryText = normalized,
                     page = 0
                 )
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        error = "네트워크 오류가 발생했어요."
-                    )
-                }
-                return@launch
             }
 
-            handleSearchResponse(res, reset = true, page = 0)
+            result.fold(
+                onSuccess = { res ->
+                    handleSearchResponse(res, reset = true, page = 0)
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            error = "네트워크 오류가 발생했어요."
+                        )
+                    }
+                }
+            )
         }
     }
 
@@ -128,24 +135,27 @@ class AddFriendVM(
 
             _state.update { it.copy(loading = true, error = null) }
 
-            val res: Response<FriendSearchResponse>
-            try {
-                res = api.getFriends(
+            val result: Result<Response<FriendSearchResponse>> = safeCall {
+                api.getFriends(
                     auth = "Bearer $token",
                     queryText = normalized,
                     page = nextPage
                 )
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        error = "네트워크 오류가 발생했어요."
-                    )
-                }
-                return@launch
             }
 
-            handleSearchResponse(res, reset = false, page = nextPage)
+            result.fold(
+                onSuccess = { res ->
+                    handleSearchResponse(res, reset = false, page = nextPage)
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            error = "네트워크 오류가 발생했어요."
+                        )
+                    }
+                }
+            )
         }
     }
 
@@ -207,49 +217,50 @@ class AddFriendVM(
             val auth = "Bearer $token"
             _state.update { it.copy(error = null) }
 
-            val res: Response<*>
-            try {
-                res = if (currentlyFollowing) {
+            // follow / unfollow 공통 처리
+            val result: Result<Response<*>> = safeCall {
+                if (currentlyFollowing) {
                     api.unfollow(auth = auth, followeeId = targetUserId)
                 } else {
                     api.follow(auth = auth, followeeId = targetUserId)
-                }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(error = "팔로우 요청 중 네트워크 오류가 발생했어요.")
-                }
-                return@launch
+                } as Response<*>
             }
 
-            if (res.code() == 401) {
-                _state.update {
-                    it.copy(sessionExpired = true)
-                }
-                return@launch
-            }
-
-            if (!res.isSuccessful) {
-                val msg = when (res.code()) {
-                    400 -> "자기 자신은 팔로우할 수 없어요."
-                    404 -> "팔로우 내역이 존재하지 않아요."
-                    409 -> "이미 팔로우한 유저예요."
-                    else -> "팔로우 요청에 실패했어요. (${res.code()})"
-                }
-                _state.update { it.copy(error = msg) }
-                return@launch
-            }
-
-            _state.update { prev ->
-                prev.copy(
-                    items = prev.items.map { item ->
-                        if (item.userId == targetUserId) {
-                            item.copy(isFollowing = !currentlyFollowing)
-                        } else {
-                            item
-                        }
+            result.fold(
+                onSuccess = { res ->
+                    if (res.code() == 401) {
+                        _state.update { it.copy(sessionExpired = true) }
+                        return@fold
                     }
-                )
-            }
+
+                    if (!res.isSuccessful) {
+                        val msg = when (res.code()) {
+                            400 -> "자기 자신은 팔로우할 수 없어요."
+                            404 -> "팔로우 내역이 존재하지 않아요."
+                            409 -> "이미 팔로우한 유저예요."
+                            else -> "팔로우 요청에 실패했어요. (${res.code()})"
+                        }
+                        _state.update { it.copy(error = msg) }
+                        return@fold
+                    }
+
+                    // 성공 시 로컬 상태 토글
+                    _state.update { prev ->
+                        prev.copy(
+                            items = prev.items.map { item ->
+                                if (item.userId == targetUserId) {
+                                    item.copy(isFollowing = !currentlyFollowing)
+                                } else item
+                            }
+                        )
+                    }
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(error = "팔로우 요청 중 네트워크 오류가 발생했어요.")
+                    }
+                }
+            )
         }
     }
 
