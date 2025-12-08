@@ -206,7 +206,7 @@ fun HomeUI(
                             )
 
                             Spacer(modifier = Modifier.width(dw(8f)))
-                            LevelGauge(lv = level, xp = xp)
+                            LevelGauge(lv = level, xp = xp, modifier = Modifier.height(dh(25f)))
                         }
                         Spacer(modifier = Modifier.height(dh(16f)))
                         Box(
