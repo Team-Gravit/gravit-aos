@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gravit.api.ApiService
 import com.example.gravit.api.AuthPrefs
+import com.example.gravit.api.FriendCountResponse
 import com.example.gravit.api.FriendSliceResponse
 import com.example.gravit.api.FriendUserSummary
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,10 @@ class FriendListVM(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
+    private suspend fun <T> safeCall(block: suspend () -> T): Result<T> {
+        return runCatching { block() }
+    }
+
     fun init() {
         viewModelScope.launch {
             loadCount()
@@ -76,27 +81,28 @@ class FriendListVM(
         }
     }
 
-    // --- 카운트 ------------------------------------------------------------
-
     private suspend fun loadCount() {
         val auth = getAuth() ?: return
 
-        val res: Response<com.example.gravit.api.FriendCountResponse>
-        try {
-            res = api.getFriendCount(auth)
-        } catch (e: Exception) {
-            return
+        val result: Result<Response<FriendCountResponse>> = safeCall {
+            api.getFriendCount(auth)
         }
 
-        if (!res.isSuccessful) return
-        val body = res.body() ?: return
+        result.fold(
+            onSuccess = { res ->
+                if (!res.isSuccessful) return@fold
+                val body = res.body() ?: return@fold
 
-        _state.update {
-            it.copy(
-                followerCount = body.followerCount,
-                followingCount = body.followingCount
-            )
-        }
+                _state.update {
+                    it.copy(
+                        followerCount = body.followerCount,
+                        followingCount = body.followingCount
+                    )
+                }
+            },
+            onFailure = {
+            }
+        )
     }
 
     private fun loadFollower(reset: Boolean) {
@@ -107,20 +113,23 @@ class FriendListVM(
 
             _state.update { it.copy(loading = true, error = null) }
 
-            val res: Response<FriendSliceResponse>
-            try {
-                res = api.getFollowerList(auth = auth, page = targetPage)
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        error = "팔로워 목록을 불러오지 못했어요."
-                    )
-                }
-                return@launch
+            val result: Result<Response<FriendSliceResponse>> = safeCall {
+                api.getFollowerList(auth = auth, page = targetPage)
             }
 
-            handleFollowerResponse(res, reset, targetPage)
+            result.fold(
+                onSuccess = { res ->
+                    handleFollowerResponse(res, reset, targetPage)
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            error = "팔로워 목록을 불러오지 못했어요."
+                        )
+                    }
+                }
+            )
         }
     }
 
@@ -173,20 +182,23 @@ class FriendListVM(
 
             _state.update { it.copy(loading = true, error = null) }
 
-            val res: Response<FriendSliceResponse>
-            try {
-                res = api.getFollowingList(auth = auth, page = targetPage)
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        error = "팔로잉 목록을 불러오지 못했어요."
-                    )
-                }
-                return@launch
+            val result: Result<Response<FriendSliceResponse>> = safeCall {
+                api.getFollowingList(auth = auth, page = targetPage)
             }
 
-            handleFollowingResponse(res, reset, targetPage)
+            result.fold(
+                onSuccess = { res ->
+                    handleFollowingResponse(res, reset, targetPage)
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            error = "팔로잉 목록을 불러오지 못했어요."
+                        )
+                    }
+                }
+            )
         }
     }
 
@@ -236,34 +248,37 @@ class FriendListVM(
         viewModelScope.launch {
             val auth = getAuth() ?: return@launch
 
-            val res: Response<Unit>
-            try {
-                res = api.rejectFollowing(auth = auth, followerId = followerId)
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(error = "팔로워를 거절하지 못했어요.")
+            val result: Result<Response<Unit>> = safeCall {
+                api.rejectFollowing(auth = auth, followerId = followerId)
+            }
+
+            result.fold(
+                onSuccess = { res ->
+                    if (res.code() == 401) {
+                        _state.update { it.copy(sessionExpired = true) }
+                        return@fold
+                    }
+
+                    if (!res.isSuccessful) {
+                        _state.update {
+                            it.copy(error = "팔로워를 거절하지 못했어요. (${res.code()})")
+                        }
+                        return@fold
+                    }
+
+                    _state.update { prev ->
+                        prev.copy(
+                            followerItems = prev.followerItems.filterNot { it.id == followerId },
+                            followerCount = (prev.followerCount - 1).coerceAtLeast(0)
+                        )
+                    }
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(error = "팔로워를 거절하지 못했어요.")
+                    }
                 }
-                return@launch
-            }
-
-            if (res.code() == 401) {
-                _state.update { it.copy(sessionExpired = true) }
-                return@launch
-            }
-
-            if (!res.isSuccessful) {
-                _state.update {
-                    it.copy(error = "팔로워를 거절하지 못했어요. (${res.code()})")
-                }
-                return@launch
-            }
-
-            _state.update { prev ->
-                prev.copy(
-                    followerItems = prev.followerItems.filterNot { it.id == followerId },
-                    followerCount = (prev.followerCount - 1).coerceAtLeast(0)
-                )
-            }
+            )
         }
     }
 
@@ -271,33 +286,37 @@ class FriendListVM(
         viewModelScope.launch {
             val auth = getAuth() ?: return@launch
 
-            val res: Response<Unit>
-            try {
-                res = api.unfollow(auth = auth, followeeId = followeeId)
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(error = "팔로우를 취소하지 못했어요.")
-                }
-                return@launch
+            val result: Result<Response<Unit>> = safeCall {
+                api.unfollow(auth = auth, followeeId = followeeId)
             }
 
-            if (res.code() == 401) {
-                _state.update { it.copy(sessionExpired = true) }
-                return@launch
-            }
-            if (!res.isSuccessful) {
-                _state.update {
-                    it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
-                }
-                return@launch
-            }
+            result.fold(
+                onSuccess = { res ->
+                    if (res.code() == 401) {
+                        _state.update { it.copy(sessionExpired = true) }
+                        return@fold
+                    }
 
-            _state.update { prev ->
-                prev.copy(
-                    followingItems = prev.followingItems.filterNot { it.id == followeeId },
-                    followingCount = (prev.followingCount - 1).coerceAtLeast(0)
-                )
-            }
+                    if (!res.isSuccessful) {
+                        _state.update {
+                            it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
+                        }
+                        return@fold
+                    }
+
+                    _state.update { prev ->
+                        prev.copy(
+                            followingItems = prev.followingItems.filterNot { it.id == followeeId },
+                            followingCount = (prev.followingCount - 1).coerceAtLeast(0)
+                        )
+                    }
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(error = "팔로우를 취소하지 못했어요.")
+                    }
+                }
+            )
         }
     }
 }

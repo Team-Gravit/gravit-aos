@@ -83,7 +83,7 @@ fun FollowList(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 40.dp),
+                    .padding(top = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = Color(0xFFBA00FF))
@@ -132,8 +132,7 @@ private fun FriendTabBar(
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         FriendTabItem(
@@ -171,7 +170,7 @@ private fun FriendTabItem(
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             color = if (selected) Color(0xFF222222) else Color(0xFF222222).copy(alpha = 0.4f)
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
                 .height(1.dp)

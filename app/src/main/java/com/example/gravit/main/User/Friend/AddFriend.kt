@@ -69,28 +69,49 @@ fun AddFriend(navController: NavController) {
                 onQueryChange = vm::onQueryChange
             )
 
-            if (ui.loading && ui.items.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFFBA00FF),)
-                }
-            } else {
-                FriendResultList(
-                    items = ui.items,
-                    hasNext = ui.hasNext,
-                    loadingMore = ui.loading && ui.items.isNotEmpty(),
-                    onLoadNext = { vm.loadNext() },
-                    onToggleFollow = { friend ->
-                        vm.toggleFollow(
-                            targetUserId = friend.userId,
-                            currentlyFollowing = friend.isFollowing
+            when {
+                ui.query.isBlank() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(
+                            text = "태그나 닉네임으로 친구를 검색하세요.",
+                            fontFamily = pretendard,
+                            fontSize = 14.sp,
+                            color = Color(0xFF222222).copy(alpha = 0.6f)
                         )
                     }
-                )
+                }
+
+                ui.loading && ui.items.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFBA00FF))
+                    }
+                }
+
+                else -> {
+                    FriendResultList(
+                        items = ui.items,
+                        hasNext = ui.hasNext,
+                        loadingMore = ui.loading && ui.items.isNotEmpty(),
+                        onLoadNext = { vm.loadNext() },
+                        onToggleFollow = { friend ->
+                            vm.toggleFollow(
+                                targetUserId = friend.userId,
+                                currentlyFollowing = friend.isFollowing
+                            )
+                        }
+                    )
+                }
             }
 
             if (ui.error != null) {
@@ -103,6 +124,15 @@ fun AddFriend(navController: NavController) {
                 )
             }
         }
+    }
+    if (ui.error != null) {
+        Text(
+            text = ui.error ?: "",
+            color = Color.Red,
+            fontFamily = pretendard,
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+        )
     }
 }
 
