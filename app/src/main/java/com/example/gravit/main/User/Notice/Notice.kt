@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -154,8 +155,8 @@ fun Notice(navController: NavController) {
                         fontSize = 16.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         fontFamily = pretendard,
-                        color = if (isSelected) Color(0xFFBA00FF) else Color(0xFF333333).copy(alpha = 0.7f)
-                        ,
+                        color = if (isSelected) Color(0xFFBA00FF) else Color(0xFF333333).copy(alpha = 0.7f),
+                        textDecoration = if (isSelected) TextDecoration.Underline else TextDecoration.None,
                         modifier = Modifier
                             .padding(horizontal = 6.dp)
                             .clickable {

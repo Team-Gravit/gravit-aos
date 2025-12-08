@@ -185,7 +185,7 @@ private fun UnitListContent(
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Column(modifier = Modifier.padding(10.dp)) {
+                Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)) {
                     Text(
                         text = "유닛 리스트",
                         fontWeight = FontWeight.SemiBold,
