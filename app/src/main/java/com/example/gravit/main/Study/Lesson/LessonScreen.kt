@@ -66,7 +66,7 @@ fun LessonScreen(
 
     LaunchedEffect(lessonId) {
         resultsMap.clear()
-        vm.load(lessonId = lessonId, type = "nomal")
+        vm.load(lessonId = lessonId, type = "normal")
     }
 
     val ui by vm.state.collectAsState()

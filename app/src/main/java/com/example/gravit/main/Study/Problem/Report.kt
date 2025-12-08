@@ -53,7 +53,9 @@ import com.example.gravit.ui.theme.pretendard
 fun ReportDialog(
     modifier: Modifier = Modifier,
     navController: NavController,
-    problemId: Int
+    problemId: Int,
+    onOverlayOpened: () -> Unit = {},
+    onOverlayClosed: () -> Unit = {},
 ){
     val context = LocalContext.current
     val vm: ReportVM = viewModel(
@@ -87,7 +89,10 @@ fun ReportDialog(
         contentDescription = "report",
         modifier = modifier
             .size(24.dp)
-            .clickable { showDialog = true }
+            .clickable {
+                showDialog = true
+                onOverlayOpened()
+            }
     )
 
     if(showDialog){
@@ -101,7 +106,10 @@ fun ReportDialog(
         )
         val canSubmit = selectedIndex != null
         Dialog(
-            onDismissRequest = {},
+            onDismissRequest = {
+                showDialog = false
+                onOverlayClosed()
+            },
             properties = DialogProperties(
                 dismissOnClickOutside = false,
                 dismissOnBackPress = false
@@ -164,7 +172,10 @@ fun ReportDialog(
                     }
                     Row {
                         ReportButton(
-                            onClick = { showDialog = false },
+                            onClick = {
+                                showDialog = false
+                                onOverlayClosed()
+                                      },
                             text = "그만두기",
                             bgC = Color(0xFFA8A8A8),
                             modifier = Modifier.weight(1f)
@@ -191,7 +202,10 @@ fun ReportDialog(
 
     if(showConfirm && !showDialog){
         Dialog(
-            onDismissRequest = {},
+            onDismissRequest = {
+                showConfirm = false
+                onOverlayClosed()
+            },
             properties = DialogProperties(
                 dismissOnClickOutside = false,
                 dismissOnBackPress = false,
@@ -250,7 +264,10 @@ fun ReportDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(59.dp),
-                        onClick = { showConfirm = false },
+                        onClick = {
+                            showConfirm = false
+                            onOverlayClosed()
+                                  },
                         shape = RoundedCornerShape(0.dp),
                         colors = ButtonDefaults.buttonColors(
                             contentColor = Color.White,

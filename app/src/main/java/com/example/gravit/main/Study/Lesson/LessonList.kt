@@ -497,9 +497,10 @@ fun LessonBox(
         Image(
             painter = painterResource(id = R.drawable.glass),
             contentDescription = "back",
-           contentScale = ContentScale.Crop
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop
         )
-        Column (modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
+        Column (modifier = Modifier.padding(20.dp)) {
             Text(
                 text = title,
                 fontSize = 14.sp,
