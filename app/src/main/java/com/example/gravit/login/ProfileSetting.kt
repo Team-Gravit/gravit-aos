@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -233,14 +234,15 @@ fun ProfileSwitcher(
         ImageButton(
             painter = painterResource(id = R.drawable.arrow_left),
             contentDescription = "Previous profile",
-            modifier = Modifier.size(Responsive.w(48f)),
+            modifier = Modifier.width(32.dp)
+                .aspectRatio(1f/2f),
             onClick = {
                 currentIndex = (currentIndex - 1 + ProfilePalette.size) % ProfilePalette.size
                 onProfileSelected(ProfilePalette.indexToId(currentIndex))
             },
             color = Color(0xFFC6C6C6)
         )
-        Spacer(Modifier.width(Responsive.w(40f)))
+        Spacer(Modifier.width(Responsive.w(32f)))
         Box(
             modifier = Modifier
                 .size(Responsive.h(178f))
@@ -254,11 +256,12 @@ fun ProfileSwitcher(
                 modifier = Modifier.size(Responsive.w(72f), Responsive.h(90.89f))
             )
         }
-        Spacer(Modifier.width(Responsive.w(40f)))
+        Spacer(Modifier.width(Responsive.w(32f)))
         ImageButton(
             painter = painterResource(id = R.drawable.arrow_right),
             contentDescription = "Next profile",
-            modifier = Modifier.size(Responsive.w(48f)),
+            modifier = Modifier.width(32.dp)
+                                .aspectRatio(1f/2f),
             onClick = {
                 currentIndex = (currentIndex + 1) % ProfilePalette.size
                 onProfileSelected(ProfilePalette.indexToId(currentIndex))

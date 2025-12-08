@@ -121,7 +121,7 @@ fun ProblemUI(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
+                    .height(70.dp)
                     .background(Color.White)
             ) {
                 Text(
