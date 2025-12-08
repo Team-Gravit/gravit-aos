@@ -99,6 +99,7 @@ fun FollowList(
                         onReject = { vm.rejectFollower(it) }
                     )
                 }
+
                 FriendTab.Following -> {
                     FollowingListContent(
                         items = ui.followingItems,
@@ -175,9 +176,7 @@ private fun FriendTabItem(
             modifier = Modifier
                 .height(1.dp)
                 .fillMaxWidth()
-                .background(
-                    if (selected) Color(0xFF030303) else Color(0xFFDCDCDC)
-                )
+                .background(if (selected) Color(0xFF030303) else Color(0xFFDCDCDC))
         )
     }
 }
@@ -198,11 +197,13 @@ private fun FollowerListContent(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            items(items) { user ->
-                FollowerRow(user = user, onReject = { onReject(user.id) })
-            }
-            item {
-                Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+            if (items.isNotEmpty()) {
+                items(items) { user ->
+                    FollowerRow(user = user, onReject = { onReject(user.id) })
+                }
+                item {
+                    Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+                }
             }
         }
 
@@ -248,11 +249,13 @@ private fun FollowingListContent(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            items(items) { user ->
-                FollowingRow(user = user, onUnfollow = { onUnfollow(user.id) })
-            }
-            item {
-                Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+            if (items.isNotEmpty()) {
+                items(items) { user ->
+                    FollowingRow(user = user, onUnfollow = { onUnfollow(user.id) })
+                }
+                item {
+                    Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+                }
             }
         }
 
@@ -310,9 +313,7 @@ private fun FollowerRow(
 
         Spacer(Modifier.width(12.dp))
 
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.nickname,
                 fontSize = 14.sp,
@@ -374,9 +375,7 @@ private fun FollowingRow(
 
         Spacer(Modifier.width(12.dp))
 
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.nickname,
                 fontSize = 14.sp,

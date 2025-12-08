@@ -77,7 +77,6 @@ fun AddFriend(navController: NavController) {
                             .weight(1f),
                         contentAlignment = Alignment.TopCenter
                     ) {
-                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "태그나 닉네임으로 친구를 검색하세요.",
                             fontFamily = pretendard,
@@ -227,10 +226,11 @@ fun FriendResultList(
                     friend = friend,
                     onToggleFollow = onToggleFollow
                 )
+            }
+            item {
                 Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
             }
         }
-
         if (hasNext || loadingMore) {
             Box(
                 modifier = Modifier

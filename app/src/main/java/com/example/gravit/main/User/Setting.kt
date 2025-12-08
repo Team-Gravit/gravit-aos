@@ -265,7 +265,10 @@ fun Setting(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(40.dp),
+                            .height(40.dp)
+                            .clickable {
+                                showDeleteSheet = true
+                            },
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Text(
@@ -282,10 +285,7 @@ fun Setting(
                             contentDescription = "account info",
                             modifier = Modifier
                                 .size(18.dp)
-                                .align(Alignment.CenterEnd)
-                                .clickable {
-                                    showDeleteSheet = true
-                                },
+                                .align(Alignment.CenterEnd),
                             tint = Color.Unspecified
                         )
                     }
@@ -371,7 +371,8 @@ private fun RowNavigableItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp),
+            .height(40.dp)
+            .clickable { onClick() },
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
@@ -388,8 +389,7 @@ private fun RowNavigableItem(
             contentDescription = null,
             modifier = Modifier
                 .size(18.dp)
-                .align(Alignment.CenterEnd)
-                .clickable { onClick() },
+                .align(Alignment.CenterEnd),
             tint = Color.Unspecified
         )
     }
