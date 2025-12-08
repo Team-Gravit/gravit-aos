@@ -43,7 +43,6 @@ fun DeletionGuard(
         owner.lifecycle.addObserver(obs)
         onDispose { owner.lifecycle.removeObserver(obs) }
     }
-    // 결과에 따라 전역 네비
     LaunchedEffect(state) {
         when (state) {
             DeleteAccountVM.DeletionState.Confirmed -> {

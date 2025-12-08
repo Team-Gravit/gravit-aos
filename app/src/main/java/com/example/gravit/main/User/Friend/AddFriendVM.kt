@@ -217,7 +217,6 @@ class AddFriendVM(
             val auth = "Bearer $token"
             _state.update { it.copy(error = null) }
 
-            // follow / unfollow 공통 처리
             val result: Result<Response<*>> = safeCall {
                 if (currentlyFollowing) {
                     api.unfollow(auth = auth, followeeId = targetUserId)
@@ -244,7 +243,6 @@ class AddFriendVM(
                         return@fold
                     }
 
-                    // 성공 시 로컬 상태 토글
                     _state.update { prev ->
                         prev.copy(
                             items = prev.items.map { item ->
