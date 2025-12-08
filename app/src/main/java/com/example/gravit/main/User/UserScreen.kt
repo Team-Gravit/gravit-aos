@@ -432,7 +432,7 @@ private fun BadgeCategorySection(category: BadgeCategoryResponses) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(14.dp),
-                horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.Start),
+                horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 badges.forEach { badge ->

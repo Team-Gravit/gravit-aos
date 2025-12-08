@@ -491,21 +491,14 @@ fun LessonBox(
             .size(104.dp, 129.dp)
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Color(0xFF8B69FF), RoundedCornerShape(8.dp))
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.15f)
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(Float.POSITIVE_INFINITY, 0f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(horizontal = 10.dp, vertical = 10.dp)
             .clickable{onClick()},
         contentAlignment = Alignment.Center,
     ){
+        Image(
+            painter = painterResource(id = R.drawable.glass),
+            contentDescription = "back",
+           contentScale = ContentScale.Crop
+        )
         Column (modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
             Text(
                 text = title,

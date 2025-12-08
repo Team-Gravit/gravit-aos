@@ -7,12 +7,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -34,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -147,6 +150,12 @@ fun ReportDialog(
                                     modifier = Modifier.verticalScroll(rememberScrollState())
                                 )
                             },
+                            textStyle = TextStyle(
+                                color = Color.Black,
+                                fontFamily = pretendard,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(102.dp),
@@ -191,7 +200,7 @@ fun ReportDialog(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(294.dp)
+                    .wrapContentHeight()
                 ,
                 shape = RoundedCornerShape(20.dp),
                 color = Color.White
@@ -199,39 +208,48 @@ fun ReportDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 43.dp),
+                        .padding(top = 46.dp),
                     horizontalAlignment = Alignment.CenterHorizontally)
                 {
                     Image(
                         painter = painterResource(id = R.drawable.report_check),
                         contentDescription = null,
+                        modifier = Modifier.size(52.dp)
 
                         )
-                    Spacer(Modifier.height(23.dp))
-                    Text(
-                        text = "회원님의 신고가 접수되었어요.",
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 20.sp,
-                        color = Color.Black,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        text = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight(400),
-                        fontSize = 14.sp,
-                        color = Color(0xFF868686),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 19.6.sp
-                    )
+                    Column (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 25.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ){
+                        Spacer(Modifier.height(20.dp))
+                        Text(
+                            text = "회원님의 신고가 접수되었어요.",
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 20.sp,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight(400),
+                            fontSize = 14.sp,
+                            color = Color(0xFF868686),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            lineHeight = 19.6.sp,
+                            letterSpacing = 0.sp
+                        )
+                    }
                     Spacer(Modifier.height(19.dp))
                     Button(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f),
+                            .height(59.dp),
                         onClick = { showConfirm = false },
                         shape = RoundedCornerShape(0.dp),
                         colors = ButtonDefaults.buttonColors(

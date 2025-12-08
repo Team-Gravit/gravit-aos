@@ -111,7 +111,7 @@ fun PreviousButton(
                     color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(dh(13f)))
+                Spacer(modifier = Modifier.weight(1f))
 
                 RoundedGauge(
                     height = dh(10f),
