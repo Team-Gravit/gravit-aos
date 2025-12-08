@@ -152,7 +152,7 @@ fun Notice(navController: NavController) {
                     val isSelected = page == currentPage
                     Text(
                         text = (page + 1).toString(),
-                        fontSize = 16.sp,
+                        fontSize = 20.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         fontFamily = pretendard,
                         color = if (isSelected) Color(0xFFBA00FF) else Color(0xFF333333).copy(alpha = 0.7f),

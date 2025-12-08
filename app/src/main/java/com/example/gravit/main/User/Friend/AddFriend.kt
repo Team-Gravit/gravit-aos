@@ -97,6 +97,22 @@ fun AddFriend(navController: NavController) {
                     }
                 }
 
+                !ui.loading && ui.items.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = "해당 아이디를 찾을 수 없습니다.",
+                            fontFamily = pretendard,
+                            fontSize = 14.sp,
+                            color = Color(0xFF222222).copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
                 else -> {
                     FriendResultList(
                         items = ui.items,
@@ -123,15 +139,6 @@ fun AddFriend(navController: NavController) {
                 )
             }
         }
-    }
-    if (ui.error != null) {
-        Text(
-            text = ui.error ?: "",
-            color = Color.Red,
-            fontFamily = pretendard,
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-        )
     }
 }
 
