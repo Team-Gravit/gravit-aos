@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.TopBar
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -33,7 +34,7 @@ fun NoticeDetail(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        NoticeTopBar(navController)
+        TopBar(navController, title = "공지사항")
 
         when {
             ui.loading -> {

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.gravit.TopBar
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
@@ -48,44 +49,7 @@ fun PrivacyPolicy(navController: NavController){
             .background(Color.White)
     ){
         Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color.White)
-            ) {
-                Row(modifier = Modifier.align(Alignment.CenterStart),
-                    verticalAlignment = Alignment.CenterVertically){
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "닫기",
-                        modifier = Modifier
-                            .padding(start = 18.dp)
-                            .size(20.dp)
-                            .clickable {
-                                navController.popBackStack()
-                            },
-                        tint = Color.Black
-                    )
-
-                    Spacer(modifier = Modifier.width(18.dp))
-
-                    Text(
-                        text = "개인정보 처리방침",
-                        style = TextStyle(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = pretendard
-                        ),
-                        color = Color(0xFF222222),
-                    )
-                }
-            }
-            HorizontalDivider(
-                color = Color.Black.copy(alpha = 0.1f),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
+            TopBar(navController, title = "개인정보 처리방침")
             Text(modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp),
                 text = "개인정보처리방침\n" +
                         "\n" +

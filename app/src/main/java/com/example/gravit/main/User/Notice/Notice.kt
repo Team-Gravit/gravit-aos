@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
+import com.example.gravit.TopBar
 import com.example.gravit.ui.theme.pretendard
 import kotlin.math.max
 import kotlin.math.min
@@ -67,7 +68,7 @@ fun Notice(navController: NavController) {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        NoticeTopBar(navController)
+        TopBar(navController, title = "공지사항")
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
