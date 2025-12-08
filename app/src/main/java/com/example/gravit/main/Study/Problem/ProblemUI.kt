@@ -236,7 +236,9 @@ fun ProblemUI(
                         Spacer(modifier = Modifier.weight(1f))
                         ReportDialog(
                             navController = navController,
-                            problemId = current.problemId
+                            problemId = current.problemId,
+                            onOverlayOpened = { swVm.pause() },
+                            onOverlayClosed = { swVm.start() }
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))

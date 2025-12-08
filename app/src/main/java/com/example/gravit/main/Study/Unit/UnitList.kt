@@ -245,6 +245,7 @@ private fun UnitItemBox(
         Image(
             painter = painterResource(id = R.drawable.unit_glass),
             contentDescription = "back",
+            modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop
         )
         Column(modifier = Modifier
