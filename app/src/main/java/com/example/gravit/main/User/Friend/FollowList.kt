@@ -175,11 +175,10 @@ private fun FriendTabItem(
         Spacer(Modifier.height(4.dp))
         Box(
             modifier = Modifier
-                .height(2.dp)
-                //.width(60.dp)
+                .height(1.dp)
                 .fillMaxWidth()
                 .background(
-                    if (selected) Color.Black else Color.Transparent
+                    if (selected) Color(0xFF030303) else Color(0xFFDCDCDC)
                 )
         )
     }

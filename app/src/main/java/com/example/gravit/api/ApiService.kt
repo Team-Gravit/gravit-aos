@@ -168,6 +168,42 @@ data class ReportRequest(
     val problemId: Int
 )
 
+//친구
+data class FriendSearchResponse(
+    val hasNextPage: Boolean,
+    val contents: List<FriendItem>
+)
+
+data class FriendItem(
+    val userId: Long,
+    val profileImgNumber: Int,
+    val nickname: String,
+    val handle: String,
+    val isFollowing: Boolean
+)
+
+data class FollowResponse(
+    val followeeId: Long,
+    val followerId: Long
+)
+
+data class FriendUserSummary(
+    val id: Long,
+    val nickname: String,
+    val profileImgNumber: Int,
+    val handle: String
+)
+
+data class FriendSliceResponse(
+    val hasNextPage: Boolean,
+    val contents: List<FriendUserSummary>
+)
+
+data class FriendCountResponse(
+    val followerCount: Int,
+    val followingCount: Int
+)
+
 //사용자
 data class UserPageResponse(
     val nickname: String,
@@ -289,93 +325,7 @@ data class BookmarksRequest(
     val problemId: Int
 )
 
-//친구 검색
-data class FriendSearchResponse(
-    val hasNextPage: Boolean,
-    val contents: List<FriendItem>
-)
-
-data class FriendItem(
-    val userId: Long,
-    val profileImgNumber: Int,
-    val nickname: String,
-    val handle: String,
-    val isFollowing: Boolean
-)
-/////////////////////////////////////////
-data class FollowResponse(
-    val followeeId: Long,
-    val followerId: Long
-)
-
-data class FriendUserSummary(
-    val id: Long,
-    val nickname: String,
-    val profileImgNumber: Int,
-    val handle: String
-)
-
-data class FriendSliceResponse(
-    val hasNextPage: Boolean,
-    val contents: List<FriendUserSummary>
-)
-
-data class FriendCountResponse(
-    val followerCount: Int,
-    val followingCount: Int
-)
-
 interface ApiService {
-    // 1) 언팔로우
-    @POST("api/v1/friends/unfollowing/{followeeId}")
-    suspend fun unfollow(
-        @Header("Authorization") auth: String,
-        @Path("followeeId") followeeId: Long
-    ): Response<Unit>
-
-    // 2) 팔로워 거절
-    @POST("api/v1/friends/reject-following/{followerId}")
-    suspend fun rejectFollowing(
-        @Header("Authorization") auth: String,
-        @Path("followerId") followerId: Long
-    ): Response<Unit>
-
-    // 3) 팔로우
-    @POST("api/v1/friends/following/{followeeId}")
-    suspend fun follow(
-        @Header("Authorization") auth: String,
-        @Path("followeeId") followeeId: Long
-    ): Response<FollowResponse>
-
-    // 4) 팔로잉 목록
-    @GET("api/v1/friends/following")
-    suspend fun getFollowingList(
-        @Header("Authorization") auth: String,
-        @Query("page") page: Int = 0
-    ): Response<FriendSliceResponse>
-
-    // 5) 팔로워 목록
-    @GET("api/v1/friends/follower")
-    suspend fun getFollowerList(
-        @Header("Authorization") auth: String,
-        @Query("page") page: Int = 0
-    ): Response<FriendSliceResponse>
-
-    // 6) 팔로잉/팔로워 카운트
-    @GET("api/v1/friends/count")
-    suspend fun getFriendCount(
-        @Header("Authorization") auth: String
-    ): Response<FriendCountResponse>
-    ////////////////////////////////////////////////////////////////
-
-    //친구검색
-    @GET("api/v1/friends/search")
-    suspend fun getFriends(
-        @Header("Authorization") auth: String,
-        @Query("queryText") queryText: String,
-        @Query("page") page: Int
-        ): Response<FriendSearchResponse>
-
     @POST("api/v1/oauth/android")
     suspend fun sendCode(
         @Body token: IdTokenRequest
@@ -544,5 +494,47 @@ interface ApiService {
     suspend fun sendRefreshToken(
         @Body token: RefreshTokenRequest
     ) : RefreshTokenResponse
+
+    @POST("api/v1/friends/unfollowing/{followeeId}")
+    suspend fun unfollow(
+        @Header("Authorization") auth: String,
+        @Path("followeeId") followeeId: Long
+    ): Response<Unit>
+
+    @POST("api/v1/friends/reject-following/{followerId}")
+    suspend fun rejectFollowing(
+        @Header("Authorization") auth: String,
+        @Path("followerId") followerId: Long
+    ): Response<Unit>
+
+    @POST("api/v1/friends/following/{followeeId}")
+    suspend fun follow(
+        @Header("Authorization") auth: String,
+        @Path("followeeId") followeeId: Long
+    ): Response<FollowResponse>
+
+    @GET("api/v1/friends/following")
+    suspend fun getFollowingList(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int = 0
+    ): Response<FriendSliceResponse>
+
+    @GET("api/v1/friends/follower")
+    suspend fun getFollowerList(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int = 0
+    ): Response<FriendSliceResponse>
+
+    @GET("api/v1/friends/count")
+    suspend fun getFriendCount(
+        @Header("Authorization") auth: String
+    ): Response<FriendCountResponse>
+
+    @GET("api/v1/friends/search")
+    suspend fun getFriends(
+        @Header("Authorization") auth: String,
+        @Query("queryText") queryText: String,
+        @Query("page") page: Int
+    ): Response<FriendSearchResponse>
 }
 
