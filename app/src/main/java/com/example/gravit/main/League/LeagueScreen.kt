@@ -1,6 +1,5 @@
 package com.example.gravit.main.League
 
-import android.R.attr.bottom
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -760,50 +759,50 @@ fun TierSelector(
     }
 }
 private fun tierName(id: Int): String = when (id) {
-    1 -> "브론즈 1"
+    1 -> "브론즈 3"
     2 -> "브론즈 2"
-    3 -> "브론즈 3"
-    4 -> "실버 1"
+    3 -> "브론즈 1"
+    4 -> "실버 3"
     5 -> "실버 2"
-    6 -> "실버 3"
-    7 -> "골드 1"
+    6 -> "실버 1"
+    7 -> "골드 3"
     8 -> "골드 2"
-    9 -> "골드 3"
-    10 -> "플래티넘 1"
+    9 -> "골드 1"
+    10 -> "플래티넘 3"
     11 -> "플래티넘 2"
-    12 -> "플래티넘 3"
-    13 -> "다이아몬드 1"
+    12 -> "플래티넘 1"
+    13 -> "다이아몬드 3"
     14 -> "다이아몬드 2"
-    15 -> "다이아몬드 3"
+    15 -> "다이아몬드 1"
     else -> "Unranked"
 }
 
 private fun tierIdFromName(name: String?): Int = when (name) {
-    "Bronze 1" -> 1
+    "Bronze 3" -> 1
     "Bronze 2" -> 2
-    "Bronze 3" -> 3
-    "Silver 1" -> 4
+    "Bronze 1" -> 3
+    "Silver 3" -> 4
     "Silver 2" -> 5
-    "Silver 3" -> 6
-    "Gold 1" -> 7
+    "Silver 1" -> 6
+    "Gold 3" -> 7
     "Gold 2" -> 8
-    "Gold 3" -> 9
-    "Platinum 1" -> 10
+    "Gold 1" -> 9
+    "Platinum 3" -> 10
     "Platinum 2" -> 11
-    "Platinum 3" -> 12
-    "Diamond 1" -> 13
+    "Platinum 1" -> 12
+    "Diamond 3" -> 13
     "Diamond 2" -> 14
-    "Diamond 3" -> 15
+    "Diamond 1" -> 15
     else -> -1
 }
 
 fun TextColor(tierId: Int) : Color =
     when(tierId) {
-        1, 2 ,3 -> Color(0xFF6C3F00)
-        4, 5, 6 -> Color(0xFF818181)
-        7, 8, 9 -> Color(0xFFE29F00)
-        10, 11, 12 -> Color(0xFF00B399)
-        13, 14, 15 -> Color(0xFF00AFC3)
+        3, 2 ,1 -> Color(0xFF6C3F00)
+        6, 5, 4 -> Color(0xFF818181)
+        9, 8, 7 -> Color(0xFFE29F00)
+        12, 11, 10 -> Color(0xFF00B399)
+        15, 14, 13 -> Color(0xFF00AFC3)
     else -> Color(0xFF6C3F00)
 
 }
