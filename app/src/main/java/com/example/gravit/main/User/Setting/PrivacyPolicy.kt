@@ -86,7 +86,7 @@ fun PrivacyPolicy(navController: NavController){
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-            Text(modifier = Modifier.padding(10.dp),
+            Text(modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp),
                 text = "개인정보처리방침\n" +
                         "\n" +
                         "본 개인정보처리방침은 Gravit(이하 \"서비스 제공자\")가 무료 서비스로 제작한 모바일 디바이스용 Gravit 앱(이하 \"애플리케이션\")에 적용됩니다. 본 서비스는 \"있는 그대로\" 사용하도록 제공됩니다.\n" +
@@ -234,7 +234,6 @@ fun PrivacyPolicy(navController: NavController){
 @Preview(showBackground = true)
 @Composable
 fun PrivacyPolicyPreview() {
-    // 프리뷰용 NavController 생성
     val navController = rememberNavController()
     PrivacyPolicy(navController = navController)
 }

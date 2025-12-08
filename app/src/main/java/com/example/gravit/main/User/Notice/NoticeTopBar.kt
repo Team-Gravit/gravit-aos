@@ -12,11 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.pretendard
 import androidx.compose.ui.text.font.FontWeight
+import com.example.gravit.R
 
 @Composable
 fun NoticeTopBar(
@@ -39,7 +41,7 @@ fun NoticeTopBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Filled.ArrowBackIosNew,
+                    painter = painterResource(id = R.drawable.arrow_left),
                     contentDescription = "뒤로가기",
                     modifier = Modifier
                         .padding(start = 18.dp)

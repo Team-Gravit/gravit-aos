@@ -42,7 +42,6 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-// UI용 모델
 data class UnitUi(
     val unitId: Int,
     val orderText: String,
@@ -50,7 +49,6 @@ data class UnitUi(
     val progressRate: Float
 )
 
-// API → UI 변환
 fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
     return dto.unitDetails.mapIndexed { index, detail: UnitDetail ->
         val summary = detail.unitSummary
@@ -59,7 +57,7 @@ fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
 
         UnitUi(
             unitId = summary.unitId,
-            orderText = "UNIT %02d".format(index + 1),
+            orderText = "Unit%02d".format(index + 1),
             title = summary.title,
             progressRate = rate
         )
@@ -251,13 +249,13 @@ private fun UnitItemBox(
             .clickable {
                 navController.navigate("lessonList/${unit.unitId}/${unit.title}")
             }
-            .padding(10.dp)
+            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp)
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Text(
                 text = "${unit.orderText} - ${unit.title}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontFamily = pretendard,
                 textAlign = TextAlign.Start,
                 color = Color.White,
@@ -272,7 +270,7 @@ private fun UnitItemBox(
                 Text(
                     text = "${percent}%",
                     fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     fontFamily = pretendard,
                     color = Color.White,
                     textAlign = TextAlign.End,
@@ -301,7 +299,7 @@ private fun UnitItemBox(
                                         Color(0xFFDD00FF)
                                     ),
                                     start = Offset(0f, 0f),
-                                    end = Offset(endX * 100f, endY * 100f) //그라데이션 좀 더 언구하겠음
+                                    end = Offset(endX * 5f, endY * 100f)
 
                                 )
                             )
