@@ -33,15 +33,15 @@ enum class FabState { HIDDEN, SUBMIT, NEXT }
 
 @Composable
 fun ShortAnswer(
-    submitted: Boolean,      // 제출 여부(부모 상태; 정오답 색상 표시용)
+    submitted: Boolean,
     answer: AnswerResponse,
     problemId: Int,
     onTextChange: (String) -> Unit,
     text: String,
     isCorrect: Boolean?,
     onSubmit: () -> Unit,
-    isLast: Boolean,             //마지막 문제인지
-    onNext: () -> Unit,          //다음 문제로
+    isLast: Boolean,
+    onNext: () -> Unit,
     showRemoveFromWrongNote: Boolean = false,
     onRemoveFromWrongNote: () -> Unit = {}
 ) {
@@ -61,7 +61,6 @@ fun ShortAnswer(
     var showCompleteButton by remember(problemId) { mutableStateOf(false) }
     var readyToSubmit by remember(problemId) { mutableStateOf(false) }
 
-    // 입력을 비우면 상태 초기화
     LaunchedEffect(text) {
         if (text.isBlank()) {
             showCompleteButton = false
@@ -116,8 +115,8 @@ fun ShortAnswer(
 
         }
         val fabState = when {
-            !submitted && readyToSubmit && text.isNotBlank() -> FabState.SUBMIT    // 채점
-            submitted -> FabState.NEXT      // 다음
+            !submitted && readyToSubmit && text.isNotBlank() -> FabState.SUBMIT
+            submitted -> FabState.NEXT
             else -> FabState.HIDDEN
         }
 
@@ -207,8 +206,8 @@ fun AnswerInputField(
 
         //라인색
         val indicator = when {
-            submitted && isCorrect == true -> Color(0xFF00A80B) // 정답: 초록
-            submitted && isCorrect == false -> Color(0xFFD00000) // 오답: 빨강
+            submitted && isCorrect == true -> Color(0xFF00A80B)
+            submitted && isCorrect == false -> Color(0xFFD00000)
             hasInput || focused -> Color(0xFF5A5A5A)
             else -> Color(0xFFC3C3C3)
         }
@@ -250,7 +249,7 @@ fun AnswerInputField(
             maxLines = 1,
             minLines = 1,
 
-            enabled = !submitted, //수정 불가
+            enabled = !submitted,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onImeDone?.invoke() }),
 

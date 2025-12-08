@@ -160,7 +160,7 @@ private fun ChapterUI(
                     Row(modifier = Modifier.fillMaxWidth()) {
                         pair.forEachIndexed { index, data ->
 
-                            val enabled = data.chapterId < 4  //안 쓰는 챕터 막아두라 하셨음
+                            val enabled = data.chapterId < 4
                             ChapterButton(
                                 description = data.description,
                                 text = data.title,
@@ -426,9 +426,9 @@ private fun TriangleUpTip(
         val w = size.width
         val h = size.height
         val path = Path().apply {
-            moveTo(w / 2f, 0f)   // 위쪽 뾰족 점
-            lineTo(0f, h)        // 좌하단
-            lineTo(w, h)         // 우하단
+            moveTo(w / 2f, 0f)
+            lineTo(0f, h)
+            lineTo(w, h)
             close()
         }
         drawPath(path, color = color)

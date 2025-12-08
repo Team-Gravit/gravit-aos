@@ -178,7 +178,6 @@ fun ProblemUI(
                     }
                 }
             }
-            //진행도 바
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,7 +196,6 @@ fun ProblemUI(
             }
             Spacer(modifier = Modifier.height(25.dp))
 
-            //문제 설명
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -273,7 +271,6 @@ fun ProblemUI(
             }
             Spacer(modifier=Modifier.height(30.dp))
 
-            //객관식, 주관식
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -385,20 +382,17 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: AnswerResponse): Boolean
     if (correctAnswer.content.isBlank()) return false
     if (userAnswer.isNullOrBlank()) return false
 
-    //숫자 비교
     val userNum = userAnswer.replace(",", "").toBigDecimalOrNull()
     val corrNum = correctAnswer.content.replace(",", "").toBigDecimalOrNull()
     if (userNum != null && corrNum != null) {
         return userNum.compareTo(corrNum) == 0
     }
 
-    // 문자열 정규화
     fun norm(s: String) = s.trim()
         .lowercase()
-        .replace(Regex("\\s+"), " ")  // 여러 공백 → 하나
-        .replace(Regex("[.,]"), "")   // 쉼표/마침표 무시
+        .replace(Regex("\\s+"), " ")
+        .replace(Regex("[.,]"), "")
 
-    //중복 답 분리
     val candidates = correctAnswer.content
         .split(',')
         .map { it.trim() }

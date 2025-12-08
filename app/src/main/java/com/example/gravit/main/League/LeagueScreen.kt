@@ -146,7 +146,6 @@ fun LeagueScreen(
 
     val listState = rememberLazyListState()
 
-    // 리스트 끝 근처에서 다음 페이지 요청
     LaunchedEffect(listState, ui.items.size) {
         snapshotFlow {
             val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
@@ -303,7 +302,6 @@ fun LeagueScreen(
             if(checkLeague){
                 SeasonFinish(seasonName)
             }else{
-                //티어 선택
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
@@ -356,7 +354,6 @@ fun LeagueScreen(
                 )
                 Spacer(Modifier.height(16.dp))
 
-                //랭킹
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -584,7 +581,7 @@ fun SeasonCompleted(
 @Composable
 private fun RankCell(
     item: LeagueItem
-) { //랭킹
+) {
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -696,7 +693,7 @@ private fun RankCell(
 }
 
 @Composable
-fun TierSelector( //티어 선택
+fun TierSelector(
     vm: LeagueViewModel,
     tiers: List<Int> = (1..15).toList(),
     dotSize: Dp = 100.dp,
@@ -709,7 +706,6 @@ fun TierSelector( //티어 선택
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val sidePad = (screenWidth - dotSize) / 2
 
-    //중앙에 가장 가까운 아이템 계산
     val centerIndex by remember {
         derivedStateOf {
             val info = listState.layoutInfo
@@ -733,14 +729,13 @@ fun TierSelector( //티어 선택
         }
     }
 
-    // 스크롤이 멈췄을 때만 가운데 티어로 전환
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }.collect { moving ->
             if (moving) {
                 userHasScrolled = true
             } else if (userHasScrolled && centerIndex != lastAppliedIndex) {
                 val leagueId = tiers.getOrNull(centerIndex) ?: return@collect
-                vm.selectTier(leagueId)      //소스 전환 + 0페이지부터 재로딩
+                vm.selectTier(leagueId)
                 lastAppliedIndex = centerIndex
             }
         }
@@ -764,7 +759,7 @@ fun TierSelector( //티어 선택
         }
     }
 }
-private fun tierName(id: Int): String = when (id) { //티어 이름 변경
+private fun tierName(id: Int): String = when (id) {
     1 -> "브론즈 1"
     2 -> "브론즈 2"
     3 -> "브론즈 3"
@@ -799,7 +794,7 @@ private fun tierIdFromName(name: String?): Int = when (name) {
     "Diamond 1" -> 13
     "Diamond 2" -> 14
     "Diamond 3" -> 15
-    else -> -1 // Unranked나 매칭 안 될 때
+    else -> -1
 }
 
 fun TextColor(tierId: Int) : Color =
@@ -813,7 +808,7 @@ fun TextColor(tierId: Int) : Color =
 
 }
 @Composable
-private fun TierDot( //티어
+private fun TierDot(
     tierId: Int,
     selected: Boolean
 ) {

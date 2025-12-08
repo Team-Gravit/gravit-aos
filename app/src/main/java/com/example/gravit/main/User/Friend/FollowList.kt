@@ -321,7 +321,6 @@ private fun FollowerRow(
                 fontFamily = pretendard,
                 color = Color(0xFF222124)
             )
-            Spacer(Modifier.height(1.dp))
             Text(
                 text = "@" + user.handle,
                 fontSize = 14.sp,
@@ -383,7 +382,6 @@ private fun FollowingRow(
                 fontFamily = pretendard,
                 color = Color(0xFF222124)
             )
-            Spacer(Modifier.height(2.dp))
             Text(
                 text = "@" + user.handle,
                 fontSize = 14.sp,

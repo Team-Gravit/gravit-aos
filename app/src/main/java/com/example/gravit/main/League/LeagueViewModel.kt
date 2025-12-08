@@ -88,7 +88,6 @@ class LeagueViewModel(
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
-            // 세션 없음 → 재로그인 유도
             _myLeague.value = MyLeagueState.SessionExpired
             return@launch
         }
@@ -123,8 +122,6 @@ class LeagueViewModel(
         _source.value = Source.Tier(leagueId)
         refreshL()
     }
-
-    // 페이징 로드 (끝 근처에서 호출)
     fun loadNextL() = viewModelScope.launch {
         if (isCheckLeague()) {
             _checkLeague.value = true

@@ -46,7 +46,7 @@ object RetrofitInstance {
         }
 
         val client = OkHttpClient.Builder()
-            .addInterceptor(logger) // 로그
+            .addInterceptor(logger)
             .authenticator(
                 TokenAuthenticator(
                     context = appContext,

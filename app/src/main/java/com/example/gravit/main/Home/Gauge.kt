@@ -53,7 +53,7 @@ fun LevelGauge(
         1600 to 2199,
         2200 to 2899,
         2900 to 3699,
-        3700 to Int.MAX_VALUE // 마지막 레벨은 무한대 처리
+        3700 to Int.MAX_VALUE
     )
 
     val (startXp, endXp) = levelRanges.getOrNull(lv - 1) ?: (0 to 0)

@@ -298,7 +298,6 @@ fun FriendRow(
                 fontFamily = pretendard,
                 color = Color(0xFF222222).copy(alpha = 0.8f)
             )
-            Spacer(Modifier.height(2.dp))
             Text(
                 text = friend.handle,
                 fontSize = 14.sp,
