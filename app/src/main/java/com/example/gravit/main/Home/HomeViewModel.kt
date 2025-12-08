@@ -32,15 +32,13 @@ class HomeViewModel(
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
-            AuthPrefs.clear(appContext)
+        if (session == null) {
             _state.value = UiState.SessionExpired
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getMainPage(auth)
+            api.getMainPage("Bearer ${session.accessToken}")
         }.onSuccess { res ->
             _state.value = UiState.Success(res)
         }.onFailure { e ->

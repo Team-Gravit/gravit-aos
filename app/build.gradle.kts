@@ -1,3 +1,9 @@
+import java.io.FileInputStream
+import java.util.Properties;
+
+var properties = Properties()
+properties.load(FileInputStream("local.properties"))
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,6 +26,10 @@ android {
         manifestPlaceholders["auth0Scheme"] = "gravit"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "AUTH0_CLIENT_ID", properties.getProperty("AUTH0_CLIENT_ID"))
+        buildConfigField("String", "AUTH0_DOMAIN", properties.getProperty("AUTH0_DOMAIN"))
+        buildConfigField("String", "API_BASE_URL", properties.getProperty("API_BASE_URL"))
     }
 
     buildTypes {
@@ -40,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {

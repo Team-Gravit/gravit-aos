@@ -12,18 +12,23 @@ import kotlinx.coroutines.launch
 import android.util.Base64
 import com.example.gravit.api.IdTokenRequest
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.BuildConfig
 
 
 fun maskToken(t: String?): String =
     if (t.isNullOrBlank()) "null" else "${t.take(6)}...${t.takeLast(6)} (len=${t.length})"
 
 fun logJwtIfJwt(tag: String, token: String?) {
+    if (!BuildConfig.DEBUG) return
     if (token.isNullOrBlank()) return
+
     val parts = token.split(".")
     if (parts.size >= 2) {
         try {
-            val payload = Base64.decode(parts[1],
-                Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+            val payload = Base64.decode(
+                parts[1],
+                Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+            )
             Log.d(tag, "payload=${String(payload)}")
         } catch (e: Exception) {
             Log.d(tag, "not a JWT (decode failed)")
@@ -32,7 +37,6 @@ fun logJwtIfJwt(tag: String, token: String?) {
         Log.d(tag, "not a JWT (opaque token)")
     }
 }
-
 class LoginViewModel : ViewModel() {
 
     private val api: ApiService = RetrofitInstance.api

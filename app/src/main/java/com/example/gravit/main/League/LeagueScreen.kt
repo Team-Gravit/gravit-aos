@@ -1,5 +1,6 @@
 package com.example.gravit.main.League
 
+import android.R.attr.bottom
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -99,6 +100,7 @@ fun LeagueScreen(
     val ui by vm.state.collectAsState()
     val myLeagueState by vm.myLeague.collectAsState()
     val seasonState by vm.seasonPopup.collectAsState()
+    val checkLeague by vm.checkLeague.collectAsState()
 
     LaunchedEffect(Unit) {
         vm.loadMyLeague()
@@ -273,19 +275,21 @@ fun LeagueScreen(
                             Row (
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(28.dp)
+                                    .height(35.dp),
                             ){
                                 Image(
                                     painter = TierPalette.painterFor(rank.leagueId),
                                     contentDescription = "tier",
+                                    modifier = Modifier.height(30.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = rank.nickname,
+                                    modifier = Modifier.align(Alignment.Bottom),
                                     style = TextStyle(
                                         platformStyle = PlatformTextStyle(includeFontPadding = false),
                                         fontSize = 24.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        fontWeight = FontWeight.Bold,
                                         fontFamily = mbc1961,
                                         color = Color.Black,
                                     )
@@ -295,18 +299,18 @@ fun LeagueScreen(
                     }
                 }
             }
-            if(seasonState is LeagueViewModel.SeasonPopupState.Inspection)(
-                    SeasonFinish(season?.currentSeason?.nowSeason)
-            )else{
+            val seasonName = season?.currentSeason?.nowSeason
+            if(checkLeague){
+                SeasonFinish(seasonName)
+            }else{
                 //티어 선택
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
-                    val seasonName = season?.currentSeason?.nowSeason
                     Column {
                         Spacer(Modifier.height(24.dp))
                         Text(
-                            text = "${seasonName}",
+                            text = seasonName ?: "시즌 정보 없음",
                             color = Color(0xFF8A00B8),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             style = TextStyle(
@@ -386,7 +390,11 @@ fun LeagueScreen(
                                             .padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("마지막입니다.")
+                                        Text(
+                                            text = "더이상 유저가 없습니다.",
+                                            fontFamily = pretendard,
+                                            color = Color.Black
+                                            )
                                     }
                                 }
                                 ui.error != null -> {
@@ -496,7 +504,7 @@ fun SeasonCompleted(
                             Image(
                                 painter = painterResource(id = R.drawable.profile_logo),
                                 contentDescription = "profile logo",
-                                modifier = Modifier.size(44.dp, 62.dp)
+                                modifier = Modifier.size(64.dp, 82.dp)
                             )
                         }
                         Box(
@@ -524,7 +532,8 @@ fun SeasonCompleted(
                 }
                 Spacer(Modifier.height(16.dp))
                 Row (
-                    modifier = Modifier.size(175.dp, 56.dp)
+                    modifier = Modifier.size(175.dp, 56.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ){
                     Image(
                         painter = TierPalette.painterFor(tierIdFromName(popupDetail.leagueName)),
@@ -601,7 +610,9 @@ private fun RankCell(
                     color = if(item.rank == 1 || item.rank == 2 || item.rank == 3) Color(0xFFBA00FF) else Color(0xFFFFB608),
                     fontFeatureSettings = "tnum"
                 ),
-                modifier = Modifier.width(50.dp),
+                modifier = Modifier
+                    .width(50.dp)
+                    .padding(top = 1.dp),
                 textAlign = TextAlign.Start
             )
             Spacer(Modifier.width(8.dp))
@@ -802,12 +813,15 @@ fun TextColor(tierId: Int) : Color =
 
 }
 @Composable
-private fun TierDot( //티어 (아직 로고 안 넣음)
+private fun TierDot( //티어
     tierId: Int,
     selected: Boolean
 ) {
-    val size = if (selected) 107.dp else 80.dp   // 중앙은 더 크게
+    val size = if (selected) 107.dp else 80.dp
     val label = tierName(tierId)
+
+    val boxHeight = 107.dp
+
     val darkenFilter = ColorFilter.colorMatrix(
         ColorMatrix(
             floatArrayOf(
@@ -823,10 +837,15 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier.size(size+10.dp),
+            modifier = Modifier
+                .height(boxHeight)
+                .width(size + 10.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            if(selected){
-                Column {
+            if (selected) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Image(
                         painter = TierPalette.painterFor(tierId),
                         contentDescription = "tier",
@@ -838,7 +857,7 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
                         modifier = Modifier.size(size)
                     )
                 }
-             } else {
+            } else {
                 Image(
                     painter = TierPalette.painterFor(tierId),
                     contentDescription = "tier",
@@ -847,10 +866,10 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
                 )
             }
         }
-        Spacer(Modifier.height(7.dp))
-        if (selected) {
-            val density = LocalDensity.current
 
+        Spacer(Modifier.height(7.dp))
+
+        if (selected) {
             Text(
                 text = label,
                 style = TextStyle(
@@ -858,7 +877,6 @@ private fun TierDot( //티어 (아직 로고 안 넣음)
                     fontWeight = FontWeight.Bold,
                     fontFamily = pretendard,
                     color = TextColor(tierId),
-
                 )
             )
         }

@@ -33,16 +33,13 @@ class OnboardingViewModel(
         viewModelScope.launch {
             _state.value = UiState.Loading
 
-            val session = AuthPrefs.load(appContext) //토큰 확인
-            if (session == null || AuthPrefs.isExpired(session)) {
-                AuthPrefs.clear(appContext) //토큰 만료거나 없으면 재로그인
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
                 _state.value = UiState.SessionExpired
                 return@launch
             }
-
-            val authHeader = "Bearer ${session.accessToken}"
             runCatching {
-                api.completeOnboarding(OnboardingRequest(nickname, profileNumber), authHeader)
+                api.completeOnboarding(OnboardingRequest(nickname, profileNumber), "Bearer ${session.accessToken}")
             }.onSuccess {
                 //성공이면 온보딩 true
                 AuthPrefs.setOnboarded(appContext, true)

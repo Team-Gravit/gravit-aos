@@ -63,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
 import com.example.gravit.error.NotFoundScreen
 import com.example.gravit.error.UnauthorizedScreen
@@ -127,17 +128,17 @@ private fun ChapterUI(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(Responsive.h(70f)),
+                    .height(70.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "학습",
                     fontFamily = pretendard,
-                    fontSize = Responsive.spH(20f),
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF030303),
                     modifier = Modifier
-                        .padding(start = Responsive.w(20f))
+                        .padding(start = 20.dp)
                         .align(Alignment.CenterStart)
                 )
             }
@@ -148,9 +149,9 @@ private fun ChapterUI(
                 modifier = Modifier
                     .background(Color(0xFFF2F2F2))
                     .padding(
-                        start = Responsive.w(16f),
-                        end = Responsive.w(16f),
-                        top = Responsive.h(16f)
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp
                     )
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
@@ -173,16 +174,16 @@ private fun ChapterUI(
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(160f / 166f)
-                                    .shadow(Responsive.h(4f), RoundedCornerShape(Responsive.h(10f))),
+                                    .shadow(4.dp, RoundedCornerShape(10.dp)),
                                 isRight = (index == 1),
                                 enabled = enabled
                             )
                             if (index == 0 && pair.size > 1) {
-                                Spacer(modifier = Modifier.width(Responsive.w(8f)))
+                                Spacer(modifier = Modifier.width(8.dp))
                             }
                         }
                         if (pair.size == 1) {
-                            Spacer(modifier = Modifier.width(Responsive.w(8f)))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Spacer(
                                 modifier = Modifier
                                     .weight(1f)
@@ -190,7 +191,7 @@ private fun ChapterUI(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(Responsive.h(8f)))
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
@@ -209,10 +210,10 @@ private val csChapterName = mapOf(
     2 to "algorithm",
     3 to "network"
 )
-private fun toChaterName(id: Int): String{
-    return csChapterName[id] ?: ""
+private fun resolvePlanetRes(id: Int): Int {
+    return planetById[id] ?: R.drawable.data_structure_chapter
 }
-private val planetById = mapOf(
+val planetById = mapOf(
     1 to R.drawable.data_structure_chapter,
     2 to R.drawable.algorithm_chapter,
     3 to R.drawable.computer_network_chapter,
@@ -222,9 +223,7 @@ private val planetById = mapOf(
     7 to R.drawable.sofftware_engineering_chapter,
     8 to R.drawable.programming_language_chapter,
 )
-private fun resolvePlanetRes(id: Int): Int {
-    return planetById[id] ?: error("알 수 없는 chapterId: $id")
-}
+
 fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonUI> {
     return chapters.map { c ->
         ChapterButtonUI(
@@ -262,7 +261,7 @@ fun ChapterButton(
     Button(
         modifier = modifier,
         onClick = onClick,
-        shape = RoundedCornerShape(Responsive.h(10f)),
+        shape = RoundedCornerShape(10.dp),
         contentPadding = PaddingValues(0.dp),
         enabled = enabled
     ) {
@@ -270,25 +269,23 @@ fun ChapterButton(
             Image(
                 painter = painterResource(id = planet),
                 contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 colorFilter = if (enabled) null else grayFilter
             )
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = Responsive.h(15f))
+                    .padding(top = 15.dp)
             ) {
-                Column(modifier = Modifier.padding(horizontal = Responsive.w(10f))) {
+                Column(modifier = Modifier.padding(horizontal = 10.dp)) {
                     Row(
-                        modifier = Modifier.size(
-                            Responsive.w(140f),
-                            Responsive.h(24f)
-                        )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
                     ) {
                         Text(
                             text = text,
-                            fontSize = Responsive.spH(20f),
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
                             fontFamily = mbc1961,
                             modifier = Modifier
@@ -301,7 +298,7 @@ fun ChapterButton(
                                 painter = painterResource(R.drawable.info),
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .size(Responsive.w(24f))
+                                    .size(24.dp)
                                     .clickable { showTooltip = !showTooltip },
                                 tint = Color.White
                             )
@@ -313,11 +310,12 @@ fun ChapterButton(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(Responsive.h(12f)))
+                    Spacer(modifier = Modifier.height(12.dp))
                     RoundedGauge(
                         rate = rate,
-                        width = Responsive.w(140f),
-                        height = Responsive.h(10f)
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 10.dp,
+                        width = 0.dp
                     )
 
                 }
@@ -338,11 +336,11 @@ fun Popup(
         val density = LocalDensity.current
         val sideMarginPx = with(density) { 8.dp.roundToPx() }
         val bottomMarginPx = with(density) { 8.dp.roundToPx() }
-        val yGapPx = with(density) { Responsive.h(6f).roundToPx() }
+        val yGapPx = with(density) { 6.dp.roundToPx() }
 
-        val tipStartDp = if (isRight) Responsive.w(205f) else Responsive.w(125f)
-        val tipWidthDp = Responsive.w(42f)
-        val tipHeight = Responsive.h(20f)
+        val tipStartDp = if (isRight) 205.dp else 125.dp
+        val tipWidthDp =42.dp
+        val tipHeight = 20.dp
 
         val tipCenterOffsetPx = with(density) { (tipStartDp + tipWidthDp / 2).roundToPx() }
 
@@ -383,34 +381,32 @@ fun Popup(
                     color = Color(0xFF222124)
                 )
                 Surface(
-                    modifier = Modifier.clip(RoundedCornerShape(Responsive.w(8f)))
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(Responsive.w(257f))
+                            .width(257.dp)
                             .wrapContentHeight()
                             .background(Color(0xFF222124))
                     ) {
                         Row(
-                            modifier = Modifier.padding(
-                                horizontal = Responsive.w(10f),
-                                vertical = Responsive.h(10f)
-                            )
+                            modifier = Modifier.padding(10.dp)
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.info),
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(Responsive.h(24f))
+                                modifier = Modifier.size(24.dp)
                             )
-                            Spacer(Modifier.width(Responsive.w(10f)))
+                            Spacer(Modifier.width(10.dp))
                             Text(
                                 text = text,
-                                fontFamily = pretendard,
-                                fontSize = Responsive.spH(16f),
-                                fontWeight = FontWeight.Normal,
-                                color = Color.White,
-                                lineHeight = Responsive.spH(22f)
+                                style = TextStyle(
+                                    fontFamily = pretendard,
+                                    fontWeight = FontWeight.Normal,
+                                    color = Color.White,
+                                    lineHeight = 22.sp
+                                )
                             )
                         }
                     }

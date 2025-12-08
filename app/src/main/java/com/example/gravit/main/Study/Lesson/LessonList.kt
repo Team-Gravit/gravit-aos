@@ -2,7 +2,9 @@ package com.example.gravit.main.Study.Lesson
 
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
-import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,10 +33,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.rememberBottomSheetScaffoldState
-import androidx.compose.material.rememberBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +47,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,7 +66,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.ui.theme.pretendard
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -78,10 +75,7 @@ import androidx.navigation.NavController
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Study.Problem.CustomSnackBar
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.net.URLEncoder
 import kotlin.math.abs
-import androidx.compose.material.BottomSheetScaffold
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -90,7 +84,6 @@ fun LessonList(
     unitId: Int,
     onSessionExpired: () -> Unit,
     navController: NavController,
-    unitOderText: String,
     unitTitle: String
 ) {
     val context = LocalContext.current
@@ -99,22 +92,17 @@ fun LessonList(
 
     LaunchedEffect(Unit) { vm.load(unitId) }
 
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberBottomSheetState(
-            initialValue = BottomSheetValue.Collapsed
-        )
-    )
-    val scope = rememberCoroutineScope()
-
     val s = (ui as? LessonListVM.UiState.Success)?.data
     val chapterSummary = s?.chapterSummary
-    val chapterName = chapterSummary?.title ?: ""
     val chapterId = chapterSummary?.chapterId ?: 1
     val lessonSummaries = s?.lessonSummaries ?: emptyList()
     val bookmarkAccessible = s?.bookmarkAccessible ?: false
     val wrongAnsweredNoteAccessible = s?.wrongAnsweredNoteAccessible ?: false
 
     var snackBar by remember { mutableStateOf<String?>(null) }
+
+    var sheetState by remember { mutableStateOf(SheetState.Hidden) }
+
 
     when (ui) {
         LessonListVM.UiState.SessionExpired -> {
@@ -134,26 +122,6 @@ fun LessonList(
         }
         else -> Unit
     }
-    Log.d("DEBUG", "NoteSheetM2 chapterId = $chapterId, eng = ${replaceEng(chapterId)}")
-
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 0.dp,
-        sheetGesturesEnabled = false,
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-        sheetContent = {
-            NoteSheetM2(
-                scaffoldState = scaffoldState,
-                onDismiss = {
-                    scope.launch { scaffoldState.bottomSheetState.collapse() }
-                },
-                chapter = replaceEng(chapterId),
-                unit = unitOderText,
-                title = unitTitle
-            )
-        },
-    ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
                 painter = painterResource(id = R.drawable.unitlesson_back),
@@ -170,30 +138,30 @@ fun LessonList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(Responsive.h(70f))
-                        .padding(horizontal = Responsive.w(16f)),
+                        .height(80.dp)
+                        .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.arrow_left),
                         contentDescription = "back",
                         modifier = Modifier
-                            .size(Responsive.w(24f))
-                            .clickable { navController.popBackStack() },
+                            .size(24.dp)
+                            .clickable { navController.navigate("unit/$chapterId") },
                         tint = Color.White
                     )
-                    Spacer(Modifier.width(Responsive.w(16f)))
+                    Spacer(Modifier.width(16.dp))
                     Text(
                         text = chapterSummary?.title ?: "",
                         fontWeight = FontWeight.Bold,
                         fontFamily = pretendard,
-                        fontSize = Responsive.spW(20f),
+                        fontSize = 20.sp,
                         color = Color.White
                     )
                     Spacer(Modifier.weight(1f))
                     Box(
                         modifier = Modifier
-                            .size(Responsive.w(92f), Responsive.w(40f))
+                            .size(92.dp, 40.dp)
                             .glow(
                                 color = Color(0xFFC52AFF),
                                 radius = 28.dp,
@@ -206,12 +174,8 @@ fun LessonList(
                             )
                     ) {
                         Button(
-                            onClick = {
-                                scope.launch {
-                                    scaffoldState.bottomSheetState.expand()
-                                }
-                            },
-                            shape = RoundedCornerShape(Responsive.w(9f)),
+                            onClick = { sheetState = SheetState.Half },
+                            shape = RoundedCornerShape(9.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFC52AFF),
                                 contentColor = Color.White
@@ -223,7 +187,7 @@ fun LessonList(
                                 text = "개념노트",
                                 fontFamily = pretendard,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = Responsive.spW(15f),
+                                fontSize = 15.sp,
                                 style = TextStyle(
                                     shadow = Shadow(
                                         color = Color.Black.copy(alpha = 0.25f),
@@ -235,40 +199,39 @@ fun LessonList(
                         }
                     }
                 }
-                Spacer(Modifier.height(Responsive.w(20f)))
+                Spacer(Modifier.height(20.dp))
                 Text(
                     text = "나의 문제",
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = pretendard,
-                    fontSize = Responsive.spW(20f),
+                    fontSize = 20.sp,
                     color = Color.White,
-                    modifier = Modifier.padding(start = Responsive.w(16f))
+                    modifier = Modifier.padding(start = 16.dp)
                 )
-                Spacer(Modifier.height(Responsive.w(16f)))
+                Spacer(Modifier.height(16.dp))
                 Selector(
                     unitId = unitId,
-                    chapterName = chapterName,
                     navController = navController,
                     bookmarkAccessible = bookmarkAccessible,
                     wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
                     onShowSnackBar = { t -> snackBar = t }
                 )
-                Spacer(Modifier.height(Responsive.w(20f)))
+                Spacer(Modifier.height(20.dp))
                 Text(
                     text = "문제 리스트",
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = pretendard,
-                    fontSize = Responsive.spW(20f),
+                    fontSize = 20.sp,
                     color = Color.White,
-                    modifier = Modifier.padding(start = Responsive.w(16f))
+                    modifier = Modifier.padding(start = 16.dp)
                 )
-                Spacer(Modifier.height(Responsive.w(20f)))
+                Spacer(Modifier.height(20.dp))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(Responsive.h(8f)),
-                    horizontalArrangement = Arrangement.spacedBy(Responsive.w(8f)),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     itemsIndexed(lessonSummaries) { index, lesson ->
                         val columnCount = 3
@@ -277,29 +240,50 @@ fun LessonList(
                         LessonBox(
                             title = if ((index + 1) < 10) "Lesson0${index + 1}" else "Lesson${index + 1}",
                             completed = lesson.isSolved,
-                            modifier = Modifier.padding(
-                                bottom = if (isLastRow) 20.dp else 0.dp
-                            ),
+                            modifier = Modifier.padding(bottom = if (isLastRow) 20.dp else 0.dp),
                             totalProblem = lesson.totalProblem,
                             onClick = {
                                 navController.navigate(
-                                    "lesson/${lesson.lessonId}/${URLEncoder.encode(chapterName)}/${unitOderText}"
+                                    "lesson/${lesson.lessonId}"
                                 )
                             }
                         )
                     }
                 }
             }
+
+            AnimatedVisibility(
+                visible = sheetState != SheetState.Hidden,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
+            ) {
+                NoteSheetCustom(
+                    unitId = unitId,
+                    title = unitTitle,
+                    sheetState = sheetState,
+                    onStateChange = { newState -> sheetState = newState },
+                    onDismiss = { sheetState = SheetState.Hidden }
+                )
+            }
+
             if (snackBar != null) {
-                CustomSnackBar(text = snackBar!!)
-                LaunchedEffect(snackBar) {
-                    delay(2000)
-                    snackBar = null
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 19.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    CustomSnackBar(text = snackBar!!)
+                    LaunchedEffect(snackBar) {
+                        delay(2000)
+                        snackBar = null
+                    }
                 }
             }
         }
     }
-}
+
+
 data class SelectorItem(
     val title: String,
     val desc: String,
@@ -307,10 +291,10 @@ data class SelectorItem(
     val enabled: Boolean,
     val snackbar: String
 )
+
 @Composable
 fun Selector(
     unitId: Int,
-    chapterName: String,
     navController: NavController,
     bookmarkAccessible: Boolean,
     wrongAnsweredNoteAccessible: Boolean,
@@ -335,7 +319,6 @@ fun Selector(
 
     val listState = rememberLazyListState()
     val fling = rememberSnapFlingBehavior(listState)
-
 
     val centerIndex by remember {
         derivedStateOf {
@@ -382,7 +365,11 @@ fun Selector(
                 title = item.title,
                 context = item.desc,
                 selected = selected,
-                onClick = {navController.navigate("problem/$unitId/${URLEncoder.encode(chapterName)}/${item.type}")},
+                onClick = {
+                    navController.navigate(
+                        "problem/$unitId/${item.type}"
+                    )
+                },
                 enabled = item.enabled,
                 text = item.snackbar,
                 onShowSnackBar = onShowSnackBar
@@ -400,13 +387,12 @@ fun ProblemBox(
     enabled: Boolean,
     text: String,
     onShowSnackBar: (String) -> Unit,
-)
-{
-    Box (modifier = Modifier.size(Responsive.h(229f), Responsive.h(112f))) {
+) {
+    Box(modifier = Modifier.size(229.dp, 112.dp)) {
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .clip(RoundedCornerShape(Responsive.w(8f)))
+                .clip(RoundedCornerShape(8.dp))
                 .background(
                     brush = if (selected) Brush.linearGradient(
                         colors = listOf(
@@ -425,25 +411,28 @@ fun ProblemBox(
                 )
                 .border(1.dp, Color(0xFF6D6D6D), RoundedCornerShape(8.dp))
                 .padding(10.dp)
-                .clickable{
-                    if(enabled){
-                        onClick()
-                    } else{
+                .clickable {
+                    if (enabled) {
+                        if (selected) {
+                            onClick()
+                        } else {
+                        }
+                    } else {
                         onShowSnackBar(text)
                     }
                 }
         ) {
-            Column(modifier = Modifier.padding(Responsive.w(8f))) {
+            Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = title,
-                    fontSize = Responsive.spW(14f),
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = pretendard,
                     color = if (selected) Color(0xFF222124) else Color.White
                 )
                 Text(
                     text = context,
-                    fontSize = Responsive.spW(12f),
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = pretendard,
                     color = if (selected) Color(0xFF222124).copy(0.8f) else Color.White.copy(alpha = 0.8f)
@@ -452,14 +441,14 @@ fun ProblemBox(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(Responsive.w(18f)),
+                        .height(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "문제 풀러 가기",
                         fontFamily = pretendard,
                         fontWeight = FontWeight.Medium,
-                        fontSize = Responsive.spW(12f),
+                        fontSize = 12.sp,
                         color = if (selected) Color(0xFF222124).copy(alpha = 0.8f) else Color.White.copy(
                             alpha = 0.6f
                         )
@@ -467,7 +456,7 @@ fun ProblemBox(
                     Icon(
                         painter = painterResource(id = R.drawable.left_line),
                         contentDescription = "to problem",
-                        modifier = Modifier.size(Responsive.w(14f)),
+                        modifier = Modifier.size(14.dp),
                         tint = if (selected) Color(0xFF222124).copy(alpha = 0.6f) else Color.White.copy(
                             alpha = 0.6f
                         )
@@ -487,6 +476,8 @@ fun ProblemBox(
         }
     }
 }
+
+
 @Composable
 fun LessonBox(
     title: String,
@@ -497,8 +488,8 @@ fun LessonBox(
 ){
     Box(
         modifier = modifier
-            .size(Responsive.w(104f), Responsive.w(129f))
-            .clip(RoundedCornerShape(Responsive.w(8f)))
+            .size(104.dp, 129.dp)
+            .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Color(0xFF8B69FF), RoundedCornerShape(8.dp))
             .background(
                 brush = Brush.linearGradient(
@@ -509,25 +500,25 @@ fun LessonBox(
                     start = Offset(0f, 0f),
                     end = Offset(Float.POSITIVE_INFINITY, 0f)
                 ),
-                shape = RoundedCornerShape(Responsive.h(8f))
+                shape = RoundedCornerShape(8.dp)
             )
-            .padding(horizontal = Responsive.w(10f), vertical = Responsive.w(10f))
+            .padding(horizontal = 10.dp, vertical = 10.dp)
             .clickable{onClick()},
         contentAlignment = Alignment.Center,
     ){
-        Column (modifier = Modifier.padding(horizontal = Responsive.w(10f), vertical = Responsive.w(10f))) {
+        Column (modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
             Text(
                 text = title,
-                fontSize = Responsive.spW(14f),
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = pretendard,
                 color = Color.White,
                 letterSpacing = (-0.5).sp
             )
-            Spacer(Modifier.height(Responsive.h(4f)))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = if(completed) "학습 완료" else "학습 전",
-                fontSize = Responsive.spW(12f),
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = pretendard,
                 color = if(completed) Color.White else Color.White.copy(alpha = 0.6f)
@@ -535,7 +526,7 @@ fun LessonBox(
             Spacer(Modifier.weight(1f))
             Text(
                 text = "${totalProblem}문제",
-                fontSize = Responsive.spW(12f),
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = pretendard,
                 color = Color.White
@@ -543,6 +534,7 @@ fun LessonBox(
         }
     }
 }
+
 @SuppressLint("SuspiciousModifierThen")
 fun Modifier.glow(
     color: Color,

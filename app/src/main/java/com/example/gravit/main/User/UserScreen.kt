@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -58,7 +58,9 @@ import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.pretendard
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -66,7 +68,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.api.BadgeResponses
-import com.example.gravit.error.isDeletionPending
+import com.example.gravit.error.NotFoundScreen
 import com.example.gravit.main.User.Setting.DeleteAccountVM
 import com.example.gravit.main.User.Setting.DeleteAccountVMFactory
 
@@ -89,27 +91,16 @@ fun UserScreen(
 
     LaunchedEffect(Unit) { vm.load() }
     var navigated by remember { mutableStateOf(false) }
-    LaunchedEffect(ui) {
-        when (ui) {
-            UserScreenVM.UiState.SessionExpired -> {
-                navigated = true
-                navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
-                }
-            }
-            UserScreenVM.UiState.NotFound -> {
-                if (isDeletionPending(context)) return@LaunchedEffect
-                navigated = true
-                navController.navigate("error/404") {
-                    launchSingleTop = true; restoreState = false
-                }
-            }
-            UserScreenVM.UiState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
+    when (ui) {
+        UserScreenVM.UiState.SessionExpired -> {
+            navController.navigate("error/401")
         }
+        UserScreenVM.UiState.Loading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        else ->  NotFoundScreen(navController = navController)
     }
 
     val s = (ui as? UserScreenVM.UiState.Success)?.data
@@ -319,52 +310,52 @@ fun UserScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(16.dp))
-            Row (
-                modifier = Modifier.padding(horizontal = 17.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Text(
-                    text = "뱃지",
-                    fontFamily = pretendard,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black,
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    buildAnnotatedString {
-                        withStyle(
-                            SpanStyle(
-                                color = Color(0xFF494949),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        ) {
-                            append("${s?.badges?.earnedCount}개")
-                        }
-                        append(" ")
-                        withStyle(
-                            SpanStyle(
-                                color = Color(0xFF6D6D6D),
-                                fontWeight = FontWeight.Medium
-                            )
-                        ) {
-                            append("획득")
-                        }
-                    },
-                    style = TextStyle(
-                        fontFamily = pretendard,
-                        fontSize = 12.sp,
-                    )
-                )
-            }
             val categories: List<BadgeCategoryResponses> =
                 (s?.badges?.badgeCategoryResponses.orEmpty()).sortedBy { it.order }
 
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 17.dp)
+                    .padding(horizontal = 16.dp)
             ) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                    ) {
+                        Text(
+                            text = "뱃지",
+                            fontFamily = pretendard,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight(600),
+                            color = Color.Black
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            buildAnnotatedString {
+                                withStyle(
+                                    SpanStyle(
+                                        color = Color(0xFF494949),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                ) { append("${s?.badges?.earnedCount}개") }
+                                append(" ")
+                                withStyle(
+                                    SpanStyle(
+                                        color = Color(0xFF6D6D6D),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                ) { append("획득") }
+                            },
+                            style = TextStyle(
+                                fontFamily = pretendard,
+                                fontSize = 12.sp,
+                            ),
+                            modifier = Modifier.align(Alignment.Bottom)
+                        )
+                    }
+                }
                 items(categories, key = { it.categoryId }) { category ->
                     Spacer(Modifier.height(20.dp))
                     BadgeCategorySection(category = category)
@@ -396,9 +387,13 @@ fun UserScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BadgeCategorySection(category: BadgeCategoryResponses) {
-    Column(Modifier.fillMaxWidth()) {
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -407,11 +402,11 @@ private fun BadgeCategorySection(category: BadgeCategoryResponses) {
                 text = category.categoryName,
                 fontFamily = pretendard,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight(600),
                 color = Color(0xFF494949)
             )
             Spacer(Modifier.width(6.dp))
-            if(category.categoryName == "풀이 속도"){
+            if (category.categoryName == "풀이 속도") {
                 Text(
                     text = "*85% 이상의 정답률만 인정해요.",
                     fontFamily = pretendard,
@@ -421,8 +416,8 @@ private fun BadgeCategorySection(category: BadgeCategoryResponses) {
                     modifier = Modifier.align(Alignment.Bottom)
                 )
             }
-
         }
+
         Spacer(Modifier.height(8.dp))
 
         Surface(
@@ -431,19 +426,18 @@ private fun BadgeCategorySection(category: BadgeCategoryResponses) {
             shadowElevation = 0.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
+            val badges = category.badgeResponses.sortedBy { it.order }
+
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(14.dp),
-                maxItemsInEachRow = 5,
-                horizontalArrangement = Arrangement.spacedBy(22.dp,Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.Start),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                category.badgeResponses
-                    .sortedBy { it.order }
-                    .forEach { badge ->
-                        BadgeChip(badge = badge)
-                    }
+                badges.forEach { badge ->
+                    BadgeChip(badge = badge)
+                }
             }
         }
     }
@@ -468,7 +462,7 @@ private fun BadgeChip(badge: BadgeResponses) {
             .wrapContentWidth()
     ) {
         Box(
-            modifier = Modifier.size(42.dp, 64.dp),
+            modifier = Modifier.size(42.dp),
             contentAlignment = Alignment.Center
         ) {
             val iconRes = R.drawable.badge

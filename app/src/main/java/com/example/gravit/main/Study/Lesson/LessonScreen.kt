@@ -26,17 +26,14 @@ import com.example.gravit.main.Study.Problem.LoadingScreen
 import com.example.gravit.main.Study.Problem.ProblemUI
 import com.example.gravit.main.Study.Problem.StopwatchViewModel
 import kotlinx.coroutines.delay
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LessonScreen(
     navController: NavController,
-    chapterName: String,
     lessonId: Int,
-    onSessionExpired: () -> Unit,
-    unitOderText: String
+    onSessionExpired: () -> Unit
 ){
     //스톱워치
     val swVm: StopwatchViewModel = viewModel()
@@ -111,11 +108,12 @@ fun LessonScreen(
     val s = ui as? LessonViewModel.UiState.Success?: return
     val problems = s.data.problems
     val declaredTotal = s.data.totalProblems
-    val total = if (declaredTotal > 0) min(declaredTotal, problems.size) else problems.size
-
-    val problemSlots: List<Problems> = remember(problems, total) {
-        List(total) { idx -> problems[idx] }
+    val rawTotal = if (declaredTotal > 0) declaredTotal else problems.size
+    val problemSlots: List<Problems> = remember(problems, rawTotal) {
+        (0 until rawTotal)
+            .mapNotNull { idx -> problems.getOrNull(idx) }
     }
+    val total = problemSlots.size
 
     LaunchedEffect(problems) {
         vm.initBookmarks(problems)
@@ -145,14 +143,14 @@ fun LessonScreen(
 
 
         navController.currentBackStackEntry?.savedStateHandle?.set("problemList", problemSubmissionRequests)
-        navController.navigate("lesson/complete/${chapterName}/${accuracy}/${learningTime}/${lessonId}/${unitOderText}")
+        navController.navigate("lesson/complete/${s.data.unitSummary.title}/${accuracy}/${learningTime}/${lessonId}")
 
     }
     val bookmarkMap by vm.bookmark.collectAsState()
 
     ProblemUI(
         navController = navController,
-        chapterName = chapterName,
+        unitTitle = s.data.unitSummary.title,
         problems = problemSlots,
         total = total,
         swVm = swVm,
@@ -160,5 +158,6 @@ fun LessonScreen(
         onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
         onRecordResult = ::recordResult,
         onFinishLesson = ::finishLesson,
+        unitId = s.data.unitSummary.unitId
     )
 }

@@ -40,17 +40,16 @@ class UserScreenVM (
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
         runCatching {
             coroutineScope {
-                val u = async { api.getUser(auth) }
-                val b = async { api.getBadges(auth) }
+                val u = async { api.getUser("Bearer ${session.accessToken}") }
+                val b = async { api.getBadges("Bearer ${session.accessToken}") }
                 User(u.await(), b.await())
             }
         }.onSuccess { res ->

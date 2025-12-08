@@ -39,36 +39,6 @@ import com.example.gravit.main.User.Setting.DeletionGuard
 import com.example.gravit.main.User.Setting.PrivacyPolicy
 import com.example.gravit.main.User.UserScreen
 
-fun NavController.toLesson(
-    chapterId: Int,
-    unitId: Int,
-    lessonId: Int,
-    chapterName: String,
-    togo: String,
-) {
-    val encodedName = Uri.encode(chapterName)
-    navigate("$togo/$chapterId/$unitId/$lessonId/$encodedName"){
-        popUpTo(0) {
-            inclusive = true
-        }
-        launchSingleTop = true
-    }
-}
-fun NavController.toLessonCompleted(
-    chapterId: Int,
-    unitId: Int,
-    lessonId: Int,
-    chapterName: String,
-    accuracy: Int = 0,
-    learningTime: Int = 0
-) {
-    val encodedName = Uri.encode(chapterName)
-    val route = "lesson/complete/$chapterId/$unitId/$lessonId?chapterName=$encodedName&accuracy=$accuracy&learningTime=$learningTime"
-    navigate(route) {
-        launchSingleTop = true
-    }
-}
-
 enum class FollowTab { Followers, Following }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -125,61 +95,49 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lessonList/{unitId}/{unitOderText}/{unitTitle}",
+                    route = "lessonList/{unitId}/{unitTitle}",
                     arguments = listOf(
                         navArgument("unitId") { type = NavType.IntType },
-                        navArgument("unitOderText") { type = NavType.StringType },
                         navArgument("unitTitle") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getInt("unitId")
-                    val unitOderText = backStackEntry.arguments!!.getString("unitOderText").orEmpty()
                     val unitTitle = backStackEntry.arguments!!.getString("unitTitle").orEmpty()
                     LessonList(
                         navController = innerNavController,
                         onSessionExpired = goToLoginChoice,
                         unitId = unitId,
-                        unitOderText = unitOderText,
                         unitTitle = unitTitle
                     )
                 }
 
                 composable( //이거 이제 문제집 네비
-                    route = "lesson/{lessonId}/{chapterName}/{unitOderText}",
+                    route = "lesson/{lessonId}",
                     arguments = listOf(
-                        navArgument("lessonId") { type = NavType.IntType },
-                        navArgument("chapterName") { type = NavType.StringType},
-                        navArgument("unitOderText") { type = NavType.StringType },
+                        navArgument("lessonId") { type = NavType.IntType }
                     )
                 ) { backStackEntry ->
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
-                    val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
-                    val unitOderText = backStackEntry.arguments!!.getString("unitOderText").orEmpty()
 
                     LessonScreen(
                         navController = innerNavController,
-                        chapterName = chapterName,   // 헤더 표시용
                         lessonId = lessonId,
-                        onSessionExpired = goToLoginChoice,
-                        unitOderText = unitOderText
+                        onSessionExpired = goToLoginChoice
                     )
                 }
 
                 composable(
-                    route = "problem/{unitId}/{chapterName}/{type}",
+                    route = "problem/{unitId}/{type}",
                     arguments = listOf(
                         navArgument("unitId") { type = NavType.IntType },
-                        navArgument("chapterName") { type = NavType.StringType; defaultValue = "" },
                         navArgument("type") { type = NavType.StringType; defaultValue = "" },
                     )
                 ) {  backStackEntry ->
-                    val unitId = backStackEntry.arguments!!.getInt("lessonId")
-                    val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
+                    val unitId = backStackEntry.arguments!!.getInt("unitId")
                     val type = backStackEntry.arguments!!.getString("type").orEmpty()
 
                     BookWrongScreen(
                         navController = innerNavController,
-                        chapterName = chapterName,
                         unitId = unitId,
                         onSessionExpired = goToLoginChoice,
                         type = type
@@ -187,28 +145,25 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lesson/complete/{chapterName}/{accuracy}/{learningTime}/{lessonId}/{unitOderText}",
+                    route = "lesson/complete/{unitTitle}/{accuracy}/{learningTime}/{lessonId}",
                     arguments = listOf(
-                        navArgument("chapterName") { type = NavType.StringType },
+                        navArgument("unitTitle") { type = NavType.StringType },
                         navArgument("accuracy") { type = NavType.FloatType },
                         navArgument("learningTime") { type = NavType.IntType },
                         navArgument("lessonId") { type = NavType.IntType },
-                        navArgument("unitOderText") { type = NavType.StringType },
                     )
                 ) { backStackEntry ->
-                    val chapterName = backStackEntry.arguments!!.getString("chapterName").orEmpty()
+                    val unitTitle = backStackEntry.arguments!!.getString("unitTitle").orEmpty()
                     val accuracy = backStackEntry.arguments!!.getFloat("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
-                    val unitOderText = backStackEntry.arguments!!.getString("unitOderText").orEmpty()
 
                     LessonComplete(
                         navController = innerNavController,
-                        chapterName = chapterName,
+                        unitTitle = unitTitle,
                         accuracy = accuracy,
                         learningTime = learningTime,
-                        lessonId = lessonId,
-                        unitOderText = unitOderText
+                        lessonId = lessonId
                     )
                 }
 

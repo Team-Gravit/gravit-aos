@@ -34,15 +34,14 @@ class ReportVM(
             _state.value = UiState.Loading
 
             val session = AuthPrefs.load(appContext)
-            if (session == null || AuthPrefs.isExpired(session)) {
+            if (session == null) {
                 AuthPrefs.clear(appContext)
                 _state.value = UiState.SessionExpired
                 return@launch
             }
 
-            val auth = "Bearer ${session.accessToken}"
             runCatching {
-                api.sendReport(ReportRequest(reportType, content, problemId), auth)
+                api.sendReport(ReportRequest(reportType, content, problemId), "Bearer ${session.accessToken}")
             }.onSuccess {
                 AuthPrefs.setOnboarded(appContext, true)
                 _state.value = UiState.Success

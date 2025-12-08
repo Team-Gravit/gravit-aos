@@ -2,6 +2,7 @@ package com.example.gravit.main.Study.Problem
 
 import android.content.Context
 import android.util.Log
+import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,7 @@ import com.example.gravit.api.LessonSubmissionSaveRequest
 import com.example.gravit.api.ProblemResponse
 import com.example.gravit.api.ProblemSubmissionRequests
 import com.example.gravit.api.Problems
+import com.example.gravit.api.RetrofitInstance.api
 import com.example.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,40 +41,33 @@ class LessonViewModel(
     val state = _state.asStateFlow()
 
     fun load(lessonId: Int = 0, unitId: Int = 0, type: String) = viewModelScope.launch {
-        try{
-            _state.value = UiState.Loading
-            val session = AuthPrefs.load(appContext)
-            if (session == null) {
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-                return@launch
-            }
+        _state.value = UiState.Loading
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _state.value = UiState.SessionExpired
+            return@launch
+        }
 
-            val auth = "Bearer ${session.accessToken}"
-            runCatching {
-                when(type) {
-                    "bookmarks" ->
-                        api.getBookmarks(auth, unitId)
-                    "wrong-answered-notes" ->
-                        api.getWrongAnswered(auth,unitId)
-                    else -> api.getLesson(auth, lessonId)
-                }
-            }.onSuccess { res ->
-                _state.value = UiState.Success(res)
-            }.onFailure { e ->
-                handleApiFailure(
-                    e = e,
-                    appContext = appContext,
-                    onStateChange = { _state.value = it },
-                    unauthorizedState = UiState.SessionExpired,
-                    notFoundState = UiState.NotFound,
-                    failedState = UiState.Failed
-                )
+        runCatching {
+            when(type) {
+                "bookmarks" ->
+                    api.getBookmarks("Bearer ${session.accessToken}", unitId)
+                "wrong-answered-notes" ->
+                    api.getWrongAnswered("Bearer ${session.accessToken}",unitId)
+                else -> api.getLesson("Bearer ${session.accessToken}", lessonId)
             }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            _state.value = UiState.Failed
+        }.onSuccess { res ->
+            _state.value = UiState.Success(res)
+        }.onFailure { e ->
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _state.value = it },
+                unauthorizedState = UiState.SessionExpired,
+                notFoundState = UiState.NotFound,
+                failedState = UiState.Failed
+            )
         }
     }
 
@@ -99,10 +94,9 @@ class LessonViewModel(
             onDone(false)
             return@launch
         }
-        val auth = "Bearer ${session.accessToken}"
         runCatching {
             val result = LessonResultRequest(lessonSubmissionSaveRequest, problemSubmissionRequests)
-           api.sendLessonResults(result, auth)
+           api.sendLessonResults(result, "Bearer ${session.accessToken}")
         }.onSuccess { response ->
             _submit.value = SubmitState.Success(response)
             onDone(true)
@@ -141,9 +135,8 @@ class LessonViewModel(
             onDone(false)
             return@launch
         }
-        val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.sendProblemResults(problemSubmissionRequests, auth)
+            api.sendProblemResults(problemSubmissionRequests, "Bearer ${session.accessToken}")
         }.onSuccess {
             _problemSubmit.value = ProblemSubmitState.Success
             onDone(true)
@@ -183,14 +176,13 @@ class LessonViewModel(
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
         val request = BookmarksRequest(problemId)
 
         runCatching {
             if (newValue) {
-                api.addBookmark(auth, request)
+                api.addBookmark("Bearer ${session.accessToken}", request)
             } else {
-                api.removeBookmark(auth, request)
+                api.removeBookmark("Bearer ${session.accessToken}", request)
             }
         }.onFailure { e ->
             Log.e("Bookmark", "removeBookmark failed", e)

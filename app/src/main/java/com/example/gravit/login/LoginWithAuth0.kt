@@ -9,7 +9,7 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.provider.CustomTabsOptions
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.result.Credentials
-
+import com.example.gravit.BuildConfig
 
 
 fun loginWithAuth0(
@@ -18,7 +18,10 @@ fun loginWithAuth0(
     onSuccess: (String) -> Unit
 ) {
     val activity = context as ComponentActivity
-    val auth0 = Auth0.getInstance("fq1pF2twsWNYG0JORVHFuJNzteGPtyTe", "dev-fl5wpn5srn5xay26.us.auth0.com")
+    val auth0 = Auth0.getInstance(
+        BuildConfig.AUTH0_CLIENT_ID,
+        BuildConfig.AUTH0_DOMAIN
+    )
 
     val ctOptions = CustomTabsOptions.newBuilder()
         .showTitle(true)
@@ -32,31 +35,27 @@ fun loginWithAuth0(
         .withParameters(
             buildMap {
                 when (connection.lowercase()) {
-                "naver" -> put("connection_scope", "name email nickname")
-                "kakao" -> put("connection_scope", "profile_nickname account_email")
+                    "naver" -> put("connection_scope", "name email nickname")
+                    "kakao" -> put("connection_scope", "profile_nickname account_email")
                 }
             }
         )
         .start(activity, object : Callback<Credentials, AuthenticationException> {
             override fun onSuccess(result: Credentials) {
-
                 val idToken = result.idToken
                 if (idToken.isBlank()) {
                     Log.e("Auth0", "No idToken")
                     return
                 }
 
-                // 로그
                 Log.d("Auth0", "idToken = ${maskToken(idToken)}")
                 logJwtIfJwt("Auth0.idToken.payload", idToken)
 
-
-                onSuccess(idToken) //다음 단계로 전달 (LoginActivity)
+                onSuccess(idToken)
             }
+
             override fun onFailure(error: AuthenticationException) {
                 Log.e("Auth0", "Login failed: ${error.getDescription()}")
             }
         })
-
 }
-

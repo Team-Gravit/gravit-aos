@@ -23,6 +23,7 @@ class ChapterViewModel(
         data object Failed : UiState
         data object SessionExpired : UiState
         data object NotFound : UiState
+        data class InvalidChapterId(val id: Int) : UiState
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Loading)
@@ -32,17 +33,23 @@ class ChapterViewModel(
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
-
-        val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getChapterPage(auth)
+            api.getChapterPage("Bearer ${session.accessToken}")
         }.onSuccess { res ->
-            _state.value = UiState.Success(res)
+            val invalid = res
+                .map { it.chapterSummary.chapterId }
+                .firstOrNull { id -> planetById[id] == null }
+
+            if (invalid != null) {
+                _state.value = UiState.InvalidChapterId(invalid)
+            } else {
+                _state.value = UiState.Success(res)
+            }
         }.onFailure { e ->
             handleApiFailure(
                 e = e,

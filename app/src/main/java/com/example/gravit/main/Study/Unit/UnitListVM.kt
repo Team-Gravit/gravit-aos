@@ -36,16 +36,15 @@ class UnitListVM(
                 _state.value = UiState.Loading
 
                 val session = AuthPrefs.load(appContext)
-                if (session == null || AuthPrefs.isExpired(session)) {
+                if (session == null) {
                     AuthPrefs.clear(appContext)
                     _state.value = UiState.SessionExpired
                     return@launch
                 }
 
-                val auth = "Bearer ${session.accessToken}"
 
                 val data = api.getUnitPage(
-                    auth = auth,
+                    auth = "Bearer ${session.accessToken}",
                     chapterId = chapterId
                 )
 

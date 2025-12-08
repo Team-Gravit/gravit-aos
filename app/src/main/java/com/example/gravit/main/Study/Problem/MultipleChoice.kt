@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.example.gravit.R
 import com.example.gravit.api.OptionDto
 import com.example.gravit.ui.theme.pretendard
+import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank
 
@@ -42,6 +43,16 @@ fun MultipleChoice(
     showRemoveFromWrongNote: Boolean = false,
     onRemoveFromWrongNote: () -> Unit = {}
 ) {
+    var removeSnackBarText by remember { mutableStateOf<String?>(null) }
+    var removedFromWrongNote by remember { mutableStateOf(false) }
+
+    LaunchedEffect(removeSnackBarText) {
+        if (removeSnackBarText != null) {
+            delay(1500)
+            removeSnackBarText = null
+        }
+    }
+
     var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
     var readyToSubmit     by remember(problemNum) { mutableStateOf(false) }
 
@@ -91,7 +102,7 @@ fun MultipleChoice(
         }
 
         Column(columnModifier) {
-            if (submitted && isCorrect == true && showRemoveFromWrongNote) {
+            if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
                 Row (
                     modifier = Modifier
                         .fillMaxWidth()
@@ -107,7 +118,11 @@ fun MultipleChoice(
                         textDecoration = TextDecoration.Underline,
                         modifier = Modifier
                             .padding(bottom = 8.dp)
-                            .clickable { onRemoveFromWrongNote() }
+                            .clickable {
+                                removedFromWrongNote = true
+                                onRemoveFromWrongNote()
+                                removeSnackBarText = "오답노트에서 제거되었아요."
+                            }
                     )
                 }
             }
@@ -145,25 +160,38 @@ fun MultipleChoice(
             else -> FabState.HIDDEN
         }
 
-        if (fabState != FabState.HIDDEN) {
-            Box(
+        if (fabState != FabState.HIDDEN || removeSnackBarText != null) {
+            Row(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 20.dp)
+                    .align(Alignment.BottomCenter) // 전체를 아래에 붙이고
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                when (fabState) {
-                    FabState.NEXT -> {
-                        Image(
-                            painter = painterResource(id = R.drawable.next_on),  // 다음
-                            contentDescription = "다음",
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clickable {
-                                    onNext()
-                                }
-                        )
+                Box(
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (removeSnackBarText != null) {
+                        CustomSnackBar(removeSnackBarText!!)
                     }
-                    else -> Unit
+                }
+
+                if (fabState != FabState.HIDDEN) {
+                    Spacer(Modifier.width(12.dp))
+                    when (fabState) {
+                        FabState.NEXT -> {
+                            Image(
+                                painter = painterResource(id = R.drawable.next_on),
+                                contentDescription = "다음",
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clickable { onNext() }
+                            )
+                        }
+                        else -> Unit
+                    }
                 }
             }
         }
@@ -265,7 +293,7 @@ private fun OptionCell(
             if (showExplanation) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = explanation!!,
+                    text = explanation,
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Normal,
                     fontSize = 14.sp,

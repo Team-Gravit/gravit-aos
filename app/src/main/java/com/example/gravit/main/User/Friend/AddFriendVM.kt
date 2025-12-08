@@ -37,17 +37,16 @@ class AddFriendVM(
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
-        val auth = "Bearer ${session.accessToken}"
 
         val nq = normalizeQuery(rawQuery)
 
         runCatching {
-            api.getFriends(auth = auth, queryText = nq, page = 0)
+            api.getFriends(auth = "Bearer ${session.accessToken}", queryText = nq, page = 0)
         }.onSuccess { res ->
             _state.value = UiState.Success(res.contents)
         }.onFailure { e ->
@@ -65,16 +64,15 @@ class AddFriendVM(
         val willFollow = !(cur.results.find { it.userId == userId }?.isFollowing ?: false)
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
-        val auth = "Bearer ${session.accessToken}"
 
         runCatching {
-            if (willFollow) api.sendFolloweeId(auth, userId)
-            else api.sendUnFolloweeId(auth, userId)
+            if (willFollow) api.sendFolloweeId("Bearer ${session.accessToken}", userId)
+            else api.sendUnFolloweeId("Bearer ${session.accessToken}", userId)
         }.onSuccess {
             val updated = cur.results.map {
                 if (it.userId == userId) it.copy(isFollowing = willFollow) else it

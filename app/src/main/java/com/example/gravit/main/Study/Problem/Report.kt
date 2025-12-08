@@ -185,11 +185,14 @@ fun ReportDialog(
             onDismissRequest = {},
             properties = DialogProperties(
                 dismissOnClickOutside = false,
-                dismissOnBackPress = false
+                dismissOnBackPress = false,
             )
         ) {
             Surface(
-                modifier = Modifier.height(294.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(294.dp)
+                ,
                 shape = RoundedCornerShape(20.dp),
                 color = Color.White
             ){
@@ -200,7 +203,7 @@ fun ReportDialog(
                     horizontalAlignment = Alignment.CenterHorizontally)
                 {
                     Image(
-                        painter = painterResource(id = R.drawable.check_circle),
+                        painter = painterResource(id = R.drawable.report_check),
                         contentDescription = null,
 
                         )
@@ -217,13 +220,14 @@ fun ReportDialog(
                     Text(
                         text = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
                         fontFamily = pretendard,
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight(400),
                         fontSize = 14.sp,
                         color = Color(0xFF868686),
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        lineHeight = 19.6.sp
                     )
-                    Spacer(Modifier.height(28.dp))
+                    Spacer(Modifier.height(19.dp))
                     Button(
                         modifier = Modifier
                             .fillMaxWidth()

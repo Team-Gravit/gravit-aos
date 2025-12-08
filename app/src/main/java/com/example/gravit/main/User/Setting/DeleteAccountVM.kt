@@ -42,15 +42,14 @@ class DeleteAccountVM(
         _state.value = DeletionState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = DeletionState.SessionExpired
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
 
-        val resp = runCatching { api.requestDeletionMail(auth, dest) }
+        val resp = runCatching { api.requestDeletionMail("Bearer ${session.accessToken}", dest) }
             .getOrElse { e ->
                 val code = (e as? retrofit2.HttpException)?.code()
                 if (code == 401) {
@@ -81,7 +80,7 @@ class DeleteAccountVM(
         if (!isPending()) return@launch
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = DeletionState.SessionExpired
             return@launch

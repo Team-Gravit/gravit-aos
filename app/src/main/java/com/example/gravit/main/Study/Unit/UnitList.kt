@@ -249,7 +249,7 @@ private fun UnitItemBox(
                 )
             )
             .clickable {
-                navController.navigate("lessonList/${unit.unitId}/${unit.orderText}/${unit.title}")
+                navController.navigate("lessonList/${unit.unitId}/${unit.title}")
             }
             .padding(10.dp)
     ) {

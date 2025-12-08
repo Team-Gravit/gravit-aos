@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -35,7 +34,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import com.example.gravit.ui.theme.Responsive
 
 @Composable
 fun LevelGauge(
@@ -43,7 +41,7 @@ fun LevelGauge(
     xp: Int,
     modifier: Modifier = Modifier
         .fillMaxWidth()
-        .height(Responsive.h(30f))
+        .height(25.dp)
 ) {
     val levelRanges = listOf(
         0 to 99,
@@ -70,7 +68,7 @@ fun LevelGauge(
         }
         else -> 0f
     }
-    val shape = RoundedCornerShape(Responsive.w(16f))
+    val shape = RoundedCornerShape(16.dp)
 
     Box(
         modifier = modifier
@@ -92,7 +90,7 @@ fun LevelGauge(
         )
         Box (
             modifier = Modifier
-                .padding(start = Responsive.w(15f))
+                .padding(start = 15.dp)
                 .align(Alignment.CenterStart),
         ){
             if (progress < 0.23f) {
@@ -109,7 +107,7 @@ fun LevelGauge(
                             append("$lv")
                         }
                     },
-                    fontSize = Responsive.spH(14f),
+                    fontSize = 14.sp,
                     fontFamily = pretendard,
                     color = Color.Transparent,
                     style = TextStyle(
@@ -139,7 +137,7 @@ fun LevelGauge(
                         append("${lv}")
                     }
                 },
-                fontSize = Responsive.spH(14f),
+                fontSize = 14.sp,
                 fontFamily = pretendard,
                 color = Color.White,
             )
@@ -174,7 +172,7 @@ fun LeagueGauge(
             brush = Brush.linearGradient(
                 colors = listOf(Color(0xFFDD00FF), Color(0xFF8100B3)),
             ),
-            startAngle = -90f,   // 위에서 시작
+            startAngle = -90f,
             sweepAngle = -360f * progress,
             useCenter = false,
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
@@ -199,7 +197,6 @@ fun RoundedGauge(
 
     Column(
         modifier = modifier
-            .width(width)
             .wrapContentHeight()
     ) {
         Box(
@@ -217,12 +214,12 @@ fun RoundedGauge(
                     .background(Color(0xFFBA00FF))
             )
         }
-        Spacer(modifier = Modifier.height(Responsive.h(3f)))
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = "$rate%",
-            fontSize = Responsive.spH(15f),
+            fontSize = 14.sp,
             fontFamily = pretendard,
-            fontWeight = FontWeight.Normal,
+            fontWeight = FontWeight(400),
             color = Color.White
         )
     }

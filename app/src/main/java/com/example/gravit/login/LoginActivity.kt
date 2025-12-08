@@ -52,7 +52,7 @@ fun LoginScreen (
     LaunchedEffect(jwt) {
         jwt?.let { token ->
             //저장
-            AuthPrefs.save(context, token.accessToken, token.isOnboarded)
+            AuthPrefs.save(context, token.accessToken, token.refreshToken,token.isOnboarded)
 
             val s = AuthPrefs.load(context) //저장이 실패됐는지 다시 확인
             if (s == null) {

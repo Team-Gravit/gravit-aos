@@ -1,7 +1,5 @@
 package com.example.gravit.main.Study.Problem
 
-import android.text.TextUtils.replace
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,14 +19,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
@@ -36,11 +35,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,7 +48,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -66,30 +61,20 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.api.AnswerResponse
-import com.example.gravit.api.LessonSubmissionSaveRequest
-import com.example.gravit.api.ProblemSubmissionRequests
 import com.example.gravit.api.Problems
-import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.ConfirmBottomSheet
-import com.example.gravit.navigation.toLessonCompleted
 import com.example.gravit.ui.theme.pretendard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.min
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProblemUI(
     navController: NavController,
-    chapterName: String,
+    unitTitle: String,
     problems: List<Problems>,
     total: Int,
     swVm: StopwatchViewModel,
@@ -99,6 +84,7 @@ fun ProblemUI(
     onFinishLesson: () -> Unit,
     type: String = "normal",
     onRemoveWrongNote: (Int) -> Unit = {},
+    unitId: Int
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = false
@@ -106,12 +92,12 @@ fun ProblemUI(
     val coroutineScope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
 
-    var bookmarkSnackBar by remember { mutableStateOf(false) }
+    var bookmarkSnackBar by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(bookmarkSnackBar) {
-        if (bookmarkSnackBar) {
+        if (bookmarkSnackBar != null) {
             delay(2000)
-            bookmarkSnackBar = false
+            bookmarkSnackBar = null
         }
     }
 
@@ -139,7 +125,7 @@ fun ProblemUI(
                     .background(Color.White)
             ) {
                 Text(
-                    text = chapterName,
+                    text = unitTitle,
                     fontSize = 20.sp,
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,
@@ -162,8 +148,15 @@ fun ProblemUI(
                             .clickable {
                                 swVm.pause()
                                 coroutineScope.launch {
-                                    showSheet = true
-                                    sheetState.show()
+                                    if(type == "normal"){
+                                        showSheet = true
+                                        sheetState.show()
+                                    } else {
+                                        navController.navigate("lessonList/$unitId/$unitTitle") {
+                                            popUpTo(0) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
                                 }
                             },
                         tint = Color(0xFF494949)
@@ -224,8 +217,10 @@ fun ProblemUI(
                             modifier = Modifier
                                 .size(25.dp)
                                 .clickable {
-                                    if(!isBookmark){
-                                        bookmarkSnackBar = true
+                                    bookmarkSnackBar = if (!isBookmark) {
+                                        "북마크에 추가되었어요."
+                                    } else {
+                                        "북마크에서 제거되었어요."
                                     }
                                     onBookmarkToggle(current.problemId)
                                 }
@@ -263,6 +258,7 @@ fun ProblemUI(
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .background(Color.White)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         InlineUnderlineText(
                             raw = current.content,
@@ -353,14 +349,14 @@ fun ProblemUI(
                 }
             }
         }
-        if(bookmarkSnackBar){
+        if (bookmarkSnackBar != null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 19.dp),
+                    .padding(bottom = 45.dp),
                 contentAlignment = Alignment.BottomCenter
-            ){
-                CustomSnackBar("북마크에 추가되었어요.")
+            ) {
+                CustomSnackBar(text = bookmarkSnackBar!!)
             }
         }
         if (showSheet) {
@@ -368,13 +364,13 @@ fun ProblemUI(
                 onDismiss = { showSheet = false },
                 imageRes = R.drawable.study_popup,
                 titleText = "지금까지 푼 내역이\n모두 사라져요!",
-                descriptionText = "${chapterName} 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
+                descriptionText = "${unitTitle} 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
                 confirmButtonText = "계속하기",
                 cancelText = "그만두기",
                 onConfirm = {
                 },
                 onCancel = {
-                    navController.navigate("home") {
+                    navController.navigate("lessonList/$unitId/$unitTitle") {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }

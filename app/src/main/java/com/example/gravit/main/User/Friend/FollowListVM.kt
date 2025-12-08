@@ -39,15 +39,14 @@ class FollowListVM(
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
         runCatching {
-            api.getFollower(auth = auth, page = page)
+            api.getFollower(auth = "Bearer ${session.accessToken}", page = page)
         }.onSuccess { res ->
             val list = res.contents
             _followerCount.value = list.size
@@ -67,15 +66,15 @@ class FollowListVM(
         _state.value = UiState.Loading
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
 
-        val auth = "Bearer ${session.accessToken}"
+
         runCatching {
-            api.getFollowing(auth = auth, page = page)
+            api.getFollowing(auth = "Bearer ${session.accessToken}", page = page)
         }.onSuccess { res ->
             val list = res.contents
             _followingCount.value = list.size
@@ -95,17 +94,16 @@ class FollowListVM(
         val cur = _state.value as? UiState.Success ?: return@launch
 
         val session = AuthPrefs.load(appContext)
-        if (session == null || AuthPrefs.isExpired(session)) {
+        if (session == null) {
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
-        val auth = "Bearer ${session.accessToken}"
 
         _state.value = cur.copy(data = cur.data.filterNot { it.id == userId })
 
         runCatching {
-            api.sendUnFolloweeId(auth, userId)
+            api.sendUnFolloweeId("Bearer ${session.accessToken}", userId)
         }.onFailure {
             _state.value = cur
         }

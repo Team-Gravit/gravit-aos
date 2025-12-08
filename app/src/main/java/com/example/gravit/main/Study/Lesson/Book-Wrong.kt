@@ -24,12 +24,10 @@ import com.example.gravit.main.Study.Problem.LoadingScreen
 import com.example.gravit.main.Study.Problem.ProblemUI
 import com.example.gravit.main.Study.Problem.StopwatchViewModel
 import kotlinx.coroutines.delay
-import kotlin.math.min
 
 @Composable
 fun BookWrongScreen(
     navController: NavController,
-    chapterName: String,
     unitId: Int,
     onSessionExpired: () -> Unit,
     type: String
@@ -39,7 +37,6 @@ fun BookWrongScreen(
     val swVm: StopwatchViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var bookmark by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner) {
         // 앱이 백그라운드로 가면 멈춤
@@ -57,16 +54,13 @@ fun BookWrongScreen(
         }
     }
 
-    var resultNext by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-    var submitting by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
     val vm: LessonViewModel = viewModel(
         factory = LessonVMFactory(RetrofitInstance.api, context)
     )
 
     LaunchedEffect(unitId) {
-        vm.load(unitId = 1, type = type)
+        vm.load(unitId = unitId, type = type)
         vm.resetProblemSubmit()
     }
 
@@ -131,10 +125,12 @@ fun BookWrongScreen(
     val s = ui as? LessonViewModel.UiState.Success?: return
     val problems = s.data.problems
     val declaredTotal = s.data.totalProblems
-    val total = if (declaredTotal > 0) min(declaredTotal, problems.size) else problems.size
-    val problemSlots: List<Problems> = remember(problems, total) {
-        List(total) { idx -> problems[idx] }
+    val rawTotal = if (declaredTotal > 0) declaredTotal else problems.size
+    val problemSlots: List<Problems> = remember(problems, rawTotal) {
+        (0 until rawTotal)
+            .mapNotNull { idx -> problems.getOrNull(idx) }
     }
+    val total = problemSlots.size
 
     LaunchedEffect(problems) {
         vm.initBookmarks(problems)
@@ -150,10 +146,11 @@ fun BookWrongScreen(
     }
 
     val bookmarkMap by vm.bookmark.collectAsState()
-    val unit = 1
+    val unitTitle = s.data.unitSummary.title
+
     ProblemUI(
         navController = navController,
-        chapterName = chapterName,
+        unitTitle = s.data.unitSummary.title,
         problems = problemSlots,
         total = total,
         swVm = swVm,
@@ -163,7 +160,7 @@ fun BookWrongScreen(
         bookmarkMap = bookmarkMap,
         onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
         onFinishLesson = {
-            navController.navigate("lessonList/$unit") {
+            navController.navigate("lessonList/$unitId/$unitTitle") {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
             }
@@ -175,6 +172,7 @@ fun BookWrongScreen(
                 }
             }
         },
+        unitId = unitId
     )
 
 }
