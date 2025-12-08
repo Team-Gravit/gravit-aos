@@ -3,7 +3,6 @@ package com.example.gravit.ui.theme
 import androidx.compose.ui.graphics.Color
 
 object ProfilePalette {
-    // 1-based ID <-> index(0-based) 매핑
     val colors: List<Color> = listOf(
         Color(0xFFEB1D64), // 1
         Color(0xFFF44336), // 2
@@ -27,17 +26,11 @@ object ProfilePalette {
     )
 
     const val DEFAULT_ID = 1
-
-    /** 서버/DB의 1-based id를 Compose Color로 */
     fun idToColor(id: Int): Color {
         val idx = id - 1
         return if (idx in colors.indices) colors[idx] else colors[DEFAULT_ID - 1]
     }
-
-    /** Compose 쪽 index(0-based) -> 서버로 보낼 1-based id */
     fun indexToId(index: Int): Int = (index % colors.size).let { it + 1 }
-
-    /** 서버 id(1-based) -> UI에서 쓸 index(0-based) */
     fun idToIndex(id: Int): Int {
         val idx = id - 1
         return if (idx in colors.indices) idx else DEFAULT_ID - 1

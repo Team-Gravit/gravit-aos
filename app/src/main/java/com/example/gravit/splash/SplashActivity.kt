@@ -28,8 +28,6 @@ fun SplashScreen(navController: NavController) {
     val configuration = LocalConfiguration.current
     val widthDp = configuration.screenWidthDp.dp
     val heightDp = configuration.screenHeightDp.dp
-
-    // dp → px 변환
     val density = LocalDensity.current
     val widthPx = with(density) { widthDp.toPx() }
     val heightPx = with(density) { heightDp.toPx() }

@@ -23,7 +23,6 @@ class DeleteAccountVM(
     private fun markPending() { prefs.edit().putBoolean("pending", true).apply() }
     private fun clearPending() { prefs.edit().putBoolean("pending", false).apply() }
 
-    // 2) sealed class 올바른 선언
     sealed class DeletionState {
         data object Idle : DeletionState()
         data object Loading : DeletionState()
@@ -61,7 +60,6 @@ class DeleteAccountVM(
                 return@launch
             }
 
-        // 202 Accepted일 때만 pending 처리 + 콜백 호출
         if (resp.isSuccessful && resp.code() == 202) {
             markPending()
             _state.value = DeletionState.Pending
