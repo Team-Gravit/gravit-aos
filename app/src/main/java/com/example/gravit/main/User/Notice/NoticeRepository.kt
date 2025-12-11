@@ -8,17 +8,22 @@ import com.example.gravit.api.RetrofitInstance
 
 class NoticeRepository(private val appContext: Context) {
 
-    private fun bearerOrThrow(): String {
+    private fun bearerOrFailure(): Result<String> {
         val token = AuthPrefs.load(appContext)?.accessToken
-            ?: throw IllegalStateException("세션 만료")
-        return "Bearer $token"
+            ?: return Result.failure(IllegalStateException("세션 만료"))
+
+        return Result.success("Bearer $token")
     }
 
-    suspend fun fetchSummaries(page: Int): NoticeSummaryPageResponse {
-        return RetrofitInstance.api.getNoticeSummaries(bearerOrThrow(), page)
+    suspend fun fetchSummaries(page: Int): Result<NoticeSummaryPageResponse> {
+        return bearerOrFailure().mapCatching { bearer ->
+            RetrofitInstance.api.getNoticeSummaries(bearer, page)
+        }
     }
 
-    suspend fun fetchDetail(id: Long): NoticeDetailResponse {
-        return RetrofitInstance.api.getNoticeDetail(bearerOrThrow(), id)
+    suspend fun fetchDetail(id: Long): Result<NoticeDetailResponse> {
+        return bearerOrFailure().mapCatching { bearer ->
+            RetrofitInstance.api.getNoticeDetail(bearer, id)
+        }
     }
 }

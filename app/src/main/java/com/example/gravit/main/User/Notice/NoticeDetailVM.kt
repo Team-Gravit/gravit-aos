@@ -1,6 +1,7 @@
 package com.example.gravit.main.User.Notice
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -8,9 +9,9 @@ import com.example.gravit.api.NoticeDetailResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import android.util.Log
 
 class NoticeDetailVM(private val repo: NoticeRepository): ViewModel() {
+
     data class UiState(
         val loading: Boolean = false,
         val item: NoticeDetailResponse? = null,
@@ -22,15 +23,27 @@ class NoticeDetailVM(private val repo: NoticeRepository): ViewModel() {
 
     fun load(id: Long) {
         _state.value = UiState(loading = true)
+
         viewModelScope.launch {
-            runCatching { repo.fetchDetail(id) }
+            repo.fetchDetail(id)
                 .onSuccess { detail ->
-                    Log.d("NoticeDetailVM", "detail loaded: id=${detail.id}, title=${detail.title}")
-                    _state.value = UiState(loading = false, item = detail)
+                    Log.d(
+                        "NoticeDetailVM",
+                        "detail loaded: id=${detail.id}, title=${detail.title}"
+                    )
+                    _state.value = UiState(
+                        loading = false,
+                        item = detail,
+                        error = null
+                    )
                 }
                 .onFailure { e ->
                     Log.e("NoticeDetailVM", "detail error: ${e.message}", e)
-                    _state.value = UiState(loading = false, error = e.message ?: "로드 실패")
+                    _state.value = UiState(
+                        loading = false,
+                        item = null,
+                        error = e.message ?: "로드 실패"
+                    )
                 }
         }
     }

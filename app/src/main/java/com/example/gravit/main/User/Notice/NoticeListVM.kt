@@ -1,6 +1,7 @@
 package com.example.gravit.main.User.Notice
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -8,7 +9,6 @@ import com.example.gravit.api.NoticeSummaryItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import android.util.Log
 
 class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
 
@@ -24,14 +24,21 @@ class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
     val state: StateFlow<UiState> = _state
 
     fun loadFirst() {
-        if (_state.value.loading) return
+        val cur = _state.value
+        if (cur.loading) return
+
         _state.value = UiState(loading = true)
+
         viewModelScope.launch {
-            runCatching { repo.fetchSummaries(1) }
+            repo.fetchSummaries(1)
                 .onSuccess { res ->
                     val list = res.content ?: emptyList()
-                    Log.d("NoticeListVM", "loadFirst: size=${list.size}, hasNext=${res.hasNext}")
-                    _state.value = _state.value.copy(
+                    Log.d(
+                        "NoticeListVM",
+                        "loadFirst: size=${list.size}, hasNext=${res.hasNext}"
+                    )
+
+                    _state.value = UiState(
                         items = list,
                         page = 1,
                         hasNext = res.hasNext,
@@ -41,7 +48,10 @@ class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
                 }
                 .onFailure { e ->
                     Log.e("NoticeListVM", "loadFirst error: ${e.message}", e)
-                    _state.value = _state.value.copy(
+                    _state.value = UiState(
+                        items = emptyList(),
+                        page = 1,
+                        hasNext = false,
                         loading = false,
                         error = e.message ?: "로드 실패"
                     )
@@ -52,22 +62,35 @@ class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
     fun loadNext() {
         val cur = _state.value
         if (cur.loading || !cur.hasNext) return
+
+        val nextPage = cur.page + 1
         _state.value = cur.copy(loading = true)
+
         viewModelScope.launch {
-            runCatching {
-                repo.fetchSummaries(1)
-            }.onSuccess { res ->
-                _state.value = _state.value.copy(
-                    items = res.content,
-                    page = 1,
-                    hasNext = res.hasNext,
-                    loading = false,
-                    error = null
-                )
-                Log.d("NoticeListVM", "loadFirst: size=${res.content.size}, hasNext=${res.hasNext}")
-            }.onFailure { e ->
-                _state.value = _state.value.copy(loading = false, error = e.message ?: "로드 실패")
-            }
+            repo.fetchSummaries(nextPage)
+                .onSuccess { res ->
+                    val newItems = cur.items + (res.content ?: emptyList())
+
+                    _state.value = _state.value.copy(
+                        items = newItems,
+                        page = nextPage,
+                        hasNext = res.hasNext,
+                        loading = false,
+                        error = null
+                    )
+
+                    Log.d(
+                        "NoticeListVM",
+                        "loadNext: page=$nextPage, size=${newItems.size}, hasNext=${res.hasNext}"
+                    )
+                }
+                .onFailure { e ->
+                    Log.e("NoticeListVM", "loadNext error: ${e.message}", e)
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        error = e.message ?: "로드 실패"
+                    )
+                }
         }
     }
 }
