@@ -1,5 +1,8 @@
 package com.example.gravit.main.Study.Lesson
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -9,6 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -64,48 +69,106 @@ fun BookWrongScreen(
     val problemSubmit by vm.problemSubmit.collectAsState()
 
     var navigated by remember { mutableStateOf(false) }
-    LaunchedEffect(ui) {
-        when (ui) {
-            LessonViewModel.UiState.SessionExpired ->  {
-                navigated = true
+    val navTarget: String? = when {
+        ui is LessonViewModel.UiState.SessionExpired ||
+                problemSubmit is LessonViewModel.ProblemSubmitState.SessionExpired -> "401"
+
+        ui is LessonViewModel.UiState.NotFound ||
+                problemSubmit is LessonViewModel.ProblemSubmitState.NotFound -> "404"
+
+        ui is LessonViewModel.UiState.Failed ||
+                problemSubmit is LessonViewModel.ProblemSubmitState.Failed -> "FAILED"
+
+        else -> null
+    }
+
+    LaunchedEffect(navTarget) {
+        if (navTarget == null || navigated) return@LaunchedEffect
+        navigated = true
+        when (navTarget) {
+            "401" -> {
                 navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
+                    launchSingleTop = true
+                    restoreState = false
                 }
             }
-            LessonViewModel.UiState.NotFound -> {
-                navigated = true
+            "404" -> {
                 navController.navigate("error/404") {
-                   launchSingleTop = true; restoreState = false
+                    launchSingleTop = true
+                    restoreState = false
                 }
             }
-            LessonViewModel.UiState.Failed -> {
-                navigated = true
-                onSessionExpired()
+            "FAILED" -> {
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
             }
-            else -> Unit
         }
     }
 
-    LaunchedEffect(problemSubmit) {
-        when (problemSubmit) {
-            LessonViewModel.SubmitState.SessionExpired ->  {
-                navigated = true
-                navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
-                }
+    when (ui) {
+        LessonViewModel.UiState.Loading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
-            LessonViewModel.SubmitState.NotFound -> {
-                navigated = true
-                navController.navigate("error/404") {
-                    launchSingleTop = true; restoreState = false
-                }
-            }
-            LessonViewModel.SubmitState.Failed -> {
-                navigated = true
-                onSessionExpired()
-            }
-            else -> Unit
         }
+
+        is LessonViewModel.UiState.Success -> {
+            val s = (ui as LessonViewModel.UiState.Success).data
+            val problems = s.problems
+            val declaredTotal = s.totalProblems
+            val rawTotal = if (declaredTotal > 0) declaredTotal else problems.size
+            val problemSlots: List<Problems> = remember(problems, rawTotal) {
+                (0 until rawTotal)
+                    .mapNotNull { idx -> problems.getOrNull(idx) }
+            }
+            val total = problemSlots.size
+
+            LaunchedEffect(problems) {
+                vm.initBookmarks(problems)
+            }
+
+            fun submitSingleProblem(problemId: Int, isCorrect: Boolean) {
+                vm.submitProblemResults(
+                    ProblemSubmissionRequests(problemId, isCorrect)
+                ) { ok ->
+
+                }
+            }
+
+            val bookmarkMap by vm.bookmark.collectAsState()
+            val unitTitle = s.unitSummary.title
+
+            ProblemUI(
+                navController = navController,
+                unitTitle = s.unitSummary.title,
+                problems = problemSlots,
+                total = total,
+                swVm = swVm,
+                onRecordResult = { id, correct ->
+                    submitSingleProblem(id, correct)
+                },
+                bookmarkMap = bookmarkMap,
+                onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
+                onFinishLesson = {
+                    navController.navigate("lessonList/$unitId/$unitTitle") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                type = type,
+                onRemoveWrongNote = { problemId ->
+                    if (type == "wrong-answered-notes") {
+                        vm.removeWrongAnswered(problemId) { ok ->
+                        }
+                    }
+                },
+                unitId = unitId
+            )
+
+        }
+        else -> Unit
     }
 
     var showLoading by rememberSaveable { mutableStateOf(true) }
@@ -115,59 +178,5 @@ fun BookWrongScreen(
     }
     if (showLoading) {
         LoadingScreen()
-        return
     }
-
-    val s = ui as? LessonViewModel.UiState.Success?: return
-    val problems = s.data.problems
-    val declaredTotal = s.data.totalProblems
-    val rawTotal = if (declaredTotal > 0) declaredTotal else problems.size
-    val problemSlots: List<Problems> = remember(problems, rawTotal) {
-        (0 until rawTotal)
-            .mapNotNull { idx -> problems.getOrNull(idx) }
-    }
-    val total = problemSlots.size
-
-    LaunchedEffect(problems) {
-        vm.initBookmarks(problems)
-    }
-
-    fun submitSingleProblem(problemId: Int, isCorrect: Boolean) {
-        vm.submitProblemResults(
-            ProblemSubmissionRequests(problemId, isCorrect)
-        ) { ok ->
-
-        }
-    }
-
-    val bookmarkMap by vm.bookmark.collectAsState()
-    val unitTitle = s.data.unitSummary.title
-
-    ProblemUI(
-        navController = navController,
-        unitTitle = s.data.unitSummary.title,
-        problems = problemSlots,
-        total = total,
-        swVm = swVm,
-        onRecordResult = { id, correct ->
-            submitSingleProblem(id, correct)
-        },
-        bookmarkMap = bookmarkMap,
-        onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
-        onFinishLesson = {
-            navController.navigate("lessonList/$unitId/$unitTitle") {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
-            }
-        },
-        type = type,
-        onRemoveWrongNote = { problemId ->
-            if (type == "wrong-answered-notes") {
-                vm.removeWrongAnswered(problemId) { ok ->
-                }
-            }
-        },
-        unitId = unitId
-    )
-
 }

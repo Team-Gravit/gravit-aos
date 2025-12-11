@@ -69,10 +69,24 @@ fun HomeScreen(
 
     var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
-    when (ui) {
-        HomeViewModel.UiState.SessionExpired -> {
-            navController.navigate("error/401")
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            HomeViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401")
+            }
+            HomeViewModel.UiState.NotFound -> {
+                onSessionExpired()
+            }
+            HomeViewModel.UiState.Failed -> {
+                onSessionExpired()
+            }
+            else -> Unit
         }
+    }
+    when (ui) {
         HomeViewModel.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -85,11 +99,8 @@ fun HomeScreen(
                 navController = navController
             )
         }
-        else -> {
-            NotFoundScreen(navController = navController)
-        }
+        else -> Unit
     }
-
 }
 
 @Composable

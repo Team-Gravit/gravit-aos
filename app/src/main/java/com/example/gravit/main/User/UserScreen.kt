@@ -100,7 +100,16 @@ fun UserScreen(
                 CircularProgressIndicator()
             }
         }
-        else ->  NotFoundScreen(navController = navController)
+        UserScreenVM.UiState.NotFound -> {
+            navController.navigate("error/404")
+        }
+        UserScreenVM.UiState.Failed -> {
+            navController.navigate("home") {
+                popUpTo("home") { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        else -> Unit
     }
 
     val s = (ui as? UserScreenVM.UiState.Success)?.data

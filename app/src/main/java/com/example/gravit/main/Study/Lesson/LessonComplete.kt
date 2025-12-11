@@ -1,5 +1,6 @@
 package com.example.gravit.main.Study.Lesson
 
+import android.R.attr.data
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,7 +57,6 @@ import androidx.navigation.NavController
 import com.example.gravit.api.LessonSubmissionSaveRequest
 import com.example.gravit.api.ProblemSubmissionRequests
 import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.main.Study.Problem.FormatSeconds
 import com.example.gravit.main.Home.LevelGauge
 import com.example.gravit.main.Study.Problem.LessonVMFactory
@@ -65,7 +65,6 @@ import com.example.gravit.ui.theme.pretendard
 @Composable
 fun LessonComplete(
     navController: NavController,
-    unitTitle: String,
     accuracy: Float,
     learningTime: Int,
     lessonId: Int,
@@ -99,6 +98,12 @@ fun LessonComplete(
                     launchSingleTop = true; restoreState = false
                 }
             }
+            LessonViewModel.SubmitState.Failed -> {
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
             else -> Unit
         }
     }
@@ -119,7 +124,7 @@ fun LessonComplete(
                     .background(Color.White)
             ) {
                 Text(
-                    text = unitTitle,
+                    text = unitSummary?.title ?: "",
                     fontSize = 20.sp,
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Bold,

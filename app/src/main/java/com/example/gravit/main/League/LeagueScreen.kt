@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -78,7 +79,9 @@ import androidx.navigation.NavController
 import com.example.gravit.R
 import com.example.gravit.api.LastSeasonPopupDto
 import com.example.gravit.api.LeagueItem
+import com.example.gravit.api.MyLeague
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.api.SeasonPopupResponse
 import com.example.gravit.main.Home.LeagueGauge
 import com.example.gravit.ui.theme.ProfilePalette
 import com.example.gravit.ui.theme.TierPalette
@@ -96,6 +99,7 @@ fun LeagueScreen(
 ) {
     val context = LocalContext.current
     val vm: LeagueViewModel = viewModel(factory = LeagueVMFactory(RetrofitInstance.api, context))
+
     val ui by vm.state.collectAsState()
     val myLeagueState by vm.myLeague.collectAsState()
     val seasonState by vm.seasonPopup.collectAsState()
@@ -109,6 +113,7 @@ fun LeagueScreen(
 
     val sessionExpired by vm.sessionExpired.collectAsState()
     val notFound by vm.notFound.collectAsState()
+
     var navigated by remember { mutableStateOf(false) }
     //세션 만료
     val navTarget: String? = when {
@@ -125,6 +130,7 @@ fun LeagueScreen(
 
         else -> null
     }
+
     LaunchedEffect(navTarget) {
         if (navTarget == null || navigated) return@LaunchedEffect
         navigated = true
@@ -139,27 +145,57 @@ fun LeagueScreen(
                     launchSingleTop = true; restoreState = false
                 }
             }
-            "FAILED" -> onSessionExpired()
-        }
-    }
-
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(listState, ui.items.size) {
-        snapshotFlow {
-            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            val total = listState.layoutInfo.totalItemsCount
-            if (last != null) last to total else null
-        }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .collect { (lastVisible, total) ->
-                if (lastVisible >= total - 3) vm.loadNextL()
+            "FAILED" -> {
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
             }
+        }
     }
-    val my = (myLeagueState as? LeagueViewModel.MyLeagueState.Success)?.data
-    val myLeagueId = my?.leagueId
-    val season = (seasonState as? LeagueViewModel.SeasonPopupState.Ready)?.data
+
+    when{
+        myLeagueState is LeagueViewModel.MyLeagueState.Loading ||
+                seasonState   is LeagueViewModel.SeasonPopupState.Loading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        myLeagueState is LeagueViewModel.MyLeagueState.Success &&
+                seasonState   is LeagueViewModel.SeasonPopupState.Ready -> {
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(listState, ui.items.size) {
+                snapshotFlow {
+                    val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                    val total = listState.layoutInfo.totalItemsCount
+                    if (last != null) last to total else null
+                }
+                    .filterNotNull()
+                    .distinctUntilChanged()
+                    .collect { (lastVisible, total) ->
+                        if (lastVisible >= total - 3) vm.loadNextL()
+                    }
+            }
+            val my = (myLeagueState as LeagueViewModel.MyLeagueState.Success).data
+            val season = (seasonState as LeagueViewModel.SeasonPopupState.Ready).data
+
+            LeagueUI(my, vm, checkLeague, season, listState, ui, seasonState)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun LeagueUI(
+    my: MyLeague,
+    vm: LeagueViewModel,
+    checkLeague: Boolean,
+    season: SeasonPopupResponse,
+    listState: LazyListState,
+    ui: LeagueViewModel.PagingUi,
+    seasonState: LeagueViewModel.SeasonPopupState
+){
     val shadow = with(LocalDensity.current) {
         Shadow(
             color = Color.Black.copy(alpha = 0.25f),
@@ -174,7 +210,7 @@ fun LeagueScreen(
         .background(Color(0xFFF2F2F2)))
     {
         Column(modifier = Modifier.fillMaxSize()) {
-            my?.let { rank -> //내 랭킹
+            my.let { rank -> //내 랭킹
                 Surface(
                     shadowElevation = 5.dp,
                     color = Color.White
@@ -199,7 +235,7 @@ fun LeagueScreen(
                                     color = Color.Black,
                                     fontSize = 18.sp,
                                     fontFamily = pretendard,
-                                    )){
+                                )){
                                     append("등")
                                 }
                             },
@@ -297,7 +333,7 @@ fun LeagueScreen(
                     }
                 }
             }
-            val seasonName = season?.currentSeason?.nowSeason
+            val seasonName = season.currentSeason.nowSeason
             if(checkLeague){
                 SeasonFinish(seasonName)
             }else{
@@ -307,7 +343,7 @@ fun LeagueScreen(
                     Column {
                         Spacer(Modifier.height(24.dp))
                         Text(
-                            text = seasonName ?: "시즌 정보 없음",
+                            text = seasonName,
                             color = Color(0xFF8A00B8),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             style = TextStyle(
@@ -341,7 +377,7 @@ fun LeagueScreen(
                             }
                         }
                         Spacer(Modifier.height(20.dp))
-                        TierSelector(vm = vm, initialLeagueId = myLeagueId)
+                        TierSelector(vm = vm, initialLeagueId = my.leagueId)
                         Spacer(Modifier.height(20.dp))
                     }
                 }
@@ -390,7 +426,7 @@ fun LeagueScreen(
                                             text = "더이상 유저가 없습니다.",
                                             fontFamily = pretendard,
                                             color = Color.Black
-                                            )
+                                        )
                                     }
                                 }
                                 ui.error != null -> {
@@ -400,7 +436,7 @@ fun LeagueScreen(
                                             .padding(16.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(ui.error!!)
+                                        Text(ui.error)
                                         Spacer(Modifier.height(8.dp))
                                         OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
                                     }

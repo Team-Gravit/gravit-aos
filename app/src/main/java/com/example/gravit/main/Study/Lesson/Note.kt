@@ -32,9 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -133,11 +131,6 @@ fun NoteSheetCustom(
     val animatedRatio by animateFloatAsState(targetRatio, label = "sheetRatio")
 
     var dragAmount by remember { mutableStateOf(0f) }
-
-    val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
-    val screenHeightDp = configuration.screenHeightDp.dp
-    val sheetHeightDp = screenHeightDp * animatedRatio
 
     Box(
         modifier = Modifier.fillMaxSize()

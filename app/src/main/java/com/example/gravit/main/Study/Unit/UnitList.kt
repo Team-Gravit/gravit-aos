@@ -99,10 +99,18 @@ fun UnitList(
         }
 
         UnitListVM.UiState.SessionExpired -> {
-            onSessionExpired()
+            navController.navigate("error/401") {
+                launchSingleTop = true
+                restoreState = false
+            }
         }
 
-        UnitListVM.UiState.NotFound,
+        UnitListVM.UiState.NotFound -> {
+            navController.navigate("error/404") {
+                launchSingleTop = true
+                restoreState = false
+            }
+        }
         UnitListVM.UiState.Failed -> {
             Box(
                 modifier = Modifier
