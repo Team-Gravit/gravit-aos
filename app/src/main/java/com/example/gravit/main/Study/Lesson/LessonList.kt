@@ -72,6 +72,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.api.ChapterSummary
+import com.example.gravit.api.LessonSummaries
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.main.Study.Problem.CustomSnackBar
 import kotlinx.coroutines.delay
@@ -92,197 +94,239 @@ fun LessonList(
 
     LaunchedEffect(Unit) { vm.load(unitId) }
 
-    val s = (ui as? LessonListVM.UiState.Success)?.data
-    val chapterSummary = s?.chapterSummary
-    val chapterId = chapterSummary?.chapterId ?: 1
-    val lessonSummaries = s?.lessonSummaries ?: emptyList()
-    val bookmarkAccessible = s?.bookmarkAccessible ?: false
-    val wrongAnsweredNoteAccessible = s?.wrongAnsweredNoteAccessible ?: false
+    var navigated by remember { mutableStateOf(false) }
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
 
-    var snackBar by remember { mutableStateOf<String?>(null) }
-
-    var sheetState by remember { mutableStateOf(SheetState.Hidden) }
-
+        when (ui) {
+            LessonListVM.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    launchSingleTop = true; restoreState = false
+                }
+            }
+            LessonListVM.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    launchSingleTop = true; restoreState = false
+                }
+            }
+            LessonListVM.UiState.Failed -> {
+                navigated = true
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            else -> Unit
+        }
+    }
 
     when (ui) {
-        LessonListVM.UiState.SessionExpired -> {
-            navController.navigate("error/401") {
-                launchSingleTop = true; restoreState = false
-            }
-        }
         LessonListVM.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
-        LessonListVM.UiState.NotFound -> {
-            navController.navigate("error/404") {
-                launchSingleTop = true; restoreState = false
-            }
+
+        is LessonListVM.UiState.Success -> {
+            val s = (ui as LessonListVM.UiState.Success).data
+            val chapterSummary = s.chapterSummary
+            val chapterId = chapterSummary.chapterId
+            val lessonSummaries = s.lessonSummaries
+            val bookmarkAccessible = s.bookmarkAccessible
+            val wrongAnsweredNoteAccessible = s.wrongAnsweredNoteAccessible
+            LessonListUI(
+                navController = navController,
+                chapterId = chapterId,
+                chapterSummary = chapterSummary,
+                unitId = unitId,
+                lessonSummaries = lessonSummaries,
+                bookmarkAccessible = bookmarkAccessible,
+                wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
+                unitTitle = unitTitle
+
+            )
         }
         else -> Unit
     }
-        Box(modifier = Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(id = R.drawable.unitlesson_back),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            Column(
+}
+
+
+@Composable
+fun LessonListUI(
+    navController: NavController,
+    chapterId: Int,
+    chapterSummary: ChapterSummary,
+    unitId: Int,
+    lessonSummaries: List<LessonSummaries>,
+    bookmarkAccessible: Boolean,
+    wrongAnsweredNoteAccessible: Boolean,
+    unitTitle: String
+){
+    var snackBar by remember { mutableStateOf<String?>(null) }
+    var sheetState by remember { mutableStateOf(SheetState.Hidden) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.unitlesson_back),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.statusBars.asPaddingValues())
+
+        ) {
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(WindowInsets.statusBars.asPaddingValues())
-
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
+                Icon(
+                    painter = painterResource(id = R.drawable.arrow_left),
+                    contentDescription = "back",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .size(24.dp)
+                        .clickable { navController.navigate("unit/$chapterId") },
+                    tint = Color.White
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = chapterSummary.title,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = pretendard,
+                    fontSize = 20.sp,
+                    color = Color.White
+                )
+                Spacer(Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(92.dp, 40.dp)
+                        .glow(
+                            color = Color(0xFFC52AFF),
+                            radius = 28.dp,
+                            cornerRadius = 9.dp
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color.White,
+                            shape = RoundedCornerShape(9.dp)
+                        )
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.arrow_left),
-                        contentDescription = "back",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable { navController.navigate("unit/$chapterId") },
-                        tint = Color.White
-                    )
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                        text = chapterSummary?.title ?: "",
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = pretendard,
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Box(
-                        modifier = Modifier
-                            .size(92.dp, 40.dp)
-                            .glow(
-                                color = Color(0xFFC52AFF),
-                                radius = 28.dp,
-                                cornerRadius = 9.dp
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = Color.White,
-                                shape = RoundedCornerShape(9.dp)
-                            )
+                    Button(
+                        onClick = { sheetState = SheetState.Half },
+                        shape = RoundedCornerShape(9.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFC52AFF),
+                            contentColor = Color.White
+                        ),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Button(
-                            onClick = { sheetState = SheetState.Half },
-                            shape = RoundedCornerShape(9.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFC52AFF),
-                                contentColor = Color.White
-                            ),
-                            contentPadding = PaddingValues(0.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Text(
-                                text = "개념노트",
-                                fontFamily = pretendard,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                style = TextStyle(
-                                    shadow = Shadow(
-                                        color = Color.Black.copy(alpha = 0.25f),
-                                        offset = Offset(1f, 1f),
-                                        blurRadius = 1f
-                                    )
+                        Text(
+                            text = "개념노트",
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            style = TextStyle(
+                                shadow = Shadow(
+                                    color = Color.Black.copy(alpha = 0.25f),
+                                    offset = Offset(1f, 1f),
+                                    blurRadius = 1f
                                 )
                             )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    text = "나의 문제",
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = pretendard,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-                Spacer(Modifier.height(16.dp))
-                Selector(
-                    unitId = unitId,
-                    navController = navController,
-                    bookmarkAccessible = bookmarkAccessible,
-                    wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
-                    onShowSnackBar = { t -> snackBar = t }
-                )
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    text = "문제 리스트",
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = pretendard,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-                Spacer(Modifier.height(20.dp))
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    itemsIndexed(lessonSummaries) { index, lesson ->
-                        val columnCount = 3
-                        val isLastRow = index >= lessonSummaries.size - columnCount
-
-                        LessonBox(
-                            title = if ((index + 1) < 10) "Lesson0${index + 1}" else "Lesson${index + 1}",
-                            completed = lesson.isSolved,
-                            modifier = Modifier.padding(bottom = if (isLastRow) 20.dp else 0.dp),
-                            totalProblem = lesson.totalProblem,
-                            onClick = {
-                                navController.navigate(
-                                    "lesson/${lesson.lessonId}"
-                                )
-                            }
                         )
                     }
                 }
             }
-
-            AnimatedVisibility(
-                visible = sheetState != SheetState.Hidden,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = "나의 문제",
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = pretendard,
+                fontSize = 20.sp,
+                color = Color.White,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+            Selector(
+                unitId = unitId,
+                navController = navController,
+                bookmarkAccessible = bookmarkAccessible,
+                wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
+                onShowSnackBar = { t -> snackBar = t }
+            )
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = "문제 리스트",
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = pretendard,
+                fontSize = 20.sp,
+                color = Color.White,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+            Spacer(Modifier.height(20.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                NoteSheetCustom(
-                    unitId = unitId,
-                    title = unitTitle,
-                    sheetState = sheetState,
-                    onStateChange = { newState -> sheetState = newState },
-                    onDismiss = { sheetState = SheetState.Hidden }
-                )
-            }
+                itemsIndexed(lessonSummaries) { index, lesson ->
+                    val columnCount = 3
+                    val isLastRow = index >= lessonSummaries.size - columnCount
 
-            if (snackBar != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 19.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CustomSnackBar(text = snackBar!!)
-                    LaunchedEffect(snackBar) {
-                        delay(2000)
-                        snackBar = null
-                    }
+                    LessonBox(
+                        title = if ((index + 1) < 10) "Lesson0${index + 1}" else "Lesson${index + 1}",
+                        completed = lesson.isSolved,
+                        modifier = Modifier.padding(bottom = if (isLastRow) 20.dp else 0.dp),
+                        totalProblem = lesson.totalProblem,
+                        onClick = {
+                            navController.navigate(
+                                "lesson/${lesson.lessonId}"
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = sheetState != SheetState.Hidden,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it })
+        ) {
+            NoteSheetCustom(
+                unitId = unitId,
+                title = unitTitle,
+                sheetState = sheetState,
+                onStateChange = { newState -> sheetState = newState },
+                onDismiss = { sheetState = SheetState.Hidden }
+            )
+        }
+
+        if (snackBar != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 19.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(text = snackBar!!)
+                LaunchedEffect(snackBar) {
+                    delay(2000)
+                    snackBar = null
                 }
             }
         }
     }
-
+}
 
 data class SelectorItem(
     val title: String,

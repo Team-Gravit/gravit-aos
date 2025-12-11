@@ -1,5 +1,9 @@
 package com.example.gravit.main.Study.Lesson
 
+import android.R.attr.type
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -11,6 +15,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -20,6 +26,7 @@ import androidx.navigation.NavController
 import com.example.gravit.api.ProblemSubmissionRequests
 import com.example.gravit.api.Problems
 import com.example.gravit.api.RetrofitInstance
+import com.example.gravit.main.Home.HomeViewModel
 import com.example.gravit.main.Study.Problem.LessonVMFactory
 import com.example.gravit.main.Study.Problem.LessonViewModel
 import com.example.gravit.main.Study.Problem.LoadingScreen
@@ -84,8 +91,10 @@ fun LessonScreen(
                 }
             }
             LessonViewModel.UiState.Failed -> {
-                navigated = true
-                onSessionExpired()
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
             }
             else -> Unit
         }
@@ -139,7 +148,7 @@ fun LessonScreen(
 
 
         navController.currentBackStackEntry?.savedStateHandle?.set("problemList", problemSubmissionRequests)
-        navController.navigate("lesson/complete/${s.data.unitSummary.title}/${accuracy}/${learningTime}/${lessonId}")
+        navController.navigate("lesson/complete/${accuracy}/${learningTime}/${lessonId}")
 
     }
     val bookmarkMap by vm.bookmark.collectAsState()

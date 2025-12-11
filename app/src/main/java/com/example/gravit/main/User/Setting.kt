@@ -93,16 +93,10 @@ fun Setting(
         when (deleteState) {
             DeleteAccountVM.DeletionState.NotFound -> {
                 if (isDeletionPending(context)) return@LaunchedEffect
-                navController.navigate("error/404") {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                    launchSingleTop = true; restoreState = false
-                }
+                navController.navigate("error/404")
             }
             DeleteAccountVM.DeletionState.SessionExpired -> {
-                navController.navigate("error/401") {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                    launchSingleTop = true; restoreState = false
-                }
+                navController.navigate("error/401")
             }
             else -> Unit
         }

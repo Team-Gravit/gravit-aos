@@ -145,22 +145,19 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lesson/complete/{unitTitle}/{accuracy}/{learningTime}/{lessonId}",
+                    route = "lesson/complete/{accuracy}/{learningTime}/{lessonId}",
                     arguments = listOf(
-                        navArgument("unitTitle") { type = NavType.StringType },
                         navArgument("accuracy") { type = NavType.FloatType },
                         navArgument("learningTime") { type = NavType.IntType },
                         navArgument("lessonId") { type = NavType.IntType },
                     )
                 ) { backStackEntry ->
-                    val unitTitle = backStackEntry.arguments!!.getString("unitTitle").orEmpty()
                     val accuracy = backStackEntry.arguments!!.getFloat("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
                     val lessonId = backStackEntry.arguments!!.getInt("lessonId")
 
                     LessonComplete(
                         navController = innerNavController,
-                        unitTitle = unitTitle,
                         accuracy = accuracy,
                         learningTime = learningTime,
                         lessonId = lessonId

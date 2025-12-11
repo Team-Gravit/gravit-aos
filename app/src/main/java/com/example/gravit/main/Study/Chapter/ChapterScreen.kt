@@ -57,7 +57,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.example.gravit.api.ChapterPageResponse
-import com.example.gravit.ui.theme.Responsive
 import com.example.gravit.main.Home.RoundedGauge
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,8 +64,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
-import com.example.gravit.error.NotFoundScreen
-import com.example.gravit.error.UnauthorizedScreen
 
 
 @Composable
@@ -82,18 +79,40 @@ fun ChapterScreen(
 
     var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
-    when (ui) {
-        ChapterViewModel.UiState.SessionExpired -> {
-            UnauthorizedScreen(
-                navController = navController,
-                onSessionExpired = onSessionExpired
-            )
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            ChapterViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    launchSingleTop = true; restoreState = false
+                }
+            }
+            ChapterViewModel.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    launchSingleTop = true; restoreState = false
+                }
+            }
+            ChapterViewModel.UiState.Failed -> {
+                navigated = true
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            else -> Unit
         }
+    }
+
+    when (ui) {
         ChapterViewModel.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
+
         is ChapterViewModel.UiState.Success -> {
             val chapters = (ui as ChapterViewModel.UiState.Success).data
             ChapterUI(
@@ -101,12 +120,8 @@ fun ChapterScreen(
                 chapters = chapters
             )
         }
-
-        else -> {
-            NotFoundScreen(navController = navController)
-        }
+        else -> Unit
     }
-
 }
 
 @Composable

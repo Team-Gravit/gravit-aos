@@ -54,14 +54,14 @@ fun DeletionGuard(
 
             DeleteAccountVM.DeletionState.SessionExpired -> {
                 navController.navigate("error/401") {
-                    popUpTo(0) { inclusive = true }
                     launchSingleTop = true
+                    restoreState = false
                 }
             }
             DeleteAccountVM.DeletionState.NotFound -> {
                 navController.navigate("error/404") {
-                    popUpTo(0) { inclusive = true }
                     launchSingleTop = true
+                    restoreState = false
                 }
             }
             else -> Unit
