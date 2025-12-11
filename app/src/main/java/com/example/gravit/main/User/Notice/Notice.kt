@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.TopBar
+import com.example.gravit.main.User.TopBar
 import com.example.gravit.ui.theme.pretendard
 import kotlin.math.max
 import kotlin.math.min
@@ -40,6 +39,7 @@ fun Notice(navController: NavController) {
     val ctx = LocalContext.current
     val vm: NoticeListVM = viewModel(factory = NoticeListVMFactory(ctx))
     val ui by vm.state.collectAsState()
+
     val pageSize = 4
     var currentPage by rememberSaveable { mutableStateOf(0) }
 
@@ -70,6 +70,7 @@ fun Notice(navController: NavController) {
             .background(Color.White)
     ) {
         TopBar(navController, title = "공지사항")
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,7 +88,7 @@ fun Notice(navController: NavController) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
-                    ){
+                    ) {
                         Text(
                             text = item.title,
                             fontSize = 20.sp,
@@ -128,6 +129,11 @@ fun Notice(navController: NavController) {
         Spacer(modifier = Modifier.height(15.dp))
 
         if (totalPages > 1) {
+            val pageWindowSize = 5
+
+            val windowStart = (currentPage / pageWindowSize) * pageWindowSize
+            val windowEnd = min(windowStart + pageWindowSize, totalPages)
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -148,7 +154,8 @@ fun Notice(navController: NavController) {
                             }
                         }
                 )
-                for (page in 0 until totalPages) {
+
+                for (page in windowStart until windowEnd) {
                     val isSelected = page == currentPage
                     Text(
                         text = (page + 1).toString(),
@@ -164,6 +171,7 @@ fun Notice(navController: NavController) {
                             }
                     )
                 }
+
                 val isLastLocalPage = currentPage >= totalPages - 1
                 val canLoadMoreFromServer = ui.hasNext
 

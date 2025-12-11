@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.R
-import com.example.gravit.TopBar
+import com.example.gravit.main.User.TopBar
 import com.example.gravit.api.FriendUserSummary
 import com.example.gravit.api.RetrofitInstance
 import com.example.gravit.navigation.FollowTab

@@ -1,6 +1,5 @@
-package com.example.gravit
+package com.example.gravit.main.User
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.gravit.R
 import com.example.gravit.ui.theme.pretendard
 
 @Composable

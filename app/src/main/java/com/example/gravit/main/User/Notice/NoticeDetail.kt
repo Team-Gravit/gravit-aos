@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.TopBar
+import com.example.gravit.main.User.TopBar
 import com.example.gravit.ui.theme.pretendard
 
 @Composable
