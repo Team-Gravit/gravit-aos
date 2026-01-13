@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Setting
+package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -12,13 +12,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.main.User.TopBar
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.login.CustomButton
-import com.example.gravit.login.NameInputFiled
-import com.example.gravit.login.ProfileSwitcher
-import com.example.gravit.login.isValidNickname
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.login.CustomButton
+import com.inuappcenter.gravit.login.NameInputFiled
+import com.inuappcenter.gravit.login.ProfileSwitcher
+import com.inuappcenter.gravit.login.isValidNickname
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
 fun Account(

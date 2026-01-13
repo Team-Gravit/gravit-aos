@@ -1,4 +1,4 @@
-package com.example.gravit.main
+package com.inuappcenter.gravit.main
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,8 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import com.example.gravit.ui.theme.pretendard
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.inuappcenter.gravit.ui.theme.pretendard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

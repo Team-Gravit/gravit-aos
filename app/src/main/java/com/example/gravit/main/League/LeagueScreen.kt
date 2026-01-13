@@ -1,5 +1,6 @@
-package com.example.gravit.main.League
+package com.inuappcenter.gravit.main.League
 
+import android.R.attr.bottom
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -18,6 +19,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -76,17 +80,17 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.LastSeasonPopupDto
-import com.example.gravit.api.LeagueItem
-import com.example.gravit.api.MyLeague
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.api.SeasonPopupResponse
-import com.example.gravit.main.Home.LeagueGauge
-import com.example.gravit.ui.theme.ProfilePalette
-import com.example.gravit.ui.theme.TierPalette
-import com.example.gravit.ui.theme.mbc1961
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.LastSeasonPopupDto
+import com.inuappcenter.gravit.api.LeagueItem
+import com.inuappcenter.gravit.api.MyLeague
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.SeasonPopupResponse
+import com.inuappcenter.gravit.main.Home.LeagueGauge
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.TierPalette
+import com.inuappcenter.gravit.ui.theme.mbc1961
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlin.math.abs
@@ -137,12 +141,22 @@ fun LeagueScreen(
         when (navTarget) {
             "401" -> {
                 navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             "404" -> {
                 navController.navigate("error/404") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             "FAILED" -> {
@@ -209,7 +223,11 @@ fun LeagueUI(
         .padding(WindowInsets.statusBars.asPaddingValues())
         .background(Color(0xFFF2F2F2)))
     {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
             my.let { rank -> //내 랭킹
                 Surface(
                     shadowElevation = 5.dp,
@@ -388,58 +406,54 @@ fun LeagueUI(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
-
-                Box(
+                LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxSize()
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(ui.items, key = { it.userId }) { item ->
-                            RankCell(item = item)
-                        }
+                    items(ui.items, key = { it.userId }) { item ->
+                        RankCell(item = item)
+                    }
 
-                        item {
-                            when {
-                                ui.isLoading -> {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                    }
+                    item {
+                        when {
+                            ui.isLoading -> {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
                                 }
-                                ui.endReached -> {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "더이상 유저가 없습니다.",
-                                            fontFamily = pretendard,
-                                            color = Color.Black
-                                        )
-                                    }
+                            }
+                            ui.endReached -> {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "더이상 유저가 없습니다.",
+                                        fontFamily = pretendard,
+                                        color = Color.Black
+                                    )
                                 }
-                                ui.error != null -> {
-                                    Column(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(ui.error)
-                                        Spacer(Modifier.height(8.dp))
-                                        OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
-                                    }
+                            }
+                            ui.error != null -> {
+                                Column(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(ui.error)
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
                                 }
                             }
                         }
@@ -621,7 +635,7 @@ private fun RankCell(
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .height(54.dp)
+            .heightIn(min = 54.dp)
             .background(Color(0xFFFFFFFF), RoundedCornerShape(16.dp))
             .border(1.dp, Color(0xFFDCDCDC), RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp)),

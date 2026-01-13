@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Friend
+package com.inuappcenter.gravit.main.User.Friend
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,13 +28,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.main.User.TopBar
-import com.example.gravit.api.FriendUserSummary
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.navigation.FollowTab
-import com.example.gravit.ui.theme.ProfilePalette
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.FriendUserSummary
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.navigation.FollowTab
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
+import kotlin.collections.isNotEmpty
 
 @Composable
 fun FollowList(
@@ -62,13 +63,21 @@ fun FollowList(
     }
 
     if (ui.sessionExpired) {
-        navController.navigate("error/404")
+        navController.navigate("error/404"){
+            popUpTo(
+                navController.currentBackStackEntry?.destination?.id ?: return@navigate
+            ) {
+                inclusive = true
+            }
+            launchSingleTop = true
+        }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .navigationBarsPadding()
     ) {
         TopBar(navController, title = "팔로우 / 팔로잉")
 
@@ -195,7 +204,8 @@ private fun FollowerListContent(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 30.dp)
         ) {
             if (items.isNotEmpty()) {
                 items(items) { user ->
@@ -247,7 +257,8 @@ private fun FollowingListContent(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 30.dp)
         ) {
             if (items.isNotEmpty()) {
                 items(items) { user ->

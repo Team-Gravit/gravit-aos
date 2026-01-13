@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Friend
+package com.inuappcenter.gravit.main.User.Friend
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -34,12 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.main.User.TopBar
-import com.example.gravit.api.FriendItem
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.ProfilePalette
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.FriendItem
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun AddFriend(navController: NavController) {
@@ -53,7 +53,14 @@ fun AddFriend(navController: NavController) {
     val ui by vm.state.collectAsState()
 
     if (ui.sessionExpired) {
-        navController.navigate("error/404")
+        navController.navigate("error/404"){
+            popUpTo(
+                navController.currentBackStackEntry?.destination?.id ?: return@navigate
+            ) {
+                inclusive = true
+            }
+            launchSingleTop = true
+        }
     }
 
     Box(
@@ -61,7 +68,11 @@ fun AddFriend(navController: NavController) {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
             TopBar(navController, title = "친구 추가")
 
             FriendSearchBar(
@@ -226,7 +237,8 @@ fun FriendResultList(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 30.dp)
         ) {
             items(items) { friend ->
                 FriendRow(

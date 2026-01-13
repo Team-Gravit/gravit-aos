@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Lesson
+package com.inuappcenter.gravit.main.Study.Lesson
 
 import android.widget.TextView
 import androidx.compose.animation.core.animateFloatAsState
@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.ui.theme.pretendard
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.html.HtmlPlugin
@@ -229,8 +229,9 @@ fun NoteSheetCustom(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(bottom = 80.dp)
                 ) {
-                    Column {
+                    Column{
                         MarkdownText(noteText)
                         Spacer(Modifier.height(25.dp))
                     }

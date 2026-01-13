@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Unit
+package com.inuappcenter.gravit.main.Study.Unit
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,11 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.api.UnitDetail
-import com.example.gravit.api.UnitPageResponse
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.UnitDetail
+import com.inuappcenter.gravit.api.UnitPageResponse
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -100,27 +100,35 @@ fun UnitList(
 
         UnitListVM.UiState.SessionExpired -> {
             navController.navigate("error/401") {
+                popUpTo(
+                    navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                ) {
+                    inclusive = true
+                }
                 launchSingleTop = true
-                restoreState = false
             }
         }
 
         UnitListVM.UiState.NotFound -> {
             navController.navigate("error/404") {
+                popUpTo(
+                    navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                ) {
+                    inclusive = true
+                }
                 launchSingleTop = true
-                restoreState = false
             }
         }
         UnitListVM.UiState.Failed -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black),
+                    .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "유닛 정보를 불러오지 못했어요.",
-                    color = Color.White,
+                    color = Color.Black,
                     fontFamily = pretendard
                 )
             }
@@ -158,6 +166,8 @@ private fun UnitListContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
+                .navigationBarsPadding()
+
         ) {
             Box(
                 modifier = Modifier
@@ -174,7 +184,23 @@ private fun UnitListContent(
                         modifier = Modifier
                             .padding(start = 18.dp)
                             .size(20.dp)
-                            .clickable { navController.navigate("chapter") },
+                            .clickable {
+
+                                val popped = navController.popBackStack(
+                                    route = "chapter",
+                                    inclusive = false
+                                )
+
+                                if (!popped) {
+                                    navController.navigate("chapter") {
+                                        popUpTo("unit/{chapterId}") {
+                                            inclusive = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = false
+                                    }
+                                }
+                            },
                         tint = Color.White
                     )
 
@@ -206,8 +232,10 @@ private fun UnitListContent(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 80.dp)
                     ) {
                         itemsIndexed(units) { _, unit ->
                             UnitItemBox(
@@ -243,7 +271,6 @@ private fun UnitItemBox(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
             .clip(RoundedCornerShape(8.dp))
             .border(width = 1.dp, color = Color(0xFF8B69FF), RoundedCornerShape(8.dp))
             .clickable {

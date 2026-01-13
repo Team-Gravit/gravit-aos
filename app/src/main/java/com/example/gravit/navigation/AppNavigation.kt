@@ -1,4 +1,4 @@
-package com.example.gravit.navigation
+package com.inuappcenter.gravit.navigation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
@@ -6,11 +6,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.gravit.login.LoginScreen
-import com.example.gravit.login.LoginViewModel
-import com.example.gravit.login.ProfileFinish
-import com.example.gravit.login.ProfileSetting
-import com.example.gravit.splash.SplashScreen
+import com.inuappcenter.gravit.login.LoginScreen
+import com.inuappcenter.gravit.login.LoginViewModel
+import com.inuappcenter.gravit.login.ProfileFinish
+import com.inuappcenter.gravit.login.ProfileSetting
+import com.inuappcenter.gravit.splash.SplashScreen
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

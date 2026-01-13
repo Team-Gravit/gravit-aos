@@ -1,8 +1,8 @@
-package com.example.gravit.main.Study.Problem
-
+package com.inuappcenter.gravit.main.Study.Problem
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,8 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -24,9 +27,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.R
-import com.example.gravit.api.AnswerResponse
-import com.example.gravit.ui.theme.pretendard
+import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.inuappcenter.gravit.api.AnswerResponse
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 
 enum class FabState { HIDDEN, SUBMIT, NEXT }
@@ -43,10 +47,11 @@ fun ShortAnswer(
     isLast: Boolean,
     onNext: () -> Unit,
     showRemoveFromWrongNote: Boolean = false,
-    onRemoveFromWrongNote: () -> Unit = {}
+    onRemoveFromWrongNote: () -> Unit = {},
+    problemVm: ProblemViewModel
+
 ) {
     var removeSnackBarText by remember { mutableStateOf<String?>(null) }
-    var removedFromWrongNote by remember { mutableStateOf(false) }
 
     LaunchedEffect(removeSnackBarText) {
         if (removeSnackBarText != null) {
@@ -54,22 +59,23 @@ fun ShortAnswer(
             removeSnackBarText = null
         }
     }
+    val removedFromWrongNote = problemVm.isRemovedFromWrongNote(problemId)
 
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+    var inputFocused by remember(problemId) { mutableStateOf(false) }
 
-    var showCompleteButton by remember(problemId) { mutableStateOf(false) }
-    var readyToSubmit by remember(problemId) { mutableStateOf(false) }
 
-    LaunchedEffect(text) {
-        if (text.isBlank()) {
-            showCompleteButton = false
-            readyToSubmit = false
-        }
-    }
     Box(modifier = Modifier
         .fillMaxSize()
         .padding(horizontal = 16.dp)
+        .pointerInput(Unit) {
+            detectTapGestures(onTap = {
+                focusManager.clearFocus()
+                keyboard?.hide()
+            })
+        }
     ) {
         Column (modifier = Modifier.verticalScroll(rememberScrollState())){
             AnswerInputField(
@@ -77,17 +83,14 @@ fun ShortAnswer(
                 onValueChange = onTextChange,
                 submitted = submitted,
                 isCorrect = isCorrect,
+                focusRequester = focusRequester,
+                onFocusChange = { inputFocused = it },
                 onImeDone = {
-                    if (text.isNotBlank() && !submitted) {
-                        focusManager.clearFocus()
-                        keyboard?.hide()
-                        showCompleteButton = true
-                    }
+                    focusManager.clearFocus()
+                    keyboard?.hide()
                 }
             )
-            if (!submitted && text.isNotBlank() && showCompleteButton && !readyToSubmit) {
-                readyToSubmit = true
-            }
+
             if (submitted && isCorrect != null) {
                 Spacer(Modifier.height(12.dp))
                 Row (verticalAlignment = Alignment.CenterVertically) {
@@ -102,7 +105,7 @@ fun ShortAnswer(
                             color = Color(0xFFA8A8A8),
                             textDecoration = TextDecoration.Underline,
                             modifier = Modifier.clickable {
-                                removedFromWrongNote = true
+                                problemVm.removeFromWrongNote(problemId)
                                 onRemoveFromWrongNote()
                                 removeSnackBarText = "오답노트에서 제거되었아요."
                             }
@@ -114,53 +117,63 @@ fun ShortAnswer(
             }
 
         }
+        val canSubmit = text.isNotBlank()
+
         val fabState = when {
-            !submitted && readyToSubmit && text.isNotBlank() -> FabState.SUBMIT
             submitted -> FabState.NEXT
+            !submitted && !inputFocused -> FabState.SUBMIT
             else -> FabState.HIDDEN
         }
 
         if (fabState != FabState.HIDDEN) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(bottom = 20.dp)
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp)
             ) {
-                when (fabState) {
-                    FabState.SUBMIT -> {
-                        Image(
-                            painter = painterResource(id = R.drawable.check_on),
-                            contentDescription = "채점",
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clickable { if (!submitted) onSubmit() }
-                        )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    when (fabState) {
+                        FabState.SUBMIT -> {
+                            Image(
+                                painter = painterResource(id = R.drawable.check_on),
+                                contentDescription = "채점",
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clickable(enabled = canSubmit) {
+                                        focusManager.clearFocus()
+                                        keyboard?.hide()
+                                        onSubmit()
+                                    }
+                            )
+                        }
+                        FabState.NEXT -> {
+                            Image(
+                                painter = painterResource(id = R.drawable.next_on),
+                                contentDescription = "다음",
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clickable { onNext() }
+                            )
+                        }
+                        else -> Unit
                     }
-                    FabState.NEXT -> {
-                        Image(
-                            painter = painterResource(id = R.drawable.next_on),
-                            contentDescription = "다음",
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clickable { onNext() }
-                        )
+                }
+                if (removeSnackBarText != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                    ) {
+                        CustomSnackBar(removeSnackBarText!!)
                     }
-                    else -> Unit
                 }
             }
         }
-        if (removeSnackBarText != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 45.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                CustomSnackBar(removeSnackBarText!!)
-            }
-        }
     }
-
 }
 
 @Composable
@@ -169,8 +182,10 @@ fun FeedbackSubjective(
     answer: AnswerResponse
 ) {
     Column{
+        val answerText = answer.contents.joinToString(", ")
+
         Text(
-            text = if (isCorrect) "정답입니다!" else "정답: ${answer.content}",
+            text = if (isCorrect) "정답입니다!" else "정답: $answerText",
             color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
             fontFamily = pretendard,
             fontWeight = FontWeight.SemiBold,
@@ -197,6 +212,8 @@ fun AnswerInputField(
     isCorrect: Boolean?,
     modifier: Modifier = Modifier,
     placeholder: String = "정답을 입력해주세요.",
+    focusRequester: FocusRequester = FocusRequester(),
+    onFocusChange: (Boolean) -> Unit = {},
     onImeDone: (() -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -230,7 +247,11 @@ fun AnswerInputField(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .onFocusChanged { focused = it.isFocused },
+                .focusRequester(focusRequester)
+                .onFocusChanged {
+                    focused = it.isFocused
+                    onFocusChange(it.isFocused)
+            },
             shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,

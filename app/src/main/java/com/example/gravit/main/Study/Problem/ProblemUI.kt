@@ -1,5 +1,6 @@
-package com.example.gravit.main.Study.Problem
+package com.inuappcenter.gravit.main.Study.Problem
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,7 +37,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +51,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -61,12 +66,14 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.AnswerResponse
-import com.example.gravit.api.Problems
-import com.example.gravit.main.ConfirmBottomSheet
-import com.example.gravit.ui.theme.pretendard
+import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.inuappcenter.gravit.api.AnswerResponse
+import com.inuappcenter.gravit.api.Problems
+import com.inuappcenter.gravit.main.ConfirmBottomSheet
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -100,16 +107,38 @@ fun ProblemUI(
             bookmarkSnackBar = null
         }
     }
+    val problemVm: ProblemViewModel = viewModel()
+    val state by problemVm.uiState.collectAsState()
 
-    var index by rememberSaveable(total) { mutableStateOf(0) }
-    var submitted by remember(index) { mutableStateOf(false) }
-    var selectedIndex by remember(index) { mutableStateOf<Int?>(null) }
-    var shortText by remember(index) { mutableStateOf("") }
-    var lastCorrect by remember(index) { mutableStateOf<Boolean?>(null) }
-
+    var index by rememberSaveable(total) { mutableIntStateOf(0) }
     val current = problems[index]
     val isLast = index == total - 1
+
     val isBookmark = bookmarkMap[current.problemId] ?: false
+
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    BackHandler(enabled = true) {
+        if (showSheet) {
+            showSheet = false
+            swVm.start()
+            return@BackHandler
+        }
+
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+
+        swVm.pause()
+        if (type == "normal") {
+            showSheet = true
+        } else {
+            navController.navigate("lessonList/$unitId/$unitTitle") {
+                popUpTo("lessonList/$unitId/$unitTitle") { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
@@ -147,15 +176,12 @@ fun ProblemUI(
                             .padding(start = 16.dp)
                             .clickable {
                                 swVm.pause()
-                                coroutineScope.launch {
-                                    if(type == "normal"){
-                                        showSheet = true
-                                        sheetState.show()
-                                    } else {
-                                        navController.navigate("lessonList/$unitId/$unitTitle") {
-                                            popUpTo(0) { inclusive = true }
-                                            launchSingleTop = true
-                                        }
+                                if (type == "normal") {
+                                    showSheet = true
+                                } else {
+                                    navController.navigate("lessonList/$unitId/$unitTitle") {
+                                        popUpTo("lessonList/$unitId/$unitTitle") { inclusive = true }
+                                        launchSingleTop = true
                                     }
                                 }
                             },
@@ -280,70 +306,60 @@ fun ProblemUI(
             ) {
                 if(current.problemType == "SUBJECTIVE") {
                     ShortAnswer(
-                        submitted = submitted,
+                        submitted = state.submitted,
                         problemId = current.problemId,
-                        text = shortText,
+                        text = state.shortText,
                         answer = current.answerResponse,
-                        onTextChange = { shortText = it },
-                        isCorrect = lastCorrect,
+                        onTextChange = { problemVm.updateText(it) },
+                        isCorrect = state.isCorrect,
                         onSubmit = {
-                            val correct = isAnswerCorrect(shortText, current.answerResponse)
-                            lastCorrect = correct
-                            submitted = true
-
+                            val correct = isAnswerCorrect(
+                                state.shortText,
+                                current.answerResponse
+                            )
+                            problemVm.submit(correct)
                             onRecordResult(current.problemId, correct)
                         },
-
                         isLast = isLast,
                         onNext = {
                             if (!isLast) {
                                 index++
-                                submitted = false
-                                selectedIndex = null
-                                shortText = ""
-                                lastCorrect = null
+                                problemVm.reset()
                             } else {
                                 onFinishLesson()
                             }
                         },
                         showRemoveFromWrongNote = (type == "wrong-answered-notes"),
-                        onRemoveFromWrongNote = {
-                            onRemoveWrongNote(current.problemId)
-                        }
+                        onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
+                        problemVm = problemVm
                     )
                 } else{
                     MultipleChoice(
                         options = current.options,
                         problemNum = current.problemId,
-                        selectedIndex = selectedIndex,
-                        submitted = submitted,
-                        isCorrect = lastCorrect,
-                        onSelect = { selectedIndex = it },
+                        selectedIndex = state.selectedIndex,
+                        submitted = state.submitted,
+                        isCorrect = state.isCorrect,
+                        onSelect = { problemVm.select(it) },
                         onSubmit = { selectedIdx ->
                             val correct =
                                 current.options.getOrNull(selectedIdx)?.isAnswer == true
-                            lastCorrect = correct
-                            submitted = true
-
+                            problemVm.submit(correct)
                             onRecordResult(current.problemId, correct)
                         },
                         isLast = isLast,
                         onNext = {
                             if (!isLast) {
                                 index++
-                                submitted = false
-                                selectedIndex = null
-                                shortText = ""
-                                lastCorrect = null
+                                problemVm.reset()
                             } else {
                                 onFinishLesson()
                             }
                         },
                         showRemoveFromWrongNote = (type == "wrong-answered-notes"),
-                        onRemoveFromWrongNote = {
-                            onRemoveWrongNote(current.problemId)
-                        },
-                        modifier = Modifier.fillMaxSize()
+                        onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
+                        modifier = Modifier.fillMaxSize(),
+                        problemVm = problemVm
                     )
                 }
             }
@@ -360,17 +376,24 @@ fun ProblemUI(
         }
         if (showSheet) {
             ConfirmBottomSheet(
-                onDismiss = { showSheet = false },
+                onDismiss = {
+                    coroutineScope.launch { sheetState.hide() }
+                    showSheet = false
+                    swVm.start()
+                },
                 imageRes = R.drawable.study_popup,
                 titleText = "지금까지 푼 내역이\n모두 사라져요!",
-                descriptionText = "${unitTitle} 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
+                descriptionText = "$unitTitle 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
                 confirmButtonText = "계속하기",
                 cancelText = "그만두기",
                 onConfirm = {
+                    showSheet = false
+                    swVm.start()
                 },
                 onCancel = {
+                    showSheet = false
                     navController.navigate("lessonList/$unitId/$unitTitle") {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo("lessonList/$unitId/$unitTitle") { inclusive = true }
                         launchSingleTop = true
                     }
                 }
@@ -380,14 +403,19 @@ fun ProblemUI(
     }
 }
 
-fun isAnswerCorrect(userAnswer: String?, correctAnswer: AnswerResponse): Boolean {
-    if (correctAnswer.content.isBlank()) return false
+fun isAnswerCorrect(
+    userAnswer: String?,
+    correctAnswer: AnswerResponse?
+): Boolean {
+    if (correctAnswer?.contents.isNullOrEmpty()) return false
     if (userAnswer.isNullOrBlank()) return false
 
     val userNum = userAnswer.replace(",", "").toBigDecimalOrNull()
-    val corrNum = correctAnswer.content.replace(",", "").toBigDecimalOrNull()
-    if (userNum != null && corrNum != null) {
-        return userNum.compareTo(corrNum) == 0
+    if (userNum != null) {
+        return correctAnswer.contents.any { ans ->
+            val corrNum = ans.replace(",", "").toBigDecimalOrNull()
+            corrNum != null && userNum.compareTo(corrNum) == 0
+        }
     }
 
     fun norm(s: String) = s.trim()
@@ -395,18 +423,17 @@ fun isAnswerCorrect(userAnswer: String?, correctAnswer: AnswerResponse): Boolean
         .replace(Regex("\\s+"), " ")
         .replace(Regex("[.,]"), "")
 
-    val candidates = correctAnswer.content
-        .split(',')
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-
     val userN = norm(userAnswer)
 
-    if (candidates.isNotEmpty()) {
-        return candidates.any { norm(it) == userN }
-    }
+    fun containsEitherWay(a: String, b: String): Boolean =
+        a.contains(b) || b.contains(a)
 
-    return norm(correctAnswer.content) == userN
+    return correctAnswer.contents.any { answer ->
+        val ansN = norm(answer)
+        ansN.isNotBlank() &&
+                userN.isNotBlank() &&
+                containsEitherWay(userN, ansN)
+    }
 }
 
 @Composable
@@ -477,9 +504,11 @@ fun InlineUnderlineText(
 
 @Composable
 fun CustomSnackBar(
-    text: String
+    text: String,
+    modifier: Modifier = Modifier
 ){
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(100.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Black.copy(alpha = 0.6f),

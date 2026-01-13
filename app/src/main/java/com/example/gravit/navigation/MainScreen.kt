@@ -1,16 +1,14 @@
-package com.example.gravit.navigation
+package com.inuappcenter.gravit.navigation
 
 import BottomNavigationBar
-import android.R.attr.type
-import android.net.Uri
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -18,29 +16,34 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.gravit.error.NotFoundScreen
-import com.example.gravit.error.UnauthorizedScreen
-import com.example.gravit.main.Home.HomeScreen
-import com.example.gravit.main.Study.Chapter.ChapterScreen
-import com.example.gravit.main.Study.Lesson.LessonComplete
-import com.example.gravit.main.League.LeagueScreen
-import com.example.gravit.main.Study.Lesson.BookWrongScreen
-import com.example.gravit.main.Study.Lesson.LessonList
-import com.example.gravit.main.Study.Lesson.LessonScreen
-import com.example.gravit.main.Study.Unit.UnitList
-import com.example.gravit.main.User.Friend.AddFriend
-import com.example.gravit.main.User.Friend.FollowList
-import com.example.gravit.main.User.Notice.Notice
-import com.example.gravit.main.User.Notice.NoticeDetail
-import com.example.gravit.main.User.Setting
-import com.example.gravit.main.User.Setting.Account
-import com.example.gravit.main.User.Setting.DeletionComplete
-import com.example.gravit.main.User.Setting.DeletionGuard
-import com.example.gravit.main.User.Setting.PrivacyPolicy
-import com.example.gravit.main.User.UserScreen
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.inuappcenter.gravit.error.NotFoundScreen
+import com.inuappcenter.gravit.error.UnauthorizedScreen
+import com.inuappcenter.gravit.main.Home.HomeScreen
+import com.inuappcenter.gravit.main.League.LeagueScreen
+import com.inuappcenter.gravit.main.Study.Chapter.ChapterScreen
+import com.inuappcenter.gravit.main.Study.Lesson.BookWrongScreen
+import com.inuappcenter.gravit.main.Study.Lesson.LessonComplete
+import com.inuappcenter.gravit.main.Study.Lesson.LessonList
+import com.inuappcenter.gravit.main.Study.Lesson.LessonScreen
+import com.inuappcenter.gravit.main.Study.Unit.UnitList
+import com.inuappcenter.gravit.main.User.Friend.AddFriend
+import com.inuappcenter.gravit.main.User.Friend.FollowList
+import com.inuappcenter.gravit.main.User.Notice.Notice
+import com.inuappcenter.gravit.main.User.Notice.NoticeDetail
+import com.inuappcenter.gravit.main.User.Setting
+import com.inuappcenter.gravit.main.User.Setting.Account
+import com.inuappcenter.gravit.main.User.Setting.DeletionComplete
+import com.inuappcenter.gravit.main.User.Setting.DeletionGuard
+import com.inuappcenter.gravit.main.User.Setting.PrivacyPolicy
+import com.inuappcenter.gravit.main.User.UserScreen
+import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
+import androidx.compose.foundation.layout.PaddingValues
+
 
 enum class FollowTab { Followers, Following }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(rootNavController: NavController) {
@@ -64,15 +67,25 @@ fun MainScreen(rootNavController: NavController) {
         }
     }
 
+    val systemUiController = rememberSystemUiController()
+    val (statusBarColor, darkIcons) =
+        statusBarStyleForMainRoute(currentRoute)
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = statusBarColor,
+            darkIcons = darkIcons
+        )
+    }
+
     Scaffold(
         bottomBar = { if (!hideBottomBar) { BottomNavigationBar(innerNavController) } },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding ->
+    ) { innerPadding: PaddingValues ->
         DeletionGuard(navController = innerNavController) {
             NavHost(
                 navController = innerNavController,
                 startDestination = "home",
-                modifier = Modifier.padding(innerPadding)
             ) {
                 composable("home") { HomeScreen(innerNavController, goToLoginChoice) }
 

@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.inuappcenter.gravit.main.User
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -52,11 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.BadgeCategoryResponses
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.ProfilePalette
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
@@ -66,11 +65,14 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import com.example.gravit.ui.theme.Responsive
-import com.example.gravit.api.BadgeResponses
-import com.example.gravit.error.NotFoundScreen
-import com.example.gravit.main.User.Setting.DeleteAccountVM
-import com.example.gravit.main.User.Setting.DeleteAccountVMFactory
+import com.inuappcenter.gravit.api.BadgeCategoryResponses
+import com.inuappcenter.gravit.api.BadgeResponses
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.User.Setting.DeleteAccountVM
+import com.inuappcenter.gravit.main.User.Setting.DeleteAccountVMFactory
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.Responsive
+import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
 fun UserScreen(
@@ -93,7 +95,14 @@ fun UserScreen(
     var navigated by remember { mutableStateOf(false) }
     when (ui) {
         UserScreenVM.UiState.SessionExpired -> {
-            navController.navigate("error/401")
+            navController.navigate("error/401"){
+                popUpTo(
+                    navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                ) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
         }
         UserScreenVM.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -101,7 +110,14 @@ fun UserScreen(
             }
         }
         UserScreenVM.UiState.NotFound -> {
-            navController.navigate("error/404")
+            navController.navigate("error/404"){
+                popUpTo(
+                    navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                ) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
         }
         UserScreenVM.UiState.Failed -> {
             navController.navigate("home") {
@@ -123,6 +139,7 @@ fun UserScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .navigationBarsPadding()
         ) {
             Box(
                 modifier = Modifier
@@ -325,8 +342,9 @@ fun UserScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(bottom = 60.dp)
+                ) {
                 item {
                     Row(
                         modifier = Modifier

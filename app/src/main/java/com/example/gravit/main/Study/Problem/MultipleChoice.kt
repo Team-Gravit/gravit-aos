@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Problem
+package com.inuappcenter.gravit.main.Study.Problem
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,9 +21,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.R
-import com.example.gravit.api.OptionDto
-import com.example.gravit.ui.theme.pretendard
+import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.inuappcenter.gravit.api.OptionDto
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank
@@ -41,25 +42,15 @@ fun MultipleChoice(
     modifier: Modifier = Modifier,
     isCorrect: Boolean?,
     showRemoveFromWrongNote: Boolean = false,
-    onRemoveFromWrongNote: () -> Unit = {}
+    onRemoveFromWrongNote: () -> Unit = {},
+    problemVm: ProblemViewModel,
 ) {
     var removeSnackBarText by remember { mutableStateOf<String?>(null) }
-    var removedFromWrongNote by remember { mutableStateOf(false) }
 
     LaunchedEffect(removeSnackBarText) {
         if (removeSnackBarText != null) {
             delay(1500)
             removeSnackBarText = null
-        }
-    }
-
-    var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
-    var readyToSubmit     by remember(problemNum) { mutableStateOf(false) }
-
-    LaunchedEffect(selectedIndex, submitted) {
-        if (selectedIndex == null || submitted) {
-            showCompleteButton = false
-            readyToSubmit = false
         }
     }
 
@@ -87,19 +78,19 @@ fun MultipleChoice(
     val correctIdx = remember(displayOptions) {
         displayOptions.indexOfFirst { it.isAnswer }.takeIf { it >= 0 }
     }
+
+    val removedFromWrongNote = problemVm.isRemovedFromWrongNote(problemNum)
+    val isMyAnswerCorrect = submitted && selectedIndex == correctIdx
+    val useScroll = submitted && !isMyAnswerCorrect
+
+    val columnModifier = if (useScroll) {
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    } else {
+        Modifier.fillMaxSize()
+    }
     Box(modifier = modifier.fillMaxSize()) {
-
-        val isMyAnswerCorrect = submitted && selectedIndex == correctIdx
-        val useScroll = submitted && !isMyAnswerCorrect
-
-        val columnModifier = if (useScroll) {
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        } else {
-            Modifier.fillMaxSize()
-        }
-
         Column(columnModifier) {
             if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
                 Row (
@@ -118,7 +109,7 @@ fun MultipleChoice(
                         modifier = Modifier
                             .padding(bottom = 8.dp)
                             .clickable {
-                                removedFromWrongNote = true
+                                problemVm.removeFromWrongNote(problemNum)
                                 onRemoveFromWrongNote()
                                 removeSnackBarText = "오답노트에서 제거되었아요."
                             }
@@ -154,42 +145,34 @@ fun MultipleChoice(
             }
         }
 
-        val fabState = when {
-            submitted -> FabState.NEXT
-            else -> FabState.HIDDEN
-        }
-
-        if (fabState != FabState.HIDDEN || removeSnackBarText != null) {
-            Row(
+        if (submitted || removeSnackBarText != null) {
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 20.dp)
             ) {
-                Box(
+
+                Row(
                     modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (removeSnackBarText != null) {
-                        CustomSnackBar(removeSnackBarText!!)
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.next_on),
+                        contentDescription = "다음",
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable { onNext() }
+                    )
                 }
 
-                if (fabState != FabState.HIDDEN) {
-                    Spacer(Modifier.width(12.dp))
-                    when (fabState) {
-                        FabState.NEXT -> {
-                            Image(
-                                painter = painterResource(id = R.drawable.next_on),
-                                contentDescription = "다음",
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clickable { onNext() }
-                            )
-                        }
-                        else -> Unit
+                if (removeSnackBarText != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                    ) {
+                        CustomSnackBar(removeSnackBarText!!)
                     }
                 }
             }

@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Setting
+package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -15,8 +15,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun DeletionComplete(

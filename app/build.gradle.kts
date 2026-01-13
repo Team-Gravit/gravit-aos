@@ -1,8 +1,10 @@
+import org.gradle.kotlin.dsl.implementation
 import java.io.FileInputStream
 import java.util.Properties;
 
-var properties = Properties()
-properties.load(FileInputStream("local.properties"))
+val properties = Properties().apply {
+    load(FileInputStream("local.properties"))
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -12,24 +14,35 @@ plugins {
 }
 
 android {
-    namespace = "com.example.gravit"
+    namespace = "com.inuappcenter.gravit"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.gravit"
+        applicationId = "com.inuappcenter.gravit"
         minSdk = 25
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
+        val kakaoKey = properties.getProperty("KAKAO_NATIVE_APP_KEY")
         manifestPlaceholders["auth0Domain"] = "dev-fl5wpn5srn5xay26.us.auth0.com"
         manifestPlaceholders["auth0Scheme"] = "gravit"
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "AUTH0_CLIENT_ID", properties.getProperty("AUTH0_CLIENT_ID"))
-        buildConfigField("String", "AUTH0_DOMAIN", properties.getProperty("AUTH0_DOMAIN"))
-        buildConfigField("String", "API_BASE_URL", properties.getProperty("API_BASE_URL"))
+        buildConfigField("String", "AUTH0_CLIENT_ID", "\"${properties.getProperty("AUTH0_CLIENT_ID")}\"")
+        buildConfigField("String", "AUTH0_DOMAIN", "\"${properties.getProperty("AUTH0_DOMAIN")}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${properties.getProperty("API_BASE_URL")}\"")
+
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
+
+        buildConfigField("String", "OAUTH_CLIENT_ID", "\"${properties.getProperty("OAUTH_CLIENT_ID")}\"")
+        buildConfigField("String", "OAUTH_CLIENT_SECRET", "\"${properties.getProperty("OAUTH_CLIENT_SECRET")}\"")
+        buildConfigField("String", "OAUTH_CLIENT_NAME", "\"${properties.getProperty("OAUTH_CLIENT_NAME")}\"")
+
+        buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${properties.getProperty("GOOGLE_CLIENT_ID")}\"")
+        buildConfigField("String", "GOOGLE_CLIENT_SECRET", "\"${properties.getProperty("GOOGLE_CLIENT_SECRET")}\"")
     }
 
     buildTypes {
@@ -114,4 +127,12 @@ dependencies {
     implementation("io.noties.markwon:ext-tables:4.6.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    implementation("com.kakao.sdk:v2-user:2.20.0")
+    implementation("com.navercorp.nid:oauth:5.11.1")
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+
 }

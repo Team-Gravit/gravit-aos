@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import android.os.Build
 import java.text.SimpleDateFormat

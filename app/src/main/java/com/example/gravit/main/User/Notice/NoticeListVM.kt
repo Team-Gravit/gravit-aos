@@ -1,11 +1,11 @@
-package com.example.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.NoticeSummaryItem
+import com.inuappcenter.gravit.api.NoticeSummaryItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

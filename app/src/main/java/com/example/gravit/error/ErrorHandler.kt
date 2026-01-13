@@ -1,7 +1,7 @@
-package com.example.gravit.error
+package com.inuappcenter.gravit.error
 
 import android.content.Context
-import com.example.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.AuthPrefs
 import retrofit2.HttpException
 
 fun isDeletionPending(ctx: Context): Boolean =
