@@ -1,17 +1,14 @@
 package com.inuappcenter.gravit.navigation
 
 import BottomNavigationBar
-import android.R.attr.type
-import android.net.Uri
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -41,10 +38,12 @@ import com.inuappcenter.gravit.main.User.Setting.DeletionGuard
 import com.inuappcenter.gravit.main.User.Setting.PrivacyPolicy
 import com.inuappcenter.gravit.main.User.UserScreen
 import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
+import androidx.compose.foundation.layout.PaddingValues
 
 
 enum class FollowTab { Followers, Following }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(rootNavController: NavController) {
@@ -82,7 +81,7 @@ fun MainScreen(rootNavController: NavController) {
     Scaffold(
         bottomBar = { if (!hideBottomBar) { BottomNavigationBar(innerNavController) } },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding ->
+    ) { innerPadding: PaddingValues ->
         DeletionGuard(navController = innerNavController) {
             NavHost(
                 navController = innerNavController,

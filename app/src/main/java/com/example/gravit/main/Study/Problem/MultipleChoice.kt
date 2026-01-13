@@ -54,16 +54,6 @@ fun MultipleChoice(
         }
     }
 
-    var showCompleteButton by remember(problemNum) { mutableStateOf(false) }
-    var readyToSubmit     by remember(problemNum) { mutableStateOf(false) }
-
-    LaunchedEffect(selectedIndex, submitted) {
-        if (selectedIndex == null || submitted) {
-            showCompleteButton = false
-            readyToSubmit = false
-        }
-    }
-
     val mcOptions = remember(options) {
         options.mapIndexed { idx, o ->
             MCOption(
