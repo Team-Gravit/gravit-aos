@@ -1,8 +1,8 @@
-package com.example.gravit.api
+package com.inuappcenter.gravit.api
 
 import android.content.Context
 import android.util.Log
-import com.example.gravit.BuildConfig
+import com.inuappcenter.gravit.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit

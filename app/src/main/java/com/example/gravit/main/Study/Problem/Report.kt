@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Problem
+package com.inuappcenter.gravit.main.Study.Problem
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -45,9 +45,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun ReportDialog(
@@ -63,19 +63,26 @@ fun ReportDialog(
     )
     val ui by vm.state.collectAsState()
 
-    var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(ui) {
         when (ui) {
             ReportVM.UiState.SessionExpired -> {
-                navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             ReportVM.UiState.NotFound -> {
-                navigated = true
                 navController.navigate("error/404") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             else -> Unit

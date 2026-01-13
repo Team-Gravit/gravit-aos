@@ -1,4 +1,4 @@
-package com.example.gravit.main.Home
+package com.inuappcenter.gravit.main.Home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -21,18 +21,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.R
-import com.example.gravit.ui.theme.mbc1961
+import com.inuappcenter.gravit.ui.theme.mbc1961
+import com.inuappcenter.gravit.R
 
 val previousImg: Map<Int, Int> = mapOf(
     0 to R.drawable.previous_null,
     1 to R.drawable.data_structure,
     2 to R.drawable.algorithm,
     3 to R.drawable.computer_network,
-    4 to R.drawable.operating_system,
-    5 to R.drawable.database,
-    6 to R.drawable.computer_security,
-    7 to R.drawable.programming_language,
+    4 to R.drawable.database,
+    5 to R.drawable.computer_security,
+    6 to R.drawable.software_engineering,
+    7 to R.drawable.opreating_system,
     8 to R.drawable.programming_language
 )
 

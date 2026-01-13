@@ -1,11 +1,10 @@
-package com.example.gravit.ui.theme
+package com.inuappcenter.gravit.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import com.example.gravit.R
-import com.example.gravit.ui.theme.ProfilePalette.colors
+import com.inuappcenter.gravit.R
 
 object TierPalette {
     val tiers: List<Int> = listOf(

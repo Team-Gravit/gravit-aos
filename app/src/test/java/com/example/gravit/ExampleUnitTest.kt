@@ -1,4 +1,4 @@
-package com.example.gravit
+package com.inuappcenter.gravit
 
 import org.junit.Test
 

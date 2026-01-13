@@ -1,9 +1,10 @@
-package com.example.gravit.login
+package com.inuappcenter.gravit.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,15 +55,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.ui.theme.DesignSpec
-import com.example.gravit.ui.theme.LocalDesignSpec
-import com.example.gravit.R
-import com.example.gravit.ui.theme.Responsive
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.error.isDeletionPending
-import com.example.gravit.ui.theme.pretendard
-import com.example.gravit.ui.theme.ProfilePalette
-
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.error.isDeletionPending
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
+import com.inuappcenter.gravit.ui.theme.DesignSpec
+import com.inuappcenter.gravit.ui.theme.LocalDesignSpec
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.Responsive
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -76,6 +80,8 @@ fun ProfileSetting(navController: NavController) {
     var nickname by remember { mutableStateOf("") }
     var profileNo by remember { mutableIntStateOf(ProfilePalette.DEFAULT_ID) }
     var navigated by remember { mutableStateOf(false) }
+    var showSnackbar by remember { mutableStateOf(false) }
+
 
     LaunchedEffect(ui) {
         when (ui) {
@@ -98,18 +104,35 @@ fun ProfileSetting(navController: NavController) {
                     popUpTo(0); launchSingleTop = true; restoreState = false
                 }
             }
-            OnboardingViewModel.UiState.Failed -> {
-                navController.navigate("login choice") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+            else -> Unit
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        vm.event.collect { event ->
+            when (event) {
+                OnboardingViewModel.Event.ShowFailedSnack -> {
+                    showSnackbar = true
+                    delay(2000)
+                    showSnackbar = false
                 }
             }
-            else -> Unit
         }
     }
 
     CompositionLocalProvider(
         LocalDesignSpec provides DesignSpec(375f, 812f)
     ) {
+        val systemUiController = rememberSystemUiController()
+        val isDarkMode = isSystemInDarkTheme()
+
+        SideEffect {
+            systemUiController.setStatusBarColor(
+                color = Color.Transparent,
+                darkIcons = !isDarkMode
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -177,9 +200,7 @@ fun ProfileSetting(navController: NavController) {
             CustomButton(
                 text = "다음",
                 onClick = {
-                    if (isValidNickname(nickname) && ui !is OnboardingViewModel.UiState.Loading) {
-                        vm.submit(nickname, profileNo)
-                    }
+                    vm.submit(nickname, profileNo)
                 },
                 enabled = isValidNickname(nickname) && ui !is OnboardingViewModel.UiState.Loading,
                 modifier = Modifier
@@ -199,6 +220,19 @@ fun ProfileSetting(navController: NavController) {
                     Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center
                 ) { CircularProgressIndicator() }
+            }
+            if (showSnackbar) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    CustomSnackBar(
+                        text = "다시 시도해 주세요.",
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .padding(bottom = 10.dp)
+                    )
+                }
             }
         }
     }

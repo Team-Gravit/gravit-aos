@@ -1,7 +1,10 @@
-package com.example.gravit.main.Study.Lesson
+package com.inuappcenter.gravit.main.Study.Lesson
 
+import android.R.attr.fontFamily
+import android.R.attr.fontWeight
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -18,14 +21,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -53,7 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import com.example.gravit.R
+import com.inuappcenter.gravit.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shadow
@@ -66,16 +74,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.ui.theme.pretendard
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.api.ChapterSummary
-import com.example.gravit.api.LessonSummaries
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.main.Study.Problem.CustomSnackBar
+import com.inuappcenter.gravit.api.LessonSummaries
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
+import com.inuappcenter.gravit.ui.theme.pretendard
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -102,13 +110,23 @@ fun LessonList(
             LessonListVM.UiState.SessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             LessonListVM.UiState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             LessonListVM.UiState.Failed -> {
@@ -131,21 +149,16 @@ fun LessonList(
 
         is LessonListVM.UiState.Success -> {
             val s = (ui as LessonListVM.UiState.Success).data
-            val chapterSummary = s.chapterSummary
-            val chapterId = chapterSummary.chapterId
             val lessonSummaries = s.lessonSummaries
             val bookmarkAccessible = s.bookmarkAccessible
             val wrongAnsweredNoteAccessible = s.wrongAnsweredNoteAccessible
             LessonListUI(
                 navController = navController,
-                chapterId = chapterId,
-                chapterSummary = chapterSummary,
                 unitId = unitId,
                 lessonSummaries = lessonSummaries,
                 bookmarkAccessible = bookmarkAccessible,
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
                 unitTitle = unitTitle
-
             )
         }
         else -> Unit
@@ -156,8 +169,6 @@ fun LessonList(
 @Composable
 fun LessonListUI(
     navController: NavController,
-    chapterId: Int,
-    chapterSummary: ChapterSummary,
     unitId: Int,
     lessonSummaries: List<LessonSummaries>,
     bookmarkAccessible: Boolean,
@@ -178,7 +189,7 @@ fun LessonListUI(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(WindowInsets.statusBars.asPaddingValues())
-
+                .navigationBarsPadding()
         ) {
             Row(
                 modifier = Modifier
@@ -192,12 +203,12 @@ fun LessonListUI(
                     contentDescription = "back",
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable { navController.navigate("unit/$chapterId") },
+                        .clickable { navController.popBackStack()},
                     tint = Color.White
                 )
                 Spacer(Modifier.width(16.dp))
                 Text(
-                    text = chapterSummary.title,
+                    text = unitTitle,
                     fontWeight = FontWeight.Bold,
                     fontFamily = pretendard,
                     fontSize = 20.sp,
@@ -274,7 +285,7 @@ fun LessonListUI(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -315,7 +326,7 @@ fun LessonListUI(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 19.dp),
+                    .padding(bottom = 115.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 CustomSnackBar(text = snackBar!!)
@@ -395,9 +406,7 @@ fun Selector(
     }
 
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(112.dp),
+        modifier = Modifier.fillMaxWidth(),
         state = listState,
         flingBehavior = fling,
         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -432,7 +441,10 @@ fun ProblemBox(
     text: String,
     onShowSnackBar: (String) -> Unit,
 ) {
-    Box(modifier = Modifier.size(229.dp, 112.dp)) {
+    Box(modifier = Modifier
+        .width(229.dp)
+        .aspectRatio(229f / 112f)
+    ) {
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -459,7 +471,6 @@ fun ProblemBox(
                     if (enabled) {
                         if (selected) {
                             onClick()
-                        } else {
                         }
                     } else {
                         onShowSnackBar(text)
@@ -477,15 +488,17 @@ fun ProblemBox(
                 Text(
                     text = context,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight(500),
                     fontFamily = pretendard,
-                    color = if (selected) Color(0xFF222124).copy(0.8f) else Color.White.copy(alpha = 0.8f)
+                    color = if (selected) Color(0xFF222124).copy(0.8f) else Color.White.copy(alpha = 0.8f),
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    )
                 )
                 Spacer(Modifier.weight(1f))
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(18.dp),
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -532,7 +545,8 @@ fun LessonBox(
 ){
     Box(
         modifier = modifier
-            .size(104.dp, 129.dp)
+            .width(104.dp)
+            .aspectRatio(104f / 129f)
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Color(0xFF8B69FF), RoundedCornerShape(8.dp))
             .clickable{onClick()},

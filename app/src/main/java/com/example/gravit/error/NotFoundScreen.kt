@@ -1,4 +1,4 @@
-package com.example.gravit.error
+package com.inuappcenter.gravit.error
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,9 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.gravit.R
-import com.example.gravit.main.Study.Problem.ReportButton
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.main.Study.Problem.ReportButton
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun NotFoundScreen(
@@ -43,7 +43,7 @@ fun NotFoundScreen(
         img = R.drawable.img404,
         title = "페이지를 찾을 수 없어요.",
         content = "입력한 주소가 잘못되었거나,\n페이지가 이동되었거나 삭제되었을 수 있어요.\n주소를 다시 확인하시거나,\n홈으로 돌아가 서비스를 다시 이용해 주세요.",
-        onClick1 = { navController.navigate("home") },
+        onClick1 = { navController.popBackStack("home", inclusive = false) },
         onClick2 = {navController.popBackStack()}
         )
 }

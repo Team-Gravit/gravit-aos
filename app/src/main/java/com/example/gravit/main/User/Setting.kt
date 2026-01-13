@@ -1,4 +1,4 @@
-package com.example.gravit.main.User
+package com.inuappcenter.gravit.main.User
 
 import android.Manifest
 import android.content.Context
@@ -39,16 +39,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.error.isDeletionPending
-import com.example.gravit.main.ConfirmBottomSheet
-import com.example.gravit.main.User.Setting.DeleteAccountVM
-import com.example.gravit.main.User.Setting.DeleteAccountVMFactory
-import com.example.gravit.main.User.Setting.DeletionComplete
-import com.example.gravit.main.User.Setting.LogoutVMFactory
-import com.example.gravit.main.User.Setting.LogoutViewModel
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.error.isDeletionPending
+import com.inuappcenter.gravit.main.ConfirmBottomSheet
+import com.inuappcenter.gravit.main.User.Setting.DeleteAccountVM
+import com.inuappcenter.gravit.main.User.Setting.DeleteAccountVMFactory
+import com.inuappcenter.gravit.main.User.Setting.LogoutVMFactory
+import com.inuappcenter.gravit.main.User.Setting.LogoutViewModel
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,10 +92,24 @@ fun Setting(
         when (deleteState) {
             DeleteAccountVM.DeletionState.NotFound -> {
                 if (isDeletionPending(context)) return@LaunchedEffect
-                navController.navigate("error/404")
+                navController.navigate("error/404"){
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
             }
             DeleteAccountVM.DeletionState.SessionExpired -> {
-                navController.navigate("error/401")
+                navController.navigate("error/401"){
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
             }
             else -> Unit
         }
@@ -104,32 +117,10 @@ fun Setting(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
             .background(Color.White)
     ) {
         Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color.White)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "닫기",
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .align(Alignment.CenterStart)
-                        .clickable { navController.popBackStack() },
-                    tint = Color(0xFF4D4D4D)
-                )
-            }
-
-            HorizontalDivider(
-                color = Color.Black.copy(alpha = 0.1f),
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
+            TopBar(navController = navController, title = "", useCloseIcon = true)
 
             Box(
                 modifier = Modifier

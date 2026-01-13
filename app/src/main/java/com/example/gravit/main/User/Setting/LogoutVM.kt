@@ -1,10 +1,10 @@
-package com.example.gravit.main.User.Setting
+package com.inuappcenter.gravit.main.User.Setting
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.AuthPrefs
 import kotlinx.coroutines.launch
 
 class LogoutViewModel(

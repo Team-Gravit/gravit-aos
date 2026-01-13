@@ -1,6 +1,7 @@
-package com.example.gravit.main.Study.Lesson
+package com.inuappcenter.gravit.main.Study.Lesson
 
-import android.R.attr.data
+import android.annotation.SuppressLint
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,10 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.gravit.R
+import com.inuappcenter.gravit.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,19 +47,22 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.api.LessonSubmissionSaveRequest
-import com.example.gravit.api.ProblemSubmissionRequests
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.main.Study.Problem.FormatSeconds
-import com.example.gravit.main.Home.LevelGauge
-import com.example.gravit.main.Study.Problem.LessonVMFactory
-import com.example.gravit.main.Study.Problem.LessonViewModel
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.LessonSubmissionSaveRequest
+import com.inuappcenter.gravit.api.ProblemSubmissionRequests
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Home.LevelGauge
+import com.inuappcenter.gravit.main.Study.Problem.FormatSeconds
+import com.inuappcenter.gravit.main.Study.Problem.LessonVMFactory
+import com.inuappcenter.gravit.main.Study.Problem.LessonViewModel
+import com.inuappcenter.gravit.ui.theme.pretendard
+
+@SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
 fun LessonComplete(
     navController: NavController,
@@ -69,8 +70,8 @@ fun LessonComplete(
     learningTime: Int,
     lessonId: Int,
 ){
-    val entry = navController.previousBackStackEntry
-    val problemList = entry?.savedStateHandle?.get<List<ProblemSubmissionRequests>>("problemList")
+    val homeEntry = navController.getBackStackEntry("home")
+    val problemList = homeEntry.savedStateHandle.get<ArrayList<ProblemSubmissionRequests>>("problemList")
     val lessonSubmission = LessonSubmissionSaveRequest(lessonId, learningTime, accuracy)
     val context = LocalContext.current
     val vm: LessonViewModel = viewModel(
@@ -79,28 +80,26 @@ fun LessonComplete(
 
     LaunchedEffect(Unit) {
         vm.submitResults(lessonSubmission, problemList)
+        homeEntry.savedStateHandle.remove<ArrayList<ProblemSubmissionRequests>>("problemList")
     }
 
     val submit by vm.submit.collectAsState()
 
-    var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(submit) {
         when (submit) {
             LessonViewModel.SubmitState.SessionExpired ->  {
-                navigated = true
                 navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(navController.currentBackStackEntry?.destination?.id ?: return@navigate) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             LessonViewModel.SubmitState.NotFound -> {
-                navigated = true
                 navController.navigate("error/404") {
-                    launchSingleTop = true; restoreState = false
-                }
-            }
-            LessonViewModel.SubmitState.Failed -> {
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
+                    popUpTo(navController.currentBackStackEntry?.destination?.id ?: return@navigate) {
+                        inclusive = true
+                    }
                     launchSingleTop = true
                 }
             }
@@ -140,7 +139,7 @@ fun LessonComplete(
                         .align(Alignment.CenterStart)
                         .padding(start = 16.dp)
                         .size(24.dp)
-                        .clickable { navController.navigate("home")},
+                        .clickable { navController.popBackStack("home", inclusive = false) },
                     tint = Color(0xFF4D4D4D)
                 )
             }
@@ -220,7 +219,7 @@ fun LessonComplete(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp , vertical = 16.dp)
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                         .weight(1f)
                 ) {
                     RoundBox(
@@ -244,9 +243,7 @@ fun LessonComplete(
                     .weight(1f)
                 ) {
                     Button(
-                        onClick = {
-                            navController.navigate("lessonList/${unitSummary?.unitId}/${unitSummary?.title}")
-                        },
+                        onClick = { navController.popBackStack() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(63.dp),
@@ -275,6 +272,37 @@ fun LessonComplete(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
+            }
+        }
+
+        if(submit is LessonViewModel.SubmitState.Failed) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF2F2F2)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally){
+                    Text(
+                        text = "오류가 발생했습니다.\n다시 시도해 주세요.",
+                        fontFamily = pretendard,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        border = BorderStroke(1.dp, Color.Black),
+                        colors = ButtonDefaults.buttonColors(
+                            contentColor = Color.Black,
+                            containerColor = Color(0xFFF2F2F2)
+                        ),
+                        onClick = { navController.popBackStack() },
+                    ) {
+                        Text(
+                            text = "이전으로",
+                            fontFamily = pretendard
+                        )
+                    }
+                }
             }
         }
     }
@@ -329,6 +357,7 @@ fun RoundBox(
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun PillShape(
     modifier: Modifier = Modifier,

@@ -1,4 +1,4 @@
-package com.example.gravit.main.Home
+package com.inuappcenter.gravit.main.Home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -29,11 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.ui.theme.pretendard
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
+import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
 fun LevelGauge(

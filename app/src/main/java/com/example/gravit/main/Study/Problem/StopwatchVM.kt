@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Problem
+package com.inuappcenter.gravit.main.Study.Problem
 
 import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.ui.theme.pretendard
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

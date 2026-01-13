@@ -1,4 +1,4 @@
-package com.example.gravit.main.League
+package com.inuappcenter.gravit.main.League
 
 import android.content.Context
 import android.os.Build
@@ -6,12 +6,12 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.LeagueItem
-import com.example.gravit.api.MyLeague
-import com.example.gravit.api.SeasonPopupResponse
-import com.example.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.LeagueItem
+import com.inuappcenter.gravit.api.MyLeague
+import com.inuappcenter.gravit.api.SeasonPopupResponse
+import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

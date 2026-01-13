@@ -1,8 +1,8 @@
-package com.example.gravit.error
+package com.inuappcenter.gravit.error
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.example.gravit.R
+import com.inuappcenter.gravit.R
 
 @Composable
 fun UnauthorizedScreen(

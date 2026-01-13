@@ -1,14 +1,14 @@
-package com.example.gravit.main.Study.Unit
+package com.inuappcenter.gravit.main.Study.Unit
 
 import android.content.Context
 import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.UnitPageResponse
-import com.example.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.UnitPageResponse
+import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

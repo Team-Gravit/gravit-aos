@@ -1,10 +1,10 @@
-package com.example.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import android.content.Context
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.NoticeDetailResponse
-import com.example.gravit.api.NoticeSummaryPageResponse
-import com.example.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.NoticeDetailResponse
+import com.inuappcenter.gravit.api.NoticeSummaryPageResponse
+import com.inuappcenter.gravit.api.RetrofitInstance
 
 class NoticeRepository(private val appContext: Context) {
 

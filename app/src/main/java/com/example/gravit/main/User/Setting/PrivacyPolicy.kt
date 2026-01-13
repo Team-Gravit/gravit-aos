@@ -1,10 +1,13 @@
-package com.example.gravit.main.User.Setting
+package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -18,8 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.gravit.main.User.TopBar
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
 fun PrivacyPolicy(navController: NavController){
