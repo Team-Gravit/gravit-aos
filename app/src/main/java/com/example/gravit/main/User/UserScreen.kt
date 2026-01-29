@@ -313,7 +313,7 @@ fun UserScreen(
                                     contentDescription = "user",
                                     modifier = Modifier
                                         .padding(vertical = 3.dp)
-                                        .size(30.dp)
+                                        .size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
