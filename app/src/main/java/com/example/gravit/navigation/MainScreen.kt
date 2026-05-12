@@ -39,6 +39,8 @@ import com.inuappcenter.gravit.main.User.Setting.PrivacyPolicy
 import com.inuappcenter.gravit.main.User.UserScreen
 import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 
 
 enum class FollowTab { Followers, Following }
@@ -86,6 +88,7 @@ fun MainScreen(rootNavController: NavController) {
             NavHost(
                 navController = innerNavController,
                 startDestination = "home",
+                modifier = Modifier.padding(innerPadding)
             ) {
                 composable("home") { HomeScreen(innerNavController, goToLoginChoice) }
 

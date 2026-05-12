@@ -204,7 +204,7 @@ fun RoundedGauge(
                 .fillMaxWidth()
                 .height(height)
                 .clip(RoundedCornerShape(50))
-                .background(Color(0xFFEEEEEE))
+                .background(Color(0xFFFEF1FF))
         ) {
             Box(
                 modifier = Modifier
@@ -214,13 +214,5 @@ fun RoundedGauge(
                     .background(Color(0xFFBA00FF))
             )
         }
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-            text = "$rate%",
-            fontSize = 14.sp,
-            fontFamily = pretendard,
-            fontWeight = FontWeight(400),
-            color = Color.White
-        )
     }
 }
