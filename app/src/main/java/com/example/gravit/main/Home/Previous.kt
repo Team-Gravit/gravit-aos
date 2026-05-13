@@ -151,6 +151,25 @@ fun PreviousButton(
                 ) {
                     units.forEachIndexed { index, unit ->
                         val unitOrderText = "Unit%02d".format(index + 1)
+                        val unitProgress = unit.progressRate
+
+                        val backgroundColor = when {
+                            unitProgress >= 100.0 -> Color(0xFFF8F8F8)
+                            unitProgress > 0.0 -> Color.White
+                            else -> Color(0xFFF8F8F8)
+                        }
+
+                        val borderColor = when {
+                            unitProgress >= 100.0 -> Color(0xFFF8F8F8)
+                            unitProgress > 0.0 -> Color(0xFFBA00FF)
+                            else -> Color(0xFFF8F8F8)
+                        }
+
+                        val textColor = when {
+                            unitProgress >= 100.0 -> Color.Black
+                            unitProgress > 0.0 -> Color.Black
+                            else -> Color(0xFFC6C6C6)
+                        }
 
                         Box(
                             modifier = Modifier
@@ -159,10 +178,10 @@ fun PreviousButton(
                                 .clip(RoundedCornerShape(8.dp))
                                 .border(
                                     width = 1.dp,
-                                    color = Color(0xFFE7E7E7),
+                                    color = borderColor,
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .background(Color.White)
+                                .background(backgroundColor)
                                 .clickable {
                                     onUnitClick(unit)
                                 },
@@ -173,7 +192,7 @@ fun PreviousButton(
                                 fontSize = 14.sp,
                                 fontFamily = pretendard,
                                 fontWeight = FontWeight(500),
-                                color = Color(0xFF383838),
+                                color = textColor,
                                 modifier = Modifier.padding(horizontal = dw(14f))
                             )
                         }
