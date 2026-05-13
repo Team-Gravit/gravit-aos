@@ -72,6 +72,7 @@ data class LearningDetail(
     val recentSolvedChapterProgressRate: String
 )
 data class MissionDetail(
+    val missionName: String,
     val missionDescription: String,
     val awardXp: Int,
     val isCompleted: Boolean
