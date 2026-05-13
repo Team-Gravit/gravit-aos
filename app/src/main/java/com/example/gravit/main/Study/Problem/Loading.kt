@@ -1,16 +1,22 @@
-package com.example.gravit.main.Study.Problem
+package com.inuappcenter.gravit.main.Study.Problem
 
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,8 +30,8 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
-import com.example.gravit.R
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun LoadingScreen(){
@@ -48,7 +54,7 @@ fun LoadingScreen(){
         "같은 레슨을 반복해서 풀면,\nXP와 LP는 추가로 지급되지 않으니 참고해주세요.",
         "리그는 매주 일요일 자정에 초기화되어\n새로운 순위 경쟁이 시작돼요."
     )
-    val randomTip = remember { tips.random() }
+    val randomTip = rememberSaveable { tips.random() }
 
     Box(
         Modifier

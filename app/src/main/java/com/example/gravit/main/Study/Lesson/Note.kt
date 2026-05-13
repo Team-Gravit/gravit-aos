@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Lesson
+package com.inuappcenter.gravit.main.Study.Lesson
 
 import android.widget.TextView
 import androidx.compose.animation.core.animateFloatAsState
@@ -32,17 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.ui.theme.pretendard
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.html.HtmlPlugin
@@ -133,11 +131,6 @@ fun NoteSheetCustom(
     val animatedRatio by animateFloatAsState(targetRatio, label = "sheetRatio")
 
     var dragAmount by remember { mutableStateOf(0f) }
-
-    val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
-    val screenHeightDp = configuration.screenHeightDp.dp
-    val sheetHeightDp = screenHeightDp * animatedRatio
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -236,8 +229,9 @@ fun NoteSheetCustom(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(bottom = 80.dp)
                 ) {
-                    Column {
+                    Column{
                         MarkdownText(noteText)
                         Spacer(Modifier.height(25.dp))
                     }

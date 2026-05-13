@@ -1,4 +1,4 @@
-package com.example.gravit.main.League
+package com.inuappcenter.gravit.main.League
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.example.gravit.ui.theme.gmarketsans
+import com.inuappcenter.gravit.ui.theme.gmarketsans
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import java.util.TimeZone

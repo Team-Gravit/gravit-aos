@@ -1,12 +1,13 @@
-package com.example.gravit.main.Study.Lesson
+package com.inuappcenter.gravit.main.Study.Lesson
 
 import android.content.Context
+import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -30,36 +31,26 @@ class NoteVM(
     val state = _state.asStateFlow()
 
     fun load(unitId: Int) = viewModelScope.launch {
-        try {
-            _state.value = UiState.Loading
-
-            val session = AuthPrefs.load(appContext)
-
-            if (session == null) {
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-                return@launch
-            }
-
-            runCatching {
-                api.getNotes("Bearer ${session.accessToken}",  unitId).string()
-            }.onSuccess { res ->
-                _state.value = UiState.Success(res)
-            }.onFailure { e ->
-                handleApiFailure(
-                    e = e,
-                    appContext = appContext,
-                    onStateChange = { _state.value = it },
-                    unauthorizedState = UiState.SessionExpired,
-                    notFoundState = UiState.NotFound,
-                    failedState = UiState.Failed
-                )
-            }
-
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            _state.value = UiState.Failed
+        _state.value = UiState.Loading
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _state.value = UiState.SessionExpired
+            return@launch
+        }
+        runCatching {
+            api.getNotes("Bearer ${session.accessToken}", unitId).string()
+        }.onSuccess { res ->
+            _state.value = UiState.Success(res)
+        }.onFailure { e ->
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _state.value = it },
+                unauthorizedState = UiState.SessionExpired,
+                notFoundState = UiState.NotFound,
+                failedState = UiState.Failed
+            )
         }
     }
 }

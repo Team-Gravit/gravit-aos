@@ -1,13 +1,13 @@
-package com.example.gravit.main.User.Friend
+package com.inuappcenter.gravit.main.User.Friend
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.FriendItem
-import com.example.gravit.api.FriendSearchResponse
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.FriendItem
+import com.inuappcenter.gravit.api.FriendSearchResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.Response
 import java.text.Normalizer
+import kotlin.collections.map
 
 class AddFriendVM(
     private val api: ApiService,

@@ -1,7 +1,10 @@
-package com.example.gravit.login
+package com.inuappcenter.gravit.login
 
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,8 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,13 +36,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.gravit.R
-import com.example.gravit.ui.theme.pretendard
+import androidx.credentials.exceptions.NoCredentialException
+import com.inuappcenter.gravit.R
 import androidx.navigation.NavController
-import com.example.gravit.ui.theme.DesignSpec
-import com.example.gravit.ui.theme.LocalDesignSpec
-import com.example.gravit.ui.theme.Responsive
-import com.example.gravit.api.AuthPrefs
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.ui.theme.DesignSpec
+import com.inuappcenter.gravit.ui.theme.LocalDesignSpec
+import com.inuappcenter.gravit.ui.theme.Responsive
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.login.LoginViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen (
@@ -46,6 +55,7 @@ fun LoginScreen (
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val jwt by viewModel.jwtToken.collectAsState()
 
 
@@ -78,13 +88,24 @@ fun LoginScreen (
             }
         }
     }
-
     CompositionLocalProvider(
         LocalDesignSpec provides DesignSpec(375f, 812f)
     ) {
+        val systemUiController = rememberSystemUiController()
+        val isDarkMode = isSystemInDarkTheme()
+
+        SideEffect {
+            systemUiController.setStatusBarColor(
+                color = Color.Transparent,
+                darkIcons = !isDarkMode
+            )
+        }
+
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.White)
                 .padding(WindowInsets.statusBars.asPaddingValues())
         ) {
             Text(
@@ -147,8 +168,15 @@ fun LoginScreen (
                         contentColor = Color(0xFF4C4C4C),
                         logoResId = R.drawable.goole_login_logo,
                         onClick = {
-                            loginWithAuth0(context, "google-oauth2") { idToken ->
-                                viewModel.sendIdTokenToServer(idToken)
+                            scope.launch {
+                                try {
+                                    val idToken = loginWithGoogle(context)
+                                    viewModel.sendIdTokenToServer("google", idToken)
+                                } catch (e: NoCredentialException) {
+                                    Log.w("GoogleLogin", "사용 가능한 Google 계정이 없음")
+                                } catch (e: Exception) {
+                                    Log.e("GoogleLogin", "구글 로그인 실패", e)
+                                }
                             }
                         },
                         modifier = Modifier.border(
@@ -165,9 +193,17 @@ fun LoginScreen (
                         contentColor = Color(0xFF4C4C4C),
                         logoResId = R.drawable.kakao_login_logo,
                         onClick = {
-                            loginWithAuth0(context, "kakao") { idToken ->
-                                viewModel.sendIdTokenToServer(idToken)
-                            }
+                            loginWithKakao(
+                                context = context,
+                                connection = "kakao",
+                                onSuccess = { idToken ->
+                                    viewModel.sendIdTokenToServer("kakao",idToken)
+                                },
+                                onError = { e ->
+                                    Log.e("KakaoLogin", "failed", e)
+                                }
+                            )
+
                         }
                     )
                     Spacer(modifier = Modifier.height(Responsive.h(8f)))
@@ -178,9 +214,13 @@ fun LoginScreen (
                         contentColor = Color.White,
                         logoResId = R.drawable.naver_login_logo,
                         onClick = {
-                            loginWithAuth0(context, "Naver") { idToken ->
-                                viewModel.sendIdTokenToServer(idToken)
-                            }
+                            loginWithNaver(
+                                context = context,
+                                viewModel = viewModel,
+                                onError = { e ->
+                                    Log.e("NaverLogin", "failed", e)
+                                }
+                            )
                         }
                     )
                 }

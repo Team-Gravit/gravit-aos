@@ -1,4 +1,4 @@
-package com.example.gravit.api
+package com.inuappcenter.gravit.api
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
@@ -21,6 +21,12 @@ data class AuthTokenResponse(
     val refreshToken: String,
     val isOnboarded : Boolean
 )
+data class NaverUserInfo(
+    val email: String,
+    val providerId: String,
+    val nickname: String
+)
+
 //리프레시
 data class RefreshTokenRequest(
     val refreshToken: String
@@ -91,7 +97,7 @@ data class UnitSummary(
 
 //레슨리스트
 data class LessonListResponse(
-    val chapterSummary: ChapterSummary,
+    val unitSummary: UnitSummary,
     val unitId: Int,
     val lessonSummaries: List<LessonSummaries>,
     val bookmarkAccessible: Boolean,
@@ -120,7 +126,7 @@ data class Problems(
     val isBookmarked: Boolean,
 )
 data class AnswerResponse(
-    val content: String,
+    val contents: List<String>,
     val explanation: String
 )
 data class OptionDto(
@@ -325,152 +331,154 @@ data class BookmarksRequest(
 )
 
 interface ApiService {
-    @POST("api/v1/oauth/android")
+    //OAuth2.0 Android API
+    @POST("api/v1/oauth/android") //OAuth 회원가입/로그인 처리
     suspend fun sendCode(
+        @Query("provider") provider: String,
         @Body token: IdTokenRequest
     ): AuthTokenResponse
+    @POST("api/v1/oauth/android/naver") //네이버 OAuth 회원가입/로그인 처리
+    suspend fun sendNaverInfo(
+        @Body body: NaverUserInfo
+    ) : AuthTokenResponse
 
-    @POST("api/v1/users/onboarding")
+    //User API
+    @POST("api/v1/users/onboarding") //온보딩 정보 등록
     suspend fun completeOnboarding(
         @Body body: OnboardingRequest,
         @Header("Authorization") auth: String
     ): OnboardingResponse
-
-    @GET("api/v1/users/main-page")
+    @GET("api/v1/users") //유저 정보 조회
+    suspend fun userInfo(
+        @Header("Authorization") auth: String
+    ): Response<UserInfoResponse>
+    @PATCH("api/v1/users") //프로필 수정
+    suspend fun updateUserInfo(
+        @Header("Authorization") auth: String,
+        @Body body: UpdateUserInfoRequest
+    ): Response<UserInfoResponse>
+    @GET("api/v1/users/my-page") //마이페이지 조회
+    suspend fun getUser(
+        @Header("Authorization") auth: String
+    ) : UserPageResponse
+    @GET("api/v1/users/main-page") //메인 페이지 조회
     suspend fun getMainPage(
         @Header("Authorization") auth: String,
     ): MainPageResponse
 
-    @GET("api/v1/learning/chapters")
+    //Chapter API
+    @GET("api/v1/chapters") //챕터 조회
     suspend fun getChapterPage(
         @Header("Authorization") auth: String
     ): List<ChapterPageResponse>
 
-    @GET("api/v1/learning/{chapterId}/units")
+    //Unit API
+    @GET("api/v1/units/{chapterId}") //유닛 조회
     suspend fun getUnitPage(
         @Header("Authorization") auth: String,
         @Path("chapterId") chapterId: Int
     ): UnitPageResponse
 
-    @GET("api/v1/learning/{lessonId}")
+    //Problem API
+    @GET("api/v1/problems/{lessonId}") //레슨 문제 조회
     suspend fun getLesson(
         @Header("Authorization") auth: String,
         @Path("lessonId") lessonId: Int
     ) : ProblemResponse
-
-    @GET("api/v1/learning/{unitId}/bookmarks")
-    suspend fun getBookmarks(
-        @Header("Authorization") auth: String,
-        @Path("unitId") unitId: Int
-    ) : ProblemResponse
-
-    @GET("api/v1/learning/{unitId}/wrong-answered-notes")
-    suspend fun getWrongAnswered(
-        @Header("Authorization") auth: String,
-        @Path("unitId") unitId: Int
-    ) : ProblemResponse
-
-    @POST("api/v1/learning/lessons/results")
-    suspend fun sendLessonResults(
-        @Body body: LessonResultRequest,
-        @Header("Authorization") auth: String
-    ) : LessonResultResponse
-
-    @POST("api/v1/learning/problems/results")
+    @POST("api/v1/problems/results") //문제 결과 저장
     suspend fun sendProblemResults(
         @Body body: ProblemSubmissionRequests,
         @Header("Authorization") auth: String
     )
 
-    @GET("api/v1/users/my-page")
-    suspend fun getUser(
-        @Header("Authorization") auth: String
-    ) : UserPageResponse
-
-    @GET("api/v1/ranking/user-leagues/page/{pageNum}")
-    suspend fun getLeagues_league(
-        @Header("Authorization") auth: String,
-        @Path("pageNum") pageNum: Int
-    ) : LeaguePageResponse<LeagueItem>
-
-    @GET("api/v1/ranking/leagues/{leagueId}/page/{pageNum}")
-    suspend fun getLeagues_tier(
-        @Header("Authorization") auth: String,
-        @Path("leagueId") leagueId: Int,
-        @Path("pageNum") pageNum: Int
-    ) : LeaguePageResponse<LeagueItem>
-
-    @GET("api/v1/ranking/me")
-    suspend fun getMyLeague(
-        @Header("Authorization") auth: String,
-    ) : MyLeague
-
-    @GET("api/v1/league/home")
-    suspend fun getLeagueHome(
-        @Header("Authorization") auth: String,
-    ) : SeasonPopupResponse
-
-    @POST("api/v1/learning/reports")
-    suspend fun sendReport(
-        @Body body: ReportRequest,
-        @Header("Authorization") auth: String,
-    ) : ReportRequest
-
-    @GET("api/v1/users")
-    suspend fun userInfo(
-        @Header("Authorization") auth: String
-    ): Response<UserInfoResponse>
-
-    @PATCH("api/v1/users")
-    suspend fun updateUserInfo(
-        @Header("Authorization") auth: String,
-        @Body body: UpdateUserInfoRequest
-    ): Response<UserInfoResponse>
-
-    @GET("api/v1/notice/{noticeId}")
-    suspend fun getNoticeDetail(
-        @Header("Authorization") auth: String,
-        @Path("noticeId") noticeId: Long
-    ): NoticeDetailResponse
-
-    @GET("api/v1/notice/summaries/{page}")
-    suspend fun getNoticeSummaries(
-        @Header("Authorization") auth: String,
-        @Path("page") page: Int
-    ): NoticeSummaryPageResponse
-
-    @GET("api/v1/badges/me")
-    suspend fun getBadges(
-        @Header("Authorization") auth: String,
-    ) : Badges
-
-    @POST("api/v1/users/deletion/request")
-    suspend fun requestDeletionMail(
-        @Header("Authorization") auth: String,
-        @Query("dest") dest: String,
-    ): Response<Unit>
-
-    @GET("api/v1/cs-notes/{unitId}")
+    //CS-Note API
+    @GET("api/v1/cs-notes/{unitId}") //개념 노트 조회
     suspend fun getNotes(
         @Header("Authorization") auth: String,
         @Path("unitId") unitId: Int
     ): ResponseBody
 
-    @GET("api/v1/learning/{unitId}/lessons")
+    //Lesson API
+    @GET("api/v1/lessons/{unitId}") //레슨 목록 조회
     suspend fun getLessonList(
         @Header("Authorization") auth: String,
         @Path("unitId") unit: Int
     ) : LessonListResponse
+    @POST("api/v1/lessons/results") //레슨 결과 저장
+    suspend fun sendLessonResults(
+        @Body body: LessonResultRequest,
+        @Header("Authorization") auth: String
+    ) : LessonResultResponse
 
-    @POST("api/v1/learning/bookmarks")
+    //UserLeague API
+    @GET("api/v1/ranking/user-leagues/page/{pageNum}") //내 리그 기준 유저 랭킹 조회
+    suspend fun getLeagues_league(
+        @Header("Authorization") auth: String,
+        @Path("pageNum") pageNum: Int
+    ) : LeaguePageResponse<LeagueItem>
+    @GET("api/v1/ranking/leagues/{leagueId}/page/{pageNum}") //티어별 유저 랭킹 조회
+    suspend fun getLeagues_tier(
+        @Header("Authorization") auth: String,
+        @Path("leagueId") leagueId: Int,
+        @Path("pageNum") pageNum: Int
+    ) : LeaguePageResponse<LeagueItem>
+    @GET("api/v1/ranking/me") //내 리그·랭킹 요약 조회
+    suspend fun getMyLeague(
+        @Header("Authorization") auth: String,
+    ) : MyLeague
+
+    //League API
+    @GET("api/v1/league/home") //리그 페이지 home 조회
+    suspend fun getLeagueHome(
+        @Header("Authorization") auth: String,
+    ) : SeasonPopupResponse
+
+    //Report API
+    @POST("api/v1/reports") //문제 신고 제출
+    suspend fun sendReport(
+        @Body body: ReportRequest,
+        @Header("Authorization") auth: String,
+    ) : ReportRequest
+
+    //Notice Query API
+    @GET("api/v1/notice/{noticeId}") //공지 상세 조회
+    suspend fun getNoticeDetail(
+        @Header("Authorization") auth: String,
+        @Path("noticeId") noticeId: Long
+    ): NoticeDetailResponse
+    @GET("api/v1/notice/summaries/{page}") //공지 요약 목록 조회
+    suspend fun getNoticeSummaries(
+        @Header("Authorization") auth: String,
+        @Path("page") page: Int
+    ): NoticeSummaryPageResponse
+
+    //Badge API
+    @GET("api/v1/badges/me") //내 뱃지 목록 조회
+    suspend fun getBadges(
+        @Header("Authorization") auth: String,
+    ) : Badges
+
+    //User Deletion API
+    @POST("api/v1/users/deletion/request") //계정 삭제 요청
+    suspend fun requestDeletionMail(
+        @Header("Authorization") auth: String,
+        @Query("dest") dest: String,
+    ): Response<Unit>
+
+    //Bookmark API
+    @GET("api/v1/bookmarks/{unitId}") //유닛 내 북마크 된 문제 조회
+    suspend fun getBookmarks(
+        @Header("Authorization") auth: String,
+        @Path("unitId") unitId: Int
+    ) : ProblemResponse
+    @POST("api/v1/bookmarks") //북마크 저장
     suspend fun addBookmark(
         @Header("Authorization") auth: String,
         @Body request: BookmarksRequest
     )
-
-    @HTTP(
+    @HTTP( //북마크 삭제
         method = "DELETE",
-        path = "api/v1/learning/bookmarks",
+        path = "api/v1/bookmarks",
         hasBody = true
     )
     suspend fun removeBookmark(
@@ -478,9 +486,15 @@ interface ApiService {
         @Body request: BookmarksRequest
     )
 
-    @HTTP(
+    //WrongAnsweredNote API
+    @GET("api/v1/wrong-answered-notes/{unitId}") //유닛 내 오답 문제 조회
+    suspend fun getWrongAnswered(
+        @Header("Authorization") auth: String,
+        @Path("unitId") unitId: Int
+    ) : ProblemResponse
+    @HTTP( //오답노트 삭제
         method = "DELETE",
-        path = "api/v1/learning/wrong-answered-notes",
+        path = "api/v1/wrong-answered-notes",
         hasBody = true
     )
     suspend fun removeWrongAnswered(
@@ -488,47 +502,43 @@ interface ApiService {
         @Body request: BookmarksRequest
     )
 
-    @POST("api/v1/auth/reissue")
+    //AuthToken API
+    @POST("api/v1/auth/reissue") //리프레시 토큰
     suspend fun sendRefreshToken(
         @Body token: RefreshTokenRequest
     ) : RefreshTokenResponse
 
-    @POST("api/v1/friends/unfollowing/{followeeId}")
+    //Friend API
+    @POST("api/v1/friends/unfollowing/{followeeId}") //언팔로잉
     suspend fun unfollow(
         @Header("Authorization") auth: String,
         @Path("followeeId") followeeId: Long
     ): Response<Unit>
-
-    @POST("api/v1/friends/reject-following/{followerId}")
+    @POST("api/v1/friends/reject-following/{followerId}") //팔로잉 거절
     suspend fun rejectFollowing(
         @Header("Authorization") auth: String,
         @Path("followerId") followerId: Long
     ): Response<Unit>
-
-    @POST("api/v1/friends/following/{followeeId}")
+    @POST("api/v1/friends/following/{followeeId}") //팔로잉
     suspend fun follow(
         @Header("Authorization") auth: String,
         @Path("followeeId") followeeId: Long
     ): Response<FollowResponse>
-
-    @GET("api/v1/friends/following")
+    @GET("api/v1/friends/following") //팔로잉 목록 조회
     suspend fun getFollowingList(
         @Header("Authorization") auth: String,
         @Query("page") page: Int = 0
     ): Response<FriendSliceResponse>
-
-    @GET("api/v1/friends/follower")
+    @GET("api/v1/friends/follower") //팔로워 목록 조회
     suspend fun getFollowerList(
         @Header("Authorization") auth: String,
         @Query("page") page: Int = 0
     ): Response<FriendSliceResponse>
-
-    @GET("api/v1/friends/count")
+    @GET("api/v1/friends/count") //팔로워/팔로잉 카운트 조회
     suspend fun getFriendCount(
         @Header("Authorization") auth: String
     ): Response<FriendCountResponse>
-
-    @GET("api/v1/friends/search")
+    @GET("api/v1/friends/search") //핸들&닉네임 검색
     suspend fun getFriends(
         @Header("Authorization") auth: String,
         @Query("queryText") queryText: String,

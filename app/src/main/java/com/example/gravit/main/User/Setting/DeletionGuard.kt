@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Setting
+package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -12,8 +12,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.RetrofitInstance
 
 @Composable
 fun DeletionGuard(
@@ -54,14 +53,14 @@ fun DeletionGuard(
 
             DeleteAccountVM.DeletionState.SessionExpired -> {
                 navController.navigate("error/401") {
-                    popUpTo(0) { inclusive = true }
                     launchSingleTop = true
+                    restoreState = false
                 }
             }
             DeleteAccountVM.DeletionState.NotFound -> {
                 navController.navigate("error/404") {
-                    popUpTo(0) { inclusive = true }
                     launchSingleTop = true
+                    restoreState = false
                 }
             }
             else -> Unit

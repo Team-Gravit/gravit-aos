@@ -1,4 +1,4 @@
-package com.example.gravit.main.League
+package com.inuappcenter.gravit.main.League
 
 import android.R.attr.bottom
 import android.os.Build
@@ -19,11 +19,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -76,15 +80,17 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.LastSeasonPopupDto
-import com.example.gravit.api.LeagueItem
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.main.Home.LeagueGauge
-import com.example.gravit.ui.theme.ProfilePalette
-import com.example.gravit.ui.theme.TierPalette
-import com.example.gravit.ui.theme.mbc1961
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.LastSeasonPopupDto
+import com.inuappcenter.gravit.api.LeagueItem
+import com.inuappcenter.gravit.api.MyLeague
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.SeasonPopupResponse
+import com.inuappcenter.gravit.main.Home.LeagueGauge
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.TierPalette
+import com.inuappcenter.gravit.ui.theme.mbc1961
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlin.math.abs
@@ -97,6 +103,7 @@ fun LeagueScreen(
 ) {
     val context = LocalContext.current
     val vm: LeagueViewModel = viewModel(factory = LeagueVMFactory(RetrofitInstance.api, context))
+
     val ui by vm.state.collectAsState()
     val myLeagueState by vm.myLeague.collectAsState()
     val seasonState by vm.seasonPopup.collectAsState()
@@ -110,6 +117,7 @@ fun LeagueScreen(
 
     val sessionExpired by vm.sessionExpired.collectAsState()
     val notFound by vm.notFound.collectAsState()
+
     var navigated by remember { mutableStateOf(false) }
     //세션 만료
     val navTarget: String? = when {
@@ -126,41 +134,82 @@ fun LeagueScreen(
 
         else -> null
     }
+
     LaunchedEffect(navTarget) {
         if (navTarget == null || navigated) return@LaunchedEffect
         navigated = true
         when (navTarget) {
             "401" -> {
                 navController.navigate("error/401") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
             "404" -> {
                 navController.navigate("error/404") {
-                    launchSingleTop = true; restoreState = false
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
                 }
             }
-            "FAILED" -> onSessionExpired()
-        }
-    }
-
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(listState, ui.items.size) {
-        snapshotFlow {
-            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            val total = listState.layoutInfo.totalItemsCount
-            if (last != null) last to total else null
-        }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .collect { (lastVisible, total) ->
-                if (lastVisible >= total - 3) vm.loadNextL()
+            "FAILED" -> {
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
             }
+        }
     }
-    val my = (myLeagueState as? LeagueViewModel.MyLeagueState.Success)?.data
-    val myLeagueId = my?.leagueId
-    val season = (seasonState as? LeagueViewModel.SeasonPopupState.Ready)?.data
+
+    when{
+        myLeagueState is LeagueViewModel.MyLeagueState.Loading ||
+                seasonState   is LeagueViewModel.SeasonPopupState.Loading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        myLeagueState is LeagueViewModel.MyLeagueState.Success &&
+                seasonState   is LeagueViewModel.SeasonPopupState.Ready -> {
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(listState, ui.items.size) {
+                snapshotFlow {
+                    val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                    val total = listState.layoutInfo.totalItemsCount
+                    if (last != null) last to total else null
+                }
+                    .filterNotNull()
+                    .distinctUntilChanged()
+                    .collect { (lastVisible, total) ->
+                        if (lastVisible >= total - 3) vm.loadNextL()
+                    }
+            }
+            val my = (myLeagueState as LeagueViewModel.MyLeagueState.Success).data
+            val season = (seasonState as LeagueViewModel.SeasonPopupState.Ready).data
+
+            LeagueUI(my, vm, checkLeague, season, listState, ui, seasonState)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun LeagueUI(
+    my: MyLeague,
+    vm: LeagueViewModel,
+    checkLeague: Boolean,
+    season: SeasonPopupResponse,
+    listState: LazyListState,
+    ui: LeagueViewModel.PagingUi,
+    seasonState: LeagueViewModel.SeasonPopupState
+){
     val shadow = with(LocalDensity.current) {
         Shadow(
             color = Color.Black.copy(alpha = 0.25f),
@@ -174,8 +223,12 @@ fun LeagueScreen(
         .padding(WindowInsets.statusBars.asPaddingValues())
         .background(Color(0xFFF2F2F2)))
     {
-        Column(modifier = Modifier.fillMaxSize()) {
-            my?.let { rank -> //내 랭킹
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
+            my.let { rank -> //내 랭킹
                 Surface(
                     shadowElevation = 5.dp,
                     color = Color.White
@@ -200,7 +253,7 @@ fun LeagueScreen(
                                     color = Color.Black,
                                     fontSize = 18.sp,
                                     fontFamily = pretendard,
-                                    )){
+                                )){
                                     append("등")
                                 }
                             },
@@ -298,7 +351,7 @@ fun LeagueScreen(
                     }
                 }
             }
-            val seasonName = season?.currentSeason?.nowSeason
+            val seasonName = season.currentSeason.nowSeason
             if(checkLeague){
                 SeasonFinish(seasonName)
             }else{
@@ -308,7 +361,7 @@ fun LeagueScreen(
                     Column {
                         Spacer(Modifier.height(24.dp))
                         Text(
-                            text = seasonName ?: "시즌 정보 없음",
+                            text = seasonName,
                             color = Color(0xFF8A00B8),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             style = TextStyle(
@@ -342,7 +395,7 @@ fun LeagueScreen(
                             }
                         }
                         Spacer(Modifier.height(20.dp))
-                        TierSelector(vm = vm, initialLeagueId = myLeagueId)
+                        TierSelector(vm = vm, initialLeagueId = my.leagueId)
                         Spacer(Modifier.height(20.dp))
                     }
                 }
@@ -353,58 +406,54 @@ fun LeagueScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
-
-                Box(
+                LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxSize()
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(ui.items, key = { it.userId }) { item ->
-                            RankCell(item = item)
-                        }
+                    items(ui.items, key = { it.userId }) { item ->
+                        RankCell(item = item)
+                    }
 
-                        item {
-                            when {
-                                ui.isLoading -> {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                    }
+                    item {
+                        when {
+                            ui.isLoading -> {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
                                 }
-                                ui.endReached -> {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "더이상 유저가 없습니다.",
-                                            fontFamily = pretendard,
-                                            color = Color.Black
-                                            )
-                                    }
+                            }
+                            ui.endReached -> {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "더이상 유저가 없습니다.",
+                                        fontFamily = pretendard,
+                                        color = Color.Black
+                                    )
                                 }
-                                ui.error != null -> {
-                                    Column(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(ui.error!!)
-                                        Spacer(Modifier.height(8.dp))
-                                        OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
-                                    }
+                            }
+                            ui.error != null -> {
+                                Column(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(ui.error)
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedButton(onClick = { vm.loadNextL() }) { Text("다시 시도") }
                                 }
                             }
                         }
@@ -586,7 +635,7 @@ private fun RankCell(
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .height(54.dp)
+            .heightIn(min = 54.dp)
             .background(Color(0xFFFFFFFF), RoundedCornerShape(16.dp))
             .border(1.dp, Color(0xFFDCDCDC), RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp)),
@@ -760,50 +809,50 @@ fun TierSelector(
     }
 }
 private fun tierName(id: Int): String = when (id) {
-    1 -> "브론즈 1"
+    1 -> "브론즈 3"
     2 -> "브론즈 2"
-    3 -> "브론즈 3"
-    4 -> "실버 1"
+    3 -> "브론즈 1"
+    4 -> "실버 3"
     5 -> "실버 2"
-    6 -> "실버 3"
-    7 -> "골드 1"
+    6 -> "실버 1"
+    7 -> "골드 3"
     8 -> "골드 2"
-    9 -> "골드 3"
-    10 -> "플래티넘 1"
+    9 -> "골드 1"
+    10 -> "플래티넘 3"
     11 -> "플래티넘 2"
-    12 -> "플래티넘 3"
-    13 -> "다이아몬드 1"
+    12 -> "플래티넘 1"
+    13 -> "다이아몬드 3"
     14 -> "다이아몬드 2"
-    15 -> "다이아몬드 3"
+    15 -> "다이아몬드 1"
     else -> "Unranked"
 }
 
 private fun tierIdFromName(name: String?): Int = when (name) {
-    "Bronze 1" -> 1
+    "Bronze 3" -> 1
     "Bronze 2" -> 2
-    "Bronze 3" -> 3
-    "Silver 1" -> 4
+    "Bronze 1" -> 3
+    "Silver 3" -> 4
     "Silver 2" -> 5
-    "Silver 3" -> 6
-    "Gold 1" -> 7
+    "Silver 1" -> 6
+    "Gold 3" -> 7
     "Gold 2" -> 8
-    "Gold 3" -> 9
-    "Platinum 1" -> 10
+    "Gold 1" -> 9
+    "Platinum 3" -> 10
     "Platinum 2" -> 11
-    "Platinum 3" -> 12
-    "Diamond 1" -> 13
+    "Platinum 1" -> 12
+    "Diamond 3" -> 13
     "Diamond 2" -> 14
-    "Diamond 3" -> 15
+    "Diamond 1" -> 15
     else -> -1
 }
 
 fun TextColor(tierId: Int) : Color =
     when(tierId) {
-        1, 2 ,3 -> Color(0xFF6C3F00)
-        4, 5, 6 -> Color(0xFF818181)
-        7, 8, 9 -> Color(0xFFE29F00)
-        10, 11, 12 -> Color(0xFF00B399)
-        13, 14, 15 -> Color(0xFF00AFC3)
+        3, 2 ,1 -> Color(0xFF6C3F00)
+        6, 5, 4 -> Color(0xFF818181)
+        9, 8, 7 -> Color(0xFFE29F00)
+        12, 11, 10 -> Color(0xFF00B399)
+        15, 14, 13 -> Color(0xFF00AFC3)
     else -> Color(0xFF6C3F00)
 
 }

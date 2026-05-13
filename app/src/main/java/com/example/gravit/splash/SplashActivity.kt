@@ -1,13 +1,15 @@
-package com.example.gravit.splash
+package com.inuappcenter.gravit.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -18,8 +20,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.gravit.R
-import com.example.gravit.api.AuthPrefs
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 
 
@@ -68,7 +71,6 @@ fun SplashScreen(navController: NavController) {
             }
         }
     }
-
 
     Box(
         modifier = Modifier

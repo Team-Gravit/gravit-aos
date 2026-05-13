@@ -1,4 +1,4 @@
-package com.example.gravit.ui.theme
+package com.inuappcenter.gravit.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -9,7 +9,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -55,4 +59,23 @@ fun GravitTheme(
         typography = Typography,
         content = content
     )
+}
+
+@Composable
+fun statusBarStyleForMainRoute(route: String): Pair<Color, Boolean> {
+    val isDarkMode = isSystemInDarkTheme()
+
+    return when {
+        route == "home" ->
+            Color.Transparent to false
+
+        route.startsWith("unit/") ->
+            Color.Transparent to false
+
+        route.startsWith("lessonList/") ->
+            Color.Transparent to false
+
+        else ->
+            Color.Transparent to !isDarkMode
+    }
 }

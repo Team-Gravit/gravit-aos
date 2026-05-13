@@ -1,14 +1,16 @@
-package com.example.gravit.login
+package com.inuappcenter.gravit.login
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.OnboardingRequest
-import com.example.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.OnboardingRequest
+import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -53,8 +55,22 @@ class OnboardingViewModel(
                     notFoundState = UiState.NotFound,
                     failedState = UiState.Failed
                 )
+                _event.tryEmit(Event.ShowFailedSnack)
             }
         }
+    }
+
+    sealed interface Event {
+        data object ShowFailedSnack : Event
+    }
+
+    private val _event = MutableSharedFlow<Event>(extraBufferCapacity = 1)
+    val event = _event.asSharedFlow()
+
+
+    fun testFailed() {
+        _state.value = UiState.Failed
+        _event.tryEmit(Event.ShowFailedSnack)
     }
 
 }

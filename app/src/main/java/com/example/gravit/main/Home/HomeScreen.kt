@@ -1,5 +1,6 @@
-package com.example.gravit.main.Home
+package com.inuappcenter.gravit.main.Home
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -50,13 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.MainPageResponse
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.error.NotFoundScreen
-import com.example.gravit.main.Study.Lesson.PillShape
-import com.example.gravit.main.Study.Lesson.RoundBox
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.api.MainPageResponse
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Study.Lesson.PillShape
+import com.inuappcenter.gravit.main.Study.Lesson.RoundBox
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun HomeScreen(
@@ -69,10 +69,31 @@ fun HomeScreen(
 
     var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
-    when (ui) {
-        HomeViewModel.UiState.SessionExpired -> {
-            navController.navigate("error/401")
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            HomeViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401"){
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+            HomeViewModel.UiState.NotFound -> {
+                onSessionExpired()
+            }
+            HomeViewModel.UiState.Failed -> {
+                onSessionExpired()
+            }
+            else -> Unit
         }
+    }
+    when (ui) {
         HomeViewModel.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -85,13 +106,11 @@ fun HomeScreen(
                 navController = navController
             )
         }
-        else -> {
-            NotFoundScreen(navController = navController)
-        }
+        else -> Unit
     }
-
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun HomeUI(
     home: MainPageResponse,

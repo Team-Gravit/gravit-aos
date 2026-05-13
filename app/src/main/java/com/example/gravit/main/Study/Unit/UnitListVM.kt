@@ -1,12 +1,14 @@
-package com.example.gravit.main.Study.Unit
+package com.inuappcenter.gravit.main.Study.Unit
 
 import android.content.Context
+import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.UnitPageResponse
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.UnitPageResponse
+import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -32,33 +34,34 @@ class UnitListVM(
 
     fun load() {
         viewModelScope.launch {
-            try {
-                _state.value = UiState.Loading
+            _state.value = UiState.Loading
 
-                val session = AuthPrefs.load(appContext)
-                if (session == null) {
-                    AuthPrefs.clear(appContext)
-                    _state.value = UiState.SessionExpired
-                    return@launch
-                }
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _state.value = UiState.SessionExpired
+                return@launch
+            }
 
-
-                val data = api.getUnitPage(
+            runCatching {
+                api.getUnitPage(
                     auth = "Bearer ${session.accessToken}",
                     chapterId = chapterId
                 )
-
-                _state.value = UiState.Success(data)
-
-            } catch (e: HttpException) {
-                _state.value = when (e.code()) {
-                    401 -> UiState.SessionExpired
-                    404 -> UiState.NotFound
-                    else -> UiState.Failed
-                }
-            } catch (e: Exception) {
-                _state.value = UiState.Failed
             }
+                .onSuccess { data ->
+                    _state.value = UiState.Success(data)
+                }
+                .onFailure { e ->
+                    handleApiFailure(
+                        e = e,
+                        appContext = appContext,
+                        onStateChange = { _state.value = it },
+                        unauthorizedState = UiState.SessionExpired,
+                        notFoundState = UiState.NotFound,
+                        failedState = UiState.Failed
+                    )
+                }
         }
     }
 }

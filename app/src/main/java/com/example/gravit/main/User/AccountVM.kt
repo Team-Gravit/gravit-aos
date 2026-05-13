@@ -1,14 +1,15 @@
-package com.example.gravit.main.User.Setting
+package com.inuappcenter.gravit.main.User.Setting
 
 import android.content.Context
+import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gravit.api.ApiService
-import com.example.gravit.api.AuthPrefs
-import com.example.gravit.api.UpdateUserInfoRequest
-import com.example.gravit.api.UserInfoResponse
-import com.example.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.api.ApiService
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.api.UpdateUserInfoRequest
+import com.inuappcenter.gravit.api.UserInfoResponse
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -39,32 +40,28 @@ class AccountVM(
     fun loadUserInfo() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, errorMsg = null)
-            try {
-                val bearer = bearerOrNull() ?: run {
-                    _state.value = _state.value.copy(isLoading = false, errorMsg = "세션 만료")
-                    return@launch
-                }
-                val res: Response<UserInfoResponse> = api.userInfo(bearer)
-                if (res.isSuccessful) {
-                    val body = res.body()
-                    if (body != null) {
-                        _state.value = _state.value.copy(
-                            isLoading = false,
-                            nickname = body.nickname,
-                            profileId = body.profileImgNumber,
-                            errorMsg = null
-                        )
-                    } else {
-                        _state.value = _state.value.copy(isLoading = false, errorMsg = "응답 바디가 비었습니다.")
-                    }
-                } else {
+            val bearer = bearerOrNull() ?: run {
+                _state.value = _state.value.copy(isLoading = false, errorMsg = "세션 만료")
+                return@launch
+            }
+            val res: Response<UserInfoResponse> = api.userInfo(bearer)
+            if (res.isSuccessful) {
+                val body = res.body()
+                if (body != null) {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        errorMsg = mapServerError(res.code(), res.errorBody()?.string())
+                        nickname = body.nickname,
+                        profileId = body.profileImgNumber,
+                        errorMsg = null
                     )
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, errorMsg = "응답 바디가 비었습니다.")
                 }
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(isLoading = false, errorMsg = e.message ?: "알 수 없는 오류")
+            } else {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    errorMsg = mapServerError(res.code(), res.errorBody()?.string())
+                )
             }
         }
     }

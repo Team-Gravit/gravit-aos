@@ -1,4 +1,4 @@
-package com.example.gravit.main.League
+package com.inuappcenter.gravit.main.League
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,9 +25,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gravit.ui.theme.mbc1961
-import com.example.gravit.ui.theme.pretendard
-import com.example.gravit.R
+import com.inuappcenter.gravit.ui.theme.mbc1961
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 
 @Composable
 fun SeasonFinish(
@@ -82,5 +82,6 @@ fun SeasonFinish(
             contentDescription = null,
             modifier = Modifier.size(163.dp, 216.dp)
         )
+        Spacer(Modifier.height(60.dp))
     }
 }

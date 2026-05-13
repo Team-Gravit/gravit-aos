@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.main.User.TopBar
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
 fun NoticeDetail(

@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.main.User.TopBar
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import kotlin.math.max
 import kotlin.math.min
 
@@ -44,7 +44,7 @@ fun Notice(navController: NavController) {
     var currentPage by rememberSaveable { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        vm.loadFirst()
+        vm.loadAll()
     }
 
     val totalItems = ui.items.size
@@ -100,8 +100,7 @@ fun Notice(navController: NavController) {
                             painter = painterResource(id = R.drawable.arrow_right),
                             contentDescription = "다음 페이지",
                             tint = Color(0xFF222222),
-                            modifier = Modifier
-                                .size(20.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     Spacer(Modifier.height(6.dp))
@@ -154,7 +153,6 @@ fun Notice(navController: NavController) {
                             }
                         }
                 )
-
                 for (page in windowStart until windowEnd) {
                     val isSelected = page == currentPage
                     Text(
@@ -162,8 +160,10 @@ fun Notice(navController: NavController) {
                         fontSize = 20.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         fontFamily = pretendard,
-                        color = if (isSelected) Color(0xFFBA00FF) else Color(0xFF333333).copy(alpha = 0.7f),
-                        textDecoration = if (isSelected) TextDecoration.Underline else TextDecoration.None,
+                        color = if (isSelected) Color(0xFFBA00FF)
+                        else Color(0xFF333333).copy(alpha = 0.7f),
+                        textDecoration = if (isSelected) TextDecoration.Underline
+                        else TextDecoration.None,
                         modifier = Modifier
                             .padding(horizontal = 6.dp)
                             .clickable {
@@ -171,25 +171,16 @@ fun Notice(navController: NavController) {
                             }
                     )
                 }
-
-                val isLastLocalPage = currentPage >= totalPages - 1
-                val canLoadMoreFromServer = ui.hasNext
-
                 Icon(
                     painter = painterResource(id = R.drawable.arrow_right),
                     contentDescription = "다음 페이지",
-                    tint = if (isLastLocalPage && !canLoadMoreFromServer) Color.LightGray else Color.Black,
+                    tint = if (currentPage >= totalPages - 1) Color.LightGray else Color.Black,
                     modifier = Modifier
                         .padding(horizontal = 8.dp)
                         .size(20.dp)
-                        .clickable(enabled = !ui.loading) {
-                            when {
-                                currentPage < totalPages - 1 -> {
-                                    currentPage += 1
-                                }
-                                currentPage == totalPages - 1 && canLoadMoreFromServer -> {
-                                    vm.loadNext()
-                                }
+                        .clickable(enabled = currentPage < totalPages - 1) {
+                            if (currentPage < totalPages - 1) {
+                                currentPage += 1
                             }
                         }
                 )

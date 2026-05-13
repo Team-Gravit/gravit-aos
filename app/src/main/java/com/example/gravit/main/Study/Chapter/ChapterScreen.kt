@@ -1,5 +1,6 @@
-package com.example.gravit.main.Study.Chapter
+package com.inuappcenter.gravit.main.Study.Chapter
 
+import android.R.attr.enabled
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -40,10 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.R
-import com.example.gravit.api.RetrofitInstance
-import com.example.gravit.ui.theme.mbc1961
-import com.example.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.R
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,17 +56,18 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import com.example.gravit.api.ChapterPageResponse
-import com.example.gravit.ui.theme.Responsive
-import com.example.gravit.main.Home.RoundedGauge
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
-import com.example.gravit.error.NotFoundScreen
-import com.example.gravit.error.UnauthorizedScreen
+import com.inuappcenter.gravit.api.ChapterPageResponse
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Home.RoundedGauge
+import com.inuappcenter.gravit.ui.theme.mbc1961
+import com.inuappcenter.gravit.ui.theme.pretendard
+import kotlin.collections.map
 
 
 @Composable
@@ -82,18 +83,50 @@ fun ChapterScreen(
 
     var navigated by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.load() }
-    when (ui) {
-        ChapterViewModel.UiState.SessionExpired -> {
-            UnauthorizedScreen(
-                navController = navController,
-                onSessionExpired = onSessionExpired
-            )
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            ChapterViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+            ChapterViewModel.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+            ChapterViewModel.UiState.Failed -> {
+                navigated = true
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            else -> Unit
         }
+    }
+
+    when (ui) {
         ChapterViewModel.UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
+
         is ChapterViewModel.UiState.Success -> {
             val chapters = (ui as ChapterViewModel.UiState.Success).data
             ChapterUI(
@@ -101,12 +134,8 @@ fun ChapterScreen(
                 chapters = chapters
             )
         }
-
-        else -> {
-            NotFoundScreen(navController = navController)
-        }
+        else -> Unit
     }
-
 }
 
 @Composable
@@ -117,13 +146,15 @@ private fun ChapterUI(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
             .background(Color.White)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(WindowInsets.statusBars.asPaddingValues())
                 .background(Color.White)
+                .navigationBarsPadding()
+
         ) {
             Box(
                 modifier = Modifier
@@ -151,7 +182,8 @@ private fun ChapterUI(
                     .padding(
                         start = 16.dp,
                         end = 16.dp,
-                        top = 16.dp
+                        top = 16.dp,
+                        bottom = 60.dp
                     )
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
@@ -160,23 +192,24 @@ private fun ChapterUI(
                     Row(modifier = Modifier.fillMaxWidth()) {
                         pair.forEachIndexed { index, data ->
 
-                            val enabled = data.chapterId < 4
+                            //val enabled = data.chapterId < 4
                             ChapterButton(
                                 description = data.description,
                                 text = data.title,
                                 planet = data.planetRes,
                                 rate = data.rate,
                                 onClick = {
-                                    if(enabled) {
+                                    navController.navigate("unit/${data.chapterId}")
+                                    /**if(enabled) {
                                         navController.navigate("unit/${data.chapterId}")
-                                    }
+                                    }**/
                                 },
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(160f / 166f)
                                     .shadow(4.dp, RoundedCornerShape(10.dp)),
                                 isRight = (index == 1),
-                                enabled = enabled
+                                //enabled = enabled
                             )
                             if (index == 0 && pair.size > 1) {
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -211,16 +244,16 @@ private val csChapterName = mapOf(
     3 to "network"
 )
 private fun resolvePlanetRes(id: Int): Int {
-    return planetById[id] ?: R.drawable.data_structure_chapter
+    return planetById[id] ?: R.drawable.algorithm_chapter
 }
 val planetById = mapOf(
     1 to R.drawable.data_structure_chapter,
     2 to R.drawable.algorithm_chapter,
     3 to R.drawable.computer_network_chapter,
-    4 to R.drawable.opreating_system_chapter,
-    5 to R.drawable.database_chapter,
-    6 to R.drawable.computer_security_chapter,
-    7 to R.drawable.sofftware_engineering_chapter,
+    4 to R.drawable.database_chapter,
+    5 to R.drawable.computer_security_chapter,
+    6 to R.drawable.sofftware_engineering_chapter,
+    7 to R.drawable.opreating_system_chapter,
     8 to R.drawable.programming_language_chapter,
 )
 
@@ -244,7 +277,7 @@ fun ChapterButton(
     planet: Int,
     isRight: Boolean,
     rate: Float,
-    enabled: Boolean
+    enabled: Boolean = true
 ) {
     var showTooltip by remember { mutableStateOf(false) }
     val grayFilter = ColorFilter.colorMatrix(

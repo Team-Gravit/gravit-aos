@@ -1,4 +1,4 @@
-package com.example.gravit.api
+package com.inuappcenter.gravit.api
 
 import android.content.Context
 import androidx.core.content.edit
