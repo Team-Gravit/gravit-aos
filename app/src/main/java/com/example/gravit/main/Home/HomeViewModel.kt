@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.MainPageResponse
+import com.inuappcenter.gravit.api.UnitDetail
 import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +20,12 @@ class HomeViewModel(
 
     sealed interface UiState {
         data object Loading : UiState
-        data class Success(val data: MainPageResponse) : UiState
+
+        data class Success(
+            val data: MainPageResponse,
+            val units: List<UnitDetail>
+        ) : UiState
+
         data object Failed : UiState
         data object SessionExpired : UiState
         data object NotFound : UiState
@@ -37,10 +43,30 @@ class HomeViewModel(
             return@launch
         }
 
+        val auth = "Bearer ${session.accessToken}"
+
         runCatching {
-            api.getMainPage("Bearer ${session.accessToken}")
-        }.onSuccess { res ->
-            _state.value = UiState.Success(res)
+            val mainData = api.getMainPage(auth)
+
+            val chapterId = mainData.learningDetail.recentSolvedChapterId
+
+            val units = if (chapterId != 0) {
+                api.getUnitPage(
+                    auth = auth,
+                    chapterId = chapterId
+                ).unitDetails
+            } else {
+                emptyList()
+            }
+
+            mainData to units
+
+        }.onSuccess { (mainData, units) ->
+            _state.value = UiState.Success(
+                data = mainData,
+                units = units
+            )
+
         }.onFailure { e ->
             handleApiFailure(
                 e = e,
