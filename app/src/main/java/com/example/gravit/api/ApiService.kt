@@ -41,10 +41,10 @@ data class OnboardingResponse(val userId: Int, val profileImgNumber: Int, val ni
 
 //챕터
 data class ChapterPageResponse(
-    val chapterSummary: ChapterSummary,
-    val chapterProgressRate: String
+    val chapterSummaryResponse: ChapterSummaryResponse,
+    val chapterProgressRate: Double
 )
-data class ChapterSummary(
+data class ChapterSummaryResponse(
     val chapterId: Int,
     val title: String,
     val description: String,
@@ -52,45 +52,73 @@ data class ChapterSummary(
 
 //홈
 data class MainPageResponse(
+    val profileImgNumber: Int,
     val nickname: String,
-    val leagueName: String,
-    val userLevelDetail: UserLevelDetail,
-    val learningDetail: LearningDetail,
-    val missionDetail: MissionDetail
+    val userLevelDetailResponse: UserLevelDetailResponse,
+    val leagueDetailResponse: LeagueDetailResponse,
+    val learningDetailResponse: LearningDetailResponse,
+    val recommendedUnitResponses: List<RecommendedUnitResponses> = emptyList(),
+    val weeklyLearningRecordResponse: WeeklyLearningRecordResponse,
+    val missionDetailResponse: MissionDetailResponse
 )
-data class UserLevelDetail(
-    val xp: Int,
+data class UserLevelDetailResponse(
+    val currentXp: Int,
     val level: Int,
-    val levelRate: Float
+    val levelRate: Float,
+    val maxXp: Int
 )
-data class LearningDetail(
+data class LearningDetailResponse(
     val consecutiveSolvedDays: Int,
-    val planetConquestRate: Float,
     val recentSolvedChapterId: Int,
     val recentSolvedChapterTitle: String,
-    val recentSolvedChapterDescription: String,
-    val recentSolvedChapterProgressRate: String
+    val recentSolvedChapterProgressRate: Double,
+    val units: List<Units>
 )
-data class MissionDetail(
-    val missionName: String,
+data class MissionDetailResponse(
+    val missionType: String,
     val missionDescription: String,
     val awardXp: Int,
+    val progressRate: Float,
     val isCompleted: Boolean
 )
-
+data class WeeklyLearningRecordResponse(
+    val MONDAY: Boolean,
+    val TUESDAY: Boolean,
+    val WEDNESDAY: Boolean,
+    val THURSDAY: Boolean,
+    val FRIDAY: Boolean,
+    val SATURDAY: Boolean,
+    val SUNDAY: Boolean
+)
+data class RecommendedUnitResponses(
+    val unitId: Int,
+    val unitTitle: String,
+    val chapterId: Int,
+    val chapterTitle: String
+)
+data class LeagueDetailResponse(
+    val leagueId: Int,
+    val leagueName: String,
+    val currentLP: Int,
+    val maxLP: Int
+)
+data class Units(
+    val unitId: Int,
+    val title: String,
+    val isCompleted: Boolean
+)
 // 유닛
 data class UnitPageResponse(
-    val chapterSummary: ChapterSummary,
-    val unitDetails: List<UnitDetail>
+    val chapterSummaryResponse: ChapterSummaryResponse,
+    val unitDetailResponses: List<UnitDetailResponses>
 )
 
-data class UnitDetail(
-    @SerializedName("unitSummaries")
-    val unitSummary: UnitSummary,
+data class UnitDetailResponses(
+    val unitSummaryResponse: UnitSummaryResponse,
     val progressRate: Double
 )
 
-data class UnitSummary(
+data class UnitSummaryResponse(
     val unitId: Int,
     val title: String,
     val description: String
@@ -98,8 +126,7 @@ data class UnitSummary(
 
 //레슨리스트
 data class LessonListResponse(
-    val unitSummary: UnitSummary,
-    val unitId: Int,
+    val unitSummaryResponse: UnitSummaryResponse,
     val lessonSummaries: List<LessonSummaries>,
     val bookmarkAccessible: Boolean,
     val wrongAnsweredNoteAccessible: Boolean
@@ -113,7 +140,7 @@ data class LessonSummaries(
 
 //문제
 data class ProblemResponse(
-    val unitSummary: UnitSummary,
+    val unitSummaryResponse: UnitSummaryResponse,
     val problems: List<Problems>,
     val totalProblems: Int
 )
@@ -158,7 +185,7 @@ data class ProblemSubmissionRequests(
 data class LessonResultResponse(
     val leagueName: String,
     val userLevelResponse: UserLevelResponse,
-    val unitSummary: UnitSummary
+    val unitSummary: UnitSummaryResponse
 
 )
 data class UserLevelResponse(
@@ -212,13 +239,21 @@ data class FriendCountResponse(
 
 //사용자
 data class UserPageResponse(
-    val nickname: String,
-    val profileImgNumber: Int,
-    val handle: String,
-    val follower: Int,
-    val following: Int
+    val nickname: String? = null,
+    val profileImgNumber: Int? = null,
+    val handle: String? = null,
+    val follower: Int? = null,
+    val following: Int? = null
 )
 
+data class MyPageBanner(
+    val profileImgNumber: Int? = null,
+    val nickname: String? = null,
+    val handle: String? = null,
+    val level: Int? = null,
+    val currentLeague: String? = null,
+    val consecutiveSolvedDays: Int? = null
+)
 data class UserInfoResponse(
     val userId: Int,
     val profileImgNumber: Int,
@@ -545,5 +580,9 @@ interface ApiService {
         @Query("queryText") queryText: String,
         @Query("page") page: Int
     ): Response<FriendSearchResponse>
+    @GET("api/v1/my-pages/banners")
+    suspend fun getBanners(
+        @Header("Authorization") auth: String,
+    ) : Response<MyPageBanner>
 }
 

@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.api.UnitDetail
 import com.inuappcenter.gravit.api.UnitPageResponse
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.UnitDetailResponses
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -51,8 +51,8 @@ data class UnitUi(
 )
 
 fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
-    return dto.unitDetails.mapIndexed { index, detail: UnitDetail ->
-        val summary = detail.unitSummary
+    return dto.unitDetailResponses.mapIndexed { index, detail: UnitDetailResponses ->
+        val summary = detail.unitSummaryResponse
         val ratePercent = detail.progressRate
         val rate = (ratePercent / 100.0).toFloat()
 
@@ -140,7 +140,7 @@ fun UnitList(
             val units = toUnitUiList(data)
 
             UnitListContent(
-                chapterTitle = data.chapterSummary.title,
+                chapterTitle = data.chapterSummaryResponse.title,
                 units = units,
                 navController = navController
             )
@@ -167,7 +167,6 @@ private fun UnitListContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .navigationBarsPadding()
 
         ) {
             Box(
@@ -220,7 +219,7 @@ private fun UnitListContent(
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)) {
+                Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp)) {
                     Text(
                         text = "유닛 리스트",
                         fontWeight = FontWeight.SemiBold,
@@ -236,7 +235,7 @@ private fun UnitListContent(
                         modifier = Modifier
                             .fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp)
+                        contentPadding = PaddingValues(bottom = 40.dp)
                     ) {
                         itemsIndexed(units) { _, unit ->
                             UnitItemBox(

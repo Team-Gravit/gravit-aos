@@ -327,7 +327,7 @@ fun LessonListUI(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 115.dp),
+                    .padding(bottom = 15.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 CustomSnackBar(text = snackBar!!)

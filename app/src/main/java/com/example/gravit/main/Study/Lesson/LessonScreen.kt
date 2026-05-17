@@ -189,7 +189,7 @@ fun LessonScreen(
 
                 ProblemUI(
                     navController = navController,
-                    unitTitle = s.unitSummary.title,
+                    unitTitle = s.unitSummaryResponse.title,
                     problems = problemSlots,
                     total = total,
                     swVm = swVm,
@@ -197,7 +197,7 @@ fun LessonScreen(
                     onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
                     onRecordResult = ::recordResult,
                     onFinishLesson = ::finishLesson,
-                    unitId = s.unitSummary.unitId
+                    unitId = s.unitSummaryResponse.unitId
                 )
             }
 

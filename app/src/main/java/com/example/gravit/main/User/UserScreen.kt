@@ -1,4 +1,7 @@
-package com.inuappcenter.gravit.main.User
+import com.inuappcenter.gravit.main.User.UserScreenVM
+import com.inuappcenter.gravit.main.User.UserVMFactory
+
+/* package com.inuappcenter.gravit.main.User
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -512,3 +515,4 @@ private fun BadgeChip(badge: BadgeResponses) {
         )
     }
 }
+*/
