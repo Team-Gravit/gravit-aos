@@ -2,8 +2,10 @@ import org.gradle.kotlin.dsl.implementation
 import java.io.FileInputStream
 import java.util.Properties;
 
-val properties = Properties().apply {
-    load(FileInputStream("local.properties"))
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(FileInputStream(localPropertiesFile))
 }
 
 plugins {
@@ -24,25 +26,25 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        val kakaoKey = properties.getProperty("KAKAO_NATIVE_APP_KEY")
+        val kakaoKey = properties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
         manifestPlaceholders["auth0Domain"] = "dev-fl5wpn5srn5xay26.us.auth0.com"
         manifestPlaceholders["auth0Scheme"] = "gravit"
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "AUTH0_CLIENT_ID", "\"${properties.getProperty("AUTH0_CLIENT_ID")}\"")
-        buildConfigField("String", "AUTH0_DOMAIN", "\"${properties.getProperty("AUTH0_DOMAIN")}\"")
-        buildConfigField("String", "API_BASE_URL", "\"${properties.getProperty("API_BASE_URL")}\"")
+        buildConfigField("String", "AUTH0_CLIENT_ID", "\"${properties.getProperty("AUTH0_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "AUTH0_DOMAIN", "\"${properties.getProperty("AUTH0_DOMAIN") ?: ""}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${properties.getProperty("API_BASE_URL") ?: ""}\"")
 
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
 
-        buildConfigField("String", "OAUTH_CLIENT_ID", "\"${properties.getProperty("OAUTH_CLIENT_ID")}\"")
-        buildConfigField("String", "OAUTH_CLIENT_SECRET", "\"${properties.getProperty("OAUTH_CLIENT_SECRET")}\"")
-        buildConfigField("String", "OAUTH_CLIENT_NAME", "\"${properties.getProperty("OAUTH_CLIENT_NAME")}\"")
+        buildConfigField("String", "OAUTH_CLIENT_ID", "\"${properties.getProperty("OAUTH_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "OAUTH_CLIENT_SECRET", "\"${properties.getProperty("OAUTH_CLIENT_SECRET") ?: ""}\"")
+        buildConfigField("String", "OAUTH_CLIENT_NAME", "\"${properties.getProperty("OAUTH_CLIENT_NAME") ?: ""}\"")
 
-        buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${properties.getProperty("GOOGLE_CLIENT_ID")}\"")
-        buildConfigField("String", "GOOGLE_CLIENT_SECRET", "\"${properties.getProperty("GOOGLE_CLIENT_SECRET")}\"")
+        buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${properties.getProperty("GOOGLE_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_CLIENT_SECRET", "\"${properties.getProperty("GOOGLE_CLIENT_SECRET") ?: ""}\"")
     }
 
     buildTypes {
