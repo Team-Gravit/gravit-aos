@@ -1,5 +1,6 @@
 package com.inuappcenter.gravit.login
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -88,19 +89,6 @@ fun ProfileSetting(navController: NavController) {
             OnboardingViewModel.UiState.Success -> {
                 navigated = true
                 navController.navigate("profile finish") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            OnboardingViewModel.UiState.SessionExpired -> {
-                navigated = true
-                navController.navigate("error/401") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
-                }
-            }
-            OnboardingViewModel.UiState.NotFound -> {
-                if (isDeletionPending(context)) return@LaunchedEffect
-                navigated = true
-                navController.navigate("error/404") {
                     popUpTo(0); launchSingleTop = true; restoreState = false
                 }
             }

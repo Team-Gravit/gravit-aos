@@ -160,7 +160,7 @@ fun BookWrongScreen(
 
                 ProblemUI(
                     navController = navController,
-                    unitTitle = s.unitSummary.title,
+                    unitTitle = s.unitSummaryResponse.title,
                     problems = problemSlots,
                     total = total,
                     swVm = swVm,

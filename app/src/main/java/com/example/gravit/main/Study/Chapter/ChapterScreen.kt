@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.main.Study.Chapter
 
-import android.R.attr.enabled
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -153,7 +151,6 @@ private fun ChapterUI(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .navigationBarsPadding()
 
         ) {
             Box(
@@ -182,8 +179,7 @@ private fun ChapterUI(
                     .padding(
                         start = 16.dp,
                         end = 16.dp,
-                        top = 16.dp,
-                        bottom = 60.dp
+                        top = 16.dp
                     )
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
@@ -234,7 +230,7 @@ data class ChapterButtonUI(
     val chapterId: Int,
     val title: String,
     val description: String,
-    val rate: Float,
+    val rate: Double,
     val planetRes: Int,
 )
 
@@ -243,7 +239,7 @@ private val csChapterName = mapOf(
     2 to "algorithm",
     3 to "network"
 )
-private fun resolvePlanetRes(id: Int): Int {
+fun resolvePlanetRes(id: Int): Int {
     return planetById[id] ?: R.drawable.algorithm_chapter
 }
 val planetById = mapOf(
@@ -260,11 +256,11 @@ val planetById = mapOf(
 fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonUI> {
     return chapters.map { c ->
         ChapterButtonUI(
-            chapterId = c.chapterSummary.chapterId,
-            title = c.chapterSummary.title,
-            description = c.chapterSummary.description,
-            rate = c.chapterProgressRate?.toFloatOrNull() ?: 0f,
-            planetRes = resolvePlanetRes(c.chapterSummary.chapterId),
+            chapterId = c.chapterSummaryResponse.chapterId,
+            title = c.chapterSummaryResponse.title,
+            description = c.chapterSummaryResponse.description,
+            rate = c.chapterProgressRate,
+            planetRes = resolvePlanetRes(c.chapterSummaryResponse.chapterId),
         )
     }
 }
@@ -276,7 +272,7 @@ fun ChapterButton(
     modifier: Modifier = Modifier,
     planet: Int,
     isRight: Boolean,
-    rate: Float,
+    rate: Double,
     enabled: Boolean = true
 ) {
     var showTooltip by remember { mutableStateOf(false) }
@@ -345,7 +341,7 @@ fun ChapterButton(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     RoundedGauge(
-                        rate = rate,
+                        rate = rate.toFloat(),
                         modifier = Modifier.fillMaxWidth(),
                         height = 10.dp,
                         width = 0.dp

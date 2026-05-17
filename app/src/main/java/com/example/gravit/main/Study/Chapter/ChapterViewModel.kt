@@ -42,7 +42,7 @@ class ChapterViewModel(
             api.getChapterPage("Bearer ${session.accessToken}")
         }.onSuccess { res ->
             val invalid = res
-                .map { it.chapterSummary.chapterId }
+                .map { it.chapterSummaryResponse.chapterId }
                 .firstOrNull { id -> planetById[id] == null }
 
             if (invalid != null) {
