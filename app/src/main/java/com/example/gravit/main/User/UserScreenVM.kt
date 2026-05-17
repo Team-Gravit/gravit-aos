@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.Badges
+import com.inuappcenter.gravit.api.MyPageBanner
 import com.inuappcenter.gravit.api.UserPageResponse
 import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.async
@@ -14,6 +15,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.Response
 
 class UserScreenVM (
     private val api: ApiService,
@@ -29,7 +31,7 @@ class UserScreenVM (
     }
     data class User(
         val user: UserPageResponse,
-        val badges: Badges
+        val banners: MyPageBanner?
     )
 
     private val _state = MutableStateFlow<UiState>(UiState.Loading)
@@ -48,8 +50,13 @@ class UserScreenVM (
         runCatching {
             coroutineScope {
                 val u = async { api.getUser("Bearer ${session.accessToken}") }
-                val b = async { api.getBadges("Bearer ${session.accessToken}") }
-                User(u.await(), b.await())
+                val banners = async { api.getBanners("Bearer ${session.accessToken}") }
+                val bannerResponse = banners.await()
+                User(u.await(), banners = if (bannerResponse.isSuccessful) {
+                    bannerResponse.body()
+                } else {
+                    null
+                })
             }
         }.onSuccess { res ->
             _state.value = UiState.Success(res)

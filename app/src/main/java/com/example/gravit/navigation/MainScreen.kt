@@ -36,11 +36,11 @@ import com.inuappcenter.gravit.main.User.Setting.Account
 import com.inuappcenter.gravit.main.User.Setting.DeletionComplete
 import com.inuappcenter.gravit.main.User.Setting.DeletionGuard
 import com.inuappcenter.gravit.main.User.Setting.PrivacyPolicy
-import com.inuappcenter.gravit.main.User.UserScreen
 import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
+import com.inuappcenter.gravit.main.User.MyPage
 
 
 enum class FollowTab { Followers, Following }
@@ -182,7 +182,7 @@ fun MainScreen(rootNavController: NavController) {
 
                 composable("league") { LeagueScreen(innerNavController, goToLoginChoice) }
 
-                composable("user") { UserScreen(innerNavController, goToLoginChoice) }
+                composable("user") { MyPage(innerNavController, goToLoginChoice) }
 
                 composable("user/setting") {
                     Setting(

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -487,12 +488,11 @@ fun SeasonCompleted(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(497.dp),
+                .wrapContentHeight(),
             shape = RoundedCornerShape(20.dp),
             color = Color.White
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(30.dp))
@@ -578,8 +578,11 @@ fun SeasonCompleted(
                 }
                 Spacer(Modifier.height(16.dp))
                 Row (
-                    modifier = Modifier.size(175.dp, 56.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ){
                     Image(
                         painter = TierPalette.painterFor(tierIdFromName(popupDetail.leagueName)),
@@ -606,7 +609,7 @@ fun SeasonCompleted(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = onConfirm,
                     modifier = Modifier

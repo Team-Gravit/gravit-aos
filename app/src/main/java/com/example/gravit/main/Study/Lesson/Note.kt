@@ -233,7 +233,7 @@ fun NoteSheetCustom(
                 ) {
                     Column{
                         MarkdownText(noteText)
-                        Spacer(Modifier.height(25.dp))
+                        Spacer(Modifier.height(60.dp))
                     }
                 }
             }

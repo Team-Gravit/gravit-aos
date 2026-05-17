@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,10 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.api.UnitDetail
 import com.inuappcenter.gravit.api.UnitPageResponse
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.UnitDetailResponses
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -50,8 +51,8 @@ data class UnitUi(
 )
 
 fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
-    return dto.unitDetails.mapIndexed { index, detail: UnitDetail ->
-        val summary = detail.unitSummary
+    return dto.unitDetailResponses.mapIndexed { index, detail: UnitDetailResponses ->
+        val summary = detail.unitSummaryResponse
         val ratePercent = detail.progressRate
         val rate = (ratePercent / 100.0).toFloat()
 
@@ -139,7 +140,7 @@ fun UnitList(
             val units = toUnitUiList(data)
 
             UnitListContent(
-                chapterTitle = data.chapterSummary.title,
+                chapterTitle = data.chapterSummaryResponse.title,
                 units = units,
                 navController = navController
             )
@@ -166,7 +167,6 @@ private fun UnitListContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .navigationBarsPadding()
 
         ) {
             Box(
@@ -219,7 +219,7 @@ private fun UnitListContent(
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)) {
+                Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp)) {
                     Text(
                         text = "유닛 리스트",
                         fontWeight = FontWeight.SemiBold,
@@ -235,7 +235,7 @@ private fun UnitListContent(
                         modifier = Modifier
                             .fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp)
+                        contentPadding = PaddingValues(bottom = 40.dp)
                     ) {
                         itemsIndexed(units) { _, unit ->
                             UnitItemBox(
@@ -284,17 +284,27 @@ private fun UnitItemBox(
             contentScale = ContentScale.Crop
         )
         Column(modifier = Modifier
-            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 10.dp)
+            .padding(top = 13.dp, start = 13.dp, end = 13.dp, bottom = 13.dp)
             .padding(10.dp)
         ) {
-            Text(
-                text = "${unit.orderText} - ${unit.title}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                fontFamily = pretendard,
-                textAlign = TextAlign.Start,
-                color = Color.White,
-            )
+            Row {
+                Text(
+                    text = "${unit.orderText}  ",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    fontFamily = pretendard,
+                    textAlign = TextAlign.Start,
+                    color = Color.White,
+                )
+                Text(
+                    text = unit.title,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    fontFamily = pretendard,
+                    textAlign = TextAlign.Start,
+                    color = Color.White,
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -307,24 +317,25 @@ private fun UnitItemBox(
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
                     fontFamily = pretendard,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = 0.8f),
                     textAlign = TextAlign.End,
-                    modifier = Modifier.width(40.dp)
+                    modifier = Modifier.width(60.dp),
+                    style = TextStyle(fontFeatureSettings = "tnum")
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(15.dp)
+                        .weight(1f)
+                        .height(13.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color.White)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxHeight()
-                            .padding(2.dp)
+                            .padding(1.dp)
                             .fillMaxWidth(visualRate)
                             .clip(RoundedCornerShape(10.dp))
                             .background(

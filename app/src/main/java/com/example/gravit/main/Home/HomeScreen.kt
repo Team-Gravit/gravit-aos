@@ -432,13 +432,14 @@ fun HomeUI(
                         }
                     }
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(dh(8f)))
 
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Column {
+                            Spacer(modifier = Modifier.height(dh(16f)))
                             Box(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -565,7 +566,7 @@ fun HomeUI(
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.width(18.dp))
+                                    Spacer(modifier = Modifier.width(dw(8f)))
 
                                     Box(
                                         modifier = Modifier
@@ -613,7 +614,7 @@ fun HomeUI(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(18.dp))
+                            Spacer(modifier = Modifier.height(dh(16f)))
 
                             val chapterId = home.learningDetail.recentSolvedChapterId
                             val chapterName = home.learningDetail.recentSolvedChapterTitle

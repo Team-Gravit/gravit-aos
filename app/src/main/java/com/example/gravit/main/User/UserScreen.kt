@@ -1,4 +1,7 @@
-package com.inuappcenter.gravit.main.User
+import com.inuappcenter.gravit.main.User.UserScreenVM
+import com.inuappcenter.gravit.main.User.UserVMFactory
+
+/* package com.inuappcenter.gravit.main.User
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -313,7 +316,7 @@ fun UserScreen(
                                     contentDescription = "user",
                                     modifier = Modifier
                                         .padding(vertical = 3.dp)
-                                        .size(30.dp)
+                                        .size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
@@ -512,3 +515,4 @@ private fun BadgeChip(badge: BadgeResponses) {
         )
     }
 }
+*/

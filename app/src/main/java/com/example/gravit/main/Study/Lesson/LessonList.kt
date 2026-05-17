@@ -78,6 +78,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.inuappcenter.gravit.api.LessonSummaries
@@ -326,7 +327,7 @@ fun LessonListUI(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 115.dp),
+                    .padding(bottom = 15.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 CustomSnackBar(text = snackBar!!)
@@ -558,14 +559,18 @@ fun LessonBox(
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop
         )
-        Column (modifier = Modifier.padding(20.dp)) {
+        Column (modifier = Modifier.padding(17.dp)) {
             Text(
                 text = title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = pretendard,
                 color = Color.White,
-                letterSpacing = (-0.5).sp
+                letterSpacing = (-0.8).sp,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFeatureSettings = "tnum")
             )
             Spacer(Modifier.height(4.dp))
             Text(

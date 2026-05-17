@@ -48,7 +48,20 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                properties.getProperty("DEV_API_BASE_URL") as String
+            )
+        }
+
         release {
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                properties.getProperty("PROD_API_BASE_URL") as String
+            )
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -81,6 +94,7 @@ android {
 dependencies {
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.foundation)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
