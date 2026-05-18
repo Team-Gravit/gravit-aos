@@ -107,6 +107,7 @@ data class Units(
     val title: String,
     val isCompleted: Boolean
 )
+
 // 유닛
 data class UnitPageResponse(
     val chapterSummaryResponse: ChapterSummaryResponse,
