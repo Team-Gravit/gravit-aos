@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -22,11 +24,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.Cip
+import com.example.gravit.ui.theme.CipState
 import com.example.gravit.ui.theme.PrimitiveColor
-import com.inuappcenter.gravit.api.UnitDetailResponses
+import com.inuappcenter.gravit.api.Units
 
 @Composable
 fun PreviousButton(
@@ -34,9 +39,9 @@ fun PreviousButton(
     chapterName: String,
     onClick: () -> Unit,
     onViewAllClick: () -> Unit,
-    onUnitClick: (UnitDetailResponses) -> Unit,
+    onUnitClick: (Units) -> Unit,
     progressRate: Float,
-    units: List<UnitDetailResponses> = emptyList()
+    units: List<Units> = emptyList()
 ) {
     val config = LocalConfiguration.current
     val designWidth = 360f
@@ -48,11 +53,15 @@ fun PreviousButton(
     fun dw(v: Float) = (v * scaleW).dp
     fun dh(v: Float) = (v * scaleH).dp
 
+    val statusMap = mapOf(
+        "NOT_STARTED" to "진행전",
+        "IN_PROGRESS" to "진행중",
+        "COMPLETED" to "진행됨"
+    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(color = Color.White)
+            .clip(RoundedCornerShape(8.dp))
             .then(
                 if (chapterId == 0) {
                     Modifier.clickable(onClick = onClick)
@@ -60,6 +69,7 @@ fun PreviousButton(
                     Modifier
                 }
             )
+            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -69,6 +79,26 @@ fun PreviousButton(
                     vertical = dh(16f)
                 )
         ) {
+            /* if (chapterId == 0) {
+                Row {
+                    CustomText(
+                        text = "새로운 학습을 시작하기",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight(600),
+                        color = Color.White,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(dh(8f)))
+
+                CustomText(
+                    text = "최근에 진행한 학습 정보가 없습니다.",
+                    fontWeight = FontWeight(500),
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            } else { */
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -105,7 +135,7 @@ fun PreviousButton(
                 )
 
                 Text(
-                    text = "${progressRate.toInt()}%",
+                    text = "$progressRate%",
                     style = AppTypography.Label1,
                     color = AppColor.Main1
                 )
@@ -114,88 +144,79 @@ fun PreviousButton(
             Spacer(modifier = Modifier.height(10.dp))
 
             RoundedGauge(
-                height = 10.dp,
+                height = dh(8f),
                 width = 0.dp,
                 rate = progressRate,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFFFBF1FF)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-                RoundedGauge(
-                    height = dh(8f),
-                    width = 0.dp,
-                    rate = progressRate,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color(0xFFFBF1FF)
-                )
-
-                    val unitBorderColor = when {
-                        unitProgressRate <= 0.0 -> Color(0xFFF8F8F8)
-                        unitProgressRate < 100.0 -> Color(0xFFCE4BFF)
-                        else -> Color(0xFFF8F8F8)
-                    }
-
-                    val unitBackgroundColor = when {
-                        unitProgressRate <= 0.0 -> Color(0xFFF8F8F8)
-                        unitProgressRate < 100.0 -> Color.White
-                        else -> Color(0xFFF8F8F8)
-                    }
-
-                    val unitTextColor = when {
-                        unitProgressRate <= 0.0 -> Color(0xFFC6C6C6)
-                        unitProgressRate < 100.0 -> Color(0xFF383838)
-                        else -> Color(0xFF383838)
-                    }
-
-                    val dividerColor = when {
-                        unitProgressRate <= 0.0 -> Color(0xFFDCDCDC)
-                        unitProgressRate < 100.0 -> Color(0xFFDCDCDC)
-                        else -> Color(0xFFDCDCDC)
-                    }
-
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(dh(8f))
+            ) {
+                units.forEachIndexed { index, unit ->
+                    val unitOrderText = "Unit %02d".format(index + 1)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(45.dp)
+                            .height(dh(42f))
                             .clip(RoundedCornerShape(4.dp))
-                            .background(unitBackgroundColor)
                             .border(
                                 width = 1.dp,
-                                color = unitBorderColor,
+                                color = if (unit.status == "IN_PROGRESS") Color(0xFFCE4BFF) else Color.Transparent,
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .clickable {
                                 onUnitClick(unit)
-                            },
+                            }
+                            .background(if (unit.status == "IN_PROGRESS") Color.White else PrimitiveColor.Gray100),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        Row (
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = unitOrderText,
                                 style = AppTypography.Label2,
-                                color = unitTextColor
+                                color = if (unit.status == "NOT_STARTED") PrimitiveColor.Gray400 else PrimitiveColor.Gray900,
+                                modifier = Modifier.size(50.dp, 16.dp)
                             )
-
+                            Spacer(modifier = Modifier.width(12.dp))
                             VerticalDivider(
                                 modifier = Modifier.fillMaxHeight(),
-                                thickness = 2.dp,
-                                color = dividerColor
+                                thickness = 1.dp,
+                                color = AppColor.divider1
                             )
-
+                            Spacer(modifier = Modifier.width(16.dp))
                             Text(
-                                text = unit.unitSummaryResponse.title,
+                                text = unit.title,
                                 style = AppTypography.Label2,
-                                color = unitTextColor
+                                color = if (unit.status == "NOT_STARTED") PrimitiveColor.Gray400 else PrimitiveColor.Gray900,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Cip(
+                                text = statusMap[unit.status],
+                                onClick = {},
+                                state =
+                                    if(unit.status == "NOT_STARTED") CipState.Disabled
+                                    else if (unit.status == "IN_PROGRESS") CipState.Active
+                                    else CipState.Default,
+                                modifier = Modifier.size(55.dp, 26.dp),
+                                style = AppTypography.App_Caption2
                             )
                         }
+
                     }
                 }
             }
+            //}
         }
     }
 }
