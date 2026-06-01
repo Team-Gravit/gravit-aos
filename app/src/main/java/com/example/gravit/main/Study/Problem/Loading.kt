@@ -85,7 +85,7 @@ fun LoadingScreen(){
             )
             Spacer(Modifier.height(61.dp))
             Text(
-                text = "알고 게셨나요?",
+                text = "알고 계셨나요?",
                 fontWeight = FontWeight.Medium,
                 fontFamily = pretendard,
                 fontSize = 15.sp,

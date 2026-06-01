@@ -122,13 +122,13 @@ fun PreviousButton(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(dh(8f))
-            ) {
-                units.forEachIndexed { index, unit ->
-                    val unitOrderText = "Unit %02d".format(index + 1)
-                    val unitProgressRate = unit.progressRate
+                RoundedGauge(
+                    height = dh(8f),
+                    width = 0.dp,
+                    rate = progressRate,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFFFBF1FF)
+                )
 
                     val unitBorderColor = when {
                         unitProgressRate <= 0.0 -> Color(0xFFF8F8F8)

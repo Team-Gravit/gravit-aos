@@ -2,6 +2,7 @@ package com.inuappcenter.gravit.api
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import com.inuappcenter.gravit.api.RetrofitInstance.api
 import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.http.Body
@@ -12,6 +13,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.Response
+import retrofit2.http.DELETE
 import retrofit2.http.HTTP
 
 //로그인
@@ -238,6 +240,31 @@ data class FriendCountResponse(
     val followingCount: Int
 )
 
+//소셜피드
+data class SocialRecommend(
+    val userId: Int,
+    val nickname: String,
+    val profileImgNumber: Int,
+    val mutualFollowCount: Int
+)
+data class SocialFeed(
+    val hasNextPage: Boolean,
+    val contents: List<SocialFeedContents>
+)
+data class SocialFeedContents(
+    val feedId: Int,
+    val actorId: Int,
+    val actorNickname: String,
+    val actorProfileImgNumber: Int,
+    val actorHandle: String,
+    val message: String,
+    val createdAt: String
+)
+data class FriendsCount(
+    val followerCount: Int,
+    val followingCount: Int
+)
+
 //사용자
 data class UserPageResponse(
     val nickname: String? = null,
@@ -255,13 +282,61 @@ data class MyPageBanner(
     val currentLeague: String? = null,
     val consecutiveSolvedDays: Int? = null
 )
+data class MyPageLearningInfo(
+    val weeklyReport: WeeklyReport,
+    val topChapters: List<TopChapter>,
+    val weakConcepts: List<WeakConcept>
+)
+data class WeeklyReport(
+    val MONDAY: Int,
+    val TUESDAY: Int,
+    val WEDNESDAY: Int,
+    val THURSDAY: Int,
+    val FRIDAY: Int,
+    val SATURDAY: Int,
+    val SUNDAY: Int,
+    val thisWeekCompletedLessonCount: Int,
+    val weekOverWeekDeltas: List<Int>
+)
+data class TopChapter(
+    val rank: Int,
+    val chapterTitle: String,
+    val solvedLessonCount: Int,
+    val ratio: Int
+)
+data class WeakConcept(
+    val rank: Int,
+    val unitTitle: String,
+    val chapterTitle: String,
+    val wrongAnswerCount: Int,
+    val wrongAnswerRate: Int
+)
 data class UserInfoResponse(
     val userId: Int,
     val profileImgNumber: Int,
     val nickname: String,
     val providerId: String
 )
-
+data class MyPageSummary(
+    val learningSummary: LearningSummary,
+    val learningHistory: LearningHistory,
+    val years: List<Int>
+)
+data class LearningHistory(
+    val dailySolvedCounts: List<DailySolvedCounts>,
+    val peakLearningHour: Int
+)
+data class DailySolvedCounts(
+    val date: String,
+    val solvedLessonCount: Int
+)
+data class LearningSummary(
+    val topPercent: Int,
+    val completedLessonCount: Int,
+    val totalLessonCount: Int,
+    val totalLearningHours: Double,
+    val averageAccuracy: Int
+)
 data class UpdateUserInfoRequest(
     val profilePhotoNumber: Int,
     val nickname: String,
@@ -337,6 +412,19 @@ data class LastSeasonPopupDto(
 data class SlicePage<T>(
     val hasNextPage: Boolean,
     val contents: List<T>
+)
+data class MyLeagueHistory(
+    val currentSeasonRank: Int,
+    val totalSeasonCount: Int,
+    val top3SeasonCount: Int,
+    val bestLeagueName: String,
+    val seasonHistory: List<SeasonHistory>
+)
+data class SeasonHistory(
+    val seasonKey: String,
+    val leagueName: String,
+    val sortOrder: Int,
+    val isCurrent: Boolean
 )
 
 //뱃지
@@ -581,9 +669,48 @@ interface ApiService {
         @Query("queryText") queryText: String,
         @Query("page") page: Int
     ): Response<FriendSearchResponse>
-    @GET("api/v1/my-pages/banners")
+    @GET("api/v1/my-pages/banners") //마이페이지 배너
     suspend fun getBanners(
         @Header("Authorization") auth: String,
-    ) : Response<MyPageBanner>
+    ) : MyPageBanner
+    @GET("api/v1/my-pages/learning")
+    suspend fun getMyPageLearning(
+        @Header("Authorization") auth: String,
+    ) : MyPageLearningInfo
+    @GET("api/v1/my-pages/summaries")
+    suspend fun getSummeries(
+        @Header("Authorization") auth: String,
+    ): MyPageSummary
+    @POST("api/v1/social/follow/{userId}")
+    suspend fun followSocial(
+        @Header("Authorization") auth: String,
+        @Path("userId") userId: Long
+    ) :  Response<Unit>
+    @POST("api/v1/social/feed/{feedId}/congratulate")
+    suspend fun getCongratulate(
+        @Header("Authorization") auth: String,
+        @Path("feedId") feedId: Long
+    ) :  Response<Unit>
+    @GET("api/v1/social/recommend")
+    suspend fun getSocialRecommend(
+        @Header("Authorization") auth: String,
+    ) : List<SocialRecommend>
+    @GET("api/v1/social/feed")
+    suspend fun getSocialFeed(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int
+    ) : SocialFeed
+    @DELETE("api/v1/social/feed/{feedId}")
+    suspend fun deleteFeed(
+        @Path("feedId") feedId: Long
+    )
+    @GET("api/v1/friends/count")
+    suspend fun getFriendsCount(
+        @Header("Authorization") auth: String,
+    ) : FriendsCount
+    @GET("api/v1/league-history/me")
+    suspend fun getMyLeagueHistory(
+        @Header("Authorization") auth: String,
+    ) : MyLeagueHistory
 }
 

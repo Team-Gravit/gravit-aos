@@ -648,10 +648,12 @@ fun HomeUI(
                                             contentScale = ContentScale.Crop
                                         )
 
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(Color.Black.copy(alpha = 0.18f))
+                                        RoundedGauge(
+                                            height = dh(8f),
+                                            width = 0.dp,
+                                            rate = missionInfo.progressRate,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = Color(0xFFFBF1FF)
                                         )
 
                                         Column(
