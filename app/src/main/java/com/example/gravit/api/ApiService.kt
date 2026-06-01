@@ -107,7 +107,7 @@ data class LeagueDetailResponse(
 data class Units(
     val unitId: Int,
     val title: String,
-    val isCompleted: Boolean
+    val status: String
 )
 
 // 유닛
