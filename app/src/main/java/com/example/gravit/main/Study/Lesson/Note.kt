@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
+import coil.compose.AsyncImage
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.ui.theme.pretendard
 import io.noties.markwon.Markwon
@@ -47,7 +50,44 @@ import io.noties.markwon.html.HtmlPlugin
 import io.noties.markwon.image.ImagesPlugin
 import io.noties.markwon.image.coil.CoilImagesPlugin
 import io.noties.markwon.image.network.NetworkSchemeHandler
+data class MarkdownBlock(
+    val text: String? = null,
+    val imageUrl: String? = null
+)
 
+fun parseMarkdownBlocks(markdown: String): List<MarkdownBlock> {
+    val imageRegex = Regex(
+        """<img[^>]*src=["']([^"']+)["'][^>]*>|!\[[^\]]*]\(([^)]+)\)""",
+        RegexOption.IGNORE_CASE
+    )
+
+    val blocks = mutableListOf<MarkdownBlock>()
+    var lastIndex = 0
+
+    imageRegex.findAll(markdown).forEach { match ->
+        val beforeText = markdown.substring(lastIndex, match.range.first)
+        if (beforeText.isNotBlank()) {
+            blocks.add(MarkdownBlock(text = beforeText))
+        }
+
+        val htmlImgUrl = match.groups[1]?.value
+        val markdownImgUrl = match.groups[2]?.value
+        val imageUrl = htmlImgUrl ?: markdownImgUrl
+
+        if (!imageUrl.isNullOrBlank()) {
+            blocks.add(MarkdownBlock(imageUrl = imageUrl))
+        }
+
+        lastIndex = match.range.last + 1
+    }
+
+    val remainText = markdown.substring(lastIndex)
+    if (remainText.isNotBlank()) {
+        blocks.add(MarkdownBlock(text = remainText))
+    }
+
+    return blocks
+}
 @Composable
 fun MarkdownText(content: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -91,15 +131,55 @@ fun MarkdownText(content: String, modifier: Modifier = Modifier) {
 
     AndroidView(
         modifier = modifier,
-        factory = { TextView(it).also { tv ->
+        factory = { context ->
+            TextView(context).also { tv ->
+                tv.setTextColor(android.graphics.Color.BLACK)
+                tv.setHorizontallyScrolling(false)
+                tv.setSingleLine(false)
+
+                tv.post {
+                    markwon.setMarkdown(tv, content)
+                }
+            }
+        },
+        update = { tv ->
             tv.setTextColor(android.graphics.Color.BLACK)
-            markwon.setMarkdown(tv, content)
-            } },
-        update = { view ->
-            view.setTextColor(android.graphics.Color.BLACK)
-            markwon.setMarkdown(view, content)
+            tv.post {
+                markwon.setMarkdown(tv, content)
+            }
         }
     )
+}@Composable
+fun MarkdownContent(content: String) {
+    val blocks = remember(content) {
+        parseMarkdownBlocks(content)
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        blocks.forEach { block ->
+            when {
+                block.text != null -> {
+                    MarkdownText(
+                        content = block.text,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                block.imageUrl != null -> {
+                    AsyncImage(
+                        model = block.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
+                        contentScale = ContentScale.FillWidth
+                    )
+                }
+            }
+        }
+    }
 }
 
 enum class SheetState { Hidden, Half, Full }
@@ -231,8 +311,8 @@ fun NoteSheetCustom(
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                         .padding(bottom = 80.dp)
                 ) {
-                    Column{
-                        MarkdownText(noteText)
+                    Column {
+                        MarkdownContent(noteText)
                         Spacer(Modifier.height(60.dp))
                     }
                 }

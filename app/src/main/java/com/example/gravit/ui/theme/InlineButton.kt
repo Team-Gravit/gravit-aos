@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -15,7 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.inuappcenter.gravit.R
 
@@ -24,13 +26,6 @@ enum class InlineButtonState {
     Secondary,
     Stroke,
     Stroke_Color
-}
-
-enum class InlineButtonSize {
-    XS,
-    S,
-    Default,
-    L
 }
 
 enum class InlineButtonIcon {
@@ -47,17 +42,12 @@ fun InlineButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     state: InlineButtonState = InlineButtonState.Default,
-    size: InlineButtonSize = InlineButtonSize.Default,
-    icon: InlineButtonIcon = InlineButtonIcon.N
+    icon: InlineButtonIcon = InlineButtonIcon.N,
+    style: TextStyle,
+    color: Color,
+    shape: Shape = RoundedCornerShape(8.dp),
+    padding: Dp = 8.dp
 ) {
-    val height = when(size) {
-        InlineButtonSize.Default -> 37.dp
-        InlineButtonSize.XS -> 29.dp
-        InlineButtonSize.S -> 37.dp
-        InlineButtonSize.L -> 46.dp
-
-    }
-
     val containerColor = when {
         state == InlineButtonState.Default -> AppColor.CTA
         state == InlineButtonState.Stroke -> AppColor.bg1
@@ -79,24 +69,18 @@ fun InlineButton(
         state == InlineButtonState.Stroke_Color -> AppColor.CTA
         else -> Color.Transparent
     }
-    val style = when(size) {
-       InlineButtonSize.XS -> AppTypography.App_Caption1
-       InlineButtonSize.S -> AppTypography.App_Btn2
-       InlineButtonSize.Default -> AppTypography.App_Btn1
-       InlineButtonSize.L -> AppTypography.Web_Btn_L
-    }
 
     Button(
         onClick = onClick,
-        modifier = modifier.height(height),
+        modifier = modifier,
         enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
+        shape = shape,
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor
         ),
         border = BorderStroke(1.dp, borderColor),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = PaddingValues(vertical = padding)
     ) {
 
         Row(
@@ -114,10 +98,10 @@ fun InlineButton(
                 }
                 else -> Unit
             }
-
             Text(
                 text = text,
-                style = style
+                style = style,
+                color = color
             )
 
             when (icon) {

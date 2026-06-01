@@ -490,7 +490,8 @@ fun HomeUI(
                                             height = dh(8f),
                                             width = 0.dp,
                                             rate = missionInfo.progressRate,
-                                            modifier = Modifier.fillMaxWidth()
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = Color(0xFFFBF1FF)
                                         )
                                     }
                                 }

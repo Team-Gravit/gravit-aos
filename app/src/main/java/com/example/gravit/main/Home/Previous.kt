@@ -137,7 +137,8 @@ fun PreviousButton(
                     height = dh(8f),
                     width = 0.dp,
                     rate = progressRate,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFFFBF1FF)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))

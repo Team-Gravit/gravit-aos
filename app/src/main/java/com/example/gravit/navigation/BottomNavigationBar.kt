@@ -127,7 +127,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                                 id = if (selected) item.selectedIcon else item.icon
                             ),
                             contentDescription = item.label,
-                            modifier = Modifier.height(43.dp)
+                            modifier = Modifier.height(24.dp)
                         )
                     }
 

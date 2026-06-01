@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.main.User
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,12 +13,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -35,8 +30,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.error.isDeletionPending
 import com.inuappcenter.gravit.main.ConfirmBottomSheet
@@ -115,15 +113,121 @@ fun Setting(
     Box(
         modifier = Modifier
             .fillMaxSize()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColor.bg2),
+        ) {
+            TopBar(
+                navController = navController,
+                title = "환경설정",
+                useCloseIcon = false,
+                height = 48.dp
+            )
+
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg0)
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "계정정보",
+                            style = AppTypography.Label2,
+                            color = AppColor.text3
+                        )
+                        RowNavigableItem("내 정보", { navController.navigate("user/account") })
+                        RowNavigableItem("공지사항", {})
+                        RowNavigableItem(
+                            "개인정보 처리 방침",
+                            { navController.navigate("user/privacypolicy") })
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg0)
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "기타",
+                            style = AppTypography.Label2,
+                            color = AppColor.text3
+                        )
+                        RowNavigableItem("문의하기", { navController.navigate("user/support") })
+                        RowNavigableItem("로그아웃", { logoutVM.logout { onLogout() } })
+                        RowNavigableItem("탈퇴하기", { showDeleteSheet = true })
+                    }
+                }
+            }
+
+        }
+        if (showDeleteSheet) {
+            ConfirmBottomSheet(
+                onDismiss = { showDeleteSheet = false },
+                imageRes = R.drawable.study_popup,
+                titleText = "정말 탈퇴하실건가요?",
+                descriptionText = "계정을 삭제하면 저장된\n 모든 데이터가 사라져요.\n 정말로 계정을 삭제하실건가요?",
+                confirmButtonText = "돌아가기",
+                cancelText = "탈퇴하기",
+                onConfirm = {
+                    showDeleteSheet = false
+                },
+                onCancel = {
+                    deleteVM.requestDeletionMail(dest = "prod") {
+                        showDeleteSheet = false
+                        showSentDialog = true
+                    }
+                }
+            )
+        }
+
+        if (showSentDialog) {
+            WithdrawalSentDialog(
+                onConfirm = {
+                    showSentDialog = false
+                }
+            )
+        }
+        if (deleteState is DeleteAccountVM.DeletionState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    }
+
+    /* Box(
+        modifier = Modifier
+            .fillMaxSize()
             .background(Color.White)
     ) {
         Column {
-            TopBar(navController = navController, title = "", useCloseIcon = true)
+            TopBar(navController = navController, title = "환경설정", useCloseIcon = false, height = 48.dp)
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(AppColor.bg2)
                     .height(100.dp),
             ) {
                 Column(
@@ -324,7 +428,7 @@ fun Setting(
                 CircularProgressIndicator()
             }
         }
-    }
+    } */
 }
 
 @Composable
@@ -355,8 +459,8 @@ private fun RowNavigableItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .clickable (
+            .height(44.dp)
+            .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ) {
@@ -366,20 +470,15 @@ private fun RowNavigableItem(
     ) {
         Text(
             text = title,
-            style = TextStyle(
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard
-            ),
-            color = Color(0xFF222222),
+            style = AppTypography.Label1,
+            color = if(title == "탈퇴하기") AppColor.text4 else AppColor.text1,
         )
         Icon(
-            imageVector = ImageVector.vectorResource(id = R.drawable.left_line),
+            painter = painterResource(id = R.drawable.chevron_right),
             contentDescription = null,
             modifier = Modifier
-                .size(18.dp)
-                .align(Alignment.CenterEnd),
-            tint = Color.Unspecified
+                .size(16.dp)
+                .align(Alignment.CenterEnd)
         )
     }
 }
