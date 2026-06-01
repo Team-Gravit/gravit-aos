@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -35,57 +36,58 @@ import com.inuappcenter.gravit.R
 fun TopBar(
     navController: NavController,
     title: String,
+    height: Dp = 80.dp,
     useCloseIcon: Boolean = false
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(WindowInsets.statusBars.asPaddingValues())
-            .height(80.dp)
+            .height(height)
             .background(Color.White)
     ) {
-        Row(
-            modifier = Modifier.align(Alignment.CenterStart),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if(useCloseIcon){
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "닫기",
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .clickable { navController.popBackStack() },
-                    tint = Color(0xFF4D4D4D)
-                )
-            } else {
-                Icon(
-                    painter = painterResource(id = R.drawable.arrow_left),
-                    contentDescription = "닫기",
-                    modifier = Modifier
-                        .padding(start = 18.dp)
-                        .size(20.dp)
-                        .clickable {
-                            navController.popBackStack()
-                        },
-                    tint = Color.Black
-                )
-            }
 
-            if (title.isNotEmpty()) {
-                Spacer(modifier = Modifier.width(18.dp))
+        if(useCloseIcon){
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "닫기",
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 16.dp)
+                    .clickable {
+                        navController.popBackStack()
+                    },
+                tint = Color(0xFF4D4D4D)
+            )
+        } else {
+            Icon(
+                painter = painterResource(id = R.drawable.chevron_left),
+                contentDescription = "뒤로가기",
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 12.dp)
+                    .size(24.dp)
+                    .clickable {
+                        navController.popBackStack()
+                    },
+                tint = Color.Black
+            )
+        }
 
-                Text(
-                    text = title,
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = pretendard
-                    ),
-                    color = Color(0xFF222222),
-                )
-            }
+        if (title.isNotEmpty()) {
+            Text(
+                text = title,
+                modifier = Modifier.align(Alignment.Center),
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = pretendard
+                ),
+                color = Color(0xFF222222),
+            )
         }
     }
+
     HorizontalDivider(
         color = Color.Black.copy(alpha = 0.1f),
         thickness = 1.dp,

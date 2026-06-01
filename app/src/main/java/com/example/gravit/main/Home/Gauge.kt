@@ -190,7 +190,8 @@ fun RoundedGauge(
     rate: Float,
     width: Dp,
     height: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    color: Color = Color.White
 ) {
     val percentage = rate.coerceIn(0f, 100f)
     val ratio = percentage / 100f
@@ -204,14 +205,17 @@ fun RoundedGauge(
                 .fillMaxWidth()
                 .height(height)
                 .clip(RoundedCornerShape(50))
-                .background(Color(0xFFFEF1FF))
+                .background(color)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(if(ratio <0.05f) 0.05f else ratio)
                     .clip(RoundedCornerShape(50))
-                    .background(Color(0xFFBA00FF))
+                    .background(
+                        brush = Brush.horizontalGradient(
+                        colors = listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
+                    ))
             )
         }
     }

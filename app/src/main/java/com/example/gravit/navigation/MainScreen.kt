@@ -40,6 +40,8 @@ import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
+import com.example.gravit.main.User.Notice.Notice2
+import com.example.gravit.main.User.Support.CustomerSupport
 import com.inuappcenter.gravit.main.User.MyPage
 
 
@@ -55,7 +57,6 @@ fun MainScreen(rootNavController: NavController) {
 
     val hideBottomBar = currentRoute.startsWith("lesson/") ||
                         currentRoute.startsWith("problem/") ||
-                        currentRoute.startsWith("user/notice") ||
                         currentRoute.startsWith("user/account") ||
                         currentRoute.startsWith("user/privacypolicy") ||
                         currentRoute.startsWith("error/") ||
@@ -202,8 +203,11 @@ fun MainScreen(rootNavController: NavController) {
                 // account
                 composable("user/account") { Account(innerNavController) }
 
+                composable("user/support") { CustomerSupport(innerNavController) }
+
                 // notice
                 composable("user/notice") { Notice(innerNavController) }
+                composable("user/notice2") { Notice2(innerNavController) }
                 composable(
                     route = "user/notice/detail/{noticeId}",
                     arguments = listOf(

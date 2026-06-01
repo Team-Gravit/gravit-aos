@@ -1,7 +1,6 @@
 package com.inuappcenter.gravit.main.User.Setting
 
 import android.content.Context
-import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
