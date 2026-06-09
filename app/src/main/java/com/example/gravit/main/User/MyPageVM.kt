@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.FriendsCount
@@ -12,7 +13,6 @@ import com.inuappcenter.gravit.api.MyLeagueHistory
 import com.inuappcenter.gravit.api.MyPageBanner
 import com.inuappcenter.gravit.api.MyPageLearningInfo
 import com.inuappcenter.gravit.api.MyPageSummary
-import com.inuappcenter.gravit.api.RetrofitInstance.api
 import com.inuappcenter.gravit.api.SocialFeed
 import com.inuappcenter.gravit.api.SocialRecommend
 import com.inuappcenter.gravit.error.handleApiFailure
@@ -20,9 +20,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.Response
 
 class UserScreenVM (
     private val api: ApiService,
@@ -64,8 +62,17 @@ class UserScreenVM (
         data object SessionExpired : LeargueUiState
         data object NotFound : LeargueUiState
     }
+    sealed interface CongratulateUiState {
+        data object Loading : CongratulateUiState
+        data object Success : CongratulateUiState
+        data object SessionExpired : CongratulateUiState
+        data class Failed(val message: String) : CongratulateUiState
+    }
 
-
+    data class ErrorResponse(
+        val error: String,
+        val message: String
+    )
     private val _stateBanners = MutableStateFlow<BannersUiState>(BannersUiState.Loading)
     val stateBanners = _stateBanners.asStateFlow()
 
@@ -179,7 +186,38 @@ class UserScreenVM (
             )
         }
     }
-
+    private val _stateCongratulate = MutableStateFlow<CongratulateUiState>(CongratulateUiState.Loading)
+    val stateCongratulate = _stateCongratulate.asStateFlow()
+    fun congratulate(feedId: Long) = viewModelScope.launch {
+        _stateCongratulate.value = CongratulateUiState.Loading
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _stateCongratulate.value = CongratulateUiState.SessionExpired
+            return@launch
+        }
+        runCatching {
+            api.getCongratulate(auth = "Bearer ${session.accessToken}", feedId = feedId)
+        }.onSuccess { res ->
+            if (res.isSuccessful) {
+                _stateCongratulate.value = CongratulateUiState.Success
+            } else {
+                val message = res.errorBody()?.string()
+                    ?.let { Gson().fromJson(it, ErrorResponse::class.java).message }
+                _stateCongratulate.value =
+                    CongratulateUiState.Failed(message ?: "축하하기에 실패했습니다.")
+            }
+        }.onFailure { e ->
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _stateLearning.value = it },
+                unauthorizedState = LearningUiState.SessionExpired,
+                notFoundState = LearningUiState.NotFound,
+                failedState = LearningUiState.Failed
+            )
+        }
+    }
     data class Social(
         val recommend: List<SocialRecommend>,
         val feed: SocialFeed,

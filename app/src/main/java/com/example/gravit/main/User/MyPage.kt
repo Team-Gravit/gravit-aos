@@ -145,7 +145,7 @@ fun MyPageUI(
                     MyPageTab.Summary -> SummaryUI(vm)
                     MyPageTab.Learning -> LearningTabUI(vm)
                     MyPageTab.League -> LeagueTabUI(vm)
-                    MyPageTab.Social -> SocialTabUI(vm)
+                    MyPageTab.Social -> SocialTabUI(navController, vm)
                 }
             }
         }
@@ -944,7 +944,8 @@ fun RankRow(
                 value = item[0],
                 label = item[1],
                 modifier = Modifier.weight(1f),
-                color = if(index==0 && isLeague) AppColor.Main1 else AppColor.text1
+                color = if(index==0 && isLeague) AppColor.Main1 else AppColor.text1,
+                onClick = {}
             )
 
             if (index != rankInfo.lastIndex) {
@@ -1236,6 +1237,7 @@ fun TierChart(
 }
 @Composable
 fun SocialTabUI(
+    navController: NavController,
     vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, LocalContext.current))
 ) {
 
@@ -1275,7 +1277,11 @@ fun SocialTabUI(
                             label = item[1],
                             modifier = Modifier.weight(1f),
                             color = if(index==0 && isLeague) AppColor.Main1 else AppColor.text1,
-                            onClick = {}
+                            onClick = if(item[1] == "팔로우") {
+                                {navController.navigate("user/followList?tab=followers") { launchSingleTop = true } }
+                            } else {
+                                {navController.navigate("user/followList?tab=following") { launchSingleTop = true }}
+                            }
                         )
 
                         if (index != socialInfo.lastIndex) {

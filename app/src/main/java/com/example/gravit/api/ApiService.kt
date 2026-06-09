@@ -210,7 +210,7 @@ data class FriendSearchResponse(
     val contents: List<FriendItem>
 )
 
-data class FriendItem(
+data class FriendItem( //AddFriend
     val userId: Long,
     val profileImgNumber: Int,
     val nickname: String,
@@ -223,16 +223,27 @@ data class FollowResponse(
     val followerId: Long
 )
 
-data class FriendUserSummary(
+data class FriendFollowerItem(
+    val id: Long,
+    val nickname: String,
+    val profileImgNumber: Int,
+    val handle: String,
+    val isFollowing: Boolean
+)
+data class FriendUFollowingItem(
     val id: Long,
     val nickname: String,
     val profileImgNumber: Int,
     val handle: String
 )
 
-data class FriendSliceResponse(
+data class FollowingSliceResponse(
     val hasNextPage: Boolean,
-    val contents: List<FriendUserSummary>
+    val contents: List<FriendUFollowingItem>
+)
+data class FollowerSliceResponse(
+    val hasNextPage: Boolean,
+    val contents: List<FriendFollowerItem>
 )
 
 data class FriendCountResponse(
@@ -653,12 +664,12 @@ interface ApiService {
     suspend fun getFollowingList(
         @Header("Authorization") auth: String,
         @Query("page") page: Int = 0
-    ): Response<FriendSliceResponse>
+    ): Response<FollowingSliceResponse>
     @GET("api/v1/friends/follower") //팔로워 목록 조회
     suspend fun getFollowerList(
         @Header("Authorization") auth: String,
         @Query("page") page: Int = 0
-    ): Response<FriendSliceResponse>
+    ): Response<FollowerSliceResponse>
     @GET("api/v1/friends/count") //팔로워/팔로잉 카운트 조회
     suspend fun getFriendCount(
         @Header("Authorization") auth: String
