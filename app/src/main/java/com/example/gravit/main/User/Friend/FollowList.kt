@@ -2,14 +2,11 @@ package com.inuappcenter.gravit.main.User.Friend
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -17,24 +14,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.inuappcenter.gravit.api.FriendUserSummary
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.InlineButton
+import com.example.gravit.ui.theme.InlineButtonState
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.navigation.FollowTab
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.FriendFollowerItem
+import com.inuappcenter.gravit.api.FriendUFollowingItem
 import kotlin.collections.isNotEmpty
 
 @Composable
@@ -50,6 +52,14 @@ fun FollowList(
         )
     )
     val ui by vm.state.collectAsState()
+
+    val vm1: AddFriendVM = viewModel(
+        factory = AddFriendVMFactory(
+            api = RetrofitInstance.api,
+            appContext = ctx.applicationContext
+        )
+    )
+    val ui1 by vm1.state.collectAsState()
 
     LaunchedEffect(initialTab) {
         vm.init()
@@ -76,11 +86,17 @@ fun FollowList(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(AppColor.bg1)
             .navigationBarsPadding()
     ) {
-        TopBar(navController, title = "팔로우 / 팔로잉")
+        TopBar(
+            navController = navController,
+            title = "친구",
+            useCloseIcon = false,
+            height = 48.dp
+        )
 
+        Spacer(Modifier.height(20.dp))
         FriendTabBar(
             selectedTab = ui.selectedTab,
             followerCount = ui.followerCount,
@@ -105,7 +121,8 @@ fun FollowList(
                         hasNext = ui.followerHasNext,
                         loadingMore = ui.loading,
                         onLoadNext = { vm.loadFollowerNext() },
-                        onReject = { vm.rejectFollower(it) }
+                        onUnfollow = { vm.unfollowFromFollower(it) },
+                        onFollow = { vm.followFromFollower(it) }
                     )
                 }
 
@@ -140,22 +157,54 @@ private fun FriendTabBar(
     followingCount: Int,
     onTabSelected: (FriendTab) -> Unit
 ) {
-    Row(
+    Box(
         modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxWidth()
+            .height(41.dp)
     ) {
-        FriendTabItem(
-            text = "${followerCount} 팔로워",
-            selected = selectedTab == FriendTab.Follower,
-            onClick = { onTabSelected(FriendTab.Follower) },
-            modifier = Modifier.weight(1f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FriendTabItem(
+                text = "${followerCount} 팔로우",
+                selected = selectedTab == FriendTab.Follower,
+                onClick = { onTabSelected(FriendTab.Follower) },
+                modifier = Modifier.weight(1f)
+            )
+
+            FriendTabItem(
+                text = "${followingCount} 팔로잉",
+                selected = selectedTab == FriendTab.Following,
+                onClick = { onTabSelected(FriendTab.Following) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(AppColor.divider1)
         )
-        FriendTabItem(
-            text = "${followingCount} 팔로잉",
-            selected = selectedTab == FriendTab.Following,
-            onClick = { onTabSelected(FriendTab.Following) },
-            modifier = Modifier.weight(1f)
+
+        Box(
+            modifier = Modifier
+                .align(
+                    if (selectedTab == FriendTab.Follower) {
+                        Alignment.BottomStart
+                    } else {
+                        Alignment.BottomEnd
+                    }
+                )
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth(0.5f)
+                .height(2.dp)
+                .background(AppColor.Main2)
         )
     }
 }
@@ -167,36 +216,32 @@ private fun FriendTabItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
         modifier = modifier
-            .clickable { onClick() }
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxHeight()
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) { onClick() },
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            fontFamily = pretendard,
-            fontSize = 15.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) Color(0xFF222222) else Color(0xFF222222).copy(alpha = 0.4f)
-        )
-        Spacer(Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .height(1.dp)
-                .fillMaxWidth()
-                .background(if (selected) Color(0xFF030303) else Color(0xFFDCDCDC))
+            style = AppTypography.Label1,
+            color = if (selected) AppColor.Main2 else AppColor.text4
         )
     }
 }
 
 @Composable
 private fun FollowerListContent(
-    items: List<FriendUserSummary>,
+    items: List<FriendFollowerItem>,
     hasNext: Boolean,
     loadingMore: Boolean,
     onLoadNext: () -> Unit,
-    onReject: (Long) -> Unit
+    onUnfollow: (Long) -> Unit,
+    onFollow: (Long) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -204,15 +249,13 @@ private fun FollowerListContent(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+            .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 30.dp)
         ) {
             if (items.isNotEmpty()) {
                 items(items) { user ->
-                    FollowerRow(user = user, onReject = { onReject(user.id) })
-                }
-                item {
-                    Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
+                    FollowerRow(user = user, onUnfollow = { onUnfollow(user.id) }, onFollow = { onFollow(user.id) })
                 }
             }
         }
@@ -245,7 +288,7 @@ private fun FollowerListContent(
 
 @Composable
 private fun FollowingListContent(
-    items: List<FriendUserSummary>,
+    items: List<FriendUFollowingItem>,
     hasNext: Boolean,
     loadingMore: Boolean,
     onLoadNext: () -> Unit,
@@ -257,15 +300,13 @@ private fun FollowingListContent(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 30.dp)
         ) {
             if (items.isNotEmpty()) {
                 items(items) { user ->
                     FollowingRow(user = user, onUnfollow = { onUnfollow(user.id) })
-                }
-                item {
-                    Divider(color = Color(0xFF000000).copy(alpha = 0.06f))
                 }
             }
         }
@@ -298,18 +339,19 @@ private fun FollowingListContent(
 
 @Composable
 private fun FollowerRow(
-    user: FriendUserSummary,
-    onReject: () -> Unit
+    user: FriendFollowerItem,
+    onUnfollow: () -> Unit,
+    onFollow: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(38.dp)
                 .clip(CircleShape)
                 .background(ProfilePalette.idToColor(user.profileImgNumber)),
             contentAlignment = Alignment.Center
@@ -327,50 +369,51 @@ private fun FollowerRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.nickname,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = pretendard,
-                color = Color(0xFF222124)
+                style = AppTypography.Label1,
+                color = AppColor.text1
             )
             Text(
                 text = "@" + user.handle,
-                fontSize = 14.sp,
-                fontFamily = pretendard,
-                color = Color(0xFF494949)
+                style = AppTypography.Label2,
+                color = AppColor.text3
+            )
+        }
+        if(user.isFollowing){
+            InlineButton(
+                text = "팔로우 취소",
+                onClick = onUnfollow,
+                style = AppTypography.Label2,
+                color = AppColor.text3,
+                state = InlineButtonState.Stroke,
+                modifier = Modifier.size(92.dp, 32.dp)
+            )
+        } else {
+            InlineButton(
+                text = "팔로우",
+                onClick = onFollow,
+                style = AppTypography.Label2,
+                modifier = Modifier.size(66.dp, 32.dp),
+                color = AppColor.CTA_text
             )
         }
 
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .clickable { onReject() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.close),
-                contentDescription = "팔로워 삭제",
-                tint = Color(0xFF494949),
-                modifier = Modifier.size(24.dp)
-            )
-        }
     }
 }
 
 @Composable
 private fun FollowingRow(
-    user: FriendUserSummary,
+    user: FriendUFollowingItem,
     onUnfollow: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(38.dp)
                 .clip(CircleShape)
                 .background(ProfilePalette.idToColor(user.profileImgNumber)),
             contentAlignment = Alignment.Center
@@ -388,37 +431,23 @@ private fun FollowingRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.nickname,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = pretendard,
-                color = Color(0xFF222124)
+                style = AppTypography.Label1,
+                color = AppColor.text1
             )
             Text(
                 text = "@" + user.handle,
-                fontSize = 14.sp,
-                fontFamily = pretendard,
-                color = Color(0xFF494949)
+                style = AppTypography.Label2,
+                color = AppColor.text3
             )
         }
 
-        Button(
+        InlineButton(
+            text = "팔로우 취소",
             onClick = onUnfollow,
-            shape = RoundedCornerShape(10.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF222222).copy(alpha = 0.8f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                Color(0xFF000000).copy(alpha = 0.1f)
-            ),
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = "팔로우 취소",
-                fontSize = 15.sp,
-                fontFamily = pretendard
-            )
-        }
+            style = AppTypography.Label2,
+            color = AppColor.text3,
+            state = InlineButtonState.Stroke,
+            modifier = Modifier.size(92.dp, 32.dp)
+        )
     }
 }
