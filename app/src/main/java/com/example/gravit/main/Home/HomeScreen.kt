@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -456,6 +457,17 @@ fun HomeUI(
                                         .height(156.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(Color.White)
+                                        .clickable{
+                                            val route =
+                                                if (missionInfo.missionType == "FOLLOW_NEW_FRIEND") {
+                                                    "user"
+                                                } else {
+                                                    "chapter"
+                                                }
+                                            navController.navigate(route) {
+                                                launchSingleTop = true
+                                            }
+                                        }
                                         .padding(all = dh(16f))
                                 ) {
                                     Column {
