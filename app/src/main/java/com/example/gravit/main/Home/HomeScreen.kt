@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -29,8 +27,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,14 +64,10 @@ import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.MainPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.api.UnitDetailResponses
 import com.inuappcenter.gravit.api.Units
 import com.inuappcenter.gravit.main.Study.Chapter.resolvePlanetRes
-import com.inuappcenter.gravit.main.User.UserScreenVM
-import com.inuappcenter.gravit.main.User.UserVMFactory
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import com.inuappcenter.gravit.ui.theme.TierPalette
-import com.inuappcenter.gravit.ui.theme.mbc1961
 import com.inuappcenter.gravit.ui.theme.pretendard
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -360,7 +352,13 @@ fun HomeUI(
                                         text = "자세히 보기",
                                         style = AppTypography.Label2,
                                         textDecoration = TextDecoration.Underline,
-                                        color = PrimitiveColor.Gray400
+                                        color = PrimitiveColor.Gray400,
+                                        modifier = Modifier.clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ){
+                                            navController.navigate("user")
+                                        }
                                     )
                                 }
 
@@ -575,7 +573,9 @@ fun HomeUI(
                                             style = AppTypography.Label1,
                                             color = Color(0xFFFBF1FF),
                                             textDecoration = TextDecoration.Underline,
-                                            modifier = Modifier.clickable(onClick = {})
+                                            modifier = Modifier.clickable(onClick = {
+                                                navController.navigate("unit/${recommendedInfo.chapterId}")
+                                            })
                                         )
                                     }
                                 }
