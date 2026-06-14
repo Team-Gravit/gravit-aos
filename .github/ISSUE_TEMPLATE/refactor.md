@@ -1,6 +1,6 @@
 ---
 name: Refactor
-about: 기존 기능 개선
+about: 코드 구조 개선
 title: "[Refactor]"
 labels: refactor
 assignees: ''
