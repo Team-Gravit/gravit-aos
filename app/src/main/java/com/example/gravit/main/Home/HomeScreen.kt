@@ -179,8 +179,12 @@ fun HomeUI(
     val level = userLevelInfo.level
     val leagueName = userLeagueInfo.leagueName
     val levelRate = userLevelInfo.levelRate
-    val progress = (levelRate / 100f).coerceIn(0f, 1f)
+    val levelProgress = (levelRate / 100f).coerceIn(0f, 1f)
+
     val leagueId = userLeagueInfo.leagueId
+    val leagueProgress = (userLeagueInfo.currentLP - userLeagueInfo.minLP).toFloat() /
+            (userLeagueInfo.maxLP - userLeagueInfo.minLP).toFloat()
+
     val consecutiveDays = userLearningInfo.consecutiveSolvedDays
 
     LazyColumn(
@@ -222,7 +226,7 @@ fun HomeUI(
                                 )
 
                                 CircularProgressIndicator(
-                                    progress = { progress },
+                                    progress = { levelProgress },
                                     modifier = Modifier
                                         .size(36.dp)
                                         .graphicsLayer {
@@ -273,7 +277,7 @@ fun HomeUI(
                                 )
 
                                 CircularProgressIndicator(
-                                    progress = { progress },
+                                    progress = { leagueProgress },
                                     modifier = Modifier
                                         .size(40.dp)
                                         .graphicsLayer {
@@ -609,31 +613,5 @@ fun HomeUI(
                 }
             }
         }
-    }
-
-}
-
-@Composable
-fun CustomText (
-    modifier: Modifier = Modifier,
-    text: String?,
-    fontFamily: FontFamily = pretendard,
-    fontWeight: FontWeight,
-    fontSize: TextUnit,
-    color: Color = Color.Black,
-    shadow: Shadow? = null
-) {
-    if (text != null) {
-        Text(
-            text = text,
-            style = TextStyle(
-                fontFamily = fontFamily,
-                fontWeight = fontWeight,
-                fontSize = fontSize,
-                shadow =  shadow
-            ),
-            color = color,
-            modifier = modifier
-        )
     }
 }

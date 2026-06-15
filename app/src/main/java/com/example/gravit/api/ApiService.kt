@@ -2,7 +2,6 @@ package com.inuappcenter.gravit.api
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
-import com.inuappcenter.gravit.api.RetrofitInstance.api
 import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.http.Body
@@ -102,6 +101,7 @@ data class LeagueDetailResponse(
     val leagueId: Int,
     val leagueName: String,
     val currentLP: Int,
+    val minLP: Int,
     val maxLP: Int
 )
 data class Units(
