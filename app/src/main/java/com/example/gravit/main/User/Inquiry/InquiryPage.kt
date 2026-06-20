@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Support
+package com.example.gravit.main.User.Inquiry
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,7 +45,6 @@ import com.inuappcenter.gravit.main.User.TapButton
 import com.inuappcenter.gravit.main.User.TopBar
 import androidx.compose.ui.unit.Velocity
 import com.inuappcenter.gravit.R
-import kotlin.math.sin
 
 enum class SupportTab {
     Support,
