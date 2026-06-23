@@ -2,7 +2,6 @@ package com.inuappcenter.gravit.api
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
-import com.inuappcenter.gravit.api.RetrofitInstance.api
 import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.http.Body
@@ -466,6 +465,39 @@ data class BookmarksRequest(
     val problemId: Int
 )
 
+//문의하기
+data class InquiryListResponses(
+    val page: Int,
+    val totalPages: Int,
+    val hasNext: Boolean,
+    val contents: List<InquiryResponses>
+)
+data class InquiryResponses(
+    val id: Long,
+    val title: String,
+    val status: String,
+    val createdAt: String
+)
+data class InquiryRequest(
+    val title: String,
+    val type: String,
+    val content: String
+)
+data class InquiryDetail(
+    val id: Long,
+    val title: String,
+    val type: String,
+    val content: String,
+    val status: String,
+    val createdAt: String,
+    val updatedAt: String,
+    val answer: InquiryAnswer
+)
+data class InquiryAnswer(
+    val content: String,
+    val answeredAt: String
+)
+
 interface ApiService {
     //OAuth2.0 Android API
     @POST("api/v1/oauth/android") //OAuth 회원가입/로그인 처리
@@ -723,5 +755,20 @@ interface ApiService {
     suspend fun getMyLeagueHistory(
         @Header("Authorization") auth: String,
     ) : MyLeagueHistory
+    @GET("api/v1/inquiries")
+    suspend fun getInquiry(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int
+    ) : InquiryListResponses
+    @POST("api/v1/inquiries")
+    suspend fun sendInquiry(
+        @Header("Authorization") auth: String,
+        @Body request: InquiryRequest
+    ) : Long
+    @GET("api/v1/inquiries/{inquiryId}")
+    suspend fun getInquiryDetail(
+        @Header("Authorization") auth: String,
+        @Path("inquiryId") inquiryId: Long
+    ) : InquiryDetail
 }
 
