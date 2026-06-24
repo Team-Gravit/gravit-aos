@@ -43,7 +43,6 @@ class ReportVM(
             runCatching {
                 api.sendReport(ReportRequest(reportType, content, problemId), "Bearer ${session.accessToken}")
             }.onSuccess {
-                AuthPrefs.setOnboarded(appContext, true)
                 _state.value = UiState.Success
             }.onFailure { e ->
                 handleApiFailure(

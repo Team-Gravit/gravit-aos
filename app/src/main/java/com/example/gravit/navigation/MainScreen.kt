@@ -40,8 +40,8 @@ import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
+import com.example.gravit.main.User.Inquiry.Inquiry
 import com.example.gravit.main.User.Notice.Notice2
-import com.example.gravit.main.User.Support.CustomerSupport
 import com.inuappcenter.gravit.main.User.MyPage
 
 
@@ -203,7 +203,7 @@ fun MainScreen(rootNavController: NavController) {
                 // account
                 composable("user/account") { Account(innerNavController) }
 
-                composable("user/support") { CustomerSupport(innerNavController) }
+                composable("user/support") { Inquiry(innerNavController, goToLoginChoice) }
 
                 // notice
                 composable("user/notice") { Notice(innerNavController) }
