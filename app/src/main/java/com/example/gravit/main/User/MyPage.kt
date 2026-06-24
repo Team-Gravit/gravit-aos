@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -232,8 +231,17 @@ fun MyPageUI(
         }
     }
 
-    LaunchedEffect(Unit) { vm.loadBanners() }
-
+    LaunchedEffect(Unit) {
+        vm.loadBanners()
+        vm.loadSummary()
+        vm.loadLearning()
+        vm.loadLeague()
+    }
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == MyPageTab.Social) {
+            vm.loadSocial()
+        }
+    }
     val banners = (bannerUi as? UserScreenVM.BannersUiState.Success)?.data
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -330,7 +338,7 @@ fun MyPageProfileHeader(
 
                 Column(modifier = Modifier.padding(vertical = 7.5.dp)) {
                     Text(
-                        text = "${banner?.nickname}",
+                        text = banner?.nickname?: "",
                         style = AppTypography.Heading2,
                         color = AppColor.text1w
                     )
@@ -338,8 +346,8 @@ fun MyPageProfileHeader(
                     Spacer(Modifier.height(8.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ProfileBox("LV ${banner?.level}", 42.dp)
-                        ProfileBox("${banner?.currentLeague}", 58.dp)
+                        ProfileBox("LV ${banner?.level?: 1}", 42.dp)
+                        ProfileBox(banner?.currentLeague?: "브론즈 3", 58.dp)
                     }
                 }
 
@@ -368,7 +376,7 @@ fun MyPageProfileHeader(
             }
 
             Text(
-                text = "@${banner?.handle}",
+                text = "@${banner?.handle?: ""}",
                 style = AppTypography.Label2,
                 color = PrimitiveColor.Gray400
             )
@@ -486,7 +494,6 @@ fun SummaryUI(
     vm: UserScreenVM
 ) {
     val ui by vm.stateSummary.collectAsState()
-    LaunchedEffect(Unit) { vm.loadSummary() }
     val summaries = (ui as? UserScreenVM.SummaryUiState.Success)?.data
     val colorCube = listOf(AppColor.bg1, PrimitiveColor.Purple200, PrimitiveColor.Purple300,PrimitiveColor.Purple500,PrimitiveColor.Purple700)
     Column(
@@ -536,8 +543,18 @@ fun SummaryUI(
                         Spacer(Modifier.height(12.dp))
                     }
                 }
-                val rankInfo =
-                    listOf("${summaries?.learningSummary?.completedLessonCount?: 0}개", "완료 레슨", "${String.format("%.1f", summaries?.learningSummary?.totalLearningHours?: 0.0)}h", "총 학습시간", "${summaries?.learningSummary?.averageAccuracy?: 0}%", "평균 정답률").chunked(2)
+                val rankInfo = listOf(
+                    summaries?.learningSummary?.averageAccuracy?.let { "${it}%" } ?: "-",
+                    "평균 정답률",
+
+                    summaries?.learningSummary?.completedLessonCount?.let { "${it}개" } ?: "-",
+                    "완료 레슨",
+
+                    summaries?.learningSummary?.totalLearningHours?.let {
+                        String.format("%.1fh", it)
+                    } ?: "-",
+                    "총 학습시간"
+                ).chunked(2)
                 RankRow(rankInfo)
             }
         }
@@ -720,7 +737,6 @@ fun LearningTabUI(
     navController: NavController
 ) {
     val ui by vm.stateLearning.collectAsState()
-    LaunchedEffect(Unit) { vm.loadLearning() }
     val learning = (ui as? UserScreenVM.LearningUiState.Success)?.data
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -1172,7 +1188,6 @@ fun LeagueTabUI(
     vm: UserScreenVM
 ) {
     val ui by vm.stateLeague.collectAsState()
-    LaunchedEffect(Unit) { vm.loadLeague() }
     val league = (ui as? UserScreenVM.LeagueUiState.Success)?.data
 
     Column(
@@ -1202,8 +1217,17 @@ fun LeagueTabUI(
                         color = AppColor.text1
                     )
                 }
-                val rankinfo = listOf("${league?.currentSeasonRank}위", "현재 시즌 순위", "${league?.top3SeasonCount}회", "3위권 진입", "${league?.bestLeagueName}", "최고티어").chunked(2)
-                RankRow(rankinfo, true)
+                val ranking = listOf(
+                    league?.currentSeasonRank?.let { "${it}위" } ?: "-",
+                    "현재 시즌 순위",
+
+                    league?.top3SeasonCount?.let { "${it}회" } ?: "-",
+                    "3위권 진입",
+
+                    league?.bestLeagueName ?: "-",
+                    "최고티어"
+                ).chunked(2)
+                RankRow(ranking, true)
                 TierChart(
                     histories = league?.seasonHistory.orEmpty(),
                     modifier = Modifier
@@ -1456,9 +1480,9 @@ fun SocialTabUI(
             ) {
                 Column {
                     val socialInfo = listOf(
-                        "${social?.count?.followerCount}",
+                        "${social?.count?.followerCount?: "-"}",
                         "팔로우",
-                        "${social?.count?.followingCount}",
+                        "${social?.count?.followingCount?: "-"}",
                         "팔로잉"
                     ).chunked(2)
                     val isLeague = false
