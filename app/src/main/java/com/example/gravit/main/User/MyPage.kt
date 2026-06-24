@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -75,6 +76,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.InlineButton
 import com.example.gravit.ui.theme.InlineButtonState
 import com.example.gravit.ui.theme.PrimitiveColor
@@ -257,7 +259,7 @@ fun MyPageUI(
                     Spacer(Modifier.height(16.dp))
                     when (selectedTab) {
                         MyPageTab.Summary -> SummaryUI(vm)
-                        MyPageTab.Learning -> LearningTabUI(vm)
+                        MyPageTab.Learning -> LearningTabUI(vm, navController)
                         MyPageTab.League -> LeagueTabUI(vm)
                         MyPageTab.Social -> SocialTabUI(navController, vm)
                     }
@@ -714,14 +716,15 @@ data class DailyStudy(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LearningTabUI(
-    vm: UserScreenVM
+    vm: UserScreenVM,
+    navController: NavController
 ) {
     val ui by vm.stateLearning.collectAsState()
     LaunchedEffect(Unit) { vm.loadLearning() }
     val learning = (ui as? UserScreenVM.LearningUiState.Success)?.data
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
             modifier = Modifier
@@ -819,74 +822,102 @@ fun LearningTabUI(
                 .background(AppColor.bg0)
                 .padding(16.dp),
         ){
-            Column {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "취약 개념 TOP7",
+                    text = "이번 주 가장 많이 푼 챕터",
                     textAlign = TextAlign.Start,
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "어떤 주제에 집중했나요?",
-                    textAlign = TextAlign.Start,
-                    style = AppTypography.Headline2,
-                    color = AppColor.text1
-                )
-                Spacer(Modifier.height(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    learning?.topChapters?.forEach {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(PrimitiveColor.Gray200)
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                if(learning?.topChapters?.isEmpty() == true){
+                    Spacer(Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(161.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Box(
+                            Text(
+                                text = "이번주 학습한 내용이 없어요.\n어서 학습을 진행해 주세요.",
+                                style = AppTypography.Label1,
+                                color = AppColor.text3w,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            BlockButton(
                                 modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(50f))
-                                    .background(PrimitiveColor.Gray800),
-                                contentAlignment = Alignment.Center
-                            ){
-                                Text(
-                                    text = "${it.rank}",
-                                    style = AppTypography.Web_Btn_S_Caption1,
-                                    color = AppColor.text1w
+                                    .size(136.dp, 47.dp),
+                                text = "학습하러 가기",
+                                onClick = {navController.navigate("chapter")},
+                                style = AppTypography.Headline2
                                 )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Row {
+                        }
+                    }
+                } else{
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "어떤 주제에 집중했나요?",
+                        textAlign = TextAlign.Start,
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        learning?.topChapters?.forEach {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(PrimitiveColor.Gray200)
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(50f))
+                                        .background(PrimitiveColor.Gray800),
+                                    contentAlignment = Alignment.Center
+                                ){
                                     Text(
-                                        text = it.chapterTitle,
-                                        style = AppTypography.Headline2,
-                                        color = AppColor.text2
-                                    )
-                                    Spacer(Modifier.weight(1f))
-                                    Text(
-                                        text = "${it.solvedLessonCount}개",
-                                        style = AppTypography.Body1_Nomal,
-                                        color = AppColor.text2
+                                        text = "${it.rank}",
+                                        style = AppTypography.Web_Btn_S_Caption1,
+                                        color = AppColor.text1w
                                     )
                                 }
-                                Spacer(Modifier.height(7.dp))
-                                RoundedGauge(
-                                    rate = it.ratio.toFloat(),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    height = 8.dp,
-                                    width = 0.dp
-                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Row {
+                                        Text(
+                                            text = it.chapterTitle,
+                                            style = AppTypography.Headline2,
+                                            color = AppColor.text2
+                                        )
+                                        Spacer(Modifier.weight(1f))
+                                        Text(
+                                            text = "${it.solvedLessonCount}개",
+                                            style = AppTypography.Body1_Nomal,
+                                            color = AppColor.text2
+                                        )
+                                    }
+                                    Spacer(Modifier.height(7.dp))
+                                    RoundedGauge(
+                                        rate = it.ratio.toFloat(),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        height = 8.dp,
+                                        width = 0.dp
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
             }
         }
         Box(
@@ -897,82 +928,104 @@ fun LearningTabUI(
                 .padding(16.dp),
         ){
             Column {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "이번 주 가장 많이 푼 챕터",
+                    text = "취약 개념 TOP7",
                     textAlign = TextAlign.Start,
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "어떤 주제에 집중했나요?",
-                    textAlign = TextAlign.Start,
-                    style = AppTypography.Headline2,
-                    color = AppColor.text1
-                )
-                Spacer(Modifier.height(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    learning?.weakConcepts?.forEach {
-                    Row(
+                if(learning?.weakConcepts?.isEmpty() == true){
+                    Spacer(Modifier.height(16.dp))
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(PrimitiveColor.Gray200)
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(161.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(50f))
-                                .background(PrimitiveColor.Gray800),
-                            contentAlignment = Alignment.Center
-                        ){
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
                             Text(
-                                text = "${it.rank}",
-                                style = AppTypography.Web_Btn_S_Caption1,
-                                color = AppColor.text1w
+                                text = "이번주 학습한 내용이 없어요.\n어서 학습을 진행해 주세요.",
+                                style = AppTypography.Label1,
+                                color = AppColor.text3w,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            BlockButton(
+                                modifier = Modifier
+                                    .size(136.dp, 47.dp),
+                                text = "학습하러 가기",
+                                onClick = {navController.navigate("chapter")},
+                                style = AppTypography.Headline2
                             )
                         }
-                        Spacer(Modifier.width(12.dp))
-                        Row (
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Column {
-                                Text(
-                                    text = it.unitTitle,
-                                    style = AppTypography.Label1,
-                                    color = AppColor.text2
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = "${it.chapterTitle} • ${it.wrongAnswerCount}문제 오답",
-                                    style = AppTypography.Label2,
-                                    color = AppColor.text4
-                                )
-                            }
-                            Spacer(Modifier.weight(1f))
-                            Box(
+                    }
+                }else {
+                    Spacer(Modifier.height(16.dp))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        learning?.weakConcepts?.forEach {
+                            Row(
                                 modifier = Modifier
-                                    .size(41.dp, 22.dp)
-                                    .clip(RoundedCornerShape(60.dp))
-                                    .background(AppColor.bg1)
-                                    .border(1.dp, AppColor.Main2, RoundedCornerShape(60.dp)),
-                                contentAlignment = Alignment.Center
-                            ){
-                                Text(
-                                    text = "${it.wrongAnswerRate}%",
-                                    style = AppTypography.Caption1,
-                                    color = AppColor.Main2
-                                )
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(PrimitiveColor.Gray200)
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(50f))
+                                        .background(PrimitiveColor.Gray800),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${it.rank}",
+                                        style = AppTypography.Web_Btn_S_Caption1,
+                                        color = AppColor.text1w
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = it.unitTitle,
+                                            style = AppTypography.Label1,
+                                            color = AppColor.text2
+                                        )
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            text = "${it.chapterTitle} • ${it.wrongAnswerCount}문제 오답",
+                                            style = AppTypography.Label2,
+                                            color = AppColor.text4
+                                        )
+                                    }
+                                    Spacer(Modifier.weight(1f))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(41.dp, 22.dp)
+                                            .clip(RoundedCornerShape(60.dp))
+                                            .background(AppColor.bg1)
+                                            .border(1.dp, AppColor.Main2, RoundedCornerShape(60.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "${it.wrongAnswerRate}%",
+                                            style = AppTypography.Caption1,
+                                            color = AppColor.Main2
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                } }
-
+                }
             }
         }
     }
