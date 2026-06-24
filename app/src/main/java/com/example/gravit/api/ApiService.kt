@@ -252,7 +252,7 @@ data class FriendCountResponse(
 
 //소셜피드
 data class SocialRecommend(
-    val userId: Int,
+    val userId: Long,
     val nickname: String,
     val profileImgNumber: Int,
     val mutualFollowCount: Int
@@ -262,12 +262,14 @@ data class SocialFeed(
     val contents: List<SocialFeedContents>
 )
 data class SocialFeedContents(
-    val feedId: Int,
-    val actorId: Int,
+    val feedId: Long,
+    val actorId: Long,
     val actorNickname: String,
     val actorProfileImgNumber: Int,
     val actorHandle: String,
     val message: String,
+    val timeAgo: String,
+    val canCongratulate: Boolean,
     val createdAt: String
 )
 data class FriendsCount(
