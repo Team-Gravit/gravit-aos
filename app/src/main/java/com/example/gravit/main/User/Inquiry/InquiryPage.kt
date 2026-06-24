@@ -174,6 +174,39 @@ fun Inquiry(
             else -> Unit
         }
     }
+    LaunchedEffect(detailUi) {
+        if (navigated) return@LaunchedEffect
+
+        when (loadUi) {
+            InquiryVM.InquiryDetailUiState.Failed -> {
+                snackBarText = "오류가 발생했습니다."
+                showSnackBar = true
+            }
+            InquiryVM.InquiryDetailUiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+            InquiryVM.InquiryDetailUiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404"){
+                    popUpTo(
+                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
+                    ) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+            else -> Unit
+        }
+    }
 
     LaunchedEffect(listState) {
         snapshotFlow {
