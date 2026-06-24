@@ -177,7 +177,7 @@ fun Inquiry(
     LaunchedEffect(detailUi) {
         if (navigated) return@LaunchedEffect
 
-        when (loadUi) {
+        when (detailUi) {
             InquiryVM.InquiryDetailUiState.Failed -> {
                 snackBarText = "오류가 발생했습니다."
                 showSnackBar = true
