@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 
 enum class ButtonState {
@@ -24,8 +26,8 @@ fun BlockButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    state: ButtonState = ButtonState.Default
-
+    state: ButtonState = ButtonState.Default,
+    style: TextStyle = AppTypography.Headline1,
 ){
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -47,7 +49,7 @@ fun BlockButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(
             contentColor = contentColor,
             containerColor = containerColor,
@@ -57,7 +59,7 @@ fun BlockButton(
     ) {
         Text(
             text = text,
-            style = AppTypography.Headline1
+            style = style,
         )
     }
 }
