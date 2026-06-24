@@ -330,7 +330,7 @@ fun MyPageProfileHeader(
                     Image(
                         painter = painterResource(id = R.drawable.profile_logo),
                         contentDescription = "profile logo",
-                        modifier = Modifier.size(32.dp, 40.dp)
+                        modifier = Modifier.size(37.dp, 47.dp)
                     )
                 }
 
