@@ -46,7 +46,6 @@ class InquiryVM (
             runCatching {
                 api.sendInquiry("Bearer ${session.accessToken}", InquiryRequest(title, type, content))
             }.onSuccess {
-                AuthPrefs.setOnboarded(appContext, true)
                 _submitState.value = UiState.Success
             }.onFailure { e ->
                 handleApiFailure(
@@ -81,28 +80,32 @@ class InquiryVM (
         isLoading = true
         _loadState.value = LoadUiState.Loading
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _loadState.value = LoadUiState.SessionExpired
-            return@launch
-        }
-        runCatching {
-           api.getInquiry("Bearer ${session.accessToken}", 1)
-        }.onSuccess { res ->
-            page = 1
-            hasNext = res.hasNext
+        try {
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _loadState.value = LoadUiState.SessionExpired
+                return@launch
+            }
+            runCatching {
+               api.getInquiry("Bearer ${session.accessToken}", 1)
+            }.onSuccess { res ->
+                page = res.page
+                hasNext = res.hasNext
 
-            _loadState.value = LoadUiState.Success(res)
-        }.onFailure { e ->
-            handleApiFailure(
-                e = e,
-                appContext = appContext,
-                onStateChange = { _loadState.value = it },
-                unauthorizedState = LoadUiState.SessionExpired,
-                notFoundState = LoadUiState.NotFound,
-                failedState = LoadUiState.Failed
-            )
+                _loadState.value = LoadUiState.Success(res)
+            }.onFailure { e ->
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { _loadState.value = it },
+                    unauthorizedState = LoadUiState.SessionExpired,
+                    notFoundState = LoadUiState.NotFound,
+                    failedState = LoadUiState.Failed
+                )
+            }
+        } finally {
+            isLoading = false
         }
     }
 
@@ -129,6 +132,8 @@ class InquiryVM (
 
                 _loadState.value = currentState.copy(
                     inquiryList = currentState.inquiryList.copy(
+                        page = next.page,
+                        totalPages = next.totalPages,
                         contents = currentState.inquiryList.contents + next.contents,
                         hasNext = next.hasNext
                     )
