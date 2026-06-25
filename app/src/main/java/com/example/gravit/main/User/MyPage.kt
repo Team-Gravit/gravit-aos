@@ -92,6 +92,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.collections.associate
 import kotlin.collections.distinctBy
 import kotlin.collections.forEachIndexed
@@ -208,6 +209,10 @@ fun MyPageUI(
                 snackBarText = state.message
                 showSnackBar = true
             }
+
+            UserScreenVM.CongratulateUiState.Success -> {
+                vm.loadSocial()
+            }
             else -> Unit
         }
     }
@@ -269,7 +274,7 @@ fun MyPageUI(
                         MyPageTab.Summary -> SummaryUI(vm)
                         MyPageTab.Learning -> LearningTabUI(vm, navController)
                         MyPageTab.League -> LeagueTabUI(vm)
-                        MyPageTab.Social -> SocialTabUI(navController, vm)
+                        MyPageTab.Social -> SocialTabUI(navController, vm, banners?.nickname)
                     }
                 }
             }
@@ -376,7 +381,7 @@ fun MyPageProfileHeader(
             }
 
             Text(
-                text = "@${banner?.handle?: ""}",
+                text = banner?.handle?.let { "@${it}" } ?: "",
                 style = AppTypography.Label2,
                 color = PrimitiveColor.Gray400
             )
@@ -550,9 +555,7 @@ fun SummaryUI(
                     summaries?.learningSummary?.completedLessonCount?.let { "${it}개" } ?: "-",
                     "완료 레슨",
 
-                    summaries?.learningSummary?.totalLearningHours?.let {
-                        String.format("%.1fh", it)
-                    } ?: "-",
+                    summaries?.learningSummary?.totalLearningHours?.let { String.format(Locale.US, "%.1fh", it) } ?: "-",
                     "총 학습시간"
                 ).chunked(2)
                 RankRow(rankInfo)
@@ -1442,7 +1445,8 @@ fun TierChart(
 @Composable
 fun SocialTabUI(
     navController: NavController,
-    vm: UserScreenVM
+    vm: UserScreenVM,
+    nickname: String?
 ) {
     val ui by vm.stateSocial.collectAsState()
     LaunchedEffect(Unit) {
@@ -1687,7 +1691,7 @@ fun SocialTabUI(
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = "내이름님 외 ${recommend.mutualFollowCount}명",
+                                        text = "${nickname}님 외 ${recommend.mutualFollowCount}명",
                                         style = AppTypography.Caption1,
                                         color = AppColor.text4
                                     )

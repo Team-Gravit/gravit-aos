@@ -350,7 +350,6 @@ class UserScreenVM (
     val stateFollow = _stateFollow.asStateFlow()
 
     fun followRecommend(targetUserId: Long) = viewModelScope.launch {
-        _stateFollow.value = FollowUiState.Loading
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
@@ -358,7 +357,12 @@ class UserScreenVM (
             _stateFollow.value = FollowUiState.SessionExpired
             return@launch
         }
-        val currentState = _stateSocial.value as? SocialUiState.Success ?: return@launch
+        val currentState = _stateSocial.value as? SocialUiState.Success ?: run {
+                    _stateFollow.value = FollowUiState.Idle
+                    return@launch
+        }
+
+        _stateFollow.value = FollowUiState.Loading
 
         runCatching {
             api.followSocial(
@@ -404,6 +408,7 @@ class UserScreenVM (
             _stateFollow.value = FollowUiState.Failed("오류가 발생했습니다.")
         }
     }
+
     fun clearLoadMoreError() {
         val currentState = _stateSocial.value as? SocialUiState.Success ?: return
 
