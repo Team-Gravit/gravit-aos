@@ -3,7 +3,6 @@ package com.inuappcenter.gravit.main.User
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -31,11 +30,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +75,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.InlineButton
 import com.example.gravit.ui.theme.InlineButtonState
 import com.example.gravit.ui.theme.PrimitiveColor
@@ -82,9 +85,14 @@ import com.inuappcenter.gravit.api.MyPageBanner
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.SeasonHistory
 import com.inuappcenter.gravit.main.Home.RoundedGauge
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.collections.associate
 import kotlin.collections.distinctBy
 import kotlin.collections.forEachIndexed
@@ -111,42 +119,185 @@ fun MyPage(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyPageUI(
-    vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, LocalContext.current)),
+    vm: UserScreenVM,
     navController: NavController,
 ) {
 
     var selectedTab by remember { mutableStateOf(MyPageTab.Summary) }
+    var showSnackBar by remember { mutableStateOf(false) }
+    var snackBarText by remember { mutableStateOf("") }
 
-    val ui by vm.stateBanners.collectAsState()
-    LaunchedEffect(Unit) { vm.loadBanners() }
-    val banners = (ui as? UserScreenVM.BannersUiState.Success)?.data
+    val bannerUi by vm.stateBanners.collectAsState()
+    val socialUi by vm.stateSocial.collectAsState()
+    val leagueUi by vm.stateLeague.collectAsState()
+    val summaryUi by vm.stateSummary.collectAsState()
+    val learningUi by vm.stateLearning.collectAsState()
+    val congratulateUi by vm.stateCongratulate.collectAsState()
+    val followUi by vm.stateFollow.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppColor.bg2)
-            .padding(WindowInsets.statusBars.asPaddingValues()),
-        contentPadding = PaddingValues(bottom = 16.dp)
-    ) {
-        item {
-            MyPageProfileHeader(banners,navController)
-        }
-        item {
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                MyPageTabRow(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-                Spacer(Modifier.height(16.dp))
+    val isLoading = bannerUi == UserScreenVM.BannersUiState.Loading ||
                 when (selectedTab) {
-                    MyPageTab.Summary -> SummaryUI(vm)
-                    MyPageTab.Learning -> LearningTabUI(vm)
-                    MyPageTab.League -> LeagueTabUI(vm)
-                    MyPageTab.Social -> SocialTabUI(navController, vm)
+                    MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.Loading
+                    MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.Loading
+                    MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.Loading
+                    MyPageTab.Social ->
+                        socialUi == UserScreenVM.SocialUiState.Loading ||
+                        followUi == UserScreenVM.FollowUiState.Loading ||
+                        congratulateUi == UserScreenVM.CongratulateUiState.Loading
                 }
+    val isSessionExpired = bannerUi == UserScreenVM.BannersUiState.SessionExpired ||
+            when (selectedTab) {
+                MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.SessionExpired
+                MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.SessionExpired
+                MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.SessionExpired
+                MyPageTab.Social ->
+                    socialUi == UserScreenVM.SocialUiState.SessionExpired ||
+                            followUi == UserScreenVM.FollowUiState.SessionExpired ||
+                            congratulateUi == UserScreenVM.CongratulateUiState.SessionExpired
+            }
+    val isNotFound = bannerUi == UserScreenVM.BannersUiState.NotFound ||
+            when (selectedTab) {
+                MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.NotFound
+                MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.NotFound
+                MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.NotFound
+                MyPageTab.Social -> socialUi == UserScreenVM.SocialUiState.NotFound
+
+            }
+    val isFailed = bannerUi == UserScreenVM.BannersUiState.Failed ||
+            when (selectedTab) {
+                MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.Failed
+                MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.Failed
+                MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.Failed
+                MyPageTab.Social -> socialUi == UserScreenVM.SocialUiState.Failed
+
+            }
+
+    var navigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isSessionExpired) {
+        if (!isSessionExpired || navigated) return@LaunchedEffect
+        navigated = true
+        navController.navigate("error/401") {
+            popUpTo(
+                navController.currentBackStackEntry?.destination?.id ?: return@navigate
+            ) {
+                inclusive = true
+            }
+            launchSingleTop = true
+        }
+    }
+    LaunchedEffect(isNotFound) {
+        if (!isNotFound || navigated) return@LaunchedEffect
+
+        navController.navigate("error/404") {
+            popUpTo(
+                navController.currentBackStackEntry?.destination?.id ?: return@navigate
+            ) {
+                inclusive = true
+            }
+            launchSingleTop = true
+        }
+    }
+    LaunchedEffect(isFailed) {
+        if (!isFailed) return@LaunchedEffect
+        snackBarText = "오류가 발생했습니다."
+        showSnackBar = true
+    }
+    LaunchedEffect(congratulateUi) {
+        when (val state = congratulateUi) {
+            is UserScreenVM.CongratulateUiState.Failed -> {
+                snackBarText = state.message
+                showSnackBar = true
+            }
+
+            UserScreenVM.CongratulateUiState.Success -> {
+                vm.loadSocial()
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(followUi) {
+        when (val state = followUi) {
+            is UserScreenVM.FollowUiState.Failed -> {
+                snackBarText = state.message
+                showSnackBar = true
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(socialUi) {
+        val state = socialUi as? UserScreenVM.SocialUiState.Success
+        val message = state?.data?.loadMoreError
+
+        if (message != null) {
+            snackBarText = message
+            showSnackBar = true
+            vm.clearLoadMoreError()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        vm.loadBanners()
+        vm.loadSummary()
+        vm.loadLearning()
+        vm.loadLeague()
+    }
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == MyPageTab.Social) {
+            vm.loadSocial()
+        }
+    }
+    val banners = (bannerUi as? UserScreenVM.BannersUiState.Success)?.data
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColor.bg2)
+                .padding(WindowInsets.statusBars.asPaddingValues()),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            item {
+                MyPageProfileHeader(banners, navController)
+            }
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    MyPageTabRow(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    when (selectedTab) {
+                        MyPageTab.Summary -> SummaryUI(vm)
+                        MyPageTab.Learning -> LearningTabUI(vm, navController)
+                        MyPageTab.League -> LeagueTabUI(vm)
+                        MyPageTab.Social -> SocialTabUI(navController, vm, banners?.nickname)
+                    }
+                }
+            }
+        }
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        if (showSnackBar) {
+            CustomSnackBar(
+                text = snackBarText,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp)
+            )
+
+            LaunchedEffect(snackBarText) {
+                delay(2000)
+                showSnackBar = false
             }
         }
     }
@@ -184,7 +335,7 @@ fun MyPageProfileHeader(
                     Image(
                         painter = painterResource(id = R.drawable.profile_logo),
                         contentDescription = "profile logo",
-                        modifier = Modifier.size(32.dp, 40.dp)
+                        modifier = Modifier.size(37.dp, 47.dp)
                     )
                 }
 
@@ -192,7 +343,7 @@ fun MyPageProfileHeader(
 
                 Column(modifier = Modifier.padding(vertical = 7.5.dp)) {
                     Text(
-                        text = "${banner?.nickname}",
+                        text = banner?.nickname?: "",
                         style = AppTypography.Heading2,
                         color = AppColor.text1w
                     )
@@ -200,8 +351,8 @@ fun MyPageProfileHeader(
                     Spacer(Modifier.height(8.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ProfileBox("LV ${banner?.level}", 42.dp)
-                        ProfileBox("${banner?.currentLeague}", 58.dp)
+                        ProfileBox("LV ${banner?.level?: 1}", 42.dp)
+                        ProfileBox(banner?.currentLeague?: "브론즈 3", 58.dp)
                     }
                 }
 
@@ -230,7 +381,7 @@ fun MyPageProfileHeader(
             }
 
             Text(
-                text = "@${banner?.handle}",
+                text = banner?.handle?.let { "@${it}" } ?: "",
                 style = AppTypography.Label2,
                 color = PrimitiveColor.Gray400
             )
@@ -345,20 +496,10 @@ fun TapButton(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SummaryUI(
-    vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, LocalContext.current))
+    vm: UserScreenVM
 ) {
     val ui by vm.stateSummary.collectAsState()
-    LaunchedEffect(Unit) { vm.loadSummary() }
     val summaries = (ui as? UserScreenVM.SummaryUiState.Success)?.data
-
-    val currentMonth = LocalDate.now().monthValue
-    var isFirstHalf by remember { mutableStateOf(currentMonth <= 6) }
-    val months =
-        if (isFirstHalf) {
-            (1..6).toList()
-        } else {
-            (7..12).toList()
-        }
     val colorCube = listOf(AppColor.bg1, PrimitiveColor.Purple200, PrimitiveColor.Purple300,PrimitiveColor.Purple500,PrimitiveColor.Purple700)
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -394,7 +535,7 @@ fun SummaryUI(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "상위 ${summaries?.learningSummary?.topPercent}%",
+                            text = "상위 ${summaries?.learningSummary?.topPercent?: 0}%",
                             style = AppTypography.Title3,
                             color = AppColor.Main1
                         )
@@ -407,8 +548,16 @@ fun SummaryUI(
                         Spacer(Modifier.height(12.dp))
                     }
                 }
-                val rankInfo =
-                    listOf("${summaries?.learningSummary?.completedLessonCount}개", "완료 레슨", "${String.format("%.1f", summaries?.learningSummary?.totalLearningHours)}h", "총 학습시간", "${summaries?.learningSummary?.averageAccuracy}%", "평균 정답률").chunked(2)
+                val rankInfo = listOf(
+                    summaries?.learningSummary?.averageAccuracy?.let { "${it}%" } ?: "-",
+                    "평균 정답률",
+
+                    summaries?.learningSummary?.completedLessonCount?.let { "${it}개" } ?: "-",
+                    "완료 레슨",
+
+                    summaries?.learningSummary?.totalLearningHours?.let { String.format(Locale.US, "%.1fh", it) } ?: "-",
+                    "총 학습시간"
+                ).chunked(2)
                 RankRow(rankInfo)
             }
         }
@@ -587,14 +736,14 @@ data class DailyStudy(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LearningTabUI(
-    vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, LocalContext.current))
+    vm: UserScreenVM,
+    navController: NavController
 ) {
     val ui by vm.stateLearning.collectAsState()
-    LaunchedEffect(Unit) { vm.loadLearning() }
     val learning = (ui as? UserScreenVM.LearningUiState.Success)?.data
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
             modifier = Modifier
@@ -640,7 +789,7 @@ fun LearningTabUI(
                         color = AppColor.text1
                     )
                     Text(
-                        text = "${learning?.weeklyReport?.thisWeekCompletedLessonCount}개",
+                        text = "${learning?.weeklyReport?.thisWeekCompletedLessonCount?: 0}개",
                         style = AppTypography.Heading1,
                         color = AppColor.text1
                     )
@@ -692,74 +841,102 @@ fun LearningTabUI(
                 .background(AppColor.bg0)
                 .padding(16.dp),
         ){
-            Column {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "취약 개념 TOP7",
+                    text = "이번 주 가장 많이 푼 챕터",
                     textAlign = TextAlign.Start,
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "어떤 주제에 집중했나요?",
-                    textAlign = TextAlign.Start,
-                    style = AppTypography.Headline2,
-                    color = AppColor.text1
-                )
-                Spacer(Modifier.height(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    learning?.topChapters?.forEach { it ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(PrimitiveColor.Gray200)
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                if(learning?.topChapters?.isEmpty() == true){
+                    Spacer(Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(161.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Box(
+                            Text(
+                                text = "이번주 학습한 내용이 없어요.\n어서 학습을 진행해 주세요.",
+                                style = AppTypography.Label1,
+                                color = AppColor.text3w,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            BlockButton(
                                 modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(50f))
-                                    .background(PrimitiveColor.Gray800),
-                                contentAlignment = Alignment.Center
-                            ){
-                                Text(
-                                    text = "${it.rank}",
-                                    style = AppTypography.Web_Btn_S_Caption1,
-                                    color = AppColor.text1w
+                                    .size(136.dp, 47.dp),
+                                text = "학습하러 가기",
+                                onClick = {navController.navigate("chapter")},
+                                style = AppTypography.Headline2
                                 )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column() {
-                                Row {
+                        }
+                    }
+                } else{
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "어떤 주제에 집중했나요?",
+                        textAlign = TextAlign.Start,
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        learning?.topChapters?.forEach {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(PrimitiveColor.Gray200)
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(50f))
+                                        .background(PrimitiveColor.Gray800),
+                                    contentAlignment = Alignment.Center
+                                ){
                                     Text(
-                                        text = it.chapterTitle,
-                                        style = AppTypography.Headline2,
-                                        color = AppColor.text2
-                                    )
-                                    Spacer(Modifier.weight(1f))
-                                    Text(
-                                        text = "${it.solvedLessonCount}개",
-                                        style = AppTypography.Body1_Nomal,
-                                        color = AppColor.text2
+                                        text = "${it.rank}",
+                                        style = AppTypography.Web_Btn_S_Caption1,
+                                        color = AppColor.text1w
                                     )
                                 }
-                                Spacer(Modifier.height(7.dp))
-                                RoundedGauge(
-                                    rate = it.ratio.toFloat(),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    height = 8.dp,
-                                    width = 0.dp
-                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Row {
+                                        Text(
+                                            text = it.chapterTitle,
+                                            style = AppTypography.Headline2,
+                                            color = AppColor.text2
+                                        )
+                                        Spacer(Modifier.weight(1f))
+                                        Text(
+                                            text = "${it.solvedLessonCount}개",
+                                            style = AppTypography.Body1_Nomal,
+                                            color = AppColor.text2
+                                        )
+                                    }
+                                    Spacer(Modifier.height(7.dp))
+                                    RoundedGauge(
+                                        rate = it.ratio.toFloat(),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        height = 8.dp,
+                                        width = 0.dp
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
             }
         }
         Box(
@@ -770,82 +947,104 @@ fun LearningTabUI(
                 .padding(16.dp),
         ){
             Column {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "이번 주 가장 많이 푼 챕터",
+                    text = "취약 개념 TOP7",
                     textAlign = TextAlign.Start,
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "어떤 주제에 집중했나요?",
-                    textAlign = TextAlign.Start,
-                    style = AppTypography.Headline2,
-                    color = AppColor.text1
-                )
-                Spacer(Modifier.height(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    learning?.weakConcepts?.forEach { it ->
-                    Row(
+                if(learning?.weakConcepts?.isEmpty() == true){
+                    Spacer(Modifier.height(16.dp))
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(PrimitiveColor.Gray200)
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(161.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(50f))
-                                .background(PrimitiveColor.Gray800),
-                            contentAlignment = Alignment.Center
-                        ){
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
                             Text(
-                                text = "${it.rank}",
-                                style = AppTypography.Web_Btn_S_Caption1,
-                                color = AppColor.text1w
+                                text = "이번주 학습한 내용이 없어요.\n어서 학습을 진행해 주세요.",
+                                style = AppTypography.Label1,
+                                color = AppColor.text3w,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            BlockButton(
+                                modifier = Modifier
+                                    .size(136.dp, 47.dp),
+                                text = "학습하러 가기",
+                                onClick = {navController.navigate("chapter")},
+                                style = AppTypography.Headline2
                             )
                         }
-                        Spacer(Modifier.width(12.dp))
-                        Row (
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Column {
-                                Text(
-                                    text = it.unitTitle,
-                                    style = AppTypography.Label1,
-                                    color = AppColor.text2
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = "${it.chapterTitle} • ${it.wrongAnswerCount}문제 오답",
-                                    style = AppTypography.Label2,
-                                    color = AppColor.text4
-                                )
-                            }
-                            Spacer(Modifier.weight(1f))
-                            Box(
+                    }
+                }else {
+                    Spacer(Modifier.height(16.dp))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        learning?.weakConcepts?.forEach {
+                            Row(
                                 modifier = Modifier
-                                    .size(41.dp, 22.dp)
-                                    .clip(RoundedCornerShape(60.dp))
-                                    .background(AppColor.bg1)
-                                    .border(1.dp, AppColor.Main2, RoundedCornerShape(60.dp)),
-                                contentAlignment = Alignment.Center
-                            ){
-                                Text(
-                                    text = "${it.wrongAnswerRate}%",
-                                    style = AppTypography.Caption1,
-                                    color = AppColor.Main2
-                                )
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(PrimitiveColor.Gray200)
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(50f))
+                                        .background(PrimitiveColor.Gray800),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${it.rank}",
+                                        style = AppTypography.Web_Btn_S_Caption1,
+                                        color = AppColor.text1w
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = it.unitTitle,
+                                            style = AppTypography.Label1,
+                                            color = AppColor.text2
+                                        )
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            text = "${it.chapterTitle} • ${it.wrongAnswerCount}문제 오답",
+                                            style = AppTypography.Label2,
+                                            color = AppColor.text4
+                                        )
+                                    }
+                                    Spacer(Modifier.weight(1f))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(41.dp, 22.dp)
+                                            .clip(RoundedCornerShape(60.dp))
+                                            .background(AppColor.bg1)
+                                            .border(1.dp, AppColor.Main2, RoundedCornerShape(60.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "${it.wrongAnswerRate}%",
+                                            style = AppTypography.Caption1,
+                                            color = AppColor.Main2
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                } }
-
+                }
             }
         }
     }
@@ -989,11 +1188,10 @@ fun RankInfo(
 }
 @Composable
 fun LeagueTabUI(
-    vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, LocalContext.current))
+    vm: UserScreenVM
 ) {
     val ui by vm.stateLeague.collectAsState()
-    LaunchedEffect(Unit) { vm.loadLeague() }
-    val league = (ui as? UserScreenVM.LeargueUiState.Success)?.data
+    val league = (ui as? UserScreenVM.LeagueUiState.Success)?.data
 
     Column(
         modifier = Modifier
@@ -1022,8 +1220,17 @@ fun LeagueTabUI(
                         color = AppColor.text1
                     )
                 }
-                val rankinfo = listOf("${league?.currentSeasonRank}위", "현재 시즌 순위", "${league?.top3SeasonCount}회", "3위권 진입", "${league?.bestLeagueName}", "최고티어").chunked(2)
-                RankRow(rankinfo, true)
+                val ranking = listOf(
+                    league?.currentSeasonRank?.let { "${it}위" } ?: "-",
+                    "현재 시즌 순위",
+
+                    league?.top3SeasonCount?.let { "${it}회" } ?: "-",
+                    "3위권 진입",
+
+                    league?.bestLeagueName ?: "-",
+                    "최고티어"
+                ).chunked(2)
+                RankRow(ranking, true)
                 TierChart(
                     histories = league?.seasonHistory.orEmpty(),
                     modifier = Modifier
@@ -1238,56 +1445,181 @@ fun TierChart(
 @Composable
 fun SocialTabUI(
     navController: NavController,
-    vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, LocalContext.current))
+    vm: UserScreenVM,
+    nickname: String?
 ) {
-
     val ui by vm.stateSocial.collectAsState()
     LaunchedEffect(Unit) {
         vm.loadSocial()
-        Log.d("SOCIAL_UI", ui.toString())
     }
     val social = (ui as? UserScreenVM.SocialUiState.Success)?.data
+    val listState = rememberLazyListState()
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(AppColor.bg0),
-            contentAlignment = Alignment.Center
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+            val total = listState.layoutInfo.totalItemsCount
+            if (last != null) last to total else null
+        }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collect { (lastVisible, total) ->
+                if (lastVisible >= total - 3) {
+                    vm.loadMoreSocial()
+                }
+            }
+    }
+    Box {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column() {
-                val socialInfo = listOf("${social?.count?.followerCount}", "팔로우", "${social?.count?.followingCount}", "팔로잉").chunked(2)
-                val isLeague = false
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    socialInfo.forEachIndexed { index, item ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AppColor.bg0),
+                contentAlignment = Alignment.Center
+            ) {
+                Column {
+                    val socialInfo = listOf(
+                        "${social?.count?.followerCount?: "-"}",
+                        "팔로우",
+                        "${social?.count?.followingCount?: "-"}",
+                        "팔로잉"
+                    ).chunked(2)
+                    val isLeague = false
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        socialInfo.forEachIndexed { index, item ->
 
-                        RankInfo(
-                            value = item[0],
-                            label = item[1],
-                            modifier = Modifier.weight(1f),
-                            color = if(index==0 && isLeague) AppColor.Main1 else AppColor.text1,
-                            onClick = if(item[1] == "팔로우") {
-                                {navController.navigate("user/followList?tab=followers") { launchSingleTop = true } }
-                            } else {
-                                {navController.navigate("user/followList?tab=following") { launchSingleTop = true }}
+                            RankInfo(
+                                value = item[0],
+                                label = item[1],
+                                modifier = Modifier.weight(1f),
+                                color = if (index == 0 && isLeague) AppColor.Main1 else AppColor.text1,
+                                onClick = if (item[1] == "팔로우") {
+                                    {
+                                        navController.navigate("user/followList?tab=followers") {
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                } else {
+                                    {
+                                        navController.navigate("user/followList?tab=following") {
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                }
+                            )
+
+                            if (index != socialInfo.lastIndex) {
+
+                                VerticalDivider(
+                                    modifier = Modifier.height(40.dp),
+                                    thickness = 1.dp,
+                                    color = AppColor.divider1
+                                )
                             }
-                        )
+                        }
+                    }
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AppColor.bg0)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "친구 활동",
+                        style = AppTypography.Label2,
+                        color = PrimitiveColor.Gray500
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "팔로잉한 친구들의 최근 성취",
+                        style = AppTypography.Headline2,
+                        color = PrimitiveColor.Gray900
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(234.dp)
+                    ) {
+                        items(social?.feed?.contents ?: emptyList()) { feed ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(78.dp)
+                                    .padding(vertical = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(ProfilePalette.idToColor(feed.actorProfileImgNumber)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.profile_logo),
+                                        contentDescription = "profile logo",
+                                        modifier = Modifier.size(18.dp, 20.dp)
+                                    )
+                                }
 
-                        if (index != socialInfo.lastIndex) {
+                                Spacer(Modifier.width(12.dp))
 
-                            VerticalDivider(
-                                modifier = Modifier.height(40.dp),
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = feed.actorNickname,
+                                            style = AppTypography.Label1,
+                                            color = AppColor.text1
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            text = feed.timeAgo,
+                                            style = AppTypography.Caption1,
+                                            color = AppColor.text4
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(4.dp))
+
+                                    Text(
+                                        text = feed.message,
+                                        style = AppTypography.Label2,
+                                        color = AppColor.text3
+                                    )
+                                }
+
+                                Spacer(Modifier.weight(1f))
+
+                                InlineButton(
+                                    text = "축하하기",
+                                    state = InlineButtonState.Default,
+                                    onClick = { vm.congratulate(feed.feedId) },
+                                    modifier = Modifier
+                                        .height(32.dp)
+                                        .width(77.dp),
+                                    style = AppTypography.Label2,
+                                    color = AppColor.CTA_text
+                                )
+                            }
+
+                            HorizontalDivider(
+                                modifier = Modifier.fillMaxWidth(),
                                 thickness = 1.dp,
                                 color = AppColor.divider1
                             )
@@ -1295,168 +1627,88 @@ fun SocialTabUI(
                     }
                 }
             }
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(AppColor.bg0)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "친구 활동",
-                    style = AppTypography.Label2,
-                    color = PrimitiveColor.Gray500
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "팔로잉한 친구들의 최근 성취",
-                    style = AppTypography.Headline2,
-                    color = PrimitiveColor.Gray900
-                )
-                Spacer(Modifier.height(8.dp))
-                Column {
-                    social?.feed?.contents?.forEach { feed ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(78.dp)
-                                .padding(vertical = 20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AppColor.bg0)
+            ) {
+                Column(modifier = Modifier.padding(vertical = 16.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            text = "추천 친구",
+                            style = AppTypography.Label2,
+                            color = PrimitiveColor.Gray500
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = "비슷한 레벨의 학습자들",
+                            style = AppTypography.Headline2,
+                            color = PrimitiveColor.Gray900
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    LazyRow(
+                        modifier = Modifier.fillMaxHeight(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        items(social?.recommend.orEmpty()) { recommend ->
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(ProfilePalette.idToColor(feed.actorProfileImgNumber)),
+                                    .fillMaxHeight()
+                                    .width(144.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(AppColor.bg1),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.profile_logo),
-                                    contentDescription = "profile logo",
-                                    modifier = Modifier.size(18.dp, 20.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column() {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.padding(
+                                        vertical = 12.dp,
+                                        horizontal = 20.dp
+                                    ),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .clip(CircleShape)
+                                            .background(ProfilePalette.idToColor(recommend.profileImgNumber)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.profile_logo),
+                                            contentDescription = "profile logo",
+                                            modifier = Modifier.size(21.dp, 26.dp)
+                                        )
+                                    }
+                                    Spacer(Modifier.height(8.dp))
                                     Text(
-                                        text = feed.actorNickname,
+                                        text = recommend.nickname,
                                         style = AppTypography.Label1,
                                         color = AppColor.text1
                                     )
-                                    Spacer(Modifier.width(4.dp))
+                                    Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = "2시간 전",
+                                        text = "${nickname}님 외 ${recommend.mutualFollowCount}명",
                                         style = AppTypography.Caption1,
                                         color = AppColor.text4
                                     )
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = feed.message,
-                                    style = AppTypography.Label2,
-                                    color = AppColor.text3
-                                )
-                            }
-                            Spacer(Modifier.weight(1f))
-                            InlineButton(
-                                text = "축하하기",
-                                state = InlineButtonState.Default,
-                                onClick = {},
-                                modifier = Modifier
-                                    .height(32.dp)
-                                    .width(77.dp),
-                                style = AppTypography.Label2,
-                                color = AppColor.CTA_text
-                            )
-                        }
-                        HorizontalDivider(modifier = Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
-
-                    }
-                }
-            }
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(AppColor.bg0)
-        ) {
-            Column(modifier = Modifier.padding(vertical = 16.dp)) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Text(
-                        text = "추천 친구",
-                        style = AppTypography.Label2,
-                        color = PrimitiveColor.Gray500
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = "비슷한 레벨의 학습자들",
-                        style = AppTypography.Headline2,
-                        color = PrimitiveColor.Gray900
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
-                LazyRow(
-                    modifier = Modifier.fillMaxHeight(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp)
-                ) {
-                    items(social?.recommend.orEmpty()) { recommend ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .width(144.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(AppColor.bg1),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(vertical = 12.dp, horizontal = 20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(52.dp)
-                                        .clip(CircleShape)
-                                        .background(ProfilePalette.idToColor(recommend.profileImgNumber)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.profile_logo),
-                                        contentDescription = "profile logo",
-                                        modifier = Modifier.size(21.dp, 26.dp)
+                                    Spacer(Modifier.weight(1f))
+                                    InlineButton(
+                                        text = "+ 팔로우",
+                                        state = InlineButtonState.Stroke_Color,
+                                        onClick = { vm.followRecommend(recommend.userId)},
+                                        modifier = Modifier
+                                            .height(26.dp)
+                                            .width(104.dp),
+                                        style = AppTypography.Caption2,
+                                        color = AppColor.Main2,
+                                        shape = RoundedCornerShape(4.dp),
+                                        padding = 4.dp
                                     )
                                 }
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    text = recommend.nickname,
-                                    style = AppTypography.Label1,
-                                    color = AppColor.text1
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = "내이름님 외 ${recommend.mutualFollowCount}명",
-                                    style = AppTypography.Caption1,
-                                    color = AppColor.text4
-                                )
-                                Spacer(Modifier.weight(1f))
-                                InlineButton(
-                                    text = "+ 팔로우",
-                                    state = InlineButtonState.Stroke_Color,
-                                    onClick = { vm.followRecommend(recommend.userId.toLong())},
-                                    modifier = Modifier
-                                        .height(26.dp)
-                                        .width(104.dp),
-                                    style = AppTypography.Caption2,
-                                    color = AppColor.Main2,
-                                    shape = RoundedCornerShape(4.dp),
-                                    padding = 4.dp
-                                )
                             }
                         }
                     }
@@ -1490,7 +1742,7 @@ fun FriendsRow(
             )
         }
         Spacer(Modifier.width(12.dp))
-        Column() {
+        Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {

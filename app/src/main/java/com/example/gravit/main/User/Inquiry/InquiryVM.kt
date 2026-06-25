@@ -1,7 +1,6 @@
 package com.example.gravit.main.User.Inquiry
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,7 +10,6 @@ import com.inuappcenter.gravit.api.InquiryDetail
 import com.inuappcenter.gravit.api.InquiryListResponses
 import com.inuappcenter.gravit.api.InquiryRequest
 import com.inuappcenter.gravit.error.handleApiFailure
-import com.inuappcenter.gravit.main.User.UserScreenVM
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
