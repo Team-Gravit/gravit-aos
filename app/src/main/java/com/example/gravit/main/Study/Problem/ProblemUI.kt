@@ -412,14 +412,13 @@ fun isAnswerCorrect(
 
     fun norm(s: String) = s.trim()
         .lowercase()
-        .replace(Regex("\\s+"), " ")
-        .replace(Regex("[.,]"), "")
+        .replace(Regex("\\s+"), "")
 
     val userN = norm(userAnswer)
 
     return correctAnswer.contents.any { answer ->
         val ansN = norm(answer)
-        ansN.isNotBlank() && userN.isNotBlank() && userN == ansN
+        userN == ansN
     }
 }
 
