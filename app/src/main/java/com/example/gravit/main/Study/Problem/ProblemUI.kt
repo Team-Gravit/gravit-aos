@@ -410,29 +410,15 @@ fun isAnswerCorrect(
     if (correctAnswer?.contents.isNullOrEmpty()) return false
     if (userAnswer.isNullOrBlank()) return false
 
-    val userNum = userAnswer.replace(",", "").toBigDecimalOrNull()
-    if (userNum != null) {
-        return correctAnswer.contents.any { ans ->
-            val corrNum = ans.replace(",", "").toBigDecimalOrNull()
-            corrNum != null && userNum.compareTo(corrNum) == 0
-        }
-    }
-
     fun norm(s: String) = s.trim()
         .lowercase()
-        .replace(Regex("\\s+"), " ")
-        .replace(Regex("[.,]"), "")
+        .replace(Regex("\\s+"), "")
 
     val userN = norm(userAnswer)
 
-    fun containsEitherWay(a: String, b: String): Boolean =
-        a.contains(b) || b.contains(a)
-
     return correctAnswer.contents.any { answer ->
         val ansN = norm(answer)
-        ansN.isNotBlank() &&
-                userN.isNotBlank() &&
-                containsEitherWay(userN, ansN)
+        userN == ansN
     }
 }
 
