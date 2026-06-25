@@ -101,6 +101,7 @@ data class LeagueDetailResponse(
     val leagueId: Int,
     val leagueName: String,
     val currentLP: Int,
+    val minLP: Int,
     val maxLP: Int
 )
 data class Units(
