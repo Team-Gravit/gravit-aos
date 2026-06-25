@@ -182,8 +182,13 @@ fun HomeUI(
     val levelProgress = (levelRate / 100f).coerceIn(0f, 1f)
 
     val leagueId = userLeagueInfo.leagueId
-    val leagueProgress = (userLeagueInfo.currentLP - userLeagueInfo.minLP).toFloat() /
-            (userLeagueInfo.maxLP - userLeagueInfo.minLP).toFloat()
+    val lpRange = (userLeagueInfo.maxLP - userLeagueInfo.minLP).toFloat()
+    val leagueProgress = if (lpRange > 0f) {
+        ((userLeagueInfo.currentLP - userLeagueInfo.minLP).toFloat() / lpRange)
+            .coerceIn(0f, 1f)
+    } else {
+        0f
+    }
 
     val consecutiveDays = userLearningInfo.consecutiveSolvedDays
 
