@@ -500,6 +500,28 @@ data class InquiryAnswer(
     val content: String,
     val answeredAt: String
 )
+//인앱알림
+data class Notifications(
+    val hasNextPage: Boolean,
+    val contents: List<NotificationData>
+)
+
+data class NotificationData(
+    val id: Long,
+    val type: String,
+    val message: String,
+    val actionType: String,
+    val targetId: Long?,
+    val read: Boolean,
+    val createdAt: String,
+    val timeAgo: String,
+    val actor: ActorData
+)
+data class ActorData(
+    val profileId: Long,
+    val nickname: String,
+    val profileImgNumber: Int
+)
 
 interface ApiService {
     //OAuth2.0 Android API
@@ -773,5 +795,10 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Path("inquiryId") inquiryId: Long
     ) : InquiryDetail
+    @GET("api/v1/notifications")
+    suspend fun getNotifications(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int
+    ) : Notifications
 }
 
