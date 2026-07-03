@@ -247,14 +247,14 @@ fun Notice2(
                                     },
                                 onClick = {
                                     when (notification.actionType) {
-                                        "FOLLOW_BACK" -> {notificationVM.toggleFollow(notification.targetId, notification.actionType)}
+                                        "FOLLOW_BACK" -> {notificationVM.toggleFollow(notification.targetId?: 0, notification.actionType)}
                                         "GO_TO_LEARNING" -> {
                                             if(notification.targetId == null)
                                                 navController.navigate("chapter")
                                             else navController.navigate("")
                                         }
                                         "GO_TO_NOTICE" -> { navController.navigate("")}
-                                        "UNFOLLOW" -> {notificationVM.toggleFollow(notification.targetId, notification.actionType)}
+                                        "UNFOLLOW" -> {notificationVM.toggleFollow(notification.targetId?: 0, notification.actionType)}
                                         "CONGRATULATE" -> {congratulateVM.congratulate(notification.targetId?: 0)}
                                         "GO_TO_INQUIRY" -> {navController.navigate("")}
                                         else -> ""
