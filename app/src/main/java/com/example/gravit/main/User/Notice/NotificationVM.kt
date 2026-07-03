@@ -46,7 +46,7 @@ class NotificationVM(
                 return@launch
             }
             runCatching {
-                api.getNotifications("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3ODI2NjE1NjQsImV4cCI6MTc4MjY2ODc2NH0.QCPeT5_NiKy_qIca_ELsww75nznpkAbT6iavITLAitU", 0)
+                api.getNotifications("Bearer ${session.accessToken}", 0)
             }.onSuccess { res ->
                 page = 0
                 hasNext = res.hasNextPage
@@ -79,7 +79,7 @@ class NotificationVM(
         isLoading = true
         try{
             runCatching {
-                api.getNotifications("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3ODI2NjE1NjQsImV4cCI6MTc4MjY2ODc2NH0.QCPeT5_NiKy_qIca_ELsww75nznpkAbT6iavITLAitU", page+1)
+                api.getNotifications("Bearer ${session.accessToken}", page+1)
             }.onSuccess { next ->
                 page += 1
                 hasNext = next.hasNextPage
@@ -116,7 +116,7 @@ class NotificationVM(
     private val _stateAction = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
     val stateAction = _stateAction.asStateFlow()
 
-    fun toggleFollow(targetId: Long?, actionType: String) = viewModelScope.launch {
+    fun toggleFollow(targetId: Long, actionType: String) = viewModelScope.launch {
         val session = AuthPrefs.load(appContext)
         if(session == null){
             AuthPrefs.clear(appContext)
@@ -125,9 +125,9 @@ class NotificationVM(
         }
         runCatching {
             if(actionType=="FOLLOW_BACK")
-                api.follow("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3ODI2NjE1NjQsImV4cCI6MTc4MjY2ODc2NH0.QCPeT5_NiKy_qIca_ELsww75nznpkAbT6iavITLAitU", targetId)
+                api.follow("Bearer ${session.accessToken}", targetId)
             else
-                api.unfollow("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3ODI2NjE1NjQsImV4cCI6MTc4MjY2ODc2NH0.QCPeT5_NiKy_qIca_ELsww75nznpkAbT6iavITLAitU", targetId)
+                api.unfollow("Bearer ${session.accessToken}", targetId)
         }.onSuccess { res ->
             val message = runCatching {
                 res.errorBody()?.string()
