@@ -53,14 +53,17 @@ data class ChapterSummaryResponse(
 
 //홈
 data class MainPageResponse(
+    val mainProfile: MainProfile,
+    val mainLeagueResponse: MainLeagueResponse,
+    val mainLearningResponse: MainLearningResponse,
+    val recommendedUnitResponses: List<RecommendedUnitResponses> = emptyList(),
+    val weeklyRecordResponse: WeeklyRecordResponse,
+    val missionResponse: MissionResponse
+)
+data class MainProfile(
     val profileImgNumber: Int,
     val nickname: String,
     val userLevelDetailResponse: UserLevelDetailResponse,
-    val leagueDetailResponse: LeagueDetailResponse,
-    val learningDetailResponse: LearningDetailResponse,
-    val recommendedUnitResponses: List<RecommendedUnitResponses> = emptyList(),
-    val weeklyLearningRecordResponse: WeeklyLearningRecordResponse,
-    val missionDetailResponse: MissionDetailResponse
 )
 data class UserLevelDetailResponse(
     val currentXp: Int,
@@ -68,21 +71,21 @@ data class UserLevelDetailResponse(
     val levelRate: Float,
     val maxXp: Int
 )
-data class LearningDetailResponse(
+data class MainLearningResponse(
     val consecutiveSolvedDays: Int,
     val recentSolvedChapterId: Int,
     val recentSolvedChapterTitle: String,
     val recentSolvedChapterProgressRate: Double,
     val units: List<Units>
 )
-data class MissionDetailResponse(
+data class MissionResponse(
     val missionType: String,
     val missionDescription: String,
     val awardXp: Int,
     val progressRate: Float,
     val isCompleted: Boolean
 )
-data class WeeklyLearningRecordResponse(
+data class WeeklyRecordResponse(
     val MONDAY: Boolean,
     val TUESDAY: Boolean,
     val WEDNESDAY: Boolean,
@@ -97,7 +100,7 @@ data class RecommendedUnitResponses(
     val chapterId: Int,
     val chapterTitle: String
 )
-data class LeagueDetailResponse(
+data class MainLeagueResponse(
     val leagueId: Int,
     val leagueName: String,
     val currentLP: Int,
@@ -554,11 +557,30 @@ interface ApiService {
     suspend fun getUser(
         @Header("Authorization") auth: String
     ) : UserPageResponse
-    @GET("api/v1/users/main-page") //메인 페이지 조회
-    suspend fun getMainPage(
+    @GET("api/v1/main-pages/weekly-record")
+    suspend fun getWeeklyRecord(
         @Header("Authorization") auth: String,
-    ): MainPageResponse
-
+    ) : WeeklyRecordResponse
+    @GET("api/v1/main-pages/units")
+    suspend fun getRecommendUnits(
+        @Header("Authorization") auth: String,
+    ): List<RecommendedUnitResponses>
+    @GET("api/v1/main-pages/profile")
+    suspend fun getMainProfile(
+        @Header("Authorization") auth: String,
+    ): MainProfile
+    @GET("api/v1/main-pages/mission")
+    suspend fun getMainMission(
+        @Header("Authorization") auth: String,
+    ) : MissionResponse
+    @GET("api/v1/main-pages/learning")
+    suspend fun getMainLearning(
+        @Header("Authorization") auth: String,
+    ) : MainLearningResponse
+    @GET("api/v1/main-pages/league")
+    suspend fun getMainLeague(
+        @Header("Authorization") auth: String,
+    ) : MainLeagueResponse
     //Chapter API
     @GET("api/v1/chapters") //챕터 조회
     suspend fun getChapterPage(
