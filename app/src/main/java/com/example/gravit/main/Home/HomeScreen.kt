@@ -40,20 +40,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -135,7 +131,7 @@ fun HomeScreen(
 
             HomeUI(
                 home = state.data,
-                units = state.data.learningDetailResponse.units,
+                units = state.data.mainLearningResponse.units,
                 navController = navController
             )
         }
@@ -162,12 +158,12 @@ fun HomeUI(
     fun dw(v: Float) = (v * scaleW).dp
     fun dh(v: Float) = (v * scaleH).dp
 
-    val userLevelInfo = home.userLevelDetailResponse
-    val userLeagueInfo = home.leagueDetailResponse
-    val userLearningInfo = home.learningDetailResponse
+    val userLevelInfo = home.mainProfile.userLevelDetailResponse
+    val userLeagueInfo = home.mainLeagueResponse
+    val userLearningInfo = home.mainLearningResponse
     val recommendedInfo = home.recommendedUnitResponses[0]
-    val weeklyInfo = home.weeklyLearningRecordResponse
-    val missionInfo = home.missionDetailResponse
+    val weeklyInfo = home.weeklyRecordResponse
+    val missionInfo = home.missionResponse
 
     val level = userLevelInfo.level
     val leagueName = userLeagueInfo.leagueName
@@ -239,7 +235,7 @@ fun HomeUI(
                                         .padding(1.5.dp)
                                         .size(25.dp)
                                         .clip(CircleShape)
-                                        .background(ProfilePalette.idToColor(home.profileImgNumber)),
+                                        .background(ProfilePalette.idToColor(home.mainProfile.profileImgNumber)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Image(
@@ -314,7 +310,7 @@ fun HomeUI(
                         verticalArrangement = Arrangement.Bottom,
                         horizontalAlignment = Alignment.Start,
                     ) {
-                        val nickname = home.nickname
+                        val nickname = home.mainProfile.nickname
 
                         Text(
                             text = "어서오세요, ${nickname}님!",

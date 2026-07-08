@@ -8,6 +8,8 @@ import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.MainPageResponse
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -37,14 +39,26 @@ class HomeViewModel(
             _state.value = UiState.SessionExpired
             return@launch
         }
-
-        val auth = "Bearer ${session.accessToken}"
-
+        val access = "Bearer ${session.accessToken}"
         runCatching {
-            val mainData = api.getMainPage(auth)
-            UiState.Success(data = mainData)
-        }.onSuccess { successState ->
-            _state.value = successState
+            coroutineScope {
+                val mission = async { api.getMainMission(access) }
+                val learning = async { api.getMainLearning(access) }
+                val weekly = async { api.getWeeklyRecord(access) }
+                val profile = async { api.getMainProfile(access) }
+                val league = async { api.getMainLeague(access) }
+                val units = async { api.getRecommendUnits(access) }
+                MainPageResponse(
+                    mainProfile = profile.await(),
+                    missionResponse = mission.await(),
+                    mainLeagueResponse = league.await(),
+                    mainLearningResponse = learning.await(),
+                    recommendedUnitResponses = units.await(),
+                    weeklyRecordResponse = weekly.await()
+                )
+            }
+        }.onSuccess { res ->
+            _state.value = UiState.Success(res)
 
         }.onFailure { e ->
             handleApiFailure(
