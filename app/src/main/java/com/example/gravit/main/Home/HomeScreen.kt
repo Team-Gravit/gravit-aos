@@ -161,7 +161,7 @@ fun HomeUI(
     val userLevelInfo = home.mainProfile.userLevelDetailResponse
     val userLeagueInfo = home.mainLeagueResponse
     val userLearningInfo = home.mainLearningResponse
-    val recommendedInfo = home.recommendedUnitResponses[0]
+    val recommendedInfo = home.recommendedUnitResponses.firstOrNull()
     val weeklyInfo = home.weeklyRecordResponse
     val missionInfo = home.missionResponse
 
@@ -249,7 +249,7 @@ fun HomeUI(
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Lv ${level}",
+                                text = "Lv $level",
                                 style = AppTypography.Label1,
                                 color = PrimitiveColor.Gray50
                             )
@@ -539,7 +539,7 @@ fun HomeUI(
                                         .clip(RoundedCornerShape(8.dp))
                                 ) {
                                     Image(
-                                        painter = painterResource(id = resolvePlanetRes(recommendedInfo.chapterId)),
+                                        painter = painterResource(id = resolvePlanetRes(recommendedInfo?.chapterId?: 1)),
                                         contentDescription = null
                                     )
                                     Column(
@@ -554,7 +554,7 @@ fun HomeUI(
                                         Spacer(modifier = Modifier.height(4.dp))
 
                                         Text(
-                                            text = recommendedInfo.chapterTitle,
+                                            text = recommendedInfo?.chapterTitle?: "자료구조",
                                             style = AppTypography.Headline1,
                                             color = PrimitiveColor.Gray50
                                         )
@@ -562,7 +562,7 @@ fun HomeUI(
                                         Spacer(modifier = Modifier.height(dh(3f)))
 
                                         Text(
-                                            text = recommendedInfo.unitTitle,
+                                            text = recommendedInfo?.unitTitle?: "배열",
                                             style = AppTypography.Caption1,
                                             color = PrimitiveColor.Gray400
                                         )
@@ -579,7 +579,7 @@ fun HomeUI(
                                             color = Color(0xFFFBF1FF),
                                             textDecoration = TextDecoration.Underline,
                                             modifier = Modifier.clickable(onClick = {
-                                                navController.navigate("unit/${recommendedInfo.chapterId}")
+                                                navController.navigate("unit/${recommendedInfo?.chapterId?: 1}")
                                             })
                                         )
                                     }
