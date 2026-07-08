@@ -62,7 +62,7 @@ import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Notice2(
+fun Notification(
     navController: NavController,
 ){
     val date = LocalDate.now()
@@ -287,50 +287,51 @@ fun Notice2(
                                                     )
                                                 }
 
-                                                "GO_TO_LEARNING" -> {
-                                                    if (notification.targetId == null)
-                                                        navController.navigate("chapter")
-                                                    else navController.navigate("")
-                                                }
+                                                        "GO_TO_LEARNING" -> {
+                                                            if (notification.targetId == null)
+                                                                navController.navigate("chapter")
+                                                            else navController.navigate("lessonList/${notification.targetId}")
+                                                        }
 
-                                                "GO_TO_NOTICE" -> {
-                                                    navController.navigate("")
-                                                }
+                                                        "GO_TO_NOTICE" -> {
+                                                            navController.navigate("user/notice/detail/${notification.targetId}")
+                                                        }
 
-                                                "UNFOLLOW" -> {
-                                                    notificationVM.toggleFollow(
-                                                        notification.targetId ?: 0,
-                                                        notification.actionType
-                                                    )
-                                                }
+                                                        "UNFOLLOW" -> {
+                                                            notificationVM.toggleFollow(
+                                                                notification.targetId ?: 0,
+                                                                notification.actionType
+                                                            )
+                                                        }
 
-                                                "CONGRATULATE" -> {
-                                                    congratulateVM.congratulate(
-                                                        notification.targetId ?: 0
-                                                    )
-                                                }
+                                                        "CONGRATULATE" -> {
+                                                            congratulateVM.congratulate(
+                                                                notification.targetId ?: 0
+                                                            )
+                                                        }
 
-                                                "GO_TO_INQUIRY" -> {
-                                                    navController.navigate("")
-                                                }
+                                                        "GO_TO_INQUIRY" -> {
+                                                            navController.navigate("inquiry")
+                                                        }
 
-                                                else -> Unit
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(32.dp),
-                                        style = AppTypography.Label2,
-                                        color = if (notification.actionType == "UNFOLLOW") AppColor.CTA else AppColor.CTA_text,
-                                        state = if (notification.actionType == "UNFOLLOW") InlineButtonState.Stroke_Color else InlineButtonState.Default
-                                    )
+                                                        else -> Unit
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(32.dp),
+                                                style = AppTypography.Label2,
+                                                color = if (notification.actionType == "UNFOLLOW") AppColor.CTA else AppColor.CTA_text,
+                                                state = if (notification.actionType == "UNFOLLOW") InlineButtonState.Stroke_Color else InlineButtonState.Default
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-        }
+
         if(isLoading){
             Box(
                 modifier = Modifier.fillMaxSize(),
