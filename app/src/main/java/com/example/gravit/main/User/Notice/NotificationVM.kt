@@ -1,6 +1,7 @@
 package com.example.gravit.main.User.Notice
 
 import android.content.Context
+import android.system.Os.access
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,7 +22,7 @@ class NotificationVM(
     sealed interface UiState{
         data object Idle: UiState
         data object Loading : UiState
-        data class Success(val data: Notifications) : UiState
+        data class Success(val data: List<Notifications>) : UiState
         data object Failed : UiState
         data object SessionExpired : UiState
         data object NotFound : UiState
@@ -30,72 +31,27 @@ class NotificationVM(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    private var page = 0
-    private var hasNext = true
-    private var isLoading = false
-
     fun load() = viewModelScope.launch {
-        if(isLoading) return@launch
         _state.value = UiState.Loading
-        isLoading = true
-        try {
-            val session = AuthPrefs.load(appContext)
-            if(session == null){
-                AuthPrefs.clear(appContext)
-                _state.value = UiState.SessionExpired
-                return@launch
-            }
-            runCatching {
-                api.getNotifications("Bearer ${session.accessToken}", 0)
-            }.onSuccess { res ->
-                page = 0
-                hasNext = res.hasNextPage
-                _state.value = UiState.Success(res)
-            }.onFailure{ e ->
-                handleApiFailure(
-                    e = e,
-                    appContext = appContext,
-                    onStateChange = {_state.value = it },
-                    unauthorizedState = UiState.SessionExpired,
-                    notFoundState = UiState.NotFound,
-                    failedState = UiState.Failed
-                )
-            }
-        } finally {
-            isLoading = false
-        }
-    }
-
-    fun loadMore() = viewModelScope.launch {
-        if(isLoading || !hasNext) return@launch
-        val currentState = _state.value as? UiState.Success ?: return@launch
-
         val session = AuthPrefs.load(appContext)
         if(session == null){
             AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
-        isLoading = true
-        try{
-            runCatching {
-                api.getNotifications("Bearer ${session.accessToken}", page+1)
-            }.onSuccess { next ->
-                page += 1
-                hasNext = next.hasNextPage
-                _state.value = currentState.copy(
-                    data = currentState.data.copy(
-                        hasNextPage = next.hasNextPage,
-                        contents = currentState.data.contents + next.contents
-                    )
-                )
-            }.onFailure {
-                _state.value = currentState.copy(
-                    data = currentState.data.copy()
-                )
-            }
-        } finally {
-            isLoading = false
+        runCatching {
+            api.getNotifications("Bearer ${session.accessToken}")
+        }.onSuccess { res ->
+            _state.value = UiState.Success(res)
+        }.onFailure{ e ->
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = {_state.value = it },
+                unauthorizedState = UiState.SessionExpired,
+                notFoundState = UiState.NotFound,
+                failedState = UiState.Failed
+            )
         }
     }
 
