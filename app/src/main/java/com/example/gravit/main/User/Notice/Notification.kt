@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,8 +54,6 @@ import com.inuappcenter.gravit.main.User.UserScreenVM
 import com.inuappcenter.gravit.main.User.UserVMFactory
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -77,20 +75,27 @@ fun Notification(
     val congratulateVM: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, context))
     val congratulateUi by congratulateVM.stateCongratulate.collectAsState()
 
+    val actionUi by notificationVM.stateAction.collectAsState()
 
     var navigated by remember { mutableStateOf(false) }
     var showSnackBar by remember { mutableStateOf(false) }
     var snackBarText by remember { mutableStateOf("") }
-    val isLoading = notificationUi == NotificationVM.UiState.Loading
+    val isLoading = notificationUi == NotificationVM.UiState.Loading ||
+                    congratulateUi == UserScreenVM.CongratulateUiState.Loading ||
+                    actionUi == NotificationVM.ActionUiState.Loading
+
+    val isSessionExpired = notificationUi == NotificationVM.UiState.SessionExpired ||
+            congratulateUi == UserScreenVM.CongratulateUiState.SessionExpired ||
+            actionUi == NotificationVM.ActionUiState.SessionExpired
+
     LaunchedEffect(Unit) {
         notificationVM.load()
     }
 
-    LaunchedEffect(notificationUi) {
+    LaunchedEffect(isSessionExpired, notificationUi) {
         if (navigated) return@LaunchedEffect
-
-        when (notificationUi) {
-            NotificationVM.UiState.SessionExpired -> {
+        when {
+            isSessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
                     popUpTo(
@@ -101,8 +106,7 @@ fun Notification(
                     launchSingleTop = true
                 }
             }
-
-            NotificationVM.UiState.NotFound -> {
+            notificationUi == NotificationVM.UiState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404"){
                     popUpTo(
@@ -116,23 +120,9 @@ fun Notification(
             else -> Unit
         }
     }
-    val listState = rememberLazyListState()
 
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            val total = listState.layoutInfo.totalItemsCount
-            if (last != null) last to total else null
-        }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .collect { (lastVisible, total) ->
-                if (lastVisible >= total - 3) {
-                    notificationVM.loadMore()
-                }
-            }
-    }
-    val notification = (notificationUi as? NotificationVM.UiState.Success)?.data
+    val listState = rememberLazyListState()
+    val notifications = (notificationUi as? NotificationVM.UiState.Success)?.data
 
     Box (
         modifier = Modifier.fillMaxSize()
@@ -159,133 +149,126 @@ fun Notification(
                     bottom = 16.dp
                 )
             )
-            if(notification?.contents.isNullOrEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(
-                                AppTypography.Headline1.toSpanStyle() //임시 스타일
-                                    .copy(color = AppColor.text2)
-                            ) {
-                                append("알림이 없어요.")
-                            }
-                            append("\n")
-                            withStyle(
-                                AppTypography.Label1.toSpanStyle() //임시 스타일
-                                    .copy(color = AppColor.text3w)
-                            ) {
-                                append("궁금한 점이 있다면 문의하기를 통해 남겨주세요.")
-                            }
-                        },
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(AppColor.bg2),
-                ) {
-                    items(notification.contents) { notification ->
-                        Box(
+            when (notificationUi){
+                is NotificationVM.UiState.Success ->{
+                    if(notifications.isNullOrEmpty()){
+                        EmptyUi()
+                    }else{
+                        LazyColumn(
+                            state = listState,
                             modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
-                                .fillMaxWidth()
-                                .height(114.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(AppColor.bg0)
-                                .border(
-                                    1.dp,
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = AppColor.divider1
-                                )
-                                .padding(16.dp)
+                                .fillMaxSize()
+                                .background(AppColor.bg2),
                         ) {
-                            Column(
-                            ) {
-                                if (notification.actionType == "FOLLOW_BACK" || notification.actionType == "UNFOLLOW") {
-                                    Row() {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(38.dp)
-                                                .clip(CircleShape)
-                                                .background(ProfilePalette.idToColor(notification.actor.profileImgNumber)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Image(
-                                                painter = painterResource(id = R.drawable.profile_logo),
-                                                contentDescription = "profile logo",
-                                                modifier = Modifier.size(18.dp, 20.dp)
-                                            )
-                                        }
-                                        Spacer(Modifier.width(12.dp))
-                                        Column() {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically
+                            items(notifications) { notification ->
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                                        .fillMaxWidth()
+                                        .height(114.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(AppColor.bg0)
+                                        .border(
+                                            1.dp,
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = AppColor.divider1
+                                        )
+                                        .padding(16.dp)
+                                ) {
+                                    Column(
+                                    ) {
+                                        if (notification.type == "FOLLOW" || notification.actionType == "UNFOLLOW") {
+                                            Row() {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(38.dp)
+                                                        .clip(CircleShape)
+                                                        .background(ProfilePalette.idToColor(
+                                                            notification.actor?.profileImgNumber ?: 1
+                                                        )),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource(id = R.drawable.profile_logo),
+                                                        contentDescription = "profile logo",
+                                                        modifier = Modifier.size(18.dp, 20.dp)
+                                                    )
+                                                }
+                                                Spacer(Modifier.width(12.dp))
+                                                Column() {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = notification.actor?.nickname ?: "",
+                                                            style = AppTypography.Label1,
+                                                            color = AppColor.text1
+                                                        )
+                                                        Spacer(Modifier.width(4.dp))
+                                                        Text(
+                                                            text = notification.timeAgo,
+                                                            style = AppTypography.Caption1,
+                                                            color = AppColor.text4
+                                                        )
+                                                    }
+                                                    Spacer(Modifier.height(4.dp))
+                                                    notification.message?.let {
+                                                        Text(
+                                                            text = it,
+                                                            style = AppTypography.Label2,
+                                                            maxLines = 2,
+                                                            color = AppColor.text3
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                Text(
-                                                    text = notification.actor.nickname,
-                                                    style = AppTypography.Label1,
-                                                    color = AppColor.text1
-                                                )
-                                                Spacer(Modifier.width(4.dp))
+                                                notification.message?.let {
+                                                    Text(
+                                                        text = it,
+                                                        style = AppTypography.Label1,
+                                                        color = AppColor.text1,
+                                                        maxLines = 2,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(end = 43.dp)
+                                                    )
+                                                }
+
                                                 Text(
                                                     text = notification.timeAgo,
                                                     style = AppTypography.Caption1,
-                                                    color = AppColor.text4
+                                                    color = AppColor.text4,
+                                                    maxLines = 1,
+                                                    modifier = Modifier.align(Alignment.TopEnd)
                                                 )
                                             }
-                                            Spacer(Modifier.height(4.dp))
-                                            Text(
-                                                text = notification.message,
-                                                style = AppTypography.Label2,
-                                                color = AppColor.text3
-                                            )
                                         }
-                                    }
-                                } else {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = notification.message,
-                                            style = AppTypography.Label1,
-                                            color = AppColor.text1
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            text = notification.timeAgo,
-                                            style = AppTypography.Caption1,
-                                            color = AppColor.text4
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.weight(1f))
-                                if (notification.actionType != "NONE") {
-                                    InlineButton(
-                                        text =
-                                            when (notification.actionType) {
-                                                "FOLLOW_BACK" -> "맞팔로우"
-                                                "GO_TO_LEARNING" -> "학습하러 가기"
-                                                "GO_TO_NOTICE" -> "공지사항 바로가기"
-                                                "UNFOLLOW" -> "팔로우 취소"
-                                                "CONGRATULATE" -> "축하하기"
-                                                "GO_TO_INQUIRY" -> "문의사항 바로가기"
-                                                else -> ""
-                                            },
-                                        onClick = {
-                                            when (notification.actionType) {
-                                                "FOLLOW_BACK" -> {
-                                                    notificationVM.toggleFollow(
-                                                        notification.targetId ?: 0,
-                                                        notification.actionType
-                                                    )
-                                                }
+                                        if (notification.actionType != "NONE") {
+                                            Spacer(Modifier.weight(1f))
+                                            InlineButton(
+                                                text =
+                                                    when (notification.actionType) {
+                                                        "FOLLOW_BACK" -> "맞팔로우"
+                                                        "GO_TO_LEARNING" -> "학습하러 가기"
+                                                        "GO_TO_NOTICE" -> "공지사항 바로가기"
+                                                        "UNFOLLOW" -> "팔로우 취소"
+                                                        "CONGRATULATE" -> "축하하기"
+                                                        "GO_TO_INQUIRY" -> "문의사항 바로가기"
+                                                        else -> ""
+                                                    },
+                                                onClick = {
+                                                    when (notification.actionType) {
+                                                        "FOLLOW_BACK" -> {
+                                                            notificationVM.toggleFollow(
+                                                                notification.targetId ?: 0,
+                                                                notification.actionType
+                                                            )
+                                                        }
 
                                                         "GO_TO_LEARNING" -> {
                                                             if (notification.targetId == null)
@@ -331,7 +314,9 @@ fun Notification(
                         }
                     }
                 }
-
+                else -> Unit
+            }
+        }
         if(isLoading){
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -353,5 +338,34 @@ fun Notification(
                 showSnackBar = false
             }
         }
+    }
+}
+
+@Composable
+fun EmptyUi(){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = buildAnnotatedString {
+                withStyle(
+                    AppTypography.Headline1.toSpanStyle()
+                        .copy(color = AppColor.text2)
+                ) {
+                    append("알림이 없어요.")
+                }
+
+                append("\n")
+
+                withStyle(
+                    AppTypography.Label1.toSpanStyle()
+                        .copy(color = AppColor.text3w)
+                ) {
+                    append("궁금한 점이 있다면 문의하기를 통해 남겨주세요.")
+                }
+            },
+            textAlign = TextAlign.Center
+        )
     }
 }
