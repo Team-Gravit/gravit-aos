@@ -35,7 +35,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
-import com.google.androidbrowserhelper.trusted.NotificationUtils.areNotificationsEnabled
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.error.isDeletionPending
 import com.inuappcenter.gravit.main.ConfirmBottomSheet
