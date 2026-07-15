@@ -504,21 +504,19 @@ data class InquiryAnswer(
     val answeredAt: String
 )
 //인앱알림
-data class Notifications(
-    val hasNextPage: Boolean,
-    val contents: List<NotificationData>
-)
 
-data class NotificationData(
+data class Notifications(
     val id: Long,
     val type: String,
-    val message: String,
+    val message: String?,
+    val subText: String?,
     val actionType: String,
     val targetId: Long?,
+    val congratulated: Boolean?,
     val read: Boolean,
     val createdAt: String,
     val timeAgo: String,
-    val actor: ActorData
+    val actor: ActorData?
 )
 data class ActorData(
     val profileId: Long,
@@ -820,7 +818,6 @@ interface ApiService {
     @GET("api/v1/notifications")
     suspend fun getNotifications(
         @Header("Authorization") auth: String,
-        @Query("page") page: Int
-    ) : Notifications
+    ) : List<Notifications>
 }
 
