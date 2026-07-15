@@ -41,7 +41,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import com.example.gravit.main.User.Inquiry.Inquiry
-import com.example.gravit.main.User.Notice.Notice2
+import com.example.gravit.main.User.Notice.Notification
 import com.inuappcenter.gravit.main.User.MyPage
 
 
@@ -207,7 +207,7 @@ fun MainScreen(rootNavController: NavController) {
 
                 // notice
                 composable("user/notice") { Notice(innerNavController) }
-                composable("user/notice2") { Notice2(innerNavController) }
+                composable("user/notice2") { Notification(innerNavController) }
                 composable(
                     route = "user/notice/detail/{noticeId}",
                     arguments = listOf(
