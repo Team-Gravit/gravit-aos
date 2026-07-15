@@ -362,7 +362,7 @@ fun MyPageProfileHeader(
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
-                            navController.navigate("user/notice2")
+                            navController.navigate("user/notification")
                         },
                     tint = AppColor.icon_w
                 )

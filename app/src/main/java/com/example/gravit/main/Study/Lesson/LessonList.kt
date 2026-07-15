@@ -94,8 +94,7 @@ import kotlin.math.abs
 fun LessonList(
     unitId: Int,
     onSessionExpired: () -> Unit,
-    navController: NavController,
-    unitTitle: String
+    navController: NavController
 ) {
     val context = LocalContext.current
     val vm: LessonListVM = viewModel(factory = LessonListVMFactory(RetrofitInstance.api, context))
@@ -159,7 +158,7 @@ fun LessonList(
                 lessonSummaries = lessonSummaries,
                 bookmarkAccessible = bookmarkAccessible,
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
-                unitTitle = unitTitle
+                unitTitle = s.unitSummaryResponse.title
             )
         }
         else -> Unit

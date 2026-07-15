@@ -1,7 +1,6 @@
 package com.example.gravit.main.User.Notice
 
 import android.content.Context
-import android.system.Os.access
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope

@@ -142,7 +142,8 @@ fun UnitList(
             UnitListContent(
                 chapterTitle = data.chapterSummaryResponse.title,
                 units = units,
-                navController = navController
+                navController = navController,
+                chapterId = chapterId
             )
         }
     }
@@ -152,7 +153,8 @@ fun UnitList(
 private fun UnitListContent(
     chapterTitle: String,
     units: List<UnitUi>,
-    navController: NavController
+    navController: NavController,
+    chapterId: Int
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -193,7 +195,7 @@ private fun UnitListContent(
 
                                 if (!popped) {
                                     navController.navigate("chapter") {
-                                        popUpTo("unit/{chapterId}") {
+                                        popUpTo("unit/$chapterId") {
                                             inclusive = true
                                         }
                                         launchSingleTop = true
@@ -274,7 +276,7 @@ private fun UnitItemBox(
             .clip(RoundedCornerShape(8.dp))
             .border(width = 1.dp, color = Color(0xFF8B69FF), RoundedCornerShape(8.dp))
             .clickable {
-                navController.navigate("lessonList/${unit.unitId}/${unit.title}")
+                navController.navigate("lessonList/${unit.unitId}")
             }
     ) {
         Image(

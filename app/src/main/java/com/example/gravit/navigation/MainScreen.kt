@@ -112,19 +112,14 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lessonList/{unitId}/{unitTitle}",
-                    arguments = listOf(
-                        navArgument("unitId") { type = NavType.IntType },
-                        navArgument("unitTitle") { type = NavType.StringType }
-                    )
+                    route = "lessonList/{unitId}",
+                    arguments = listOf(navArgument("unitId") { type = NavType.IntType },)
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getInt("unitId")
-                    val unitTitle = backStackEntry.arguments!!.getString("unitTitle").orEmpty()
                     LessonList(
                         navController = innerNavController,
                         onSessionExpired = goToLoginChoice,
-                        unitId = unitId,
-                        unitTitle = unitTitle
+                        unitId = unitId
                     )
                 }
 
@@ -203,11 +198,11 @@ fun MainScreen(rootNavController: NavController) {
                 // account
                 composable("user/account") { Account(innerNavController) }
 
-                composable("user/support") { Inquiry(innerNavController, goToLoginChoice) }
+                composable("inquiry") { Inquiry(innerNavController, goToLoginChoice) }
 
                 // notice
                 composable("user/notice") { Notice(innerNavController) }
-                composable("user/notice2") { Notification(innerNavController) }
+                composable("user/notification") { Notification(innerNavController) }
                 composable(
                     route = "user/notice/detail/{noticeId}",
                     arguments = listOf(

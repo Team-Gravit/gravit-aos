@@ -147,10 +147,8 @@ fun Setting(
                             color = AppColor.text3
                         )
                         RowNavigableItem("내 정보", { navController.navigate("user/account") })
-                        RowNavigableItem("공지사항", {})
-                        RowNavigableItem(
-                            "개인정보 처리 방침",
-                            { navController.navigate("user/privacypolicy") })
+                        RowNavigableItem("공지사항", { navController.navigate("user/notice")})
+                        RowNavigableItem("개인정보 처리 방침", { navController.navigate("user/privacypolicy") })
                     }
                 }
                 Box(
@@ -169,7 +167,7 @@ fun Setting(
                             style = AppTypography.Label2,
                             color = AppColor.text3
                         )
-                        RowNavigableItem("문의하기", { navController.navigate("user/support") })
+                        RowNavigableItem("문의하기", { navController.navigate("inquiry") })
                         RowNavigableItem("로그아웃", { logoutVM.logout { onLogout() } })
                         RowNavigableItem("탈퇴하기", { showDeleteSheet = true })
                     }

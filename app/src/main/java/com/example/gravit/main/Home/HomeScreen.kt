@@ -616,7 +616,7 @@ fun HomeUI(
 
                         onUnitClick = { unit ->
                             navController.navigate(
-                                "lessonList/${unit.unitId}/${unit.title}"
+                                "lessonList/${unit.unitId}"
                             ) {
                                 launchSingleTop = true
                             }
