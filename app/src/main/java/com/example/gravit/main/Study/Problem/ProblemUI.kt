@@ -133,8 +133,8 @@ fun ProblemUI(
         if (type == "normal") {
             showSheet = true
         } else {
-            navController.navigate("lessonList/$unitId/$unitTitle") {
-                popUpTo("lessonList/$unitId/$unitTitle") { inclusive = true }
+            navController.navigate("lessonList/$unitId") {
+                popUpTo("lessonList/$unitId") { inclusive = true }
                 launchSingleTop = true
             }
         }
@@ -179,8 +179,8 @@ fun ProblemUI(
                                 if (type == "normal") {
                                     showSheet = true
                                 } else {
-                                    navController.navigate("lessonList/$unitId/$unitTitle") {
-                                        popUpTo("lessonList/$unitId/$unitTitle") { inclusive = true }
+                                    navController.navigate("lessonList/$unitId") {
+                                        popUpTo("lessonList/$unitId") { inclusive = true }
                                         launchSingleTop = true
                                     }
                                 }
@@ -392,8 +392,8 @@ fun ProblemUI(
                 },
                 onCancel = {
                     showSheet = false
-                    navController.navigate("lessonList/$unitId/$unitTitle") {
-                        popUpTo("lessonList/$unitId/$unitTitle") { inclusive = true }
+                    navController.navigate("lessonList/$unitId") {
+                        popUpTo("lessonList/$unitId") { inclusive = true }
                         launchSingleTop = true
                     }
                 }
