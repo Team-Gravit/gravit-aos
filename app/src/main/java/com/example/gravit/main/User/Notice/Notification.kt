@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Notice
+package com.gravit.main.User.Notice
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -69,7 +69,11 @@ fun Notification(
         DateTimeFormatter.ofPattern("yyyy. MM. dd (E)", Locale.KOREAN)
     )
     val context = LocalContext.current
-    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(RetrofitInstance.api, context))
+    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(
+        RetrofitInstance.api,
+        context
+    )
+    )
     val notificationUi by notificationVM.state.collectAsState()
 
     val congratulateVM: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, context))
