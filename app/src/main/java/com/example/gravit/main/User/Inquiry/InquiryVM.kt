@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Inquiry
+package com.inuappcenter.gravit.main.User.Inquiry
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

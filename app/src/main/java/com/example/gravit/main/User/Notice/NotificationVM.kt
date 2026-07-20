@@ -1,4 +1,4 @@
-package com.example.gravit.main.User.Notice
+package com.gravit.main.User.Notice
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

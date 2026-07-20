@@ -40,8 +40,8 @@ import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
-import com.example.gravit.main.User.Inquiry.Inquiry
-import com.example.gravit.main.User.Notice.Notification
+import com.gravit.main.User.Notice.Notification
+import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
 
 
