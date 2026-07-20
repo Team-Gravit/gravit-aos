@@ -6,12 +6,13 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
 import com.auth0.android.provider.WebAuthProvider
 import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.fcm.FCMVMFactory
+import com.inuappcenter.gravit.fcm.FcmViewModel
 import com.inuappcenter.gravit.login.maskToken
 import com.inuappcenter.gravit.navigation.AppNavigation
 import com.inuappcenter.gravit.ui.theme.GravitTheme
@@ -19,6 +20,12 @@ import com.kakao.sdk.common.KakaoSdk
 import com.navercorp.nid.NidOAuth
 
 class MainActivity : ComponentActivity() {
+    private val fcmViewModel: FcmViewModel by viewModels {
+        FCMVMFactory(
+            api = RetrofitInstance.api,
+            context = applicationContext
+        )
+    }
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +48,9 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             GravitTheme {
-                AppNavigation()
+                AppNavigation(
+                    fcmViewModel = fcmViewModel
+                )
             }
         }
     }
@@ -50,11 +59,4 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         WebAuthProvider.resume(intent)
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun AppNavigationPreview() {
-    AppNavigation()
 }
