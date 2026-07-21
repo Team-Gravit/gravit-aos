@@ -8,8 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.core.view.WindowCompat
 import com.auth0.android.provider.WebAuthProvider
-import com.example.gravit.fcm.FcmManager
 import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.fcm.FcmManager
 import com.inuappcenter.gravit.navigation.AppNavigation
 import com.inuappcenter.gravit.ui.theme.GravitTheme
 import com.kakao.sdk.common.KakaoSdk

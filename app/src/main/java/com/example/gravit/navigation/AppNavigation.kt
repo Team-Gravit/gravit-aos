@@ -7,7 +7,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.gravit.fcm.FcmManager
+import com.inuappcenter.gravit.fcm.FcmManager
 import com.inuappcenter.gravit.login.LoginScreen
 import com.inuappcenter.gravit.login.LoginViewModel
 import com.inuappcenter.gravit.login.ProfileFinish

@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.fcm
 
-import com.example.gravit.fcm.FcmManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.inuappcenter.gravit.api.RetrofitInstance
