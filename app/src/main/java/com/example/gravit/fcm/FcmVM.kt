@@ -125,6 +125,7 @@ class FcmViewModel(
                                 _state.value = UiState.Failed
                                 return@launch
                             }
+                            delay(INITIAL_RETRY_DELAY)
                         }
 
                         response.code() == 500 -> {
