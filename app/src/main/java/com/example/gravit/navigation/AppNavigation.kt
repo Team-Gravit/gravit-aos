@@ -2,10 +2,12 @@ package com.inuappcenter.gravit.navigation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.inuappcenter.gravit.fcm.FcmManager
 import com.inuappcenter.gravit.login.LoginScreen
 import com.inuappcenter.gravit.login.LoginViewModel
 import com.inuappcenter.gravit.login.ProfileFinish
@@ -15,7 +17,9 @@ import com.inuappcenter.gravit.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    fcmManager: FcmManager
+) {
     val rootnavController = rememberNavController()
 
     NavHost(navController = rootnavController, startDestination = "splash") {
@@ -28,6 +32,11 @@ fun AppNavigation() {
 
         composable("profile setting") { ProfileSetting(rootnavController) }
         composable("profile finish") { ProfileFinish(rootnavController) }
-        composable("main") { MainScreen(rootnavController) }
+        composable("main") {
+            LaunchedEffect(Unit) {
+                fcmManager.checkAndRegister()
+            }
+            MainScreen(rootnavController)
+        }
     }
 }
