@@ -1,23 +1,41 @@
 package com.inuappcenter.gravit.fcm
 
-import android.util.Log
+import com.example.gravit.fcm.FcmManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.inuappcenter.gravit.api.RetrofitInstance
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class GravitFirebaseMessagingService : FirebaseMessagingService() {
 
-    override fun onMessageReceived(message: RemoteMessage) {
-        super.onMessageReceived(message)
+    private val serviceScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-        Log.d("FCM_RECEIVE", "messageId=${message.messageId}")
-        Log.d("FCM_RECEIVE", "notification=${message.notification}")
-        Log.d("FCM_RECEIVE", "data=${message.data}")
+    private val fcmManager by lazy {
+        FcmManager(
+            api = RetrofitInstance.api,
+            context = applicationContext
+        )
     }
 
-    @Deprecated("Deprecated in Java")
+    override fun onMessageReceived(message: RemoteMessage) {
+        super.onMessageReceived(message)
+    }
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
 
-        Log.d("FCM_TOKEN", "새 토큰: $token")
+        serviceScope.launch {
+            fcmManager.register(newToken = token)
+        }
+    }
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
     }
 }
