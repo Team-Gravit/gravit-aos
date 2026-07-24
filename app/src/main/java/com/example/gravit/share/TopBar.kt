@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,7 @@ import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.AuthPrefs
 
 @Composable
 fun TopBar(
@@ -33,8 +35,10 @@ fun TopBar(
     title: String,
     height: Dp = 48.dp,
     useIcon: Boolean = true,
-    useCloseIcon: Boolean = false
+    useCloseIcon: Boolean = false,
+    isOnboarding: Boolean = false
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,6 +55,9 @@ fun TopBar(
                         .align(Alignment.CenterStart)
                         .padding(start = 16.dp)
                         .clickable {
+                            if(isOnboarding){
+                                AuthPrefs.clear(context)
+                            }
                             navController.popBackStack()
                         },
                     tint = Color(0xFF4D4D4D)
@@ -64,6 +71,9 @@ fun TopBar(
                         .padding(12.dp)
                         .size(24.dp)
                         .clickable {
+                            if(isOnboarding){
+                                AuthPrefs.clear(context)
+                            }
                             navController.popBackStack()
                         },
                     tint = AppColor.icon_default
