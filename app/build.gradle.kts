@@ -25,7 +25,7 @@ android {
         minSdk = 25
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         val kakaoKey = properties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
         manifestPlaceholders["auth0Domain"] = "dev-fl5wpn5srn5xay26.us.auth0.com"
