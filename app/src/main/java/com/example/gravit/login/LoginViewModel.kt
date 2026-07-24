@@ -4,8 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import android.util.Base64
 import com.inuappcenter.gravit.BuildConfig
@@ -14,6 +12,8 @@ import com.inuappcenter.gravit.api.AuthTokenResponse
 import com.inuappcenter.gravit.api.IdTokenRequest
 import com.inuappcenter.gravit.api.NaverUserInfo
 import com.inuappcenter.gravit.api.RetrofitInstance
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 
 fun maskToken(t: String?): String =
@@ -39,11 +39,16 @@ fun logJwtIfJwt(tag: String, token: String?) {
     }
 }
 class LoginViewModel : ViewModel() {
-
     private val api: ApiService = RetrofitInstance.api
+    sealed interface Event {
+        data class LoginSuccess(
+            val token: AuthTokenResponse
+        ) : Event
 
-    private val _jwtToken = MutableStateFlow<AuthTokenResponse?>(null)
-    val jwtToken: StateFlow<AuthTokenResponse?> = _jwtToken
+        data object LoginFailed : Event
+    }
+    private val _event = MutableSharedFlow<Event>()
+    val event = _event.asSharedFlow()
 
     fun sendIdTokenToServer(provider: String, idToken: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -57,10 +62,12 @@ class LoginViewModel : ViewModel() {
                 Log.d("AuthFlow", "Server access = ${maskToken(res.accessToken)}")
                 Log.d("AuthFlow", "Server refresh = ${maskToken(res.refreshToken)}")
                 Log.d("AuthFlow", "isOnboarded = ${res.isOnboarded}")
-                _jwtToken.value = res
+                _event.emit(
+                    Event.LoginSuccess(res)
+                )
             }.onFailure { e ->
                 Log.e("LoginViewModel", "sendAccessToken failed", e)
-                _jwtToken.value = null
+                _event.emit(Event.LoginFailed)
             }
         }
     }
@@ -75,10 +82,12 @@ class LoginViewModel : ViewModel() {
                 Log.d("AuthFlow", "Server access = ${maskToken(res.accessToken)}")
                 Log.d("AuthFlow", "Server refresh = ${maskToken(res.refreshToken)}")
                 Log.d("AuthFlow", "isOnboarded = ${res.isOnboarded}")
-                _jwtToken.value = res
+                _event.emit(
+                    Event.LoginSuccess(res)
+                )
             }.onFailure { e ->
                 Log.e("LoginViewModel", "sendNaverInfo failed", e)
-                _jwtToken.value = null
+                _event.emit(Event.LoginFailed)
             }
         }
     }

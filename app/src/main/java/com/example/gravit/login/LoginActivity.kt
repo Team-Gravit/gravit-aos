@@ -24,8 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,35 +49,28 @@ fun LoginScreen (
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val jwt by viewModel.jwtToken.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when(event){
+                is LoginViewModel.Event.LoginSuccess -> {
+                    val token = event.token
+                    AuthPrefs.save(context, token.accessToken, token.refreshToken,token.isOnboarded)
 
-    LaunchedEffect(jwt) {
-        jwt?.let { token ->
-            //저장
-            AuthPrefs.save(context, token.accessToken, token.refreshToken,token.isOnboarded)
-
-            val s = AuthPrefs.load(context)
-            if (s == null) {
-                navController.navigate("login choice") {
-                    popUpTo("login choice") { inclusive = true }
-                    launchSingleTop = true
-                    restoreState = false
+                    if (token.isOnboarded) {
+                        navController.navigate("main") {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.navigate("profile setting") {
+                            launchSingleTop = true
+                        }
+                    }
                 }
-                return@LaunchedEffect
-            }
-
-            val target = if (s.isOnboarded) "main" else "profile setting"
-            navController.navigate(target) {
-                if (target == "profile setting") {
-                    //뒤로가기 시 복귀
-                    popUpTo("login choice") { inclusive = false }
-                } else {
-                    //온보딩 완료 사용자는 로그인 제거
-                    popUpTo("login choice") { inclusive = true }
+                LoginViewModel.Event.LoginFailed -> {
+                    Log.e("LOGIN", "로그인 실패")
                 }
-                launchSingleTop = true
-                restoreState = false
             }
         }
     }
