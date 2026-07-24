@@ -535,6 +535,11 @@ data class FCMTokenResponse(
     val registered: Boolean
 )
 
+//version check
+data class VersionCheck(
+    val version: String
+)
+
 interface ApiService {
     //OAuth2.0 Android API
     @POST("api/v1/oauth/android") //OAuth 회원가입/로그인 처리
@@ -840,5 +845,8 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Query("deviceId") deviceId: String
     ) : FCMTokenResponse
+    @GET("api/v1/version")
+    suspend fun getVersion(
+    ) : VersionCheck
 }
 
