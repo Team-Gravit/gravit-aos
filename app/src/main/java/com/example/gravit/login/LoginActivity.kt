@@ -149,7 +149,7 @@ fun LoginScreen (
                                 val idToken = loginWithGoogle(context)
                                 viewModel.sendIdTokenToServer("google", idToken)
                             } catch (e: NoCredentialException) {
-                                Log.w("GoogleLogin", "사용 가능한 Google 계정이 없음")
+                                Log.w("GoogleLogin", "사용 가능한 Google 계정이 없음",e)
                             } catch (e: Exception) {
                                 Log.e("GoogleLogin", "구글 로그인 실패", e)
                             }
