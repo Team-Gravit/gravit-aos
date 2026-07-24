@@ -5,24 +5,23 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -33,19 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.credentials.exceptions.NoCredentialException
 import com.inuappcenter.gravit.R
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.AuthPrefs
-import com.inuappcenter.gravit.ui.theme.DesignSpec
-import com.inuappcenter.gravit.ui.theme.LocalDesignSpec
-import com.inuappcenter.gravit.ui.theme.Responsive
-import com.inuappcenter.gravit.ui.theme.pretendard
-import com.inuappcenter.gravit.login.LoginViewModel
+import com.inuappcenter.gravit.main.User.TopBar
 import kotlinx.coroutines.launch
 
 @Composable
@@ -88,146 +83,122 @@ fun LoginScreen (
             }
         }
     }
-    CompositionLocalProvider(
-        LocalDesignSpec provides DesignSpec(375f, 812f)
+    val systemUiController = rememberSystemUiController()
+    val isDarkMode = isSystemInDarkTheme()
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = !isDarkMode
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
-        val systemUiController = rememberSystemUiController()
-        val isDarkMode = isSystemInDarkTheme()
-
-        SideEffect {
-            systemUiController.setStatusBarColor(
-                color = Color.Transparent,
-                darkIcons = !isDarkMode
-            )
-        }
-
-
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .padding(WindowInsets.statusBars.asPaddingValues())
+                .verticalScroll(rememberScrollState())
         ) {
-            Text(
-                text = "로그인",
-                modifier = Modifier
-                    .padding(top = Responsive.h(40f))
-                    .align(Alignment.TopCenter),
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = Responsive.spH(20f)
-                )
-            )
+            TopBar(navController, "로그인", 48.dp, useIcon = false)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = Responsive.h(129f)),
+                    .height(392.dp)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.Center
             ) {
-                Column(modifier = Modifier.padding(start = Responsive.w(25f))) {
-                    Image(
-                        painter = painterResource(id = R.drawable.gravit_login_logo),
-                        contentDescription = "login_logo",
-                        modifier = Modifier.size(Responsive.h(72f))
-                    )
-                    Spacer(modifier = Modifier.height(Responsive.h(20f)))
+                Image(
+                    painter = painterResource(id = R.drawable.gravit_login_logo),
+                    contentDescription = "login_logo",
+                    modifier = Modifier.size(72.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
 
-                    Text(
-                        text = "교육행성에 어서 오세요.\nGravit!",
-                        style = TextStyle(
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Responsive.spH(24f),
-                            color = Color(0xFF030303)
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(Responsive.h(10f)))
+                Text(
+                    text = "교육행성에 어서 오세요.\nGravit!",
+                    style = AppTypography.Heading1,
+                    color = AppColor.text1,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(
-                        text = "회원 서비스 이용을 위해 로그인 해주세요.",
-                        style = TextStyle(
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = Responsive.spH(15f),
-                            color = Color(0xFF7D7D7D)
-                        )
-                    )
-                }
-                Spacer(modifier = Modifier.height(Responsive.h(30f)))
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Responsive.w(25f)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(Responsive.h(30f)))
+                Text(
+                    text = "회원 서비스 이용을 위해 로그인 해주세요.",
+                    style = AppTypography.Body1_Nomal,
+                    color = AppColor.text3,
+                )
 
-                    SocialLoginButton(
-                        text = "Google로 시작하기",
-                        backgroundColor = Color(0xFFF2F2F2),
-                        contentColor = Color(0xFF4C4C4C),
-                        logoResId = R.drawable.goole_login_logo,
-                        onClick = {
-                            scope.launch {
-                                try {
-                                    val idToken = loginWithGoogle(context)
-                                    viewModel.sendIdTokenToServer("google", idToken)
-                                } catch (e: NoCredentialException) {
-                                    Log.w("GoogleLogin", "사용 가능한 Google 계정이 없음")
-                                } catch (e: Exception) {
-                                    Log.e("GoogleLogin", "구글 로그인 실패", e)
-                                }
-                            }
-                        },
-                        modifier = Modifier.border(
-                            width = Responsive.w(0.5f),
-                            color = Color(0xFF868686),
-                            shape = RoundedCornerShape(Responsive.h(10f))
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(Responsive.h(8f)))
-
-                    SocialLoginButton(
-                        text = "카카오로 시작하기",
-                        backgroundColor = Color(0xFFFEE500),
-                        contentColor = Color(0xFF4C4C4C),
-                        logoResId = R.drawable.kakao_login_logo,
-                        onClick = {
-                            loginWithKakao(
-                                context = context,
-                                connection = "kakao",
-                                onSuccess = { idToken ->
-                                    viewModel.sendIdTokenToServer("kakao",idToken)
-                                },
-                                onError = { e ->
-                                    Log.e("KakaoLogin", "failed", e)
-                                }
-                            )
-
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(Responsive.h(8f)))
-
-                    SocialLoginButton(
-                        text = "네이버로 시작하기",
-                        backgroundColor = Color(0xFF03C75A),
-                        contentColor = Color.White,
-                        logoResId = R.drawable.naver_login_logo,
-                        onClick = {
-                            loginWithNaver(
-                                context = context,
-                                viewModel = viewModel,
-                                onError = { e ->
-                                    Log.e("NaverLogin", "failed", e)
-                                }
-                            )
-                        }
-                    )
-                }
             }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SocialLoginButton(
+                    text = "Google로 시작하기",
+                    backgroundColor = AppColor.bg1,
+                    contentColor = AppColor.CTA_secondary_text,
+                    logoResId = R.drawable.google_logo,
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val idToken = loginWithGoogle(context)
+                                viewModel.sendIdTokenToServer("google", idToken)
+                            } catch (e: NoCredentialException) {
+                                Log.w("GoogleLogin", "사용 가능한 Google 계정이 없음",e)
+                            } catch (e: Exception) {
+                                Log.e("GoogleLogin", "구글 로그인 실패", e)
+                            }
+                        }
+                    },
+                    modifier = Modifier.border(
+                        width = 1.dp,
+                        color = AppColor.divider2,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                )
+                SocialLoginButton(
+                    text = "카카오로 시작하기",
+                    backgroundColor = Color(0xFFFFE240),
+                    contentColor = AppColor.CTA_secondary_text,
+                    logoResId = R.drawable.kakao_logo,
+                    onClick = {
+                        loginWithKakao(
+                            context = context,
+                            connection = "kakao",
+                            onSuccess = { idToken ->
+                                viewModel.sendIdTokenToServer("kakao",idToken)
+                            },
+                            onError = { e ->
+                                Log.e("KakaoLogin", "failed", e)
+                            }
+                        )
+
+                    }
+                )
+                SocialLoginButton(
+                    text = "네이버로 시작하기",
+                    backgroundColor = Color(0xFF00B116),
+                    contentColor = AppColor.CTA_text,
+                    logoResId = R.drawable.naver_logo,
+                    onClick = {
+                        loginWithNaver(
+                            context = context,
+                            viewModel = viewModel,
+                            onError = { e ->
+                                Log.e("NaverLogin", "failed", e)
+                            }
+                        )
+                    }
+                )
+            }
+            Spacer(Modifier.height(40.dp))
         }
     }
-
 }
 
 @Composable
@@ -243,8 +214,8 @@ fun SocialLoginButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(Responsive.h(50f)),
-        shape = RoundedCornerShape(Responsive.h(10f)),
+            .height(48.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
             contentColor = contentColor
@@ -259,16 +230,13 @@ fun SocialLoginButton(
                 painter = painterResource(id = logoResId),
                 contentDescription = "$text logo",
                 modifier = Modifier
-                    .padding(start = Responsive.w(10f))
-                    .size(Responsive.w(35f))
+                    .padding(4.dp)
+                    .size(40.dp)
                     .align(Alignment.CenterStart)
             )
             Text(
                 text = text,
-                fontSize = Responsive.spH(16f),
-                fontFamily = pretendard,
-                fontWeight = FontWeight.Medium,
-                color = contentColor
+                style = AppTypography.Body2_Reading
             )
         }
     }
