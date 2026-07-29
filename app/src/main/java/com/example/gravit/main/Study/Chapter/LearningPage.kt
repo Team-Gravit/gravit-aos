@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.main.Study.Chapter
 
-import android.R.attr.data
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
@@ -62,7 +61,6 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.common.collect.Multimaps.index
 import com.inuappcenter.gravit.api.ChapterPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Home.RoundedGauge
