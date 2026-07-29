@@ -29,7 +29,7 @@ class ReportVM(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun submit(reportType: String, content: String, problemId: Int) {
+    fun submit(reportType: String, content: String, problemId: Long) {
         viewModelScope.launch {
             _state.value = UiState.Loading
 

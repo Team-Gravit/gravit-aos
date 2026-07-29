@@ -7,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
@@ -53,7 +54,7 @@ import com.inuappcenter.gravit.R
 fun ReportDialog(
     modifier: Modifier = Modifier,
     navController: NavController,
-    problemId: Int,
+    problemId: Long,
     onOverlayOpened: () -> Unit = {},
     onOverlayClosed: () -> Unit = {},
 ){
@@ -91,7 +92,7 @@ fun ReportDialog(
     var showDialog by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
 
-    Image(
+    Icon(
         painter = painterResource(id = R.drawable.report),
         contentDescription = "report",
         modifier = modifier
@@ -99,7 +100,8 @@ fun ReportDialog(
             .clickable {
                 showDialog = true
                 onOverlayOpened()
-            }
+            },
+        tint = AppColor.icon_default
     )
 
     if(showDialog){
