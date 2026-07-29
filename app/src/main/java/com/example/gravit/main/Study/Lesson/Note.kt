@@ -304,9 +304,8 @@ fun NoteSheetCustom(
                         .fillMaxWidth()
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .verticalScroll(rememberScrollState())
                         .background(AppColor.bg2)
-                        .padding(bottom = 80.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
