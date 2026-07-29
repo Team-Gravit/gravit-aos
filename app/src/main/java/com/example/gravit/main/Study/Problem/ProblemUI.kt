@@ -3,36 +3,30 @@ package com.inuappcenter.gravit.main.Study.Problem
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -57,8 +51,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -69,6 +63,9 @@ import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.AnswerResponse
 import com.inuappcenter.gravit.api.Problems
 import com.inuappcenter.gravit.main.ConfirmBottomSheet
@@ -85,12 +82,12 @@ fun ProblemUI(
     problems: List<Problems>,
     total: Int,
     swVm: StopwatchViewModel,
-    bookmarkMap: Map<Int, Boolean>,
-    onBookmarkToggle: (Int) -> Unit,
-    onRecordResult: (problemId: Int, isCorrect: Boolean) -> Unit,
+    bookmarkMap: Map<Long, Boolean>,
+    onBookmarkToggle: (Long) -> Unit,
+    onRecordResult: (problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) -> Unit,
     onFinishLesson: () -> Unit,
     type: String = "normal",
-    onRemoveWrongNote: (Int) -> Unit = {},
+    onRemoveWrongNote: (Long) -> Unit = {},
     unitId: Int
 ) {
     val sheetState = rememberModalBottomSheetState(
@@ -143,37 +140,28 @@ fun ProblemUI(
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.safeDrawing.asPaddingValues())
-            .background(Color(0xFFF2F2F2))
+            .background(AppColor.bg1)
         ) {
             //헤더
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(70.dp)
-                    .background(Color.White)
+                    .background(AppColor.bg0)
+                    .windowInsetsPadding(WindowInsets.statusBars),
             ) {
-                Text(
-                    text = unitTitle,
-                    fontSize = 20.sp,
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF030303)
-                )
-                Row(
+                Box (
                     modifier = Modifier
                         .fillMaxWidth()
-                        .align(Alignment.Center),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                        .height(51.dp),
+                    contentAlignment = Alignment.Center
+                ){
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        painter = painterResource(id = R.drawable.close),
                         contentDescription = "닫기",
                         modifier = Modifier
-                            .padding(start = 16.dp)
+                            .padding(start = 12.dp)
+                            .size(24.dp)
+                            .align(Alignment.CenterStart)
                             .clickable {
                                 swVm.pause()
                                 if (type == "normal") {
@@ -185,21 +173,30 @@ fun ProblemUI(
                                     }
                                 }
                             },
-                        tint = Color(0xFF494949)
+                        tint = AppColor.icon_default
                     )
-                    Row (verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = unitTitle,
+                        style = AppTypography.Label1,
+                        color = AppColor.text2
+                    )
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.outline_timer_24),
+                            painter = painterResource(id = R.drawable.timer),
                             contentDescription = "stopwatch",
                             modifier = Modifier.size(20.dp),
-                            tint = Color(0xFF494949)
+                            tint = AppColor.icon_default
 
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Stopwatch(
                             vm = swVm,
-                            autoStart = true,
-                            modifier = Modifier.padding(end = 16.dp)
+                            autoStart = true
                         )
                     }
                 }
@@ -207,8 +204,8 @@ fun ProblemUI(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
-                    .background(Color(0xFFF1CCFF))
+                    .height(3.dp)
+                    .background(PrimitiveColor.Purple100)
             ) {
                 val safeTotal = total.coerceAtLeast(1)
                 val progress = ((index + 1).coerceAtMost(safeTotal)).toFloat() / safeTotal
@@ -217,18 +214,19 @@ fun ProblemUI(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth(progress)
-                        .background(Color(0xFFBA01FF))
+                        .background(AppColor.Main1)
                 )
             }
-            Spacer(modifier = Modifier.height(25.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(AppColor.bg1)
                     .weight(1f)
                     .padding(horizontal = 16.dp)
             ) {
                 Column (modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.height(20.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -252,10 +250,8 @@ fun ProblemUI(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = "${index+1}/${total}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = pretendard,
-                            color = Color.Black
+                            style = AppTypography.Heading2,
+                            color = AppColor.text1
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         ReportDialog(
@@ -265,43 +261,35 @@ fun ProblemUI(
                             onOverlayClosed = { swVm.start() }
                         )
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = current.instruction,
-                        fontSize = 16.sp,
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF383838)
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                width = 1.dp,
-                                color = Color(0xFFDCDCDC),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(Color.White)
+                            .background(AppColor.bg0)
                             .verticalScroll(rememberScrollState())
                     ) {
                         InlineUnderlineText(
                             raw = current.content,
-                            modifier = Modifier.padding(10.dp),
-                            fontSize = 16.sp,
-                            fontFamily = pretendard,
-                            color = Color.Black,
-                            strokeWidth = 1.dp
+                            modifier = Modifier.padding(16.dp),
+                            style = AppTypography.Body2_Reading.copy(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                            strokeWidth = 1.dp,
+                            color = AppColor.text1
                         )
                     }
                 }
             }
-            Spacer(modifier=Modifier.height(30.dp))
-
+            Spacer(modifier=Modifier.height(16.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(AppColor.bg1)
                     .weight(1f)
             ) {
                 if(current.problemType == "SUBJECTIVE") {
@@ -318,7 +306,12 @@ fun ProblemUI(
                                 current.answerResponse
                             )
                             problemVm.submit(correct)
-                            onRecordResult(current.problemId, correct)
+                            onRecordResult(
+                                current.problemId,
+                                correct,
+                                null,
+                                 state.shortText
+                                )
                         },
                         isLast = isLast,
                         onNext = {
@@ -342,10 +335,13 @@ fun ProblemUI(
                         isCorrect = state.isCorrect,
                         onSelect = { problemVm.select(it) },
                         onSubmit = { selectedIdx ->
-                            val correct =
-                                current.options.getOrNull(selectedIdx)?.isAnswer == true
+                            val selectedOption = current.options.getOrNull(selectedIdx)
+                                ?: return@MultipleChoice
+
+                            val correct = selectedOption.isAnswer
+
                             problemVm.submit(correct)
-                            onRecordResult(current.problemId, correct)
+                            onRecordResult(current.problemId, correct, selectedOption.optionId, null)
                         },
                         isLast = isLast,
                         onNext = {
@@ -426,8 +422,8 @@ fun isAnswerCorrect(
 fun InlineUnderlineText(
     raw: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = 16.sp,
-    fontFamily: FontFamily? = null,
+    fontSize: TextUnit = 15.sp,
+    style: TextStyle,
     color: Color = Color.Black,
     strokeWidth: Dp = 2.dp
 ) {
@@ -477,14 +473,8 @@ fun InlineUnderlineText(
         modifier = modifier,
         text = annotated,
         inlineContent = inline,
-        fontSize = fontSize,
-        fontFamily = fontFamily,
-        fontWeight = FontWeight.Medium,
-        color = color,
-        lineHeight = fontSize * 1.3f,
-        style = LocalTextStyle.current.copy(
-            platformStyle = PlatformTextStyle(includeFontPadding = false)
-        )
+        style = style,
+        color = color
     )
 }
 

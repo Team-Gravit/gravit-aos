@@ -1,9 +1,10 @@
 package com.inuappcenter.gravit.main.Study.Problem
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -20,26 +22,31 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
+import com.example.gravit.ui.theme.ButtonState
+import com.example.gravit.ui.theme.InlineButton
+import com.example.gravit.ui.theme.InlineButtonIcon
+import com.example.gravit.ui.theme.InlineButtonState
+import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.AnswerResponse
 import com.inuappcenter.gravit.ui.theme.pretendard
-import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
-
-enum class FabState { HIDDEN, SUBMIT, NEXT }
 
 @Composable
 fun ShortAnswer(
     submitted: Boolean,
     answer: AnswerResponse,
-    problemId: Int,
+    problemId: Long,
     onTextChange: (String) -> Unit,
     text: String,
     isCorrect: Boolean?,
@@ -77,12 +84,15 @@ fun ShortAnswer(
             })
         }
     ) {
-        Column (modifier = Modifier.verticalScroll(rememberScrollState())){
+        Column (
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ){
             AnswerInputField(
                 value = text,
                 onValueChange = onTextChange,
                 submitted = submitted,
-                isCorrect = isCorrect,
                 focusRequester = focusRequester,
                 onFocusChange = { inputFocused = it },
                 onImeDone = {
@@ -90,11 +100,25 @@ fun ShortAnswer(
                     keyboard?.hide()
                 }
             )
+            Spacer(Modifier.height(16.dp))
+            InlineButton(
+                text = "풀이보기",
+                onClick = {},
+                state = InlineButtonState.Stroke_Color,
+                icon = InlineButtonIcon.L,
+                style = AppTypography.Label2,
+                color = AppColor.CTA,
+                iconAsset = R.drawable.book,
+                iconColor= AppColor.icon_color,
+                modifier = Modifier
+                    .size(97.dp, 32.dp)
+                    .align(Alignment.End)
+            )
 
             if (submitted && isCorrect != null) {
                 Spacer(Modifier.height(12.dp))
                 Row (verticalAlignment = Alignment.CenterVertically) {
-                    FeedbackSubjective(isCorrect = isCorrect, answer = answer)
+                    Feedback(isCorrect = isCorrect, answer = answer, onNext = onNext, isLast = isLast)
                     if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
                         Spacer(Modifier.weight(1f))
                         Text(
@@ -113,93 +137,128 @@ fun ShortAnswer(
                     }
                 }
 
-
             }
-
-        }
-        val canSubmit = text.isNotBlank()
-
-        val fabState = when {
-            submitted -> FabState.NEXT
-            !submitted && !inputFocused -> FabState.SUBMIT
-            else -> FabState.HIDDEN
-        }
-
-        if (fabState != FabState.HIDDEN) {
+            val canSubmit = text.isNotBlank()
+            Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(vertical = 20.dp)
+                    .padding(vertical = 20.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Row(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd),
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
-                ){
-                    when (fabState) {
-                        FabState.SUBMIT -> {
-                            Image(
-                                painter = painterResource(id = R.drawable.check_on),
-                                contentDescription = "채점",
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clickable(enabled = canSubmit) {
-                                        focusManager.clearFocus()
-                                        keyboard?.hide()
-                                        onSubmit()
-                                    }
-                            )
-                        }
-                        FabState.NEXT -> {
-                            Image(
-                                painter = painterResource(id = R.drawable.next_on),
-                                contentDescription = "다음",
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clickable { onNext() }
-                            )
-                        }
-                        else -> Unit
-                    }
+                ) {
+                    BlockButton(
+                        text = "이전",
+                        onClick = {onNext()},
+                        state = ButtonState.Stroke,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    BlockButton(
+                        text = "다음",
+                        onClick = {
+                            focusManager.clearFocus()
+                            keyboard?.hide()
+                            onSubmit()
+                        },
+                        enabled = canSubmit,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.weight(3f)
+                    )
                 }
-                if (removeSnackBarText != null) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                    ) {
-                        CustomSnackBar(removeSnackBarText!!)
-                    }
-                }
+            }
+
+        }
+        if (removeSnackBarText != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+            ) {
+                CustomSnackBar(removeSnackBarText!!)
             }
         }
     }
 }
 
 @Composable
-fun FeedbackSubjective(
+fun Feedback(
     isCorrect: Boolean,
-    answer: AnswerResponse
+    answer: AnswerResponse,
+    onNext: () -> Unit,
+    isLast: Boolean
 ) {
-    Column{
-        val answerText = answer.contents.joinToString(", ")
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(283.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(AppColor.bg0)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.Center
 
-        Text(
-            text = if (isCorrect) "정답입니다!" else "정답: $answerText",
-            color = if (isCorrect) Color(0xFF00A80B) else Color(0xFFD00000),
-            fontFamily = pretendard,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp
-        )
-        Spacer(Modifier.height(10.dp))
-        if (!isCorrect) {
-            Text(
-                text = answer.explanation,
-                fontFamily = pretendard,
-                fontWeight = FontWeight.Normal,
-                fontSize = 14.sp,
-                color = Color(0xFFD00000)
-            )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, top = 16.dp)
+                ) {
+                    Text(
+                        text = if (isCorrect) "👏🏻 정답입니다!" else "❌ 오답입니다!",
+                        color = if (isCorrect) AppColor.successColor else AppColor.errorColor,
+                        style = AppTypography.Headline1
+                    )
+                }
+                val answerText = answer.contents.joinToString(", ")
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(128.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg2)
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column {
+                        Text(
+                            text = "정답: $answerText",
+                            style = AppTypography.Body2_Reading,
+                            color = AppColor.text1
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = answer.explanation,
+                            style = AppTypography.Body2_Reading,
+                            color = AppColor.text1
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                BlockButton(
+                    text = if (isLast) "결과보기(임시)" else "다음 문제 풀기",
+                    onClick = onNext,
+                )
+
+            }
         }
     }
 }
@@ -209,24 +268,26 @@ fun AnswerInputField(
     value: String,
     onValueChange: (String) -> Unit,
     submitted: Boolean,
-    isCorrect: Boolean?,
     modifier: Modifier = Modifier,
     placeholder: String = "정답을 입력해주세요.",
     focusRequester: FocusRequester = FocusRequester(),
     onFocusChange: (Boolean) -> Unit = {},
     onImeDone: (() -> Unit)? = null
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
 
         var focused by remember { mutableStateOf(false) }
         val hasInput = value.isNotBlank()
 
         //라인색
         val indicator = when {
-            submitted && isCorrect == true -> Color(0xFF00A80B)
-            submitted && isCorrect == false -> Color(0xFFD00000)
-            hasInput || focused -> Color(0xFF5A5A5A)
-            else -> Color(0xFFC3C3C3)
+            hasInput || focused -> AppColor.text1
+            else -> AppColor.divider1
+        }
+
+        val color = when {
+            hasInput || focused -> AppColor.text1
+            else -> AppColor.text4
         }
 
         OutlinedTextField(
@@ -235,37 +296,32 @@ fun AnswerInputField(
             placeholder = {
                 Text(
                     text = placeholder,
-                    color = Color(0xFF868686),
-                    fontFamily = pretendard
+                    color = AppColor.text4,
+                    style = AppTypography.Body2_Reading
                 )
             },
-            textStyle = TextStyle(
-                color =Color.Unspecified,
-                fontSize = 18.sp,
-                fontFamily = pretendard,
-                fontWeight = FontWeight.Normal
-            ),
+            textStyle = AppTypography.Body2_Reading.copy(color =Color.Unspecified),
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
                 .onFocusChanged {
                     focused = it.isFocused
                     onFocusChange(it.isFocused)
-            },
-            shape = RoundedCornerShape(10.dp),
+                },
+            shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                disabledContainerColor = Color.White,
+                focusedContainerColor = AppColor.bg0,
+                unfocusedContainerColor = AppColor.bg0,
+                disabledContainerColor = AppColor.bg0,
 
                 focusedBorderColor = indicator,
                 unfocusedBorderColor = indicator,
                 disabledBorderColor = indicator,
 
-                focusedTextColor = indicator,
-                unfocusedTextColor = indicator,
-                disabledTextColor = indicator,
-                cursorColor = Color.Black
+                focusedTextColor = color,
+                unfocusedTextColor = color,
+                disabledTextColor = color,
+                cursorColor = AppColor.text1
             ),
             maxLines = 1,
             minLines = 1,
