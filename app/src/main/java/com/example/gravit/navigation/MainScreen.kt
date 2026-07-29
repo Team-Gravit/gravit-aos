@@ -21,7 +21,6 @@ import com.inuappcenter.gravit.error.NotFoundScreen
 import com.inuappcenter.gravit.error.UnauthorizedScreen
 import com.inuappcenter.gravit.main.Home.HomeScreen
 import com.inuappcenter.gravit.main.League.LeagueScreen
-import com.inuappcenter.gravit.main.Study.Chapter.ChapterScreen
 import com.inuappcenter.gravit.main.Study.Lesson.BookWrongScreen
 import com.inuappcenter.gravit.main.Study.Lesson.LessonComplete
 import com.inuappcenter.gravit.main.Study.Lesson.LessonList
@@ -41,6 +40,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import com.gravit.main.User.Notice.Notification
+import com.inuappcenter.gravit.main.Study.Chapter.Learning
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
 
@@ -123,13 +123,13 @@ fun MainScreen(rootNavController: NavController) {
                     )
                 }
 
-                composable( //이거 이제 문제집 네비
+                composable( //이거 문제집 네비
                     route = "lesson/{lessonId}",
                     arguments = listOf(
-                        navArgument("lessonId") { type = NavType.IntType }
+                        navArgument("lessonId") { type = NavType.LongType }
                     )
                 ) { backStackEntry ->
-                    val lessonId = backStackEntry.arguments!!.getInt("lessonId")
+                    val lessonId = backStackEntry.arguments!!.getLong("lessonId")
 
                     LessonScreen(
                         navController = innerNavController,
@@ -161,12 +161,12 @@ fun MainScreen(rootNavController: NavController) {
                     arguments = listOf(
                         navArgument("accuracy") { type = NavType.FloatType },
                         navArgument("learningTime") { type = NavType.IntType },
-                        navArgument("lessonId") { type = NavType.IntType },
+                        navArgument("lessonId") { type = NavType.LongType },
                     )
                 ) { backStackEntry ->
                     val accuracy = backStackEntry.arguments!!.getFloat("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
-                    val lessonId = backStackEntry.arguments!!.getInt("lessonId")
+                    val lessonId = backStackEntry.arguments!!.getLong("lessonId")
 
                     LessonComplete(
                         navController = innerNavController,

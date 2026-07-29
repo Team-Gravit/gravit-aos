@@ -151,7 +151,7 @@ data class ProblemResponse(
     val totalProblems: Int
 )
 data class Problems(
-    val problemId: Int,
+    val problemId: Long,
     val problemType: String,
     val instruction: String,
     val content: String,
@@ -164,11 +164,11 @@ data class AnswerResponse(
     val explanation: String
 )
 data class OptionDto(
-    val optionId: Int,
+    val optionId: Long,
     val content: String,
     val explanation: String,
     val isAnswer: Boolean,
-    val problemId: Int
+    val problemId: Long
 )
 
 //제출
@@ -177,14 +177,16 @@ data class LessonResultRequest(
     val problemSubmissionRequests: List<ProblemSubmissionRequests>?
 )
 data class LessonSubmissionSaveRequest(
-    val lessonId: Int,
+    val lessonId: Long,
     val learningTime: Int,
     val accuracy: Float
 )
 @Parcelize
 data class ProblemSubmissionRequests(
-    val problemId: Int,
-    val isCorrect: Boolean
+    val problemId: Long,
+    val isCorrect: Boolean,
+    val selectedOptionId: Long?,
+    val submittedContent: String?
 ) : Parcelable
 
 //제출 결과
@@ -204,7 +206,7 @@ data class UserLevelResponse(
 data class ReportRequest(
     val reportType: String,
     val content: String,
-    val problemId: Int
+    val problemId: Long
 )
 
 //친구
@@ -468,7 +470,7 @@ data class BadgeResponses(
 
 //북마크
 data class BookmarksRequest(
-    val problemId: Int
+    val problemId: Long
 )
 
 //문의하기
@@ -612,7 +614,7 @@ interface ApiService {
     @GET("api/v1/problems/{lessonId}") //레슨 문제 조회
     suspend fun getLesson(
         @Header("Authorization") auth: String,
-        @Path("lessonId") lessonId: Int
+        @Path("lessonId") lessonId: Long
     ) : ProblemResponse
     @POST("api/v1/problems/results") //문제 결과 저장
     suspend fun sendProblemResults(

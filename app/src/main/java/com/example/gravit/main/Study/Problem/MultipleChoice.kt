@@ -22,9 +22,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
+import com.example.gravit.ui.theme.ButtonState
+import com.google.common.math.LinearTransformation.horizontal
 import com.inuappcenter.gravit.api.OptionDto
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.AnswerResponse
 import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank
@@ -32,7 +38,7 @@ import kotlin.text.isNotBlank
 @Composable
 fun MultipleChoice(
     options: List<OptionDto>,
-    problemNum: Int,
+    problemNum: Long,
     selectedIndex: Int?,
     submitted: Boolean,
     onSelect: (Int?) -> Unit,
@@ -83,69 +89,107 @@ fun MultipleChoice(
     val isMyAnswerCorrect = submitted && selectedIndex == correctIdx
     val useScroll = submitted && !isMyAnswerCorrect
 
-    val columnModifier = if (useScroll) {
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    } else {
-        Modifier.fillMaxSize()
-    }
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(columnModifier) {
-            if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 16.dp),
-                    horizontalArrangement = Arrangement.End
-                ){
-                    Text(
-                        text = "오답노트에서 제외하기",
-                        fontSize = 15.sp,
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFA8A8A8),
-                        textDecoration = TextDecoration.Underline,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
+                    Row (
                         modifier = Modifier
-                            .padding(bottom = 8.dp)
-                            .clickable {
-                                problemVm.removeFromWrongNote(problemNum)
-                                onRemoveFromWrongNote()
-                                removeSnackBarText = "오답노트에서 제거되었아요."
-                            }
+                            .fillMaxWidth()
+                            .padding(end = 16.dp),
+                        horizontalArrangement = Arrangement.End
+                    ){
+                        Text(
+                            text = "오답노트에서 제외하기",
+                            fontSize = 15.sp,
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFA8A8A8),
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier
+                                .padding(bottom = 8.dp)
+                                .clickable {
+                                    problemVm.removeFromWrongNote(problemNum)
+                                    onRemoveFromWrongNote()
+                                    removeSnackBarText = "오답노트에서 제거되었아요."
+                                }
+                        )
+                    }
+                }
+                displayOptions.forEachIndexed { idx, opt ->
+                    val isSelected = selectedIndex == idx
+                    val enabled = !submitted && opt.text.isNotBlank()
+                    val isRight = submitted && idx == correctIdx
+                    val isWrong = submitted && isSelected && idx != correctIdx
+                    val explanationToShow = if (isWrong) opt.explanation else null
+                    OptionCell(
+                        num = opt.badge,
+                        answer = opt.text,
+                        isSelected = isSelected,
+                        isRight = isRight,
+                        isWrong = isWrong,
+                        enabled = enabled,
+                        showEye = !submitted && selectedIndex == null,
+                        explanation = if (useScroll) explanationToShow else null,
+                        onClick = {
+                            if (!enabled) return@OptionCell
+                            onSelect(idx)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        problemNum = problemNum,
+                        idx = idx,
                     )
                 }
             }
-            displayOptions.forEachIndexed { idx, opt ->
-                val isSelected = selectedIndex == idx
-                val enabled = !submitted && opt.text.isNotBlank()
-                val isRight = submitted && idx == correctIdx
-                val isWrong = submitted && isSelected && idx != correctIdx
-                val explanationToShow = if (isWrong) opt.explanation else null
-                OptionCell(
-                    num = opt.badge,
-                    answer = opt.text,
-                    isSelected = isSelected,
-                    isRight = isRight,
-                    isWrong = isWrong,
-                    enabled = enabled,
-                    showEye = !submitted && selectedIndex == null,
-                    explanation = if (useScroll) explanationToShow else null,
-                    onClick = {
-                        if (!enabled) return@OptionCell
-                        onSelect(idx)
-                        onSubmit(idx)
-                    },
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    problemNum = problemNum,
-                    idx = idx,
-                )
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BlockButton(
+                        text = "이전",
+                        onClick = {onNext()},
+                        state = ButtonState.Stroke,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    BlockButton(
+                        text = "다음",
+                        onClick = {
+                            selectedIndex?.let { index ->
+                                onSubmit(index)
+                            }
+                        },
+                        enabled = selectedIndex != null,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.weight(3f)
+                    )
+                }
             }
         }
-
-        if (submitted || removeSnackBarText != null) {
+        if(submitted && isCorrect!=null){
+            Feedback(isCorrect = isCorrect, AnswerResponse(listOf("1", "2"), "설명"), onNext = onNext, isLast = isLast)
+        }
+        /* if (submitted || removeSnackBarText != null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -176,7 +220,7 @@ fun MultipleChoice(
                     }
                 }
             }
-        }
+        } */
     }
 }
 
@@ -198,7 +242,7 @@ private fun OptionCell(
     modifier: Modifier,
     showEye: Boolean,
     explanation: String?,
-    problemNum: Int,
+    problemNum: Long,
     idx: Int
 ) {
     var isShown by remember(problemNum, idx) { mutableStateOf(true) }
@@ -211,48 +255,51 @@ private fun OptionCell(
 
     Row(
         modifier = modifier
+            .fillMaxWidth()
+            .heightIn(48.dp)
             .alpha(rowAlpha)
             .clickable(enabled = enabled && isShown) { onClick() }
-            .background(if (isSelected) Color(0xFFDCDCDC) else Color(0xFFF2F2F2))
-            .padding(horizontal = 16.dp, vertical = if (isSelected) 8.dp else 0.dp),
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) Color(0xFFDCDCDC) else AppColor.bg0)
+            .padding(12.dp),
         verticalAlignment = if (showExplanation) Alignment.Top else Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .width(40.dp)
-                .heightIn(min = 40.dp),
+                .width(24.dp)
+                .heightIn(min = 24.dp),
             contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(24.dp)
                     .clip(RoundedCornerShape(50))
                     .background(
                         when {
                             isRight -> Color(0xFF00A80B)
                             isWrong -> Color(0xFFFF0000)
-                            else -> Color.White
+                            else -> if (isSelected) Color(0xFFDCDCDC) else AppColor.bg0
                         }
                     )
-                    .border(1.dp, Color(0xFF6D6D6D), RoundedCornerShape(50)),
+                    .border(1.dp, AppColor.text3, RoundedCornerShape(50)),
                 contentAlignment = Alignment.Center
             ) {
                 if(isWrong){
-                    Image(painter = painterResource(id = R.drawable.xicon),
-                        contentDescription = null,
-                        modifier = Modifier.background(Color(0xFFFF3B2F), shape = RoundedCornerShape(50)))
+                    Image(
+                        painter = painterResource(id = R.drawable.xicon),
+                        contentDescription = null
+                    )
                 }
                 else if(isRight){
-                    Image(painter = painterResource(id = R.drawable.checkicon),
-                        contentDescription = null,
-                        modifier = Modifier.background(Color(0xFF00A80B), shape = RoundedCornerShape(50)))
+                    Image(
+                        painter = painterResource(id = R.drawable.checkicon),
+                        contentDescription = null
+                    )
                 } else{
                     Text(
                         text = num,
-                        color= when {
-                            isSelected -> Color.Black
-                            else -> Color(0xFF6D6D6D)
-                        }
+                        color= AppColor.text3,
+                        style = AppTypography.Label2
                     )
                 }
 
@@ -262,13 +309,11 @@ private fun OptionCell(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = answer,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
-                fontSize = 16.sp,
+                style = AppTypography.Label2,
                 color = when {
-                    isRight -> Color(0xFF00A80B)
-                    isWrong -> Color(0xFFD00000)
-                    else -> Color(0xFF6D6D6D)
+                    isRight -> AppColor.successColor
+                    isWrong -> AppColor.errorColor
+                    else -> AppColor.text3
                 }
             )
 

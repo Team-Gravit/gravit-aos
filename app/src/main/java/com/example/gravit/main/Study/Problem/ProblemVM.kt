@@ -12,7 +12,7 @@ class ProblemViewModel : ViewModel() {
         val submitted: Boolean = false,
         val isCorrect: Boolean? = null,
         val shortText: String = "",
-        val removedFromWrongNoteMap: Map<Int, Boolean> = emptyMap()
+        val removedFromWrongNoteMap: Map<Long, Boolean> = emptyMap()
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -39,7 +39,7 @@ class ProblemViewModel : ViewModel() {
         }
     }
 
-    fun removeFromWrongNote(problemId: Int) {
+    fun removeFromWrongNote(problemId: Long) {
         _uiState.update { state ->
             state.copy(
                 removedFromWrongNoteMap = state.removedFromWrongNoteMap + (problemId to true)
@@ -47,7 +47,7 @@ class ProblemViewModel : ViewModel() {
         }
     }
 
-    fun isRemovedFromWrongNote(problemId: Int): Boolean {
+    fun isRemovedFromWrongNote(problemId: Long): Boolean {
         return _uiState.value.removedFromWrongNoteMap[problemId] == true
     }
 

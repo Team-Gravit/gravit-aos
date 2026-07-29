@@ -383,7 +383,7 @@ fun LeagueUI(
                         ){
                             Row (modifier = Modifier.align(Alignment.CenterStart)) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.outline_timer_24),
+                                    painter = painterResource(id = R.drawable.timer),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .padding(start = 10.dp)

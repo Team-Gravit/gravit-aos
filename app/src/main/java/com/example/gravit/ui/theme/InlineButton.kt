@@ -46,7 +46,9 @@ fun InlineButton(
     style: TextStyle,
     color: Color,
     shape: Shape = RoundedCornerShape(8.dp),
-    padding: Dp = 8.dp
+    padding: Dp = 8.dp,
+    iconAsset: Int = 0,
+    iconColor: Color = AppColor.icon_default
 ) {
     val containerColor = when {
         state == InlineButtonState.Default -> AppColor.CTA
@@ -91,9 +93,10 @@ fun InlineButton(
                 InlineButtonIcon.L,
                 InlineButtonIcon.LR -> {
                     Icon(
-                        painter = painterResource(R.drawable.add_plus_lg),
+                        painter = painterResource(iconAsset),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxHeight()
+                        modifier = Modifier.fillMaxHeight(),
+                        tint = iconColor
                     )
                 }
                 else -> Unit
@@ -108,9 +111,10 @@ fun InlineButton(
                 InlineButtonIcon.R,
                 InlineButtonIcon.LR -> {
                     Icon(
-                        painter = painterResource(R.drawable.chevron_right),
+                        painter = painterResource(iconAsset),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxHeight()
+                        modifier = Modifier.fillMaxHeight(),
+                        tint = iconColor
                     )
                 }
                 else -> Unit

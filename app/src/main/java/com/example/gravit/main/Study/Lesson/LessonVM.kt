@@ -37,7 +37,7 @@ class LessonViewModel(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun load(lessonId: Int = 0, unitId: Int = 0, type: String) = viewModelScope.launch {
+    fun load(lessonId: Long = 0, unitId: Int = 0, type: String) = viewModelScope.launch {
         _state.value = UiState.Loading
         _bookmark.value = emptyMap()
         val session = AuthPrefs.load(appContext)
@@ -154,10 +154,10 @@ class LessonViewModel(
     fun resetSubmit() { _submit.value = SubmitState.Idle }
     fun resetProblemSubmit() { _problemSubmit.value = ProblemSubmitState.Idle }
 
-    private val _bookmark = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+    private val _bookmark = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
     val bookmark = _bookmark.asStateFlow()
 
-    fun toggleBookmark(problemId: Int) = viewModelScope.launch {
+    fun toggleBookmark(problemId: Long) = viewModelScope.launch {
         val current = _bookmark.value[problemId] ?: false
         val newValue = !current
 
@@ -197,7 +197,7 @@ class LessonViewModel(
     }
 
     fun removeWrongAnswered(
-        problemId: Int,
+        problemId: Long,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
         val session = AuthPrefs.load(appContext)
