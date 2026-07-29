@@ -1,6 +1,7 @@
 package com.inuappcenter.gravit.main.Study.Problem
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -122,9 +123,10 @@ fun ShortAnswer(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Feedback(
                             isCorrect = isCorrect,
-                            answer = answer,
+                            answerText = answer.contents.joinToString(", "),
                             onNext = onNext,
-                            isLast = isLast
+                            isLast = isLast,
+                            explanation = answer.explanation
                         )
                         if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
                             Spacer(Modifier.weight(1f))
@@ -194,7 +196,8 @@ fun ShortAnswer(
 @Composable
 fun Feedback(
     isCorrect: Boolean,
-    answer: AnswerResponse,
+    answerText: String,
+    explanation: String,
     onNext: () -> Unit,
     isLast: Boolean
 ) {
@@ -231,7 +234,6 @@ fun Feedback(
                         style = AppTypography.Headline1
                     )
                 }
-                val answerText = answer.contents.joinToString(", ")
                 Spacer(Modifier.height(16.dp))
                 Box(
                     modifier = Modifier
@@ -239,9 +241,10 @@ fun Feedback(
                         .height(128.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(AppColor.bg2)
+                        .border(1.dp, if(isCorrect) AppColor.successColor else AppColor.errorColor, RoundedCornerShape(8.dp))
                         .padding(16.dp)
                         .verticalScroll(rememberScrollState()),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.CenterStart
                 ) {
                     Column {
                         Text(
@@ -249,9 +252,9 @@ fun Feedback(
                             style = AppTypography.Body2_Reading,
                             color = AppColor.text1
                         )
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            text = answer.explanation,
+                            text =  explanation,
                             style = AppTypography.Body2_Reading,
                             color = AppColor.text1
                         )
