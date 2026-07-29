@@ -150,9 +150,9 @@ fun BookWrongScreen(
                 val problemSlots = remember(problems) { problems }
                 val total = problemSlots.size
 
-                fun submitSingleProblem(problemId: Int, isCorrect: Boolean) {
+                fun submitSingleProblem(problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) {
                     vm.submitProblemResults(
-                        ProblemSubmissionRequests(problemId, isCorrect)
+                        ProblemSubmissionRequests(problemId, isCorrect, selectedOptionId, submittedContent)
                     ) { ok ->
 
                     }
@@ -164,9 +164,7 @@ fun BookWrongScreen(
                     problems = problemSlots,
                     total = total,
                     swVm = swVm,
-                    onRecordResult = { id, correct ->
-                        submitSingleProblem(id, correct)
-                    },
+                    onRecordResult = ::submitSingleProblem,
                     bookmarkMap = bookmarkMap,
                     onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
                     onFinishLesson = { navController.popBackStack() },
