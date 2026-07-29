@@ -203,8 +203,10 @@ fun MultipleChoice(
         }
         if(submitted && isCorrect!=null){
             val selectedOption = selectedIndex?.let { index -> displayOptions.getOrNull(index) }
+            val correct = options.first { it.isAnswer }
             Feedback(
                 isCorrect = isCorrect,
+                answerText = correct.content,
                 onNext = onNext,
                 isLast = isLast,
                 explanation = selectedOption?.explanation.orEmpty()

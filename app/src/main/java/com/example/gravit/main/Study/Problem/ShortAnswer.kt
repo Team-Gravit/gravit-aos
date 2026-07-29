@@ -196,7 +196,7 @@ fun ShortAnswer(
 @Composable
 fun Feedback(
     isCorrect: Boolean,
-    answerText: String? = null,
+    answerText: String,
     explanation: String,
     onNext: () -> Unit,
     isLast: Boolean
@@ -247,14 +247,12 @@ fun Feedback(
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Column {
-                        if (!answerText.isNullOrBlank()) {
-                            Text(
-                                text = "정답: $answerText",
-                                style = AppTypography.Body2_Reading,
-                                color = AppColor.text1
-                            )
-                            Spacer(Modifier.height(4.dp))
-                        }
+                        Text(
+                            text = "정답: $answerText",
+                            style = AppTypography.Body2_Reading,
+                            color = AppColor.text1
+                        )
+                        Spacer(Modifier.height(8.dp))
                         Text(
                             text =  explanation,
                             style = AppTypography.Body2_Reading,
