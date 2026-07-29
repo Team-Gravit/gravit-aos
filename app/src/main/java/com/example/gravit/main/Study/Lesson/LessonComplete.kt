@@ -68,7 +68,7 @@ fun LessonComplete(
     navController: NavController,
     accuracy: Float,
     learningTime: Int,
-    lessonId: Int,
+    lessonId: Long,
 ){
     val homeEntry = navController.getBackStackEntry("home")
     val problemList = homeEntry.savedStateHandle.get<ArrayList<ProblemSubmissionRequests>>("problemList")
