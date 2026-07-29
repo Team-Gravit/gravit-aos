@@ -19,7 +19,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.inuappcenter.gravit.R
 
 enum class InlineButtonState {
     Default,
@@ -47,7 +46,7 @@ fun InlineButton(
     color: Color,
     shape: Shape = RoundedCornerShape(8.dp),
     padding: Dp = 8.dp,
-    iconAsset: Int = 0,
+    iconAsset: Int? = null,
     iconColor: Color = AppColor.icon_default
 ) {
     val containerColor = when {
@@ -89,17 +88,13 @@ fun InlineButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            when (icon) {
-                InlineButtonIcon.L,
-                InlineButtonIcon.LR -> {
-                    Icon(
-                        painter = painterResource(iconAsset),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxHeight(),
-                        tint = iconColor
-                    )
-                }
-                else -> Unit
+            if ((icon == InlineButtonIcon.L || icon == InlineButtonIcon.LR) && iconAsset != null){
+                Icon(
+                    painter = painterResource(iconAsset),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxHeight(),
+                    tint = iconColor
+                )
             }
             Text(
                 text = text,
@@ -107,17 +102,13 @@ fun InlineButton(
                 color = color
             )
 
-            when (icon) {
-                InlineButtonIcon.R,
-                InlineButtonIcon.LR -> {
-                    Icon(
-                        painter = painterResource(iconAsset),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxHeight(),
-                        tint = iconColor
-                    )
-                }
-                else -> Unit
+            if ((icon == InlineButtonIcon.R || icon == InlineButtonIcon.LR) && iconAsset != null){
+                Icon(
+                    painter = painterResource(iconAsset),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxHeight(),
+                    tint = iconColor
+                )
             }
         }
     }
