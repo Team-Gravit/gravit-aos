@@ -56,7 +56,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
@@ -422,7 +421,6 @@ fun isAnswerCorrect(
 fun InlineUnderlineText(
     raw: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = 15.sp,
     style: TextStyle,
     color: Color = Color.Black,
     strokeWidth: Dp = 2.dp
@@ -442,13 +440,13 @@ fun InlineUnderlineText(
         }
     }
 
-    val inline = remember(raw, fontSize, strokeWidth) {
+    val inline = remember(raw, style.fontSize, strokeWidth) {
         matches.mapIndexed { i, m ->
             val count = m.value.length
             "blank$i" to InlineTextContent(
                 Placeholder(
-                    width = count * fontSize * 0.60f,
-                    height = fontSize,
+                    width = count * style.fontSize * 0.60f,
+                    height = style.fontSize,
                     placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
                 )
             ) {
