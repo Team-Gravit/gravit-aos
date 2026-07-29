@@ -11,13 +11,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gravit.ui.theme.AppColor
 import com.inuappcenter.gravit.ui.theme.pretendard
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -116,7 +116,7 @@ fun Stopwatch(
             fontSize = 12.sp,
             fontFamily = pretendard,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF494949),
+            color = AppColor.text2,
             style = TextStyle(fontFeatureSettings = "tnum")
         )
     }
