@@ -2,19 +2,16 @@ package com.inuappcenter.gravit.main.Study.Unit
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,18 +23,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.UnitPageResponse
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.ChapterSummaryResponse
 import com.inuappcenter.gravit.api.UnitDetailResponses
+import com.inuappcenter.gravit.main.User.TopBar
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -47,7 +45,8 @@ data class UnitUi(
     val unitId: Int,
     val orderText: String,
     val title: String,
-    val progressRate: Float
+    val progressRate: Float,
+    val description: String
 )
 
 fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
@@ -55,12 +54,14 @@ fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
         val summary = detail.unitSummaryResponse
         val ratePercent = detail.progressRate
         val rate = (ratePercent / 100.0).toFloat()
+        val description = detail.unitSummaryResponse.description
 
         UnitUi(
             unitId = summary.unitId,
             orderText = "Unit%02d".format(index + 1),
             title = summary.title,
-            progressRate = rate
+            progressRate = rate,
+            description = description
         )
     }
 }
@@ -140,10 +141,9 @@ fun UnitList(
             val units = toUnitUiList(data)
 
             UnitListContent(
-                chapterTitle = data.chapterSummaryResponse.title,
+                chapterData = data.chapterSummaryResponse,
                 units = units,
-                navController = navController,
-                chapterId = chapterId
+                navController = navController
             )
         }
     }
@@ -151,100 +151,73 @@ fun UnitList(
 
 @Composable
 private fun UnitListContent(
-    chapterTitle: String,
+    chapterData: ChapterSummaryResponse,
     units: List<UnitUi>,
     navController: NavController,
-    chapterId: Int
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.unitlesson_back),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+    val systemUiController = rememberSystemUiController()
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = true
         )
-        Column(
+    }
+
+    Column (
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg0)
+    ) {
+        TopBar(
+            navController = navController,
+            title = chapterData.title,
+            useCloseIcon = false,
+            useAlarmIcon = true
+        )
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
-
+                .background(AppColor.bg1)
+                .weight(1f)
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.unitlesson_back),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
+                    .padding(start = 16.dp, end = 15.dp, top = 20.dp)
             ) {
-                Row(
-                    modifier = Modifier.align(Alignment.CenterStart),
-                    verticalAlignment = Alignment.CenterVertically
+                Text(
+                    text = chapterData.title,
+                    style = AppTypography.Headline2,
+                    color = AppColor.text1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = chapterData.description,
+                    style = AppTypography.Label2,
+                    color = AppColor.text3,
+                    maxLines = 2
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 40.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "뒤로가기",
-                        modifier = Modifier
-                            .padding(start = 18.dp)
-                            .size(20.dp)
-                            .clickable {
-
-                                val popped = navController.popBackStack(
-                                    route = "chapter",
-                                    inclusive = false
-                                )
-
-                                if (!popped) {
-                                    navController.navigate("chapter") {
-                                        popUpTo("unit/$chapterId") {
-                                            inclusive = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = false
-                                    }
-                                }
-                            },
-                        tint = Color.White
-                    )
-
-                    Spacer(Modifier.width(18.dp))
-
-                    Text(
-                        text = chapterTitle,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = pretendard,
-                        color = Color.White
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp)) {
-                    Text(
-                        text = "유닛 리스트",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 20.sp,
-                        fontFamily = pretendard,
-                        textAlign = TextAlign.Start,
-                        color = Color.White,
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 40.dp)
-                    ) {
-                        itemsIndexed(units) { _, unit ->
-                            UnitItemBox(
-                                unit = unit,
-                                navController = navController
-                            )
-                        }
+                    itemsIndexed(units) { _, unit ->
+                        UnitItemBox(
+                            unit = unit,
+                            navController = navController
+                        )
                     }
                 }
             }
@@ -274,65 +247,52 @@ private fun UnitItemBox(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .border(width = 1.dp, color = Color(0xFF8B69FF), RoundedCornerShape(8.dp))
             .clickable {
                 navController.navigate("lessonList/${unit.unitId}")
             }
+            .background(AppColor.bg0)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.unit_glass),
-            contentDescription = "back",
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Crop
-        )
-        Column(modifier = Modifier
-            .padding(top = 13.dp, start = 13.dp, end = 13.dp, bottom = 13.dp)
-            .padding(10.dp)
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp)
         ) {
             Row {
                 Text(
-                    text = "${unit.orderText}  ",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    textAlign = TextAlign.Start,
-                    color = Color.White,
+                    text = "${unit.orderText} - ${unit.title}",
+                    style = AppTypography.Headline2,
+                    color = AppColor.text2
                 )
-                Text(
-                    text = unit.title,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    textAlign = TextAlign.Start,
-                    color = Color.White,
+                Spacer(Modifier.weight(1f))
+                Image(
+                    painter = painterResource(R.drawable.chevron_right),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            Spacer(modifier = Modifier.height(5.5.dp))
+            Text(
+                text = unit.description,
+                style = AppTypography.Label2,
+                color = AppColor.text4,
+                maxLines = 2
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "${percent}%",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    fontFamily = pretendard,
-                    color = Color.White.copy(alpha = 0.8f),
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.width(60.dp),
-                    style = TextStyle(fontFeatureSettings = "tnum")
+                    style = AppTypography.Headline2,
+                    color = AppColor.text4
                 )
 
-                Spacer(modifier = Modifier.width(10.dp))
-
+                Spacer(modifier = Modifier.width(4.dp))
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(13.dp)
+                        .height(8.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White)
+                        .background(AppColor.bg3)
                 ) {
                     Box(
                         modifier = Modifier
