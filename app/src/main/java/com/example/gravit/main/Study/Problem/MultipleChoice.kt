@@ -26,6 +26,7 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
+import com.google.common.math.LinearTransformation.horizontal
 import com.inuappcenter.gravit.api.OptionDto
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
@@ -88,66 +89,69 @@ fun MultipleChoice(
     val isMyAnswerCorrect = submitted && selectedIndex == correctIdx
     val useScroll = submitted && !isMyAnswerCorrect
 
-    val columnModifier = if (useScroll) {
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    } else {
-        Modifier.fillMaxSize()
-    }
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(modifier = columnModifier.padding(horizontal = 16.dp)) {
-            if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 16.dp),
-                    horizontalArrangement = Arrangement.End
-                ){
-                    Text(
-                        text = "오답노트에서 제외하기",
-                        fontSize = 15.sp,
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFA8A8A8),
-                        textDecoration = TextDecoration.Underline,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
+                    Row (
                         modifier = Modifier
-                            .padding(bottom = 8.dp)
-                            .clickable {
-                                problemVm.removeFromWrongNote(problemNum)
-                                onRemoveFromWrongNote()
-                                removeSnackBarText = "오답노트에서 제거되었아요."
-                            }
+                            .fillMaxWidth()
+                            .padding(end = 16.dp),
+                        horizontalArrangement = Arrangement.End
+                    ){
+                        Text(
+                            text = "오답노트에서 제외하기",
+                            fontSize = 15.sp,
+                            fontFamily = pretendard,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFA8A8A8),
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier
+                                .padding(bottom = 8.dp)
+                                .clickable {
+                                    problemVm.removeFromWrongNote(problemNum)
+                                    onRemoveFromWrongNote()
+                                    removeSnackBarText = "오답노트에서 제거되었아요."
+                                }
+                        )
+                    }
+                }
+                displayOptions.forEachIndexed { idx, opt ->
+                    val isSelected = selectedIndex == idx
+                    val enabled = !submitted && opt.text.isNotBlank()
+                    val isRight = submitted && idx == correctIdx
+                    val isWrong = submitted && isSelected && idx != correctIdx
+                    val explanationToShow = if (isWrong) opt.explanation else null
+                    OptionCell(
+                        num = opt.badge,
+                        answer = opt.text,
+                        isSelected = isSelected,
+                        isRight = isRight,
+                        isWrong = isWrong,
+                        enabled = enabled,
+                        showEye = !submitted && selectedIndex == null,
+                        explanation = if (useScroll) explanationToShow else null,
+                        onClick = {
+                            if (!enabled) return@OptionCell
+                            onSelect(idx)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        problemNum = problemNum,
+                        idx = idx,
                     )
                 }
             }
-            displayOptions.forEachIndexed { idx, opt ->
-                val isSelected = selectedIndex == idx
-                val enabled = !submitted && opt.text.isNotBlank()
-                val isRight = submitted && idx == correctIdx
-                val isWrong = submitted && isSelected && idx != correctIdx
-                val explanationToShow = if (isWrong) opt.explanation else null
-                OptionCell(
-                    num = opt.badge,
-                    answer = opt.text,
-                    isSelected = isSelected,
-                    isRight = isRight,
-                    isWrong = isWrong,
-                    enabled = enabled,
-                    showEye = !submitted && selectedIndex == null,
-                    explanation = if (useScroll) explanationToShow else null,
-                    onClick = {
-                        if (!enabled) return@OptionCell
-                        onSelect(idx)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    problemNum = problemNum,
-                    idx = idx,
-                )
-            }
-            Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

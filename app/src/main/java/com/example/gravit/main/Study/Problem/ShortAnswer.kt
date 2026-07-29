@@ -84,62 +84,68 @@ fun ShortAnswer(
             })
         }
     ) {
-        Column (
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ){
-            AnswerInputField(
-                value = text,
-                onValueChange = onTextChange,
-                submitted = submitted,
-                focusRequester = focusRequester,
-                onFocusChange = { inputFocused = it },
-                onImeDone = {
-                    focusManager.clearFocus()
-                    keyboard?.hide()
-                }
-            )
-            Spacer(Modifier.height(16.dp))
-            InlineButton(
-                text = "풀이보기",
-                onClick = {},
-                state = InlineButtonState.Stroke_Color,
-                icon = InlineButtonIcon.L,
-                style = AppTypography.Label2,
-                color = AppColor.CTA,
-                iconAsset = R.drawable.book,
-                iconColor= AppColor.icon_color,
+        Column (modifier = Modifier.fillMaxSize()){
+            Column (
                 modifier = Modifier
-                    .size(97.dp, 32.dp)
-                    .align(Alignment.End)
-            )
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ){
+                AnswerInputField(
+                    value = text,
+                    onValueChange = onTextChange,
+                    submitted = submitted,
+                    focusRequester = focusRequester,
+                    onFocusChange = { inputFocused = it },
+                    onImeDone = {
+                        focusManager.clearFocus()
+                        keyboard?.hide()
+                    }
+                )
+                Spacer(Modifier.height(16.dp))
+                InlineButton(
+                    text = "풀이보기",
+                    onClick = {},
+                    state = InlineButtonState.Stroke_Color,
+                    icon = InlineButtonIcon.L,
+                    style = AppTypography.Label2,
+                    color = AppColor.CTA,
+                    iconAsset = R.drawable.book,
+                    iconColor = AppColor.icon_color,
+                    modifier = Modifier
+                        .size(97.dp, 32.dp)
+                        .align(Alignment.End)
+                )
 
-            if (submitted && isCorrect != null) {
-                Spacer(Modifier.height(12.dp))
-                Row (verticalAlignment = Alignment.CenterVertically) {
-                    Feedback(isCorrect = isCorrect, answer = answer, onNext = onNext, isLast = isLast)
-                    if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            text = "오답노트에서 제외하기",
-                            fontSize = 15.sp,
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFA8A8A8),
-                            textDecoration = TextDecoration.Underline,
-                            modifier = Modifier.clickable {
-                                problemVm.removeFromWrongNote(problemId)
-                                onRemoveFromWrongNote()
-                                removeSnackBarText = "오답노트에서 제거되었아요."
-                            }
+                if (submitted && isCorrect != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Feedback(
+                            isCorrect = isCorrect,
+                            answer = answer,
+                            onNext = onNext,
+                            isLast = isLast
                         )
+                        if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = "오답노트에서 제외하기",
+                                fontSize = 15.sp,
+                                fontFamily = pretendard,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFA8A8A8),
+                                textDecoration = TextDecoration.Underline,
+                                modifier = Modifier.clickable {
+                                    problemVm.removeFromWrongNote(problemId)
+                                    onRemoveFromWrongNote()
+                                    removeSnackBarText = "오답노트에서 제거되었아요."
+                                }
+                            )
+                        }
                     }
                 }
-
             }
             val canSubmit = text.isNotBlank()
-            Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -154,7 +160,7 @@ fun ShortAnswer(
                 ) {
                     BlockButton(
                         text = "이전",
-                        onClick = {onNext()},
+                        onClick = { onNext() },
                         state = ButtonState.Stroke,
                         style = AppTypography.Headline2,
                         modifier = Modifier.weight(1f)
@@ -173,7 +179,6 @@ fun ShortAnswer(
                     )
                 }
             }
-
         }
         if (removeSnackBarText != null) {
             Box(
