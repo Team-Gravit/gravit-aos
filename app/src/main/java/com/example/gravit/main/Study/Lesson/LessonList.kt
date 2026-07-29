@@ -1,92 +1,58 @@
 package com.inuappcenter.gravit.main.Study.Lesson
 
-import android.R.attr.fontFamily
-import android.R.attr.fontWeight
-import android.annotation.SuppressLint
-import android.graphics.BlurMaskFilter
-import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import com.inuappcenter.gravit.R
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.Cip
+import com.example.gravit.ui.theme.CipState
+import com.example.gravit.ui.theme.PrimitiveColor
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.LessonSummaries
 import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.UnitSummaryResponse
 import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
-import com.inuappcenter.gravit.ui.theme.pretendard
+import com.inuappcenter.gravit.main.User.TopBar
 import kotlinx.coroutines.delay
-import kotlin.math.abs
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -158,7 +124,7 @@ fun LessonList(
                 lessonSummaries = lessonSummaries,
                 bookmarkAccessible = bookmarkAccessible,
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
-                unitTitle = s.unitSummaryResponse.title
+                unitSummary = s.unitSummaryResponse
             )
         }
         else -> Unit
@@ -173,154 +139,295 @@ fun LessonListUI(
     lessonSummaries: List<LessonSummaries>,
     bookmarkAccessible: Boolean,
     wrongAnsweredNoteAccessible: Boolean,
-    unitTitle: String
+    unitSummary: UnitSummaryResponse
 ){
     var snackBar by remember { mutableStateOf<String?>(null) }
     var sheetState by remember { mutableStateOf(SheetState.Hidden) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            painter = painterResource(id = R.drawable.unitlesson_back),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+    val systemUiController = rememberSystemUiController()
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = true
         )
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .navigationBarsPadding()
+                .background(AppColor.bg0)
         ) {
-            Row(
+            TopBar(
+                navController = navController,
+                title = unitSummary.title,
+                useCloseIcon = false,
+                useAlarmIcon = true
+            )
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .background(AppColor.bg1)
+                    .weight(1f)
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.arrow_left),
-                    contentDescription = "back",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { navController.popBackStack()},
-                    tint = Color.White
+                Image(
+                    painter = painterResource(id = R.drawable.unitlesson_back),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    text = unitTitle,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = pretendard,
-                    fontSize = 20.sp,
-                    color = Color.White
-                )
-                Spacer(Modifier.weight(1f))
-                Box(
+                Column(
                     modifier = Modifier
-                        .size(92.dp, 40.dp)
-                        .glow(
-                            color = Color(0xFFC52AFF),
-                            radius = 28.dp,
-                            cornerRadius = 9.dp
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.White,
-                            shape = RoundedCornerShape(9.dp)
-                        )
+                        .padding(horizontal = 16.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                 ) {
-                    Button(
-                        onClick = { sheetState = SheetState.Half },
-                        shape = RoundedCornerShape(9.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFC52AFF),
-                            contentColor = Color.White
-                        ),
-                        contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Text(
-                            text = "개념노트",
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            style = TextStyle(
-                                shadow = Shadow(
-                                    color = Color.Black.copy(alpha = 0.25f),
-                                    offset = Offset(1f, 1f),
-                                    blurRadius = 1f
-                                )
-                            )
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = "나의 문제",
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = pretendard,
-                fontSize = 20.sp,
-                color = Color.White,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(Modifier.height(16.dp))
-            Selector(
-                unitId = unitId,
-                navController = navController,
-                bookmarkAccessible = bookmarkAccessible,
-                wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
-                onShowSnackBar = { t -> snackBar = t }
-            )
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = "문제 리스트",
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = pretendard,
-                fontSize = 20.sp,
-                color = Color.White,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(Modifier.height(20.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                itemsIndexed(lessonSummaries) { index, lesson ->
-                    val columnCount = 3
-                    val isLastRow = index >= lessonSummaries.size - columnCount
-
-                    LessonBox(
-                        title = if ((index + 1) < 10) "Lesson0${index + 1}" else "Lesson${index + 1}",
-                        completed = lesson.isSolved,
-                        modifier = Modifier.padding(bottom = if (isLastRow) 20.dp else 0.dp),
-                        totalProblem = lesson.totalProblem,
-                        onClick = {
-                            navController.navigate(
-                                "lesson/${lesson.lessonId}"
-                            )
-                        }
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        text = unitSummary.title,
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = unitSummary.description,
+                        style = AppTypography.Label2,
+                        color = AppColor.text3,
+                        maxLines = 2
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(67.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(PrimitiveColor.Purple100)
+                            .clickable(onClick = { sheetState = SheetState.Half }),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.book),
+                                contentDescription = "개념노트",
+                                modifier = Modifier.size(23.dp),
+                                tint = AppColor.Main1
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "개념노트",
+                                    style = AppTypography.Headline1,
+                                    color = AppColor.text2
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "개념노트 설명??",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3
+                                )
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Image(
+                                painter = painterResource(R.drawable.chevron_right),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(156.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .clickable {
+                                    if (bookmarkAccessible) {
+                                        navController.navigate("problem/$unitId/bookmarks")
+                                    } else {
+                                        snackBar = "북마크 문제가 없습니다."
+                                    }
+                                }
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Column {
+                                Row {
+                                    Text(
+                                        text = "북마크",
+                                        style = AppTypography.Headline1,
+                                        color = AppColor.text2
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Image(
+                                        painter = painterResource(R.drawable.chevron_right),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "북마크한 문제를 풀어요.",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3,
+                                    maxLines = 2
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Image(
+                                    painter = painterResource(R.drawable.bookmark),
+                                    contentDescription = "북마크",
+                                    modifier = Modifier
+                                        .size(37.dp, 40.dp)
+                                        .align(Alignment.End)
+                                )
+
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(156.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .clickable {
+                                    if (wrongAnsweredNoteAccessible) {
+                                        navController.navigate("problem/$unitId/wrong-answered-notes")
+                                    } else {
+                                        snackBar = "오답노트 문제가 없습니다."
+                                    }
+                                }
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Column {
+                                Row {
+                                    Text(
+                                        text = "오답노트",
+                                        style = AppTypography.Headline1,
+                                        color = AppColor.text2
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Image(
+                                        painter = painterResource(R.drawable.chevron_right),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "틀린 문제를 복습해요.",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3,
+                                    maxLines = 2
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Icon(
+                                    painter = painterResource(R.drawable.book),
+                                    contentDescription = "오답노트",
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .align(Alignment.End),
+                                    tint = Color(0xFFFFB608)
+                                )
+
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Box (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(AppColor.bg0)
+                    ){
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp, horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "문제 리스트",
+                                style = AppTypography.Label2,
+                                color = AppColor.text4,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            lessonSummaries.forEachIndexed { index, lesson ->
+                                val lessonOrderText = "Lesson%02d".format(index + 1)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(59.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ) {
+                                            navController.navigate("lesson/${lesson.lessonId}")
+                                        }
+                                        .background(PrimitiveColor.Gray200),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = lessonOrderText,
+                                                style = AppTypography.Label1,
+                                                color = AppColor.text2
+                                            )
+                                            Spacer(Modifier.height(2.dp))
+                                            Text(
+                                                text = "${lesson.totalProblem}개",
+                                                style = AppTypography.Label2,
+                                                color = AppColor.text4
+                                            )
+                                        }
+                                        Spacer(Modifier.weight(1f))
+                                        Cip(
+                                            text = if(lesson.isSolved) "학습 완료" else "잠김",
+                                            onClick = {},
+                                            state = if(lesson.isSolved) CipState.Default else CipState.Disabled,
+                                            modifier = Modifier.height(22.dp),
+                                            style = AppTypography.Caption1
+                                        )
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
                 }
             }
         }
-
-        AnimatedVisibility(
-            visible = sheetState != SheetState.Hidden,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it })
-        ) {
-            NoteSheetCustom(
-                unitId = unitId,
-                title = unitTitle,
-                sheetState = sheetState,
-                onStateChange = { newState -> sheetState = newState },
-                onDismiss = { sheetState = SheetState.Hidden }
-            )
-        }
+        NoteSheetCustom(
+            unitId = unitId,
+            sheetState = sheetState,
+            onStateChange = { newState ->
+                sheetState = newState
+            },
+            onDismiss = {
+                sheetState = SheetState.Hidden
+            }
+        )
 
         if (snackBar != null) {
             Box(
@@ -338,283 +445,3 @@ fun LessonListUI(
         }
     }
 }
-
-data class SelectorItem(
-    val title: String,
-    val desc: String,
-    val type: String,
-    val enabled: Boolean,
-    val snackbar: String
-)
-
-@Composable
-fun Selector(
-    unitId: Int,
-    navController: NavController,
-    bookmarkAccessible: Boolean,
-    wrongAnsweredNoteAccessible: Boolean,
-    onShowSnackBar: (String) -> Unit
-){
-    val items = listOf(
-        SelectorItem(
-            title = "북마크",
-            desc = "즐겨찾기로 등록해놓은 문제를 풀어요.",
-            type = "bookmarks",
-            enabled = bookmarkAccessible,
-            snackbar = "북마크 문제가 없습니다."
-        ),
-        SelectorItem(
-            title = "오답노트",
-            desc = "틀린 문제를 복습해요.",
-            type = "wrong-answered-notes",
-            enabled = wrongAnsweredNoteAccessible,
-            snackbar = "오답노트 문제가 없습니다."
-        )
-    )
-
-    val listState = rememberLazyListState()
-    val fling = rememberSnapFlingBehavior(listState)
-
-    val centerIndex by remember {
-        derivedStateOf {
-            val info = listState.layoutInfo
-            val vpCenter = (info.viewportStartOffset + info.viewportEndOffset) / 2
-            info.visibleItemsInfo.minByOrNull { item ->
-                val center = item.offset + item.size / 2
-                abs(center - vpCenter)
-            }?.index ?: 0
-        }
-    }
-    var userHasScrolled by remember { mutableStateOf(false) }
-    var lastAppliedIndex by remember { mutableIntStateOf(-1) }
-
-    LaunchedEffect(0, items.size) {
-        if (0 in items.indices) {
-            listState.scrollToItem(0)
-            lastAppliedIndex = 0
-        }
-    }
-
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.isScrollInProgress }.collect { moving ->
-            if (moving) {
-                userHasScrolled = true
-            } else if (userHasScrolled && centerIndex != lastAppliedIndex) {
-                lastAppliedIndex = centerIndex
-            }
-        }
-    }
-
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        state = listState,
-        flingBehavior = fling,
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ){
-        itemsIndexed(items) { index, item ->
-            val selected = index == centerIndex
-            ProblemBox(
-                title = item.title,
-                context = item.desc,
-                selected = selected,
-                onClick = {
-                    navController.navigate(
-                        "problem/$unitId/${item.type}"
-                    )
-                },
-                enabled = item.enabled,
-                text = item.snackbar,
-                onShowSnackBar = onShowSnackBar
-            )
-        }
-    }
-}
-
-@Composable
-fun ProblemBox(
-    title: String,
-    context: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    enabled: Boolean,
-    text: String,
-    onShowSnackBar: (String) -> Unit,
-) {
-    Box(modifier = Modifier
-        .width(229.dp)
-        .aspectRatio(229f / 112f)
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clip(RoundedCornerShape(8.dp))
-                .background(
-                    brush = if (selected) Brush.linearGradient(
-                        colors = listOf(
-                            Color.White,
-                            Color.White
-                        )
-                    )
-                    else {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF240031).copy(alpha = 0.8f),
-                                Color(0xFF240031).copy(alpha = 0.2f)
-                            )
-                        )
-                    }
-                )
-                .border(1.dp, Color(0xFF6D6D6D), RoundedCornerShape(8.dp))
-                .padding(10.dp)
-                .clickable {
-                    if (enabled) {
-                        if (selected) {
-                            onClick()
-                        }
-                    } else {
-                        onShowSnackBar(text)
-                    }
-                }
-        ) {
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = pretendard,
-                    color = if (selected) Color(0xFF222124) else Color.White
-                )
-                Text(
-                    text = context,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight(500),
-                    fontFamily = pretendard,
-                    color = if (selected) Color(0xFF222124).copy(0.8f) else Color.White.copy(alpha = 0.8f),
-                    style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    )
-                )
-                Spacer(Modifier.weight(1f))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "문제 풀러 가기",
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = if (selected) Color(0xFF222124).copy(alpha = 0.8f) else Color.White.copy(
-                            alpha = 0.6f
-                        )
-                    )
-                    Icon(
-                        painter = painterResource(id = R.drawable.left_line),
-                        contentDescription = "to problem",
-                        modifier = Modifier.size(14.dp),
-                        tint = if (selected) Color(0xFF222124).copy(alpha = 0.6f) else Color.White.copy(
-                            alpha = 0.6f
-                        )
-                    )
-                }
-            }
-        }
-        if (selected) {
-            Image(
-                painter = painterResource(R.drawable.bokmark),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(18.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-12).dp, y = -4.dp)
-            )
-        }
-    }
-}
-
-
-@Composable
-fun LessonBox(
-    title: String,
-    completed: Boolean,
-    modifier: Modifier,
-    totalProblem: Int,
-    onClick: () -> Unit
-){
-    Box(
-        modifier = modifier
-            .width(104.dp)
-            .aspectRatio(104f / 129f)
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFF8B69FF), RoundedCornerShape(8.dp))
-            .clickable{onClick()},
-        contentAlignment = Alignment.Center,
-    ){
-        Image(
-            painter = painterResource(id = R.drawable.glass),
-            contentDescription = "back",
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Crop
-        )
-        Column (modifier = Modifier.padding(17.dp)) {
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = pretendard,
-                color = Color.White,
-                letterSpacing = (-0.8).sp,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFeatureSettings = "tnum")
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = if(completed) "학습 완료" else "학습 전",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
-                color = if(completed) Color.White else Color.White.copy(alpha = 0.6f)
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = "${totalProblem}문제",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = pretendard,
-                color = Color.White
-            )
-        }
-    }
-}
-
-@SuppressLint("SuspiciousModifierThen")
-fun Modifier.glow(
-    color: Color,
-    radius: Dp = 24.dp,
-    cornerRadius: Dp = 18.dp
-): Modifier = this.then(
-    drawBehind {
-        val paint = Paint()
-        val frameworkPaint = paint.asFrameworkPaint()
-
-        frameworkPaint.color = color.toArgb()
-        frameworkPaint.maskFilter =
-            BlurMaskFilter(radius.toPx(), BlurMaskFilter.Blur.NORMAL)
-
-        drawIntoCanvas { canvas ->
-            canvas.drawRoundRect(
-                0f,
-                0f,
-                size.width,
-                size.height,
-                cornerRadius.toPx(),
-                cornerRadius.toPx(),
-                paint
-            )
-        }
-    }
-)

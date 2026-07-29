@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,15 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
 import coil.compose.AsyncImage
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.ui.theme.pretendard
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.html.HtmlPlugin
@@ -187,7 +186,6 @@ enum class SheetState { Hidden, Half, Full }
 @Composable
 fun NoteSheetCustom(
     unitId: Int,
-    title: String,
     sheetState: SheetState,
     onStateChange: (SheetState) -> Unit,
     onDismiss: () -> Unit
@@ -205,7 +203,7 @@ fun NoteSheetCustom(
 
     val targetRatio = when (sheetState) {
         SheetState.Hidden -> 0f
-        SheetState.Half   -> 0.65f
+        SheetState.Half   -> 0.72f
         SheetState.Full   -> 0.9f
     }
     val animatedRatio by animateFloatAsState(targetRatio, label = "sheetRatio")
@@ -218,11 +216,18 @@ fun NoteSheetCustom(
         if (sheetState != SheetState.Hidden) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .matchParentSize()
+                    .background(
+                        Color.Black.copy(alpha = 0.35f)
+                    )
                     .clickable(
                         indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { onStateChange(SheetState.Hidden) }
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        }
+                    ) {
+                        onStateChange(SheetState.Hidden)
+                    }
             )
         }
         Box(
@@ -263,7 +268,9 @@ fun NoteSheetCustom(
                 }
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -280,41 +287,44 @@ fun NoteSheetCustom(
                     )
                 }
 
-                Text(
-                    text = "개념노트",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = pretendard,
-                    color = Color(0xFF222124),
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-                Text(
-                    text = title,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = pretendard,
-                    color = Color(0xFF6D6D6D),
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-
-                HorizontalDivider(
-                    color = Color(0xFFA8A8A8),
-                    thickness = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(53.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "개념노트",
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg2)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .padding(bottom = 80.dp)
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
                         MarkdownContent(noteText)
                         Spacer(Modifier.height(60.dp))
                     }
+                }
+                Box(
+                    modifier = Modifier
+                        .height(88.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BlockButton(
+                        text = "닫기",
+                        onClick = onDismiss,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.height(48.dp)
+                    )
                 }
             }
         }

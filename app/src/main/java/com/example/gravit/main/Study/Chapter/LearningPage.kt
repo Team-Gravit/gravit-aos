@@ -10,16 +10,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -60,16 +57,24 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.PrimitiveColor
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.ChapterPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Home.RoundedGauge
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.share.TabBar
 import com.inuappcenter.gravit.ui.theme.mbc1961
 import com.inuappcenter.gravit.ui.theme.pretendard
 import kotlin.collections.map
 
 
+enum class LearningTab { Chapter, AI }
+
 @Composable
-fun ChapterScreen(
+fun Learning(
     navController: NavController,
     onSessionExpired: () -> Unit
 ){
@@ -78,9 +83,12 @@ fun ChapterScreen(
         factory = ChapterVMFactory(RetrofitInstance.api, context)
     )
     val ui by vm.state.collectAsState()
-
+    var selectedTab by remember { mutableStateOf(LearningTab.Chapter) }
     var navigated by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { vm.load() }
+
+    LaunchedEffect(Unit) {
+        vm.load()
+    }
     LaunchedEffect(ui) {
         if (navigated) return@LaunchedEffect
 
@@ -127,9 +135,11 @@ fun ChapterScreen(
 
         is ChapterViewModel.UiState.Success -> {
             val chapters = (ui as ChapterViewModel.UiState.Success).data
-            ChapterUI(
+            LearningUI(
                 navController = navController,
-                chapters = chapters
+                chapters = chapters,
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it }
             )
         }
         else -> Unit
@@ -137,96 +147,134 @@ fun ChapterScreen(
 }
 
 @Composable
-private fun ChapterUI(
+private fun LearningUI(
     navController: NavController,
-    chapters: List<ChapterPageResponse>
+    chapters: List<ChapterPageResponse>,
+    selectedTab: LearningTab,
+    onTabSelected: (LearningTab) -> Unit
 ){
-    Box(
+    val systemUiController = rememberSystemUiController()
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = true
+        )
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
-            .background(Color.White)
+            .background(AppColor.bg0)
     ) {
+        TopBar(navController, "학습", useIcon = false)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-
+                .background(AppColor.bg1)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "학습",
-                    fontFamily = pretendard,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF030303),
-                    modifier = Modifier
-                        .padding(start = 20.dp)
-                        .align(Alignment.CenterStart)
-                )
-            }
-
-            val buttons = remember(chapters) { mapToButtons(chapters) }
-
-            Column(
-                modifier = Modifier
-                    .background(Color(0xFFF2F2F2))
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 16.dp
+            Spacer(Modifier.height(20.dp))
+            TabBar(
+                selectedIndex = when (selectedTab) {
+                    LearningTab.Chapter -> 0
+                    LearningTab.AI -> 1
+                },
+                onTabSelected = { index ->
+                    onTabSelected(
+                        if (index == 0) {
+                            LearningTab.Chapter
+                        } else {
+                            LearningTab.AI
+                        }
                     )
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                buttons.chunked(2).forEach { pair ->
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        pair.forEachIndexed { index, data ->
+                },
+                tab1 = "개념학습",
+                tab2 = "면접대비"
+            )
+            when (selectedTab) {
+                LearningTab.Chapter -> {
+                    ChapterUI(
+                        navController = navController,
+                        chapters = chapters
+                    )
+                }
 
-                            //val enabled = data.chapterId < 4
-                            ChapterButton(
-                                description = data.description,
-                                text = data.title,
-                                planet = data.planetRes,
-                                rate = data.rate,
-                                onClick = {
-                                    navController.navigate("unit/${data.chapterId}")
-                                    /**if(enabled) {
-                                        navController.navigate("unit/${data.chapterId}")
-                                    }**/
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(160f / 166f)
-                                    .shadow(4.dp, RoundedCornerShape(10.dp)),
-                                isRight = (index == 1),
-                                //enabled = enabled
-                            )
-                            if (index == 0 && pair.size > 1) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-                        }
-                        if (pair.size == 1) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Spacer(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(160f / 166f)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
+                LearningTab.AI -> {
                 }
             }
         }
     }
 }
-data class ChapterButtonUI(
+
+@Composable
+private fun ChapterUI(
+    navController: NavController,
+    chapters: List<ChapterPageResponse>
+) {
+    val buttons = remember(chapters) { mapToButtons(chapters) }
+
+    Column(
+        modifier = Modifier
+            .background(Color(0xFFF2F2F2))
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp
+            )
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        buttons.chunked(2).forEach { pair ->
+
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                pair.forEachIndexed { index, data ->
+
+                    ChapterButton(
+                        description = data.description,
+                        text = data.title,
+                        planet = data.planetRes,
+                        rate = data.rate,
+                        onClick = {
+                            navController.navigate(
+                                "unit/${data.chapterId}"
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(160f / 166f)
+                            .shadow(
+                                4.dp,
+                                RoundedCornerShape(8.dp)
+                            ),
+                        isRight = index == 1
+                    )
+
+                    if (index == 0 && pair.size > 1) {
+                        Spacer(
+                            modifier = Modifier.width(12.dp)
+                        )
+                    }
+                }
+
+                if (pair.size == 1) {
+                    Spacer(
+                        modifier = Modifier.width(12.dp)
+                    )
+
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(160f / 166f)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+data class ChapterButtonData(
     val chapterId: Int,
     val title: String,
     val description: String,
@@ -234,7 +282,7 @@ data class ChapterButtonUI(
     val planetRes: Int,
 )
 
-private val csChapterName = mapOf(
+val csChapterName = mapOf(
     1 to "data-structure",
     2 to "algorithm",
     3 to "network"
@@ -242,6 +290,7 @@ private val csChapterName = mapOf(
 fun resolvePlanetRes(id: Int): Int {
     return planetById[id] ?: R.drawable.algorithm_chapter
 }
+
 val planetById = mapOf(
     1 to R.drawable.data_structure_chapter,
     2 to R.drawable.algorithm_chapter,
@@ -253,9 +302,9 @@ val planetById = mapOf(
     8 to R.drawable.programming_language_chapter,
 )
 
-fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonUI> {
+fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonData> {
     return chapters.map { c ->
-        ChapterButtonUI(
+        ChapterButtonData(
             chapterId = c.chapterSummaryResponse.chapterId,
             title = c.chapterSummaryResponse.title,
             description = c.chapterSummaryResponse.description,
@@ -304,9 +353,9 @@ fun ChapterButton(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 15.dp)
+                    .padding(top = 12.dp)
             ) {
-                Column(modifier = Modifier.padding(horizontal = 10.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -320,7 +369,7 @@ fun ChapterButton(
                             modifier = Modifier
                                 .align(Alignment.CenterVertically)
                                 .weight(1f),
-                            color = Color.White
+                            color = AppColor.CTA_text
                         )
                         Box {
                             Icon(
@@ -329,7 +378,7 @@ fun ChapterButton(
                                 modifier = Modifier
                                     .size(24.dp)
                                     .clickable { showTooltip = !showTooltip },
-                                tint = Color.White
+                                tint = AppColor.CTA_text
                             )
                             Popup(
                                 isShowing = showTooltip,
@@ -345,6 +394,12 @@ fun ChapterButton(
                         modifier = Modifier.fillMaxWidth(),
                         height = 10.dp,
                         width = 0.dp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${rate.toInt()}%",
+                        style = AppTypography.Label1,
+                        color = PrimitiveColor.Purple50
                     )
 
                 }

@@ -36,6 +36,7 @@ fun TopBar(
     height: Dp = 48.dp,
     useIcon: Boolean = true,
     useCloseIcon: Boolean = false,
+    useAlarmIcon: Boolean = false,
     isOnboarding: Boolean = false
 ) {
     val context = LocalContext.current
@@ -75,6 +76,22 @@ fun TopBar(
                                 AuthPrefs.clear(context)
                             }
                             navController.popBackStack()
+                        },
+                    tint = AppColor.icon_default
+                )
+            }
+            if(useAlarmIcon){
+                Icon(
+                    painter = painterResource(id = R.drawable.bell),
+                    contentDescription = "알림",
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 20.dp)
+                        .size(24.dp)
+                        .clickable {
+                            navController.navigate("user/notification"){
+                                launchSingleTop = true
+                            }
                         },
                     tint = AppColor.icon_default
                 )

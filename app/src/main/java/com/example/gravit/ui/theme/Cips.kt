@@ -2,6 +2,7 @@ package com.example.gravit.ui.theme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,7 +50,10 @@ fun Cip(
 
     Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(
+            minWidth = 1.dp,
+            minHeight = 1.dp
+        ),
         enabled = enabled,
         shape = RoundedCornerShape(60.dp),
         colors = ButtonDefaults.buttonColors(
@@ -57,7 +61,7 @@ fun Cip(
             contentColor = contentColor
         ),
         border = BorderStroke(1.dp, borderColor),
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
     ) {
         if (text != null) {
             Text(

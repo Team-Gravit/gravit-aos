@@ -94,7 +94,7 @@ fun MainScreen(rootNavController: NavController) {
                 composable("home") { HomeScreen(innerNavController, goToLoginChoice) }
 
                 //chapter
-                composable("chapter") { ChapterScreen(innerNavController, goToLoginChoice) }
+                composable("chapter") { Learning(innerNavController, goToLoginChoice) }
 
                 composable(
                     route = "unit/{chapterId}",
