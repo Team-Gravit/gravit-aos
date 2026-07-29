@@ -1,7 +1,5 @@
 package com.inuappcenter.gravit.main.Study.Lesson
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -25,7 +23,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +48,7 @@ import kotlin.math.roundToInt
 @Composable
 fun LessonScreen(
     navController: NavController,
-    lessonId: Int,
+    lessonId: Long,
     onSessionExpired: () -> Unit
 ) {
     val swVm: StopwatchViewModel = viewModel()
@@ -70,7 +67,7 @@ fun LessonScreen(
             lifecycleOwner.lifecycle.removeObserver(obs)
         }
     }
-    val resultsMap = remember { mutableStateMapOf<Int, ProblemSubmissionRequests>() }
+    val resultsMap = remember { mutableStateMapOf<Long, ProblemSubmissionRequests>() }
     var submitting by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -156,10 +153,12 @@ fun LessonScreen(
                     vm.initBookmarks(problems)
                 }
 
-                fun recordResult(problemId: Int, isCorrect: Boolean) {
+                fun recordResult(problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) {
                     resultsMap[problemId] = ProblemSubmissionRequests(
                         problemId = problemId,
-                        isCorrect = isCorrect
+                        isCorrect = isCorrect,
+                        selectedOptionId = selectedOptionId,
+                        submittedContent = submittedContent
                     )
                 }
 
