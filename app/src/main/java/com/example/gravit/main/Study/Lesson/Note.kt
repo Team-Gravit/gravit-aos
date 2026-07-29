@@ -216,12 +216,18 @@ fun NoteSheetCustom(
         if (sheetState != SheetState.Hidden) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
+                    .matchParentSize()
+                    .background(
+                        Color.Black.copy(alpha = 0.35f)
+                    )
                     .clickable(
                         indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { onStateChange(SheetState.Hidden) }
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        }
+                    ) {
+                        onStateChange(SheetState.Hidden)
+                    }
             )
         }
         Box(
@@ -281,12 +287,12 @@ fun NoteSheetCustom(
                     )
                 }
 
-                Box (
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(53.dp),
                     contentAlignment = Alignment.Center
-                ){
+                ) {
                     Text(
                         text = "개념노트",
                         style = AppTypography.Headline2,
@@ -302,18 +308,18 @@ fun NoteSheetCustom(
                         .background(AppColor.bg2)
                         .padding(bottom = 80.dp)
                 ) {
-                    Column (
+                    Column(
                         modifier = Modifier.padding(16.dp)
-                    ){
+                    ) {
                         MarkdownContent(noteText)
                         Spacer(Modifier.height(60.dp))
                     }
                 }
-                Box (
+                Box(
                     modifier = Modifier
                         .height(88.dp),
                     contentAlignment = Alignment.Center
-                ){
+                ) {
                     BlockButton(
                         text = "닫기",
                         onClick = onDismiss,

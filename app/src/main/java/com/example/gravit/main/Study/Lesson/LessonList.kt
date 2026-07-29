@@ -422,18 +422,16 @@ fun LessonListUI(
                 }
             }
         }
-        AnimatedVisibility(
-            visible = sheetState != SheetState.Hidden,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it })
-        ) {
-            NoteSheetCustom(
-                unitId = unitId,
-                sheetState = sheetState,
-                onStateChange = { newState -> sheetState = newState },
-                onDismiss = { sheetState = SheetState.Hidden }
-            )
-        }
+        NoteSheetCustom(
+            unitId = unitId,
+            sheetState = sheetState,
+            onStateChange = { newState ->
+                sheetState = newState
+            },
+            onDismiss = {
+                sheetState = SheetState.Hidden
+            }
+        )
 
         if (snackBar != null) {
             Box(
