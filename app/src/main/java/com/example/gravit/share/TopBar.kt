@@ -89,7 +89,9 @@ fun TopBar(
                         .padding(end = 20.dp)
                         .size(24.dp)
                         .clickable {
-                            navController.navigate("user/notification")
+                            navController.navigate("user/notification"){
+                                launchSingleTop = true
+                            }
                         },
                     tint = AppColor.icon_default
                 )
