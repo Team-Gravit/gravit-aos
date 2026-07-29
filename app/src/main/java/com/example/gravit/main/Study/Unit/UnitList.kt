@@ -190,7 +190,7 @@ private fun UnitListContent(
 
             Column(
                 modifier = Modifier
-                    .padding(start = 16.dp, end = 15.dp, top = 20.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 20.dp)
             ) {
                 Text(
                     text = chapterData.title,
