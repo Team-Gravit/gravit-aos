@@ -26,11 +26,12 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
-import com.google.common.math.LinearTransformation.horizontal
+import com.example.gravit.ui.theme.InlineButton
+import com.example.gravit.ui.theme.InlineButtonIcon
+import com.example.gravit.ui.theme.InlineButtonState
 import com.inuappcenter.gravit.api.OptionDto
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
-import com.inuappcenter.gravit.api.AnswerResponse
 import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank
@@ -151,6 +152,20 @@ fun MultipleChoice(
                         idx = idx,
                     )
                 }
+                Spacer(Modifier.height(16.dp))
+                InlineButton(
+                    text = "풀이보기",
+                    onClick = {},
+                    state = InlineButtonState.Stroke_Color,
+                    icon = InlineButtonIcon.L,
+                    style = AppTypography.Label2,
+                    color = AppColor.CTA,
+                    iconAsset = R.drawable.book,
+                    iconColor = AppColor.icon_color,
+                    modifier = Modifier
+                        .size(97.dp, 32.dp)
+                        .align(Alignment.End)
+                )
             }
             Box(
                 modifier = Modifier
@@ -187,7 +202,13 @@ fun MultipleChoice(
             }
         }
         if(submitted && isCorrect!=null){
-            Feedback(isCorrect = isCorrect, AnswerResponse(listOf("1", "2"), "설명"), onNext = onNext, isLast = isLast)
+            val selectedOption = selectedIndex?.let { index -> displayOptions.getOrNull(index) }
+            Feedback(
+                isCorrect = isCorrect,
+                onNext = onNext,
+                isLast = isLast,
+                explanation = selectedOption?.explanation.orEmpty()
+            )
         }
         /* if (submitted || removeSnackBarText != null) {
             Box(
