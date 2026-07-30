@@ -1,8 +1,14 @@
 package com.inuappcenter.gravit.main.Home
 
+import android.R.attr.onClick
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,7 +44,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -124,6 +133,7 @@ fun HomeScreen(
             ) {
                 CircularProgressIndicator()
             }
+            //HomeSkeletonUI()
         }
 
         is HomeViewModel.UiState.Success -> {
@@ -147,17 +157,6 @@ fun HomeUI(
     units: List<Units>,
     navController: NavController
 ) {
-
-    val config = LocalConfiguration.current
-    val designWidth = 360f
-    val designHeight = 740f
-
-    val scaleW = config.screenWidthDp.toFloat() / designWidth
-    val scaleH = config.screenHeightDp.toFloat() / designHeight
-
-    fun dw(v: Float) = (v * scaleW).dp
-    fun dh(v: Float) = (v * scaleH).dp
-
     val userLevelInfo = home.mainProfile.userLevelDetailResponse
     val userLeagueInfo = home.mainLeagueResponse
     val userLearningInfo = home.mainLearningResponse
@@ -182,13 +181,15 @@ fun HomeUI(
     val consecutiveDays = userLearningInfo.consecutiveSolvedDays
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg2)
     ) {
         item{
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF2F2F2))
+                    .background(AppColor.bg2)
             ){
                 Image(
                     painter = painterResource(id = R.drawable.main_back),
@@ -315,17 +316,23 @@ fun HomeUI(
                         Text(
                             text = "어서오세요, ${nickname}님!",
                             style = AppTypography.Title3,
-                            color = PrimitiveColor.Gray50
+                            color = PrimitiveColor.Gray50,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(30.dp)
                         )
 
                         Text(
                             text = "그래빗과 함께 cs 지식을 마스터해요!",
                             style = AppTypography.Body1_Nomal,
-                            color = PrimitiveColor.Gray100
+                            color = PrimitiveColor.Gray100,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(24.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Column(
                         modifier = Modifier.fillMaxWidth()
@@ -444,7 +451,7 @@ fun HomeUI(
                             }
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -471,7 +478,7 @@ fun HomeUI(
                                                 launchSingleTop = true
                                             }
                                         }
-                                        .padding(all = dh(16f))
+                                        .padding(16.dp)
                                 ) {
                                     Column {
                                         Text(
@@ -488,7 +495,7 @@ fun HomeUI(
                                             color = Color.Black
                                         )
 
-                                        Spacer(modifier = Modifier.height(dh(4f)))
+                                        Spacer(modifier = Modifier.height(4.dp))
 
                                         Text(
                                             text = "완료 시 +${missionInfo.awardXp} XP",
@@ -521,7 +528,7 @@ fun HomeUI(
                                         Spacer(Modifier.height(4.dp))
 
                                         RoundedGauge(
-                                            height = dh(8f),
+                                            height = 8.dp,
                                             width = 0.dp,
                                             rate = missionInfo.progressRate,
                                             modifier = Modifier.fillMaxWidth(),
@@ -530,20 +537,23 @@ fun HomeUI(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.width(dw(16f)))
+                                Spacer(modifier = Modifier.width(12.dp))
 
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(156.dp)
                                         .clip(RoundedCornerShape(8.dp))
+                                        .clickable(onClick = { navController.navigate("unit/${recommendedInfo?.chapterId?: 1}") })
                                 ) {
                                     Image(
                                         painter = painterResource(id = resolvePlanetRes(recommendedInfo?.chapterId?: 1)),
-                                        contentDescription = null
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.FillWidth
                                     )
                                     Column(
-                                        modifier = Modifier.padding(all = dh(16f))
+                                        modifier = Modifier.padding(16.dp)
                                     ){
                                         Text(
                                             text = "새 주제 시작하기",
@@ -559,7 +569,7 @@ fun HomeUI(
                                             color = PrimitiveColor.Gray50
                                         )
 
-                                        Spacer(modifier = Modifier.height(dh(3f)))
+                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         Text(
                                             text = recommendedInfo?.unitTitle?: "배열",
@@ -571,23 +581,20 @@ fun HomeUI(
                                         modifier = Modifier
                                             .align(Alignment.BottomStart)
                                             .fillMaxWidth()
-                                            .padding(all = dh(16f))
+                                            .padding(16.dp)
                                     ){
                                         Text(
                                             text = "학습하러 가기 ->",
                                             style = AppTypography.Label1,
                                             color = Color(0xFFFBF1FF),
-                                            textDecoration = TextDecoration.Underline,
-                                            modifier = Modifier.clickable(onClick = {
-                                                navController.navigate("unit/${recommendedInfo?.chapterId?: 1}")
-                                            })
+                                            textDecoration = TextDecoration.Underline
                                         )
                                     }
                                 }
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(dh(16f)))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     val chapterId = userLearningInfo.recentSolvedChapterId
                     val chapterName = userLearningInfo.recentSolvedChapterTitle
@@ -623,6 +630,213 @@ fun HomeUI(
                         }
                     )
                     Spacer(Modifier.height(10.dp))
+                }
+            }
+        }
+    }
+}
+@Composable
+fun Modifier.shimmer(): Modifier {
+    val transition = rememberInfiniteTransition(label = "")
+    val translateAnim = transition.animateFloat(
+        initialValue = -300f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1200,
+                easing = LinearEasing
+            )
+        ),
+        label = ""
+    )
+
+    val brush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFE5E5E5),
+            Color(0xFFF5F5F5),
+            Color(0xFFE5E5E5)
+        ),
+        start = Offset(translateAnim.value, 0f),
+        end = Offset(translateAnim.value + 300f, 300f)
+    )
+
+    return this.background(brush)
+}
+@Composable
+fun SkeletonBox(
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .shimmer()
+    )
+}
+@Composable
+fun SkeletonStreakCard() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        SkeletonBox(
+            Modifier
+                .height(14.dp)
+                .width(80.dp)
+        )
+        Spacer(Modifier.height(12.dp))
+        SkeletonBox(
+            Modifier
+                .height(30.dp)
+                .width(100.dp)
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            repeat(7) {
+                SkeletonBox(
+                    Modifier.size(32.dp)
+                )
+            }
+        }
+    }
+}
+@Composable
+fun SkeletonPreviousCard() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        SkeletonBox(
+            Modifier
+                .height(16.dp)
+                .width(120.dp)
+        )
+        Spacer(Modifier.height(18.dp))
+        SkeletonBox(
+            Modifier
+                .height(8.dp)
+                .fillMaxWidth()
+        )
+    }
+}
+@Composable
+fun SkeletonMissionCard(
+    modifier: Modifier
+) {
+    Column(
+        modifier
+            .height(156.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        SkeletonBox(
+            Modifier
+                .height(14.dp)
+                .width(60.dp)
+        )
+        Spacer(Modifier.height(10.dp))
+        SkeletonBox(
+            Modifier
+                .height(22.dp)
+                .fillMaxWidth(.8f)
+        )
+        Spacer(Modifier.height(8.dp))
+        SkeletonBox(
+            Modifier
+                .height(14.dp)
+                .width(70.dp)
+        )
+        Spacer(Modifier.weight(1f))
+        SkeletonBox(
+            Modifier
+                .height(8.dp)
+                .fillMaxWidth()
+        )
+    }
+}
+@Composable
+fun HomeSkeletonUI() {
+    LazyColumn {
+        item {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF2F2F2))
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.main_back),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.FillWidth
+                )
+                Column(
+                    Modifier
+                        .padding(WindowInsets.statusBars.asPaddingValues())
+                        .padding(16.dp)
+                ) {
+                    Row {
+                        Box(
+                            Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        SkeletonBox(
+                            Modifier
+                                .height(18.dp)
+                                .width(40.dp)
+                        )
+                        Spacer(Modifier.width(24.dp))
+                        Box(
+                            Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        SkeletonBox(
+                            Modifier
+                                .height(18.dp)
+                                .width(70.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(90.dp))
+                    Box(
+                        Modifier
+                            .height(30.dp)
+                            .fillMaxWidth(.6f)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .height(24.dp)
+                            .fillMaxWidth(.5f)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    SkeletonStreakCard()
+                    Spacer(Modifier.height(12.dp))
+                    Row {
+                        SkeletonMissionCard(
+                            Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        SkeletonMissionCard(
+                            Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    SkeletonPreviousCard()
+                    Spacer(Modifier.height(20.dp))
                 }
             }
         }
