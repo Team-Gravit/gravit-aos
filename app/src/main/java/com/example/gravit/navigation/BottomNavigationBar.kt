@@ -1,4 +1,4 @@
-
+package com.example.gravit.navigation
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,6 +15,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,8 +24,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.example.gravit.ui.theme.AppColor
 
 
 data class BottomNavItem(
@@ -39,7 +43,7 @@ fun BottomNavigationBar(navController: NavHostController) {
         BottomNavItem("home", R.drawable.unselected_home_button, R.drawable.selected_home_button, "홈"),
         BottomNavItem("chapter", R.drawable.unselected_study_button, R.drawable.selected_study_button, "학습"),
         BottomNavItem("league", R.drawable.unselected_league_button, R.drawable.selected_league_button, "리그"),
-        BottomNavItem("user", R.drawable.unselected_user_button, R.drawable.selected_user_button, "사용자")
+        BottomNavItem("user", R.drawable.unselected_user_button, R.drawable.selected_user_button, "마이그래빗")
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -75,9 +79,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                         else -> currentRoute == item.route ||
                                 currentRoute.startsWith("${item.route}/")
                     }
-                    Box(
+                    Column(
                         modifier = Modifier
-                            .height(43.dp)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -120,7 +123,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                                     }
                                 }
                             },
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
                             painter = painterResource(
@@ -128,6 +131,14 @@ fun BottomNavigationBar(navController: NavHostController) {
                             ),
                             contentDescription = item.label,
                             modifier = Modifier.height(24.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = item.label ?: "",
+                            fontSize = 12.sp,
+                            color = if (selected) AppColor.Main2 else Color(0xFF625B71),
                         )
                     }
 

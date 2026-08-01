@@ -30,6 +30,7 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import com.example.gravit.ui.theme.AppColor
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 
@@ -76,14 +77,14 @@ fun LoadingScreen(){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Loading....",
-                fontSize = 20.sp,
+                text = "로딩중...",
+                fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = pretendard,
-                color = Color(0xFF383838),
+                color = AppColor.text1,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(61.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 text = "알고 계셨나요?",
                 fontWeight = FontWeight.Medium,
@@ -91,7 +92,7 @@ fun LoadingScreen(){
                 fontSize = 15.sp,
                 color = Color(0xFF494949),
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(1.dp))
             Text(
                 text = randomTip,
                 fontSize = 15.sp,
