@@ -418,6 +418,9 @@ class UserScreenVM (
             )
         )
     }
+    fun clearCongratulateState() {
+        _stateCongratulate.value = CongratulateUiState.Idle
+    }
 }
 
 @Suppress("UNCHECKED_CAST")
