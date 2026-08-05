@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "399805782973",
+    "project_id": "gravit-f3ccc",
+    "storage_bucket": "gravit-f3ccc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:399805782973:android:eb36d8bd5202a0f54290d4",
+        "android_client_info": {
+          "package_name": "com.inuappcenter.gravit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDW3nPM1D1laB6LDJToHYQqZoSye6Sa4Jk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,8 +2,11 @@ package com.inuappcenter.gravit.main.Study.Problem
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,11 +19,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.main.ResultDialog
 import com.example.gravit.ui.theme.AppColor
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.ui.theme.pretendard
@@ -121,86 +130,202 @@ fun ReportDialog(
             },
             properties = DialogProperties(
                 dismissOnClickOutside = false,
-                dismissOnBackPress = false
+                dismissOnBackPress = false,
+                usePlatformDefaultWidth = false
             )
         ) {
             Surface(
-                modifier = Modifier.height(497.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White
-            ) {
-                Column (modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)) {
-                    Image(
-                        painter = painterResource(id = R.drawable.report_color),
-                        contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFFF8F8F8)
+            ){
+                Column {
+                    Column(
                         modifier = Modifier
-                            .size(50.dp)
-                            .align(Alignment.CenterHorizontally)
-                    )
-                    Text(
-                        text = "신고하기",
-                        fontFamily = pretendard,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 20.sp,
-                        color = Color.Black,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = 16.dp,
+                                vertical = 20.dp
+                            )
+                    ) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = "신고하기",
+                                fontFamily = pretendard,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFFA8A8A8)
+                            )
+
+
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .clickable(
+                                        interactionSource = remember {
+                                            MutableInteractionSource()
+                                        },
+                                        indication = null
+                                    ) {
+                                        showDialog = false
+                                        onOverlayClosed()
+                                    }
+                            )
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 1.dp,
+                        color = Color(0xFFE5E5E5)
                     )
 
-                    Column(Modifier.padding(vertical = 16.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = 16.dp,
+                                vertical = 16.dp
+                            )
+                    ) {
+
                         options.forEachIndexed { idx, opt ->
+
                             Option(
                                 isChecked = selectedIndex == idx,
                                 text = opt.first,
-                                onClick = { selectedIndex = idx}
+                                onClick = {
+                                    selectedIndex = idx
+                                }
                             )
-                            Spacer(Modifier.height(8.dp))
+
+                            Spacer(
+                                modifier = Modifier.height(12.dp)
+                            )
                         }
 
-                        OutlinedTextField(
-                            value = text,
-                            onValueChange = { text = it },
-                            placeholder = {
-                                Text(
-                                    text = "어떤 부분에 문제가 있었는지 최대한 자세하게 작성해 주세요.\n유형이 두 개 이상인 경우, 기타를 선택하고 자세하게 작성해 주세요.",
-                                    color = Color(0xFF868686),
-                                    fontFamily = pretendard,
-                                    modifier = Modifier.verticalScroll(rememberScrollState())
-                                )
-                            },
-                            textStyle = TextStyle(
-                                color = Color.Black,
-                                fontFamily = pretendard,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 15.sp
-                            ),
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(102.dp),
-                            shape = RoundedCornerShape(10.dp),
-                        )
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFFE0E0E0),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(
+                                    horizontal = 12.dp,
+                                    vertical = 10.dp
+                                )
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "신고내용",
+                                    fontFamily = pretendard,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = AppColor.divider1
+                                )
+
+                                Spacer(
+                                    modifier = Modifier.height(6.dp)
+                                )
+
+                                BasicTextField(
+                                    value = text,
+                                    onValueChange = {
+                                        text = it
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+
+                                    textStyle = TextStyle(
+                                        color = Color.Black,
+                                        fontFamily = pretendard,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp
+                                    )
+                                )
+                            }
+                        }
                     }
-                    Row {
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 16.dp
+                            )
+                    ) {
                         ReportButton(
                             onClick = {
+
                                 showDialog = false
                                 onOverlayClosed()
-                                      },
+
+                            },
+
                             text = "그만두기",
+
                             bgC = Color(0xFFA8A8A8),
-                            modifier = Modifier.weight(1f)
+
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(45.dp)
                         )
-                        Spacer(Modifier.width(19.dp))
+
+                        Spacer(
+                            modifier = Modifier.width(19.dp)
+                        )
+
+
                         ReportButton(
                             onClick = {
-                                val selected = selectedIndex?.let { options[it] }
-                                val reportType = selected?.second ?: return@ReportButton
-                                val content = text
-                                vm.submit(reportType, content, problemId)
+
+                                val selected =
+                                    selectedIndex?.let { options[it] }
+
+                                val reportType =
+                                    selected?.second
+                                        ?: return@ReportButton
+
+                                vm.submit(
+                                    reportType,
+                                    text,
+                                    problemId
+                                )
+
+
                                 showDialog = false
-                                showConfirm = true },
+                                showConfirm = true
+                            },
+
+
                             text = "제출하기",
+
                             bgC = Color(0xFF8100B3),
-                            modifier = Modifier.weight(1f),
+
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(45.dp),
+
                             enabled = canSubmit
                         )
                     }
@@ -218,82 +343,21 @@ fun ReportDialog(
             properties = DialogProperties(
                 dismissOnClickOutside = false,
                 dismissOnBackPress = false,
+                usePlatformDefaultWidth = false
             )
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                ,
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White
-            ){
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 46.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally)
-                {
-                    Image(
-                        painter = painterResource(id = R.drawable.report_check),
-                        contentDescription = null,
-                        modifier = Modifier.size(52.dp)
-
-                        )
-                    Column (
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 25.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ){
-                        Spacer(Modifier.height(20.dp))
-                        Text(
-                            text = "회원님의 신고가 접수되었어요.",
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 20.sp,
-                            color = Color.Black,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            text = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight(400),
-                            fontSize = 14.sp,
-                            color = Color(0xFF868686),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            lineHeight = 19.6.sp,
-                            letterSpacing = 0.sp
-                        )
-                    }
-                    Spacer(Modifier.height(19.dp))
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(59.dp),
-                        onClick = {
-                            showConfirm = false
-                            onOverlayClosed()
-                                  },
-                        shape = RoundedCornerShape(0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            contentColor = Color.White,
-                            containerColor = Color(0xFF8100B3)
-                        )
-                    ) {
-                        Text(
-                            text = "확인",
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-                    }
+            ResultDialog(
+                onDismiss = {
+                    showDialog = false
+                },
+                titleText = "회원님의 신고가\n접수되었어요.",
+                descriptionText = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
+                buttonText = "확인",
+                onButtonClick = {
+                    showConfirm = false
+                    onOverlayClosed()
                 }
-
-            }
+            )
         }
     }
 }
@@ -338,26 +402,44 @@ fun Option(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
+            .height(42.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null // 퍼지는 효과 끔
+                indication = null
             ) { onClick() }
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color(0xFFF2F2F2)),
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White)
+            .border(
+                width = 1.dp,
+                color = AppColor.divider1,
+                shape = RoundedCornerShape(8.dp)
+            ),
         verticalAlignment = Alignment.CenterVertically
     ){
-        Spacer(Modifier.width(16.dp))
-        Image(
-            painter = painterResource(id = if(isChecked) R.drawable.checked else R.drawable.unchecked),
-            contentDescription = if(isChecked) "checked" else "unchecked",
-            modifier = Modifier.size(24.dp)
+
+        Spacer(
+            Modifier.width(12.dp)
         )
-        Spacer(Modifier.width(8.dp))
+
+        Image(
+            painter = painterResource(
+                id = if(isChecked)
+                    R.drawable.checked
+                else
+                    R.drawable.unchecked
+            ),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+
+        Spacer(
+            Modifier.width(10.dp)
+        )
+
         Text(
             text = text,
             fontFamily = pretendard,
-            fontSize = 16.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             color = Color(0xFF383838)
         )

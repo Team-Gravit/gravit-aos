@@ -128,13 +128,7 @@ fun HomeScreen(
 
     when (ui) {
         HomeViewModel.UiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-            //HomeSkeletonUI()
+            HomeSkeletonUI()
         }
 
         is HomeViewModel.UiState.Success -> {

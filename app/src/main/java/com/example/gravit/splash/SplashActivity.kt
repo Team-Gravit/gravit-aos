@@ -39,6 +39,7 @@ import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 import androidx.core.net.toUri
 import com.inuappcenter.gravit.api.RetrofitInstance.api
+import com.kakao.sdk.common.util.Utility
 import kotlinx.coroutines.launch
 
 
@@ -74,6 +75,7 @@ fun SplashScreen(
     val activity = context as? Activity
 
     suspend fun startSplash() {
+        Log.d("KAKAO", Utility.getKeyHash(context))
         if (isChecking) return
 
         isChecking = true

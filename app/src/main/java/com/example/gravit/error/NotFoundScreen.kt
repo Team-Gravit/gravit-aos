@@ -1,5 +1,6 @@
 package com.inuappcenter.gravit.error
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,10 +30,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.gravit.ui.theme.AppColor
 import com.inuappcenter.gravit.main.Study.Problem.ReportButton
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
@@ -41,7 +47,7 @@ fun NotFoundScreen(
     ErrorScreen(
         img = R.drawable.img404,
         title = "페이지를 찾을 수 없어요.",
-        content = "입력한 주소가 잘못되었거나,\n페이지가 이동되었거나 삭제되었을 수 있어요.\n주소를 다시 확인하시거나,\n홈으로 돌아가 서비스를 다시 이용해 주세요.",
+        content = "잘못된 주소이거나 삭제된 페이지입니다.\n주소를 확인하시거나 홈으로 이동해 주세요.",
         onClick1 = { navController.popBackStack("home", inclusive = false) },
         onClick2 = {navController.popBackStack()}
         )
@@ -72,7 +78,6 @@ fun ErrorScreen(
             Image(
                 painter = painterResource(id = img),
                 contentDescription = "404 img",
-                modifier = Modifier.size(276.dp, 281.dp)
             )
             Spacer(Modifier.height(30.dp))
             Text(
@@ -105,8 +110,11 @@ fun ErrorScreen(
                 .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
         ){
             ReportButton(
-                text = "이전으로",
-                bgC = Color(0xFFA8A8A8),
+                text = "돌아가기",
+                bgC = Color.Transparent,
+                borderColor = AppColor.bg2,
+                borderWidth = 1.dp,
+                textColor = AppColor.Main1,
                 modifier = Modifier
                     .height(50.dp)
                     .weight(1f),
@@ -124,9 +132,36 @@ fun ErrorScreen(
         }
     }
 }
+
+@Composable
+fun ReportButton(
+    text: String,
+    bgC: Color,
+    modifier: Modifier = Modifier,
+    textColor: Color = Color.White,
+    borderColor: Color = Color.Transparent,
+    borderWidth: Dp = 0.dp,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        border = BorderStroke(borderWidth, borderColor),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = bgC
+        )
+    ) {
+        Text(
+            text = text,
+            color = textColor
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun NotFoundScreenPreview() {
     val navController = rememberNavController()
     NotFoundScreen(navController)
 }
