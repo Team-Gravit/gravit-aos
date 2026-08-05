@@ -67,9 +67,9 @@ import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.AnswerResponse
 import com.inuappcenter.gravit.api.Problems
-import com.inuappcenter.gravit.main.ConfirmBottomSheet
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.main.ConfirmDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -370,7 +370,7 @@ fun ProblemUI(
             }
         }
         if (showSheet) {
-            ConfirmBottomSheet(
+            ConfirmDialog(
                 onDismiss = {
                     coroutineScope.launch { sheetState.hide() }
                     showSheet = false
@@ -380,7 +380,7 @@ fun ProblemUI(
                 titleText = "지금까지 푼 내역이\n모두 사라져요!",
                 descriptionText = "$unitTitle 학습출제가 중단됩니다.\n정말 학습을 그만두시나요?",
                 confirmButtonText = "계속하기",
-                cancelText = "그만두기",
+                cancelButtonText = "그만두기",
                 onConfirm = {
                     showSheet = false
                     swVm.start()

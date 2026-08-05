@@ -33,11 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.main.ResultDialog
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.error.isDeletionPending
-import com.inuappcenter.gravit.main.ConfirmBottomSheet
+import com.inuappcenter.gravit.main.ConfirmDialog
 import com.inuappcenter.gravit.main.User.Setting.DeleteAccountVM
 import com.inuappcenter.gravit.main.User.Setting.DeleteAccountVMFactory
 import com.inuappcenter.gravit.main.User.Setting.LogoutVMFactory
@@ -176,13 +177,13 @@ fun Setting(
 
         }
         if (showDeleteSheet) {
-            ConfirmBottomSheet(
+            ConfirmDialog(
                 onDismiss = { showDeleteSheet = false },
                 imageRes = R.drawable.study_popup,
                 titleText = "정말 탈퇴하실건가요?",
                 descriptionText = "계정을 삭제하면 저장된\n 모든 데이터가 사라져요.\n 정말로 계정을 삭제하실건가요?",
                 confirmButtonText = "돌아가기",
-                cancelText = "탈퇴하기",
+                cancelButtonText = "탈퇴하기",
                 onConfirm = {
                     showDeleteSheet = false
                 },
@@ -194,14 +195,20 @@ fun Setting(
                 }
             )
         }
-
         if (showSentDialog) {
-            WithdrawalSentDialog(
-                onConfirm = {
+            ResultDialog(
+                onDismiss = {
+                    showSentDialog = false
+                },
+                titleText = "탈퇴하신다니 정말 아쉬워요.",
+                descriptionText = "가입하신 이메일로 메일을\n전송해드렸으니 메일을 확인해주시고\n절차를 따라주세요.",
+                buttonText = "확인",
+                onButtonClick = {
                     showSentDialog = false
                 }
             )
         }
+
         if (deleteState is DeleteAccountVM.DeletionState.Loading) {
             Box(
                 modifier = Modifier

@@ -1,6 +1,6 @@
 package com.inuappcenter.gravit.navigation
 
-import BottomNavigationBar
+import com.example.gravit.navigation.BottomNavigationBar
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi

@@ -1,7 +1,9 @@
 package com.inuappcenter.gravit.error
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.inuappcenter.gravit.R
 
 @Composable
@@ -15,5 +17,16 @@ fun UnauthorizedScreen(
         content = "이 페이지는 로그인한 사용자만\n이용할 수 있어요.\n계속하시려면 로그인 후 다시 시도해 주세요.",
         onClick1 = { onSessionExpired() },
         onClick2 = {navController.popBackStack()}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun UnauthorizedScreenPreview() {
+    val navController = rememberNavController()
+
+    UnauthorizedScreen(
+        navController = navController,
+        onSessionExpired = {}
     )
 }
