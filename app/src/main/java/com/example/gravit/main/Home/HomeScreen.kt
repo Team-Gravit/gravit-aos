@@ -1,8 +1,14 @@
 package com.inuappcenter.gravit.main.Home
 
+import android.R.attr.onClick
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +25,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -38,7 +45,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -142,17 +152,6 @@ fun HomeUI(
     units: List<Units>,
     navController: NavController
 ) {
-
-    val config = LocalConfiguration.current
-    val designWidth = 360f
-    val designHeight = 740f
-
-    val scaleW = config.screenWidthDp.toFloat() / designWidth
-    val scaleH = config.screenHeightDp.toFloat() / designHeight
-
-    fun dw(v: Float) = (v * scaleW).dp
-    fun dh(v: Float) = (v * scaleH).dp
-
     val userLevelInfo = home.mainProfile.userLevelDetailResponse
     val userLeagueInfo = home.mainLeagueResponse
     val userLearningInfo = home.mainLearningResponse
@@ -177,14 +176,16 @@ fun HomeUI(
     val consecutiveDays = userLearningInfo.consecutiveSolvedDays
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg2)
     ) {
-        item{
+        item {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF2F2F2))
-            ){
+                    .background(AppColor.bg2)
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.main_back),
                     contentDescription = "main back",
@@ -202,7 +203,7 @@ fun HomeUI(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
-                        ){
+                        ) {
                             Box(
                                 modifier = Modifier.size(40.dp),
                                 contentAlignment = Alignment.Center
@@ -252,7 +253,7 @@ fun HomeUI(
                         Spacer(modifier = Modifier.width(20.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically
-                        ){
+                        ) {
                             Box(
                                 modifier = Modifier.size(36.dp),
                                 contentAlignment = Alignment.Center
@@ -310,17 +311,23 @@ fun HomeUI(
                         Text(
                             text = "어서오세요, ${nickname}님!",
                             style = AppTypography.Title3,
-                            color = PrimitiveColor.Gray50
+                            color = PrimitiveColor.Gray50,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 30.dp)
                         )
 
                         Text(
                             text = "그래빗과 함께 cs 지식을 마스터해요!",
                             style = AppTypography.Body1_Nomal,
-                            color = PrimitiveColor.Gray100
+                            color = PrimitiveColor.Gray100,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 24.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Column(
                         modifier = Modifier.fillMaxWidth()
@@ -356,7 +363,7 @@ fun HomeUI(
                                         modifier = Modifier.clickable(
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
-                                        ){
+                                        ) {
                                             navController.navigate("user")
                                         }
                                     )
@@ -429,8 +436,8 @@ fun HomeUI(
                                             Text(
                                                 text = label,
                                                 style = AppTypography.Label1,
-                                                color = if(currentDay == day && completed) PrimitiveColor.Gray50
-                                                else if(completed) Color(0xFF8100B3)
+                                                color = if (currentDay == day && completed) PrimitiveColor.Gray50
+                                                else if (completed) Color(0xFF8100B3)
                                                 else PrimitiveColor.Gray500,
                                             )
                                         }
@@ -439,7 +446,7 @@ fun HomeUI(
                             }
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -455,7 +462,7 @@ fun HomeUI(
                                         .height(156.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(Color.White)
-                                        .clickable{
+                                        .clickable {
                                             val route =
                                                 if (missionInfo.missionType == "FOLLOW_NEW_FRIEND") {
                                                     "user"
@@ -466,7 +473,7 @@ fun HomeUI(
                                                 launchSingleTop = true
                                             }
                                         }
-                                        .padding(all = dh(16f))
+                                        .padding(16.dp)
                                 ) {
                                     Column {
                                         Text(
@@ -483,7 +490,7 @@ fun HomeUI(
                                             color = Color.Black
                                         )
 
-                                        Spacer(modifier = Modifier.height(dh(4f)))
+                                        Spacer(modifier = Modifier.height(4.dp))
 
                                         Text(
                                             text = "완료 시 +${missionInfo.awardXp} XP",
@@ -507,7 +514,12 @@ fun HomeUI(
                                                 color = PrimitiveColor.Gray500
                                             )
                                             Text(
-                                                text = "${String.format("%.1f", missionInfo.progressRate)}%",
+                                                text = "${
+                                                    String.format(
+                                                        "%.1f",
+                                                        missionInfo.progressRate
+                                                    )
+                                                }%",
                                                 style = AppTypography.App_Caption2,
                                                 color = AppColor.Main1
                                             )
@@ -516,7 +528,7 @@ fun HomeUI(
                                         Spacer(Modifier.height(4.dp))
 
                                         RoundedGauge(
-                                            height = dh(8f),
+                                            height = 8.dp,
                                             width = 0.dp,
                                             rate = missionInfo.progressRate,
                                             modifier = Modifier.fillMaxWidth(),
@@ -525,21 +537,28 @@ fun HomeUI(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.width(dw(16f)))
+                                Spacer(modifier = Modifier.width(12.dp))
 
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(156.dp)
                                         .clip(RoundedCornerShape(8.dp))
+                                        .clickable(onClick = { navController.navigate("unit/${recommendedInfo?.chapterId ?: 1}") })
                                 ) {
                                     Image(
-                                        painter = painterResource(id = resolvePlanetRes(recommendedInfo?.chapterId?: 1)),
-                                        contentDescription = null
+                                        painter = painterResource(
+                                            id = resolvePlanetRes(
+                                                recommendedInfo?.chapterId ?: 1
+                                            )
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.FillWidth
                                     )
                                     Column(
-                                        modifier = Modifier.padding(all = dh(16f))
-                                    ){
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
                                         Text(
                                             text = "새 주제 시작하기",
                                             style = AppTypography.Label2,
@@ -549,40 +568,37 @@ fun HomeUI(
                                         Spacer(modifier = Modifier.height(4.dp))
 
                                         Text(
-                                            text = recommendedInfo?.chapterTitle?: "자료구조",
+                                            text = recommendedInfo?.chapterTitle ?: "자료구조",
                                             style = AppTypography.Headline1,
                                             color = PrimitiveColor.Gray50
                                         )
 
-                                        Spacer(modifier = Modifier.height(dh(3f)))
+                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         Text(
-                                            text = recommendedInfo?.unitTitle?: "배열",
+                                            text = recommendedInfo?.unitTitle ?: "배열",
                                             style = AppTypography.Caption1,
                                             color = PrimitiveColor.Gray400
                                         )
                                     }
-                                    Column (
+                                    Column(
                                         modifier = Modifier
                                             .align(Alignment.BottomStart)
                                             .fillMaxWidth()
-                                            .padding(all = dh(16f))
-                                    ){
+                                            .padding(16.dp)
+                                    ) {
                                         Text(
                                             text = "학습하러 가기 ->",
                                             style = AppTypography.Label1,
                                             color = Color(0xFFFBF1FF),
-                                            textDecoration = TextDecoration.Underline,
-                                            modifier = Modifier.clickable(onClick = {
-                                                navController.navigate("unit/${recommendedInfo?.chapterId?: 1}")
-                                            })
+                                            textDecoration = TextDecoration.Underline
                                         )
                                     }
                                 }
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(dh(16f)))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     val chapterId = userLearningInfo.recentSolvedChapterId
                     val chapterName = userLearningInfo.recentSolvedChapterTitle
