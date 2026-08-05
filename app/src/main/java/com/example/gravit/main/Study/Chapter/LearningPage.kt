@@ -22,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -125,31 +124,18 @@ fun Learning(
             else -> Unit
         }
     }
-
-    when (ui) {
-        ChapterViewModel.UiState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-
-        is ChapterViewModel.UiState.Success -> {
-            val chapters = (ui as ChapterViewModel.UiState.Success).data
-            LearningUI(
-                navController = navController,
-                chapters = chapters,
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it }
-            )
-        }
-        else -> Unit
-    }
+    LearningUI(
+        navController = navController,
+        uiState = ui,
+        selectedTab = selectedTab,
+        onTabSelected = { selectedTab = it }
+    )
 }
 
 @Composable
 private fun LearningUI(
     navController: NavController,
-    chapters: List<ChapterPageResponse>,
+    uiState: ChapterViewModel.UiState,
     selectedTab: LearningTab,
     onTabSelected: (LearningTab) -> Unit
 ){
@@ -193,10 +179,20 @@ private fun LearningUI(
             )
             when (selectedTab) {
                 LearningTab.Chapter -> {
-                    ChapterUI(
-                        navController = navController,
-                        chapters = chapters
-                    )
+                    when (uiState) {
+                        ChapterViewModel.UiState.Loading -> {
+                            ChapterSkeletonUI()
+                        }
+
+                        is ChapterViewModel.UiState.Success -> {
+                            ChapterUI(
+                                navController = navController,
+                                chapters = uiState.data
+                            )
+                        }
+
+                        else -> Unit
+                    }
                 }
 
                 LearningTab.AI -> {

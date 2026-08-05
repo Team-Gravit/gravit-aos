@@ -3,6 +3,7 @@ package com.inuappcenter.gravit.main.User
 import android.annotation.SuppressLint
 import android.graphics.BlurMaskFilter
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -16,8 +17,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -114,18 +113,24 @@ fun MyPage(
 ) {
     val context = LocalContext.current
     val vm: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, context))
-    MyPageUI(vm, navController)
+    MyPageUI(
+        vm = vm,
+        navController = navController,
+        onSessionExpired = onSessionExpired
+    )
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyPageUI(
     vm: UserScreenVM,
     navController: NavController,
+    onSessionExpired: () -> Unit
 ) {
 
     var selectedTab by remember { mutableStateOf(MyPageTab.Summary) }
     var showSnackBar by remember { mutableStateOf(false) }
     var snackBarText by remember { mutableStateOf("") }
+    var navigated by remember { mutableStateOf(false) }
 
     val bannerUi by vm.stateBanners.collectAsState()
     val socialUi by vm.stateSocial.collectAsState()
@@ -135,16 +140,6 @@ fun MyPageUI(
     val congratulateUi by vm.stateCongratulate.collectAsState()
     val followUi by vm.stateFollow.collectAsState()
 
-    val isLoading = bannerUi == UserScreenVM.BannersUiState.Loading ||
-                when (selectedTab) {
-                    MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.Loading
-                    MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.Loading
-                    MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.Loading
-                    MyPageTab.Social ->
-                        socialUi == UserScreenVM.SocialUiState.Loading ||
-                        followUi == UserScreenVM.FollowUiState.Loading ||
-                        congratulateUi == UserScreenVM.CongratulateUiState.Loading
-                }
     val isSessionExpired = bannerUi == UserScreenVM.BannersUiState.SessionExpired ||
             when (selectedTab) {
                 MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.SessionExpired
@@ -172,7 +167,17 @@ fun MyPageUI(
 
             }
 
-    var navigated by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        vm.loadBanners()
+        vm.loadSummary()
+        vm.loadLearning()
+        vm.loadLeague()
+    }
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == MyPageTab.Social) {
+            vm.loadSocial()
+        }
+    }
 
     LaunchedEffect(isSessionExpired) {
         if (!isSessionExpired || navigated) return@LaunchedEffect
@@ -188,7 +193,7 @@ fun MyPageUI(
     }
     LaunchedEffect(isNotFound) {
         if (!isNotFound || navigated) return@LaunchedEffect
-
+        navigated = true
         navController.navigate("error/404") {
             popUpTo(
                 navController.currentBackStackEntry?.destination?.id ?: return@navigate
@@ -211,6 +216,7 @@ fun MyPageUI(
             }
 
             UserScreenVM.CongratulateUiState.Success -> {
+                vm.clearCongratulateState()
                 vm.loadSocial()
             }
             else -> Unit
@@ -235,58 +241,31 @@ fun MyPageUI(
             vm.clearLoadMoreError()
         }
     }
-
-    LaunchedEffect(Unit) {
-        vm.loadBanners()
-        vm.loadSummary()
-        vm.loadLearning()
-        vm.loadLeague()
-    }
-    LaunchedEffect(selectedTab) {
-        if (selectedTab == MyPageTab.Social) {
-            vm.loadSocial()
-        }
-    }
-    val banners = (bannerUi as? UserScreenVM.BannersUiState.Success)?.data
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AppColor.bg2)
-                .padding(WindowInsets.statusBars.asPaddingValues()),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            item {
-                MyPageProfileHeader(banners, navController)
-            }
-            item {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    MyPageTabRow(
+    val initialSkeleton = selectedTab == MyPageTab.Summary && (bannerUi == UserScreenVM.BannersUiState.Loading || summaryUi == UserScreenVM.SummaryUiState.Loading)
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if (initialSkeleton) {
+            MyPageSkeletonUI(navController = navController)
+        } else {
+            when (val state = bannerUi) {
+                is UserScreenVM.BannersUiState.Success -> {
+                    MyPageContent(
+                        banner = state.data,
                         selectedTab = selectedTab,
-                        onTabSelected = { selectedTab = it },
-                        modifier = Modifier.padding(top = 16.dp)
+                        onTabSelected = {
+                            selectedTab = it
+                        },
+                        vm = vm,
+                        navController = navController,
+                        socialUi = socialUi
                     )
-                    Spacer(Modifier.height(16.dp))
-                    when (selectedTab) {
-                        MyPageTab.Summary -> SummaryUI(vm)
-                        MyPageTab.Learning -> LearningTabUI(vm, navController)
-                        MyPageTab.League -> LeagueTabUI(vm)
-                        MyPageTab.Social -> SocialTabUI(navController, vm, banners?.nickname)
-                    }
                 }
+
+                else -> Unit
             }
         }
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+
         if (showSnackBar) {
             CustomSnackBar(
                 text = snackBarText,
@@ -298,6 +277,55 @@ fun MyPageUI(
             LaunchedEffect(snackBarText) {
                 delay(2000)
                 showSnackBar = false
+            }
+        }
+    }
+}
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun MyPageContent(
+    banner: MyPageBanner,
+    selectedTab: MyPageTab,
+    onTabSelected: (MyPageTab) -> Unit,
+    vm: UserScreenVM,
+    navController: NavController,
+    socialUi: UserScreenVM.SocialUiState
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg2)
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        item {
+            MyPageProfileHeader(
+                banner = banner,
+                navController = navController
+            )
+        }
+
+        item {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = 16.dp
+                )
+            ) {
+                MyPageTabRow(
+                    selectedTab = selectedTab,
+                    onTabSelected = onTabSelected,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                MyPageTabContent(
+                    selectedTab = selectedTab,
+                    vm = vm,
+                    navController = navController,
+                    nickname = banner.nickname,
+                    socialUi = socialUi
+                )
             }
         }
     }
@@ -416,6 +444,56 @@ fun ProfileBox(
             style = AppTypography.Caption1,
             color = PrimitiveColor.Gray50
         )
+    }
+}
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun MyPageTabContent(
+    selectedTab: MyPageTab,
+    vm: UserScreenVM,
+    navController: NavController,
+    nickname: String?,
+    socialUi: UserScreenVM.SocialUiState
+) {
+    when (selectedTab) {
+        MyPageTab.Summary -> {
+            SummaryUI(vm)
+        }
+
+        MyPageTab.Learning -> {
+            LearningTabUI(
+                vm = vm,
+                navController = navController
+            )
+        }
+
+        MyPageTab.League -> {
+            LeagueTabUI(vm)
+        }
+
+        MyPageTab.Social -> {
+            when (socialUi) {
+                UserScreenVM.SocialUiState.Loading -> {
+                   Box(
+                       modifier = Modifier.fillMaxSize(),
+                       contentAlignment = Alignment.Center
+                   ){
+                       CircularProgressIndicator()
+                   }
+                }
+
+                is UserScreenVM.SocialUiState.Success -> {
+                    SocialTabUI(
+                        navController = navController,
+                        vm = vm,
+                        nickname = nickname
+                    )
+                }
+                else -> {
+                    Log.d("SOCIAL", socialUi.toString())
+                }
+            }
+        }
     }
 }
 @Composable
@@ -1449,9 +1527,6 @@ fun SocialTabUI(
     nickname: String?
 ) {
     val ui by vm.stateSocial.collectAsState()
-    LaunchedEffect(Unit) {
-        vm.loadSocial()
-    }
     val social = (ui as? UserScreenVM.SocialUiState.Success)?.data
     val listState = rememberLazyListState()
 
