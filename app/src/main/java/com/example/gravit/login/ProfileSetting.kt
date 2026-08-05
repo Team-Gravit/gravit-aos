@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.login
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +28,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -51,21 +46,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
+import com.example.gravit.ui.theme.ButtonState
+import com.example.gravit.ui.theme.PrimitiveColor
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.error.isDeletionPending
 import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
-import com.inuappcenter.gravit.ui.theme.DesignSpec
-import com.inuappcenter.gravit.ui.theme.LocalDesignSpec
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
-import com.inuappcenter.gravit.ui.theme.Responsive
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.main.User.TopBar
 import kotlinx.coroutines.delay
 
 
@@ -80,14 +77,12 @@ fun ProfileSetting(navController: NavController) {
 
     var nickname by remember { mutableStateOf("") }
     var profileNo by remember { mutableIntStateOf(ProfilePalette.DEFAULT_ID) }
-    var navigated by remember { mutableStateOf(false) }
     var showSnackbar by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(ui) {
         when (ui) {
             OnboardingViewModel.UiState.Success -> {
-                navigated = true
                 navController.navigate("profile finish") {
                     popUpTo(0); launchSingleTop = true; restoreState = false
                 }
@@ -107,120 +102,105 @@ fun ProfileSetting(navController: NavController) {
             }
         }
     }
+    val systemUiController = rememberSystemUiController()
+    val isDarkMode = isSystemInDarkTheme()
 
-    CompositionLocalProvider(
-        LocalDesignSpec provides DesignSpec(375f, 812f)
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = !isDarkMode
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .navigationBarsPadding()
     ) {
-        val systemUiController = rememberSystemUiController()
-        val isDarkMode = isSystemInDarkTheme()
-
-        SideEffect {
-            systemUiController.setStatusBarColor(
-                color = Color.Transparent,
-                darkIcons = !isDarkMode
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .padding(WindowInsets.statusBars.asPaddingValues())
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
+            TopBar(navController, title = "로그인", useCloseIcon = false, isOnboarding= true)
+
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.Center
             ) {
-                Spacer(Modifier.height(Responsive.h(8f)))
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    ImageButton(
-                        painter = painterResource(id = R.drawable.back_arrow),
-                        contentDescription = "back arrow",
-                        modifier = Modifier
-                            .size(Responsive.w(48f))
-                            .padding(start = Responsive.w(14f)),
-                        onClick = {
-                            navController.navigate("login choice") {
-                                popUpTo(0); launchSingleTop = true; restoreState = false
-                            }
-                        }
-                    )
-                    Text(
-                        text = "로그인",
-                        modifier = Modifier.align(Alignment.Center),
-                        style = TextStyle(
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = Responsive.spH(20f)
-                        )
-                    )
-                }
-
-                Spacer(Modifier.height(Responsive.h(30f)))
-
                 ProfileSwitcher(
                     selectedId = profileNo,
                     onProfileSelected = { newId -> profileNo = newId }
                 )
-
-                Spacer(Modifier.height(Responsive.h(30f)))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Responsive.w(25f))
-                ) {
-                    Text(
-                        text = "닉네임 설정",
-                        style = TextStyle(
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = Responsive.spH(18f)
-                        )
-                    )
-                    Spacer(Modifier.height(Responsive.h(12f)))
-                    NameInputFiled(
-                        text = nickname,
-                        onTextChange = { nickname = it }
-                    )
-                }
+                Text(
+                    text = "닉네임 설정",
+                    style = AppTypography.Heading2,
+                    color = AppColor.text1
+                )
+                Spacer(Modifier.height(12.dp))
+                NameInputFiled(
+                    text = nickname,
+                    onTextChange = { nickname = it }
+                )
             }
-
-            CustomButton(
-                text = "다음",
-                onClick = {
-                    vm.submit(nickname, profileNo)
-                },
-                enabled = isValidNickname(nickname) && ui !is OnboardingViewModel.UiState.Loading,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(
-                        start = Responsive.w(25f),
-                        end = Responsive.w(25f),
-                        bottom = Responsive.h(14f)
-                    )
-                    .height(Responsive.h(60f))
-            )
-
-            if (ui is OnboardingViewModel.UiState.Loading) {
-                Box(
-                    Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)),
-                    contentAlignment = Alignment.Center
-                ) { CircularProgressIndicator() }
-            }
-            if (showSnackbar) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.BottomCenter
+                    .padding(vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CustomSnackBar(
-                        text = "다시 시도해 주세요.",
-                        modifier = Modifier
-                            .navigationBarsPadding()
-                            .padding(bottom = 10.dp)
+                    BlockButton(
+                        text = "이전",
+                        onClick = {
+                            AuthPrefs.clear(context)
+                            navController.popBackStack() },
+                        state = ButtonState.Stroke,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    BlockButton(
+                        text = "다음",
+                        onClick = {
+                            vm.submit(nickname, profileNo)
+                        },
+                        enabled = isValidNickname(nickname) &&
+                                ui !is OnboardingViewModel.UiState.Loading,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier.weight(3f)
                     )
                 }
+            }
+        }
+
+        if (ui is OnboardingViewModel.UiState.Loading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+        }
+        if (showSnackbar) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(
+                    text = "다시 시도해 주세요.",
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(bottom = 10.dp)
+                )
             }
         }
     }
@@ -255,25 +235,26 @@ fun ProfileSwitcher(
     var currentIndex by remember { mutableIntStateOf(ProfilePalette.idToIndex(selectedId)) }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         ImageButton(
             painter = painterResource(id = R.drawable.arrow_left),
             contentDescription = "Previous profile",
-            modifier = Modifier.width(32.dp)
-                .aspectRatio(1f/2f),
+            modifier = Modifier
+                .width(32.dp)
+                .aspectRatio(1f / 2f),
             onClick = {
                 currentIndex = (currentIndex - 1 + ProfilePalette.size) % ProfilePalette.size
                 onProfileSelected(ProfilePalette.indexToId(currentIndex))
             },
-            color = Color(0xFFC6C6C6)
+            color = PrimitiveColor.Gray500
         )
-        Spacer(Modifier.width(Responsive.w(32f)))
         Box(
             modifier = Modifier
-                .size(Responsive.h(178f))
+                .size(150.dp)
                 .clip(CircleShape)
                 .background(ProfilePalette.colors[currentIndex]),
             contentAlignment = Alignment.Center
@@ -281,20 +262,20 @@ fun ProfileSwitcher(
             Image(
                 painter = painterResource(id = R.drawable.profile_logo),
                 contentDescription = "profile logo",
-                modifier = Modifier.size(Responsive.w(72f), Responsive.h(90.89f))
+                modifier = Modifier.size(60.dp, 76.dp)
             )
         }
-        Spacer(Modifier.width(Responsive.w(32f)))
         ImageButton(
             painter = painterResource(id = R.drawable.arrow_right),
             contentDescription = "Next profile",
-            modifier = Modifier.width(32.dp)
-                                .aspectRatio(1f/2f),
+            modifier = Modifier
+                .width(32.dp)
+                .aspectRatio(1f / 2f),
             onClick = {
                 currentIndex = (currentIndex + 1) % ProfilePalette.size
                 onProfileSelected(ProfilePalette.indexToId(currentIndex))
             },
-            color = Color(0xFFC6C6C6)
+            color = PrimitiveColor.Gray500
         )
     }
 }
@@ -313,7 +294,7 @@ fun NameInputFiled(
     val isEmpty = text.isEmpty()
     val isError = text.isNotEmpty() && !isValid
 
-    Column {
+    Column{
         OutlinedTextField(
             value = text,
             onValueChange = onTextChange,
@@ -327,55 +308,40 @@ fun NameInputFiled(
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
-                        text = "닉네임",
-                        color = Color(0xFF868686),
-                        fontFamily = pretendard,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Normal
+                        text = "닉네임을 입력해주세요.",
+                        style = AppTypography.Label1,
+                        color = AppColor.text4
                     )
                 }
             },
-            textStyle = TextStyle(
-                color = if (isError) Color.Red else Color.Black,
-                fontFamily = pretendard,
-                fontSize = Responsive.spW(18f),
-                textAlign = TextAlign.Start
-            ),
+            textStyle = AppTypography.Label1.copy(color = AppColor.text1),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp),
-            shape = RoundedCornerShape(Responsive.h(10f)),
+            shape = RoundedCornerShape(8.dp),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                errorContainerColor = Color.White,
-                focusedIndicatorColor = if (isEmpty) Color(0xFFC3C3C3) else if (isError) Color.Red else Color.Blue,
-                unfocusedIndicatorColor = if (isEmpty) Color(0xFFC3C3C3) else if (isError) Color.Red else Color.Blue,
-                errorIndicatorColor = Color.Red,
-                cursorColor = if (isEmpty) Color(0xFFC3C3C3) else if (isError) Color.Red else Color.Blue
+                focusedContainerColor = AppColor.bg0,
+                unfocusedContainerColor = AppColor.bg0,
+                errorContainerColor = AppColor.bg0,
+                focusedIndicatorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.errorColor else AppColor.successColor,
+                unfocusedIndicatorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.errorColor else AppColor.successColor,
+                errorIndicatorColor = AppColor.errorColor,
+                cursorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.errorColor else AppColor.successColor
             )
         )
-        Spacer(Modifier.height(Responsive.h(8f)))
+        Spacer(Modifier.height(12.dp))
 
         if (isEmpty) {
             Text(
                 text = "*글자수 2~8자\n*공백, 특수문자 제외",
-                color = Color(0xFF868686),
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = Responsive.spH(12f)
-                )
+                color = AppColor.text4,
+                style = AppTypography.Caption1
             )
         } else {
             Text(
                 text = if (isError) "사용할 수 없는 닉네임이에요." else "사용 가능한 닉네임이에요.",
-                color = Color(0xFF868686),
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = Responsive.spH(12f)
-                )
+                color = if(isError) AppColor.errorColor else AppColor.successColor,
+                style = AppTypography.Caption1
             )
         }
     }
