@@ -7,10 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.util.Base64
 import com.inuappcenter.gravit.BuildConfig
+import com.inuappcenter.gravit.api.AccessTokenRequest
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthTokenResponse
 import com.inuappcenter.gravit.api.IdTokenRequest
-import com.inuappcenter.gravit.api.NaverUserInfo
 import com.inuappcenter.gravit.api.RetrofitInstance
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -72,12 +72,12 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    fun sendNaverInfo(body: NaverUserInfo) {
+    fun sendNaverToken(accessToken: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            Log.d("AuthFlow", "POST /api/v1/oauth/android/naver = $body")
+            Log.d("AuthFlow", "POST /api/v1/oauth/android/naver = $accessToken")
 
             runCatching {
-                api.sendNaverInfo(body)
+                api.sendNaverToken(AccessTokenRequest(accessToken))
             }.onSuccess { res ->
                 Log.d("AuthFlow", "Server access = ${maskToken(res.accessToken)}")
                 Log.d("AuthFlow", "Server refresh = ${maskToken(res.refreshToken)}")
