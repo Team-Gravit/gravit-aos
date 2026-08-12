@@ -613,7 +613,7 @@ fun SummaryUI(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "상위 ${summaries?.learningSummary?.topPercent?: 0}%",
+                            text = "상위 ${summaries?.summaries?.topPercent?: 0}%",
                             style = AppTypography.Title3,
                             color = AppColor.Main1
                         )
@@ -627,13 +627,13 @@ fun SummaryUI(
                     }
                 }
                 val rankInfo = listOf(
-                    summaries?.learningSummary?.averageAccuracy?.let { "${it}%" } ?: "-",
+                    summaries?.summaries?.averageAccuracy?.let { "${it}%" } ?: "-",
                     "평균 정답률",
 
-                    summaries?.learningSummary?.completedLessonCount?.let { "${it}개" } ?: "-",
+                    summaries?.summaries?.completedLessonCount?.let { "${it}개" } ?: "-",
                     "완료 레슨",
 
-                    summaries?.learningSummary?.totalLearningHours?.let { String.format(Locale.US, "%.1fh", it) } ?: "-",
+                    summaries?.summaries?.totalLearningHours?.let { String.format(Locale.US, "%.1fh", it) } ?: "-",
                     "총 학습시간"
                 ).chunked(2)
                 RankRow(rankInfo)
@@ -653,14 +653,14 @@ fun SummaryUI(
                     color = AppColor.text4
                 )
                 Text(
-                    text = "${(summaries?.years[0] ?: 2026)}년",
+                    text = "${(summaries?.history?.years[0] ?: 2026)}년",
                     style = AppTypography.Headline2,
                     color = AppColor.text1
                 )
                 HorizontalDivider(modifier = Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
                 LearningGrassGrid(
-                    year = summaries?.years[0] ?: 2026,
-                    dailySolvedCounts = summaries?.learningHistory?.dailySolvedCounts ?: emptyList()
+                    year = summaries?.history?.years[0] ?: 2026,
+                    dailySolvedCounts = summaries?.history?.dailySolvedCounts ?: emptyList()
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -698,7 +698,7 @@ fun SummaryUI(
                     contentAlignment = Alignment.CenterStart
                 )
                 {
-                    var peek = summaries?.learningHistory?.peakLearningHour.toString()
+                    var peek = summaries?.history?.peakLearningHour.toString()
                     if (peek == "-1") {
                         peek = "-"
                     }
@@ -1005,7 +1005,7 @@ fun LearningTabUI(
                                     }
                                     Spacer(Modifier.height(7.dp))
                                     RoundedGauge(
-                                        rate = it.ratio.toFloat(),
+                                        rate = it.ratio.toDouble(),
                                         modifier = Modifier.fillMaxWidth(),
                                         height = 8.dp,
                                         width = 0.dp
