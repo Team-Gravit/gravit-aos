@@ -36,8 +36,8 @@ class FriendListVM(
         val followingHasNext: Boolean = false,
         val followerPage: Int = 0,
         val followingPage: Int = 0,
-        val followerCount: Int = 0,
-        val followingCount: Int = 0,
+        val followerCount: Long = 0,
+        val followingCount: Long = 0,
         val loading: Boolean = false,
         val error: String? = null,
         val sessionExpired: Boolean = false

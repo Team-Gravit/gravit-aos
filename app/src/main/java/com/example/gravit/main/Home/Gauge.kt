@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -187,14 +186,14 @@ fun LeagueGauge(
 
 @Composable
 fun RoundedGauge(
-    rate: Float,
+    rate: Double,
     width: Dp,
     height: Dp,
     modifier: Modifier = Modifier,
     color: Color = Color.White
 ) {
-    val percentage = rate.coerceIn(0f, 100f)
-    val ratio = percentage / 100f
+    val percentage = rate.coerceIn(0.0, 100.0)
+    val ratio = (percentage / 100f).toFloat()
 
     Column(
         modifier = modifier

@@ -17,7 +17,7 @@ import retrofit2.HttpException
 class UnitListVM(
     private val api: ApiService,
     private val appContext: Context,
-    private val chapterId: Int
+    private val chapterId: Long
 ) : ViewModel() {
 
     sealed interface UiState {
@@ -69,7 +69,7 @@ class UnitListVM(
 class UnitListVMFactory(
     private val api: ApiService,
     private val appContext: Context,
-    private val chapterId: Int
+    private val chapterId: Long
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

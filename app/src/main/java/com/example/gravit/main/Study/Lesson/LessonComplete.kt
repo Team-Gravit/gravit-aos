@@ -66,7 +66,7 @@ import com.inuappcenter.gravit.ui.theme.pretendard
 @Composable
 fun LessonComplete(
     navController: NavController,
-    accuracy: Float,
+    accuracy: Int,
     learningTime: Int,
     lessonId: Long,
 ){

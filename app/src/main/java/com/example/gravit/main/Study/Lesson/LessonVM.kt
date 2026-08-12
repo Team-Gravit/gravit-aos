@@ -37,7 +37,7 @@ class LessonViewModel(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun load(lessonId: Long = 0, unitId: Int = 0, type: String) = viewModelScope.launch {
+    fun load(lessonId: Long = 0, unitId: Long = 0, type: String) = viewModelScope.launch {
         _state.value = UiState.Loading
         _bookmark.value = emptyMap()
         val session = AuthPrefs.load(appContext)

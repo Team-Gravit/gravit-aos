@@ -41,7 +41,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 data class UnitUi(
-    val unitId: Int,
+    val unitId: Long,
     val orderText: String,
     val title: String,
     val progressRate: Float,
@@ -67,7 +67,7 @@ fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
 
 @Composable
 fun UnitList(
-    chapterId: Int,
+    chapterId: Long,
     navController: NavController,
     onSessionExpired: () -> Unit
 ) {

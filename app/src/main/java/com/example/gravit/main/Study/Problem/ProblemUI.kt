@@ -87,7 +87,7 @@ fun ProblemUI(
     onFinishLesson: () -> Unit,
     type: String = "normal",
     onRemoveWrongNote: (Long) -> Unit = {},
-    unitId: Int
+    unitId: Long
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = false

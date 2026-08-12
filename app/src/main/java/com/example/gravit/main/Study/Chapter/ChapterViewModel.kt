@@ -23,7 +23,7 @@ class ChapterViewModel(
         data object Failed : UiState
         data object SessionExpired : UiState
         data object NotFound : UiState
-        data class InvalidChapterId(val id: Int) : UiState
+        data class InvalidChapterId(val id: Long) : UiState
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Loading)

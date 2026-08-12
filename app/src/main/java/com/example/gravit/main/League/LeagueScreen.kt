@@ -1,6 +1,6 @@
 package com.inuappcenter.gravit.main.League
 
-import android.R.attr.bottom
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -744,13 +743,14 @@ private fun RankCell(
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun TierSelector(
     vm: LeagueViewModel,
-    tiers: List<Int> = (1..15).toList(),
+    tiers: List<Long> = (1L..15L).toList(),
     dotSize: Dp = 100.dp,
     spacing: Dp = 12.dp,
-    initialLeagueId: Int?
+    initialLeagueId: Long
 ) {
     val listState = rememberLazyListState()
     val fling = rememberSnapFlingBehavior(listState)
@@ -773,7 +773,7 @@ fun TierSelector(
     var lastAppliedIndex by remember { mutableIntStateOf(-1) }
 
     LaunchedEffect(initialLeagueId, tiers) {
-        val idx = initialLeagueId?.let { tiers.indexOf(it) } ?: -1
+        val idx = initialLeagueId.let { tiers.indexOf(it) }
         if (idx >= 0) {
             listState.scrollToItem(idx)
             lastAppliedIndex = idx
@@ -811,57 +811,57 @@ fun TierSelector(
         }
     }
 }
-private fun tierName(id: Int): String = when (id) {
-    1 -> "브론즈 3"
-    2 -> "브론즈 2"
-    3 -> "브론즈 1"
-    4 -> "실버 3"
-    5 -> "실버 2"
-    6 -> "실버 1"
-    7 -> "골드 3"
-    8 -> "골드 2"
-    9 -> "골드 1"
-    10 -> "플래티넘 3"
-    11 -> "플래티넘 2"
-    12 -> "플래티넘 1"
-    13 -> "다이아몬드 3"
-    14 -> "다이아몬드 2"
-    15 -> "다이아몬드 1"
+private fun tierName(id: Long): String = when (id) {
+    1L -> "브론즈 3"
+    2L -> "브론즈 2"
+    3L -> "브론즈 1"
+    4L -> "실버 3"
+    5L -> "실버 2"
+    6L -> "실버 1"
+    7L -> "골드 3"
+    8L -> "골드 2"
+    9L -> "골드 1"
+    10L -> "플래티넘 3"
+    11L -> "플래티넘 2"
+    12L -> "플래티넘 1"
+    13L -> "다이아몬드 3"
+    14L -> "다이아몬드 2"
+    15L -> "다이아몬드 1"
     else -> "Unranked"
 }
 
-private fun tierIdFromName(name: String?): Int = when (name) {
-    "Bronze 3" -> 1
-    "Bronze 2" -> 2
-    "Bronze 1" -> 3
-    "Silver 3" -> 4
-    "Silver 2" -> 5
-    "Silver 1" -> 6
-    "Gold 3" -> 7
-    "Gold 2" -> 8
-    "Gold 1" -> 9
-    "Platinum 3" -> 10
-    "Platinum 2" -> 11
-    "Platinum 1" -> 12
-    "Diamond 3" -> 13
-    "Diamond 2" -> 14
-    "Diamond 1" -> 15
-    else -> -1
+private fun tierIdFromName(name: String?): Long = when (name) {
+    "Bronze 3" -> 1L
+    "Bronze 2" -> 2L
+    "Bronze 1" -> 3L
+    "Silver 3" -> 4L
+    "Silver 2" -> 5L
+    "Silver 1" -> 6L
+    "Gold 3" -> 7L
+    "Gold 2" -> 8L
+    "Gold 1" -> 9L
+    "Platinum 3" -> 10L
+    "Platinum 2" -> 11L
+    "Platinum 1" -> 12L
+    "Diamond 3" -> 13L
+    "Diamond 2" -> 14L
+    "Diamond 1" -> 15L
+    else -> -1L
 }
 
-fun TextColor(tierId: Int) : Color =
+fun textColor(tierId: Long) : Color =
     when(tierId) {
-        3, 2 ,1 -> Color(0xFF6C3F00)
-        6, 5, 4 -> Color(0xFF818181)
-        9, 8, 7 -> Color(0xFFE29F00)
-        12, 11, 10 -> Color(0xFF00B399)
-        15, 14, 13 -> Color(0xFF00AFC3)
+        3L, 2L ,1L -> Color(0xFF6C3F00)
+        6L, 5L, 4L -> Color(0xFF818181)
+        9L, 8L, 7L -> Color(0xFFE29F00)
+        12L, 11L, 10L -> Color(0xFF00B399)
+        15L, 14L, 13L -> Color(0xFF00AFC3)
     else -> Color(0xFF6C3F00)
 
 }
 @Composable
 private fun TierDot(
-    tierId: Int,
+    tierId: Long,
     selected: Boolean
 ) {
     val size = if (selected) 107.dp else 80.dp
@@ -923,7 +923,7 @@ private fun TierDot(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = pretendard,
-                    color = TextColor(tierId),
+                    color = textColor(tierId),
                 )
             )
         }

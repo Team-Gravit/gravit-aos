@@ -49,12 +49,12 @@ import com.inuappcenter.gravit.api.Units
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun PreviousButton(
-    chapterId: Int,
+    chapterId: Long,
     chapterName: String,
     onClick: () -> Unit,
     onViewAllClick: () -> Unit,
     onUnitClick: (Units) -> Unit,
-    progressRate: Float,
+    progressRate: Double,
     units: List<Units> = emptyList()
 ) {
     val statusMap = mapOf(
@@ -70,7 +70,7 @@ fun PreviousButton(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .then(
-                if (chapterId == 0) {
+                if (chapterId == 0L) {
                     Modifier.clickable(onClick = onClick)
                 } else {
                     Modifier

@@ -30,7 +30,7 @@ class NoteVM(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun load(unitId: Int) = viewModelScope.launch {
+    fun load(unitId: Long) = viewModelScope.launch {
         _state.value = UiState.Loading
         val session = AuthPrefs.load(appContext)
         if (session == null) {
