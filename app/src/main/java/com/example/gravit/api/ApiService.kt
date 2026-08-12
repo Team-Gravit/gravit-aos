@@ -14,18 +14,16 @@ import retrofit2.http.Query
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.HTTP
+import java.util.Date
 
 //로그인
 data class IdTokenRequest(val idToken: String)
+data class AccessTokenRequest(val accessToken: String)
 data class AuthTokenResponse(
     val accessToken: String,
     val refreshToken: String,
-    val isOnboarded : Boolean
-)
-data class NaverUserInfo(
-    val email: String,
-    val providerId: String,
-    val nickname: String
+    val isOnboarded : Boolean,
+    val role: String
 )
 
 //리프레시
@@ -38,7 +36,7 @@ data class RefreshTokenResponse(
 
 //온보딩
 data class OnboardingRequest(val nickname: String, val profilePhotoNumber: Int)
-data class OnboardingResponse(val userId: Int, val profileImgNumber: Int, val nickname: String, val providerId: String)
+data class OnboardingResponse(val userId: Long, val profileImgNumber: Int, val nickname: String, val providerId: String)
 
 //챕터
 data class ChapterPageResponse(
@@ -46,7 +44,7 @@ data class ChapterPageResponse(
     val chapterProgressRate: Double
 )
 data class ChapterSummaryResponse(
-    val chapterId: Int,
+    val chapterId: Long,
     val title: String,
     val description: String,
 )
@@ -68,12 +66,11 @@ data class MainProfile(
 data class UserLevelDetailResponse(
     val currentXp: Int,
     val level: Int,
-    val levelRate: Float,
+    val levelRate: Double,
     val maxXp: Int
 )
 data class MainLearningResponse(
-    val consecutiveSolvedDays: Int,
-    val recentSolvedChapterId: Int,
+    val recentSolvedChapterId: Long,
     val recentSolvedChapterTitle: String,
     val recentSolvedChapterProgressRate: Double,
     val units: List<Units>
@@ -82,10 +79,11 @@ data class MissionResponse(
     val missionType: String,
     val missionDescription: String,
     val awardXp: Int,
-    val progressRate: Float,
+    val progressRate: Double,
     val isCompleted: Boolean
 )
 data class WeeklyRecordResponse(
+    val consecutiveSolvedDays: Int,
     val MONDAY: Boolean,
     val TUESDAY: Boolean,
     val WEDNESDAY: Boolean,
@@ -95,20 +93,20 @@ data class WeeklyRecordResponse(
     val SUNDAY: Boolean
 )
 data class RecommendedUnitResponses(
-    val unitId: Int,
+    val unitId: Long,
     val unitTitle: String,
-    val chapterId: Int,
+    val chapterId: Long,
     val chapterTitle: String
 )
 data class MainLeagueResponse(
-    val leagueId: Int,
+    val leagueId: Long,
     val leagueName: String,
     val currentLP: Int,
     val minLP: Int,
     val maxLP: Int
 )
 data class Units(
-    val unitId: Int,
+    val unitId: Long,
     val title: String,
     val status: String
 )
@@ -125,23 +123,28 @@ data class UnitDetailResponses(
 )
 
 data class UnitSummaryResponse(
-    val unitId: Int,
+    val unitId: Long,
     val title: String,
     val description: String
 )
 
 //레슨리스트
 data class LessonListResponse(
+    val chapterSummaryResponse: ChapterSummary,
     val unitSummaryResponse: UnitSummaryResponse,
     val lessonSummaries: List<LessonSummaries>,
     val bookmarkAccessible: Boolean,
     val wrongAnsweredNoteAccessible: Boolean
 )
 data class LessonSummaries(
-    val lessonId: Int,
+    val lessonId: Long,
     val title: String,
-    val totalProblem: Int,
+    val totalProblem: Long,
     val isSolved: Boolean
+)
+data class ChapterSummary(
+    val chapterId: Long,
+    val title: String
 )
 
 //문제
@@ -179,7 +182,7 @@ data class LessonResultRequest(
 data class LessonSubmissionSaveRequest(
     val lessonId: Long,
     val learningTime: Int,
-    val accuracy: Float
+    val accuracy: Int
 )
 @Parcelize
 data class ProblemSubmissionRequests(
@@ -252,8 +255,8 @@ data class FollowerSliceResponse(
 )
 
 data class FriendCountResponse(
-    val followerCount: Int,
-    val followingCount: Int
+    val followerCount: Long,
+    val followingCount: Long
 )
 
 //소셜피드
@@ -279,8 +282,8 @@ data class SocialFeedContents(
     val createdAt: String
 )
 data class FriendsCount(
-    val followerCount: Int,
-    val followingCount: Int
+    val followerCount: Long,
+    val followingCount: Long
 )
 
 //사용자
@@ -300,12 +303,8 @@ data class MyPageBanner(
     val currentLeague: String? = null,
     val consecutiveSolvedDays: Int? = null
 )
-data class MyPageLearningInfo(
-    val weeklyReport: WeeklyReport,
-    val topChapters: List<TopChapter>,
-    val weakConcepts: List<WeakConcept>
-)
-data class WeeklyReport(
+
+data class MyPageWeeklyReport(
     val MONDAY: Int,
     val TUESDAY: Int,
     val WEDNESDAY: Int,
@@ -316,39 +315,36 @@ data class WeeklyReport(
     val thisWeekCompletedLessonCount: Int,
     val weekOverWeekDeltas: List<Int>
 )
-data class TopChapter(
+data class MyPageTopChapter(
     val rank: Int,
     val chapterTitle: String,
     val solvedLessonCount: Int,
     val ratio: Int
 )
-data class WeakConcept(
+data class MyPageWeakConcept(
     val rank: Int,
+    val unitId: Long,
     val unitTitle: String,
     val chapterTitle: String,
     val wrongAnswerCount: Int,
     val wrongAnswerRate: Int
 )
 data class UserInfoResponse(
-    val userId: Int,
+    val userId: Long,
     val profileImgNumber: Int,
     val nickname: String,
     val providerId: String
 )
-data class MyPageSummary(
-    val learningSummary: LearningSummary,
-    val learningHistory: LearningHistory,
-    val years: List<Int>
-)
-data class LearningHistory(
+data class MyPageHistory(
     val dailySolvedCounts: List<DailySolvedCounts>,
-    val peakLearningHour: Int
+    val peakLearningHour: Int,
+    val years: List<Int>
 )
 data class DailySolvedCounts(
     val date: String,
     val solvedLessonCount: Int
 )
-data class LearningSummary(
+data class MyPageLearningSummary(
     val topPercent: Int,
     val completedLessonCount: Int,
     val totalLessonCount: Int,
@@ -394,7 +390,7 @@ data class LeaguePageResponse<T>(
 )
 data class LeagueItem(
     val rank: Int,
-    val userId: Int,
+    val userId: Long,
     val lp: Int,
     val nickname: String,
     val profileImgNumber: Int,
@@ -402,10 +398,10 @@ data class LeagueItem(
     val level: Int
 )
 data class MyLeague(
-    val leagueId: Int,
+    val leagueId: Long,
     val leagueName: String,
     val rank: Int,
-    val userId: Int,
+    val userId: Long,
     val lp: Int,
     val maxLp: Int,
     val nickname: String,
@@ -424,7 +420,9 @@ data class CurrentSeason(
 data class LastSeasonPopupDto(
     val rank: Int,
     val leagueName: String,
-    val profileImgNumber: Int
+    val profileImgNumber: Int,
+    val nextLeagueName: String,
+    val nextStartLp: Int
 )
 
 data class SlicePage<T>(
@@ -440,6 +438,7 @@ data class MyLeagueHistory(
 )
 data class SeasonHistory(
     val seasonKey: String,
+    val displayKey: String,
     val leagueName: String,
     val sortOrder: Int,
     val isCurrent: Boolean
@@ -478,11 +477,13 @@ data class InquiryListResponses(
     val page: Int,
     val totalPages: Int,
     val hasNext: Boolean,
+    val totalElements: Long,
     val contents: List<InquiryResponses>
 )
 data class InquiryResponses(
     val id: Long,
     val title: String,
+    val type: String,
     val status: String,
     val createdAt: String
 )
@@ -506,11 +507,10 @@ data class InquiryAnswer(
     val answeredAt: String
 )
 //인앱알림
-
 data class Notifications(
     val id: Long,
     val type: String,
-    val message: String?,
+    val message: String,
     val subText: String?,
     val actionType: String,
     val targetId: Long?,
@@ -550,8 +550,8 @@ interface ApiService {
         @Body token: IdTokenRequest
     ): AuthTokenResponse
     @POST("api/v1/oauth/android/naver") //네이버 OAuth 회원가입/로그인 처리
-    suspend fun sendNaverInfo(
-        @Body body: NaverUserInfo
+    suspend fun sendNaverToken(
+        @Body token: AccessTokenRequest
     ) : AuthTokenResponse
 
     //User API
@@ -607,7 +607,7 @@ interface ApiService {
     @GET("api/v1/units/{chapterId}") //유닛 조회
     suspend fun getUnitPage(
         @Header("Authorization") auth: String,
-        @Path("chapterId") chapterId: Int
+        @Path("chapterId") chapterId: Long
     ): UnitPageResponse
 
     //Problem API
@@ -626,14 +626,14 @@ interface ApiService {
     @GET("api/v1/cs-notes/{unitId}") //개념 노트 조회
     suspend fun getNotes(
         @Header("Authorization") auth: String,
-        @Path("unitId") unitId: Int
+        @Path("unitId") unitId: Long
     ): ResponseBody
 
     //Lesson API
     @GET("api/v1/lessons/{unitId}") //레슨 목록 조회
     suspend fun getLessonList(
         @Header("Authorization") auth: String,
-        @Path("unitId") unit: Int
+        @Path("unitId") unit: Long
     ) : LessonListResponse
     @POST("api/v1/lessons/results") //레슨 결과 저장
     suspend fun sendLessonResults(
@@ -650,7 +650,7 @@ interface ApiService {
     @GET("api/v1/ranking/leagues/{leagueId}/page/{pageNum}") //티어별 유저 랭킹 조회
     suspend fun getLeagues_tier(
         @Header("Authorization") auth: String,
-        @Path("leagueId") leagueId: Int,
+        @Path("leagueId") leagueId: Long,
         @Path("pageNum") pageNum: Int
     ) : LeaguePageResponse<LeagueItem>
     @GET("api/v1/ranking/me") //내 리그·랭킹 요약 조회
@@ -700,7 +700,7 @@ interface ApiService {
     @GET("api/v1/bookmarks/{unitId}") //유닛 내 북마크 된 문제 조회
     suspend fun getBookmarks(
         @Header("Authorization") auth: String,
-        @Path("unitId") unitId: Int
+        @Path("unitId") unitId: Long
     ) : ProblemResponse
     @POST("api/v1/bookmarks") //북마크 저장
     suspend fun addBookmark(
@@ -721,7 +721,7 @@ interface ApiService {
     @GET("api/v1/wrong-answered-notes/{unitId}") //유닛 내 오답 문제 조회
     suspend fun getWrongAnswered(
         @Header("Authorization") auth: String,
-        @Path("unitId") unitId: Int
+        @Path("unitId") unitId: Long
     ) : ProblemResponse
     @HTTP( //오답노트 삭제
         method = "DELETE",
@@ -776,17 +776,29 @@ interface ApiService {
         @Query("page") page: Int
     ): Response<FriendSearchResponse>
     @GET("api/v1/my-pages/banners") //마이페이지 배너
-    suspend fun getBanners(
+    suspend fun getMyPageBanners(
         @Header("Authorization") auth: String,
     ) : MyPageBanner
-    @GET("api/v1/my-pages/learning")
-    suspend fun getMyPageLearning(
+    @GET("api/v1/my-pages/learning/weekly-report")
+    suspend fun getMyPageWeeklyReport(
         @Header("Authorization") auth: String,
-    ) : MyPageLearningInfo
-    @GET("api/v1/my-pages/summaries")
-    suspend fun getSummeries(
+    ) : MyPageWeeklyReport
+    @GET("api/v1/my-pages/learning/summaries")
+    suspend fun getMyPageSummaries(
         @Header("Authorization") auth: String,
-    ): MyPageSummary
+    ): MyPageLearningSummary
+    @GET("api/v1/my-pages/learning/history")
+    suspend fun getMyPageHistory(
+        @Header("Authorization") auth: String,
+    ): MyPageHistory
+    @GET("api/v1/my-pages/learning/weak-concepts")
+    suspend fun getMyPageWeakConcepts(
+        @Header("Authorization") auth: String,
+    ): List<MyPageWeakConcept>
+    @GET("api/v1/my-pages/learning/top-chapters")
+    suspend fun getMyPageTopChapters(
+        @Header("Authorization") auth: String,
+    ): List<MyPageTopChapter>
     @POST("api/v1/social/follow/{userId}")
     suspend fun followSocial(
         @Header("Authorization") auth: String,
