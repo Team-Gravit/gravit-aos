@@ -153,8 +153,8 @@ fun FollowList(
 @Composable
 private fun FriendTabBar(
     selectedTab: FriendTab,
-    followerCount: Int,
-    followingCount: Int,
+    followerCount: Long,
+    followingCount: Long,
     onTabSelected: (FriendTab) -> Unit
 ) {
     Box(
@@ -170,14 +170,14 @@ private fun FriendTabBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             FriendTabItem(
-                text = "${followerCount} 팔로우",
+                text = "${followerCount.toInt()} 팔로우",
                 selected = selectedTab == FriendTab.Follower,
                 onClick = { onTabSelected(FriendTab.Follower) },
                 modifier = Modifier.weight(1f)
             )
 
             FriendTabItem(
-                text = "${followingCount} 팔로잉",
+                text = "${followingCount.toInt()} 팔로잉",
                 selected = selectedTab == FriendTab.Following,
                 onClick = { onTabSelected(FriendTab.Following) },
                 modifier = Modifier.weight(1f)
