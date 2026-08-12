@@ -180,8 +180,8 @@ fun LoginScreen (
                         loginWithNaver(
                             context = context,
                             viewModel = viewModel,
-                            onError = { e ->
-                                Log.e("NaverLogin", "failed", e)
+                            onError = { errorCode, errorDesc ->
+                                Log.e("NaverLogin", "로그인 실패: errorCode=$errorCode, errorDesc=$errorDesc")
                             }
                         )
                     }
