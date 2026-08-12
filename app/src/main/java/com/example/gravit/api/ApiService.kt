@@ -14,7 +14,6 @@ import retrofit2.http.Query
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.HTTP
-import java.util.Date
 
 //로그인
 data class IdTokenRequest(val idToken: String)
