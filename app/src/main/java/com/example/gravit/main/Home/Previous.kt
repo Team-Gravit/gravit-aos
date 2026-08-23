@@ -46,7 +46,7 @@ import com.example.gravit.ui.theme.CipState
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.Units
 
-@SuppressLint("ConfigurationScreenWidthHeight")
+@SuppressLint("ConfigurationScreenWidthHeight", "DefaultLocale")
 @Composable
 fun PreviousButton(
     chapterId: Long,
@@ -139,7 +139,7 @@ fun PreviousButton(
                 )
 
                 Text(
-                    text = "$progressRate%",
+                    text = String.format("%.1f%%", progressRate),
                     style = AppTypography.Label1,
                     color = AppColor.Main1
                 )
