@@ -62,7 +62,7 @@ fun BottomNavigationBar(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(horizontal = 30.dp, vertical = 8.dp)
+                .padding(vertical = 8.dp)
                 .navigationBarsPadding()
                 .height(60.dp)
 
@@ -81,6 +81,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                     }
                     Column(
                         modifier = Modifier
+                            .width(90.dp)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -141,13 +142,6 @@ fun BottomNavigationBar(navController: NavHostController) {
                             color = if (selected) AppColor.Main2 else Color(0xFF625B71),
                         )
                     }
-
-                    if (index < items.lastIndex) {
-                        val space = if (index == items.lastIndex - 1) 58.dp else 60.dp
-                        Spacer(modifier = Modifier.width(space))
-
-                    }
-
                 }
             }
         }
