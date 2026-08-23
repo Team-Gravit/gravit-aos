@@ -13,7 +13,14 @@ fun loginWithNaver(
 
     val nidOAuthCallback = object : NidOAuthCallback {
         override fun onSuccess() {
-            val accessToken = NidOAuth.getAccessToken()?: ""
+            val accessToken = NidOAuth.getAccessToken()
+            if (accessToken.isNullOrBlank()) {
+                onError(
+                    "TOKEN_UNAVAILABLE",
+                    "Naver access token is unavailable"
+                )
+                return
+            }
             viewModel.sendNaverToken(accessToken)
         }
 
