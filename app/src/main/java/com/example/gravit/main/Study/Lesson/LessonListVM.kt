@@ -31,7 +31,7 @@ class LessonListVM(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
-    fun load(unitId: Int) = viewModelScope.launch {
+    fun load(unitId: Long) = viewModelScope.launch {
         try {
             _state.value = UiState.Loading
 

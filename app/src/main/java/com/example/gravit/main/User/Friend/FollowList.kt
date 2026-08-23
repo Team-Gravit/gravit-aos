@@ -53,14 +53,6 @@ fun FollowList(
     )
     val ui by vm.state.collectAsState()
 
-    val vm1: AddFriendVM = viewModel(
-        factory = AddFriendVMFactory(
-            api = RetrofitInstance.api,
-            appContext = ctx.applicationContext
-        )
-    )
-    val ui1 by vm1.state.collectAsState()
-
     LaunchedEffect(initialTab) {
         vm.init()
 
@@ -153,8 +145,8 @@ fun FollowList(
 @Composable
 private fun FriendTabBar(
     selectedTab: FriendTab,
-    followerCount: Int,
-    followingCount: Int,
+    followerCount: Long,
+    followingCount: Long,
     onTabSelected: (FriendTab) -> Unit
 ) {
     Box(
@@ -170,14 +162,14 @@ private fun FriendTabBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             FriendTabItem(
-                text = "${followerCount} 팔로우",
+                text = "$followerCount 팔로우",
                 selected = selectedTab == FriendTab.Follower,
                 onClick = { onTabSelected(FriendTab.Follower) },
                 modifier = Modifier.weight(1f)
             )
 
             FriendTabItem(
-                text = "${followingCount} 팔로잉",
+                text = "$followingCount 팔로잉",
                 selected = selectedTab == FriendTab.Following,
                 onClick = { onTabSelected(FriendTab.Following) },
                 modifier = Modifier.weight(1f)

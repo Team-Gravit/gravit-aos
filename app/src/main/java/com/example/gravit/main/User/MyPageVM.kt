@@ -10,8 +10,11 @@ import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.FriendsCount
 import com.inuappcenter.gravit.api.MyLeagueHistory
 import com.inuappcenter.gravit.api.MyPageBanner
-import com.inuappcenter.gravit.api.MyPageLearningInfo
-import com.inuappcenter.gravit.api.MyPageSummary
+import com.inuappcenter.gravit.api.MyPageHistory
+import com.inuappcenter.gravit.api.MyPageLearningSummary
+import com.inuappcenter.gravit.api.MyPageTopChapter
+import com.inuappcenter.gravit.api.MyPageWeakConcept
+import com.inuappcenter.gravit.api.MyPageWeeklyReport
 import com.inuappcenter.gravit.api.SocialFeed
 import com.inuappcenter.gravit.api.SocialRecommend
 import com.inuappcenter.gravit.error.handleApiFailure
@@ -20,6 +23,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.jvm.java
 
 class UserScreenVM (
     private val api: ApiService,
@@ -42,7 +46,7 @@ class UserScreenVM (
     }
     sealed interface LearningUiState {
         data object Loading : LearningUiState
-        data class Success(val data: MyPageLearningInfo) : LearningUiState
+        data class Success(val data: MyPageLearning) : LearningUiState
         data object Failed : LearningUiState
         data object SessionExpired : LearningUiState
         data object NotFound : LearningUiState
@@ -95,7 +99,7 @@ class UserScreenVM (
         }
 
         runCatching {
-            api.getBanners("Bearer ${session.accessToken}")
+            api.getMyPageBanners("Bearer ${session.accessToken}")
         }.onSuccess { res ->
             _stateBanners.value = BannersUiState.Success(res)
         }.onFailure { e ->
@@ -110,6 +114,10 @@ class UserScreenVM (
         }
     }
 
+    data class MyPageSummary(
+        val history: MyPageHistory,
+        val summaries: MyPageLearningSummary
+    )
     private val _stateSummary = MutableStateFlow<SummaryUiState>(SummaryUiState.Loading)
     val stateSummary = _stateSummary.asStateFlow()
 
@@ -124,7 +132,14 @@ class UserScreenVM (
         }
 
         runCatching {
-            api.getSummeries("Bearer ${session.accessToken}")
+            coroutineScope {
+                val history = async { api.getMyPageHistory("Bearer ${session.accessToken}") }
+                val summaries = async { api.getMyPageSummaries(auth = "Bearer ${session.accessToken}") }
+                MyPageSummary(
+                    history = history.await(),
+                    summaries = summaries.await()
+                )
+            }
         }.onSuccess { res ->
             _stateSummary.value = SummaryUiState.Success(res)
         }.onFailure { e ->
@@ -166,6 +181,11 @@ class UserScreenVM (
             )
         }
     }
+    data class MyPageLearning(
+        val weeklyReport: MyPageWeeklyReport,
+        val weakConcepts: List<MyPageWeakConcept>,
+        val topChapters: List<MyPageTopChapter>
+    )
     private val _stateLearning = MutableStateFlow<LearningUiState>(LearningUiState.Loading)
     val stateLearning = _stateLearning.asStateFlow()
 
@@ -180,7 +200,16 @@ class UserScreenVM (
         }
 
         runCatching {
-            api.getMyPageLearning("Bearer ${session.accessToken}")
+            coroutineScope {
+                val weeklyReport = async { api.getMyPageWeeklyReport("Bearer ${session.accessToken}")}
+                val weakConcept = async { api.getMyPageWeakConcepts("Bearer ${session.accessToken}")}
+                val topChapter = async { api.getMyPageTopChapters("Bearer ${session.accessToken}")}
+                MyPageLearning(
+                    weeklyReport = weeklyReport.await(),
+                    weakConcepts = weakConcept.await(),
+                    topChapters = topChapter.await()
+                )
+            }
         }.onSuccess { res ->
             _stateLearning.value = LearningUiState.Success(res)
         }.onFailure { e ->

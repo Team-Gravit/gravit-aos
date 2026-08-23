@@ -185,7 +185,7 @@ enum class SheetState { Hidden, Half, Full }
 
 @Composable
 fun NoteSheetCustom(
-    unitId: Int,
+    unitId: Long,
     sheetState: SheetState,
     onStateChange: (SheetState) -> Unit,
     onDismiss: () -> Unit

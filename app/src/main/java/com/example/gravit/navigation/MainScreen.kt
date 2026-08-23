@@ -99,10 +99,10 @@ fun MainScreen(rootNavController: NavController) {
                 composable(
                     route = "unit/{chapterId}",
                     arguments = listOf(
-                        navArgument("chapterId") { type = NavType.IntType }
+                        navArgument("chapterId") { type = NavType.LongType }
                     )
                 ) { backStackEntry ->
-                    val chapterId = backStackEntry.arguments!!.getInt("chapterId")
+                    val chapterId = backStackEntry.arguments!!.getLong("chapterId")
 
                     UnitList(
                         chapterId = chapterId,
@@ -113,9 +113,9 @@ fun MainScreen(rootNavController: NavController) {
 
                 composable(
                     route = "lessonList/{unitId}",
-                    arguments = listOf(navArgument("unitId") { type = NavType.IntType },)
+                    arguments = listOf(navArgument("unitId") { type = NavType.LongType },)
                 ) { backStackEntry ->
-                    val unitId = backStackEntry.arguments!!.getInt("unitId")
+                    val unitId = backStackEntry.arguments!!.getLong("unitId")
                     LessonList(
                         navController = innerNavController,
                         onSessionExpired = goToLoginChoice,
@@ -141,11 +141,11 @@ fun MainScreen(rootNavController: NavController) {
                 composable(
                     route = "problem/{unitId}/{type}",
                     arguments = listOf(
-                        navArgument("unitId") { type = NavType.IntType },
+                        navArgument("unitId") { type = NavType.LongType },
                         navArgument("type") { type = NavType.StringType; defaultValue = "" },
                     )
                 ) {  backStackEntry ->
-                    val unitId = backStackEntry.arguments!!.getInt("unitId")
+                    val unitId = backStackEntry.arguments!!.getLong("unitId")
                     val type = backStackEntry.arguments!!.getString("type").orEmpty()
 
                     BookWrongScreen(
@@ -159,12 +159,12 @@ fun MainScreen(rootNavController: NavController) {
                 composable(
                     route = "lesson/complete/{accuracy}/{learningTime}/{lessonId}",
                     arguments = listOf(
-                        navArgument("accuracy") { type = NavType.FloatType },
+                        navArgument("accuracy") { type = NavType.IntType },
                         navArgument("learningTime") { type = NavType.IntType },
                         navArgument("lessonId") { type = NavType.LongType },
                     )
                 ) { backStackEntry ->
-                    val accuracy = backStackEntry.arguments!!.getFloat("accuracy")
+                    val accuracy = backStackEntry.arguments!!.getInt("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
                     val lessonId = backStackEntry.arguments!!.getLong("lessonId")
 

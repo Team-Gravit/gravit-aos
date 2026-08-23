@@ -57,7 +57,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun LessonList(
-    unitId: Int,
+    unitId: Long,
     onSessionExpired: () -> Unit,
     navController: NavController
 ) {
@@ -132,7 +132,7 @@ fun LessonList(
 @Composable
 fun LessonListUI(
     navController: NavController,
-    unitId: Int,
+    unitId: Long,
     lessonSummaries: List<LessonSummaries>,
     bookmarkAccessible: Boolean,
     wrongAnsweredNoteAccessible: Boolean,

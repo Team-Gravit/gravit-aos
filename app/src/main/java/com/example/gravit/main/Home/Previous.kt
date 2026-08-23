@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.main.Home
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,16 +44,16 @@ import com.example.gravit.ui.theme.Cip
 import com.example.gravit.ui.theme.CipState
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.Units
+import java.util.Locale
 
-@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun PreviousButton(
-    chapterId: Int,
+    chapterId: Long,
     chapterName: String,
     onClick: () -> Unit,
     onViewAllClick: () -> Unit,
     onUnitClick: (Units) -> Unit,
-    progressRate: Float,
+    progressRate: Double,
     units: List<Units> = emptyList()
 ) {
     val statusMap = mapOf(
@@ -70,7 +69,7 @@ fun PreviousButton(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .then(
-                if (chapterId == 0) {
+                if (chapterId == 0L) {
                     Modifier.clickable(onClick = onClick)
                 } else {
                     Modifier
@@ -139,7 +138,7 @@ fun PreviousButton(
                 )
 
                 Text(
-                    text = "$progressRate%",
+                    text = String.format(Locale.US,"%.1f%%", progressRate),
                     style = AppTypography.Label1,
                     color = AppColor.Main1
                 )

@@ -1,14 +1,8 @@
 package com.inuappcenter.gravit.main.Home
 
-import android.R.attr.onClick
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,14 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -162,7 +152,7 @@ fun HomeUI(
     val level = userLevelInfo.level
     val leagueName = userLeagueInfo.leagueName
     val levelRate = userLevelInfo.levelRate
-    val levelProgress = (levelRate / 100f).coerceIn(0f, 1f)
+    val levelProgress = (levelRate / 100f).coerceIn(0.0, 1.0).toFloat()
 
     val leagueId = userLeagueInfo.leagueId
     val lpRange = (userLeagueInfo.maxLP - userLeagueInfo.minLP).toFloat()
@@ -173,7 +163,7 @@ fun HomeUI(
         0f
     }
 
-    val consecutiveDays = userLearningInfo.consecutiveSolvedDays
+    val consecutiveDays = weeklyInfo.consecutiveSolvedDays
 
     LazyColumn(
         modifier = Modifier
@@ -603,16 +593,15 @@ fun HomeUI(
                     val chapterId = userLearningInfo.recentSolvedChapterId
                     val chapterName = userLearningInfo.recentSolvedChapterTitle
                     val progressRate = userLearningInfo.recentSolvedChapterProgressRate
-                    val rate = progressRate.toFloat()
 
                     PreviousButton(
                         chapterId = chapterId,
                         chapterName = chapterName,
-                        progressRate = rate,
+                        progressRate = progressRate,
                         units = units,
 
                         onClick = {
-                            if (chapterId == 0) {
+                            if (chapterId == 0L) {
                                 navController.navigate("chapter") {
                                     launchSingleTop = true
                                 }

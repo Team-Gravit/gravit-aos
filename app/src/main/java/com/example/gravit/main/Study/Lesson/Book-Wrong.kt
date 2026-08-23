@@ -43,7 +43,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun BookWrongScreen(
     navController: NavController,
-    unitId: Int,
+    unitId: Long,
     onSessionExpired: () -> Unit,
     type: String
 ) {

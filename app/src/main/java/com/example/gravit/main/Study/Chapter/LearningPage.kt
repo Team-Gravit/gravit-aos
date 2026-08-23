@@ -271,7 +271,7 @@ private fun ChapterUI(
     }
 }
 data class ChapterButtonData(
-    val chapterId: Int,
+    val chapterId: Long,
     val title: String,
     val description: String,
     val rate: Double,
@@ -283,19 +283,19 @@ val csChapterName = mapOf(
     2 to "algorithm",
     3 to "network"
 )
-fun resolvePlanetRes(id: Int): Int {
+fun resolvePlanetRes(id: Long): Int {
     return planetById[id] ?: R.drawable.algorithm_chapter
 }
 
 val planetById = mapOf(
-    1 to R.drawable.data_structure_chapter,
-    2 to R.drawable.algorithm_chapter,
-    3 to R.drawable.computer_network_chapter,
-    4 to R.drawable.database_chapter,
-    5 to R.drawable.computer_security_chapter,
-    6 to R.drawable.sofftware_engineering_chapter,
-    7 to R.drawable.opreating_system_chapter,
-    8 to R.drawable.programming_language_chapter,
+    1L to R.drawable.data_structure_chapter,
+    2L to R.drawable.algorithm_chapter,
+    3L to R.drawable.computer_network_chapter,
+    4L to R.drawable.database_chapter,
+    5L to R.drawable.computer_security_chapter,
+    6L to R.drawable.sofftware_engineering_chapter,
+    7L to R.drawable.opreating_system_chapter,
+    8L to R.drawable.programming_language_chapter,
 )
 
 fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonData> {
@@ -386,7 +386,7 @@ fun ChapterButton(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     RoundedGauge(
-                        rate = rate.toFloat(),
+                        rate = rate,
                         modifier = Modifier.fillMaxWidth(),
                         height = 10.dp,
                         width = 0.dp

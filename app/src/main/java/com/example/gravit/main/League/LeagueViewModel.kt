@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import androidx.core.content.edit
 
 class LeagueViewModel(
     private val api: ApiService,
@@ -42,7 +43,7 @@ class LeagueViewModel(
 
     sealed class Source {
         data object UserLeague : Source()
-        data class Tier(val leagueId: Int) : Source()
+        data class Tier(val leagueId: Long) : Source()
     }
 
     private val _source = MutableStateFlow<Source>(Source.UserLeague)
@@ -112,7 +113,7 @@ class LeagueViewModel(
         refreshL()
     }
 
-    fun selectTier(leagueId: Int) {
+    fun selectTier(leagueId: Long) {
         _source.value = Source.Tier(leagueId)
         refreshL()
     }
@@ -192,7 +193,7 @@ class LeagueViewModel(
         seasonPrefs.getString("last_shown_season", null)
 
     private fun markShownSeason(seasonId: String) {
-        seasonPrefs.edit().putString("last_shown_season", seasonId).apply()
+        seasonPrefs.edit { putString("last_shown_season", seasonId) }
     }
 
     fun confirmSeasonPopup(seasonId: String) {
