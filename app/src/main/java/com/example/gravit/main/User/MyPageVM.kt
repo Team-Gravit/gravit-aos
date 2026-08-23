@@ -201,9 +201,9 @@ class UserScreenVM (
 
         runCatching {
             coroutineScope {
-                val weeklyReport = async { api.getMyPageWeeklyReport("Beary ${session.accessToken}")}
-                val weakConcept = async { api.getMyPageWeakConcepts("Beary ${session.accessToken}")}
-                val topChapter = async { api.getMyPageTopChapters("Beary ${session.accessToken}")}
+                val weeklyReport = async { api.getMyPageWeeklyReport("Bearer ${session.accessToken}")}
+                val weakConcept = async { api.getMyPageWeakConcepts("Bearer ${session.accessToken}")}
+                val topChapter = async { api.getMyPageTopChapters("Bearer ${session.accessToken}")}
                 MyPageLearning(
                     weeklyReport = weeklyReport.await(),
                     weakConcepts = weakConcept.await(),
