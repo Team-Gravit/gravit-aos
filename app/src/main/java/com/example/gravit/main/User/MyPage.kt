@@ -652,14 +652,15 @@ fun SummaryUI(
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
+                val historyYear = summaries?.history?.years?.firstOrNull() ?: LocalDate.now().year
                 Text(
-                    text = "${(summaries?.history?.years[0] ?: 2026)}년",
+                    text = "${historyYear}년",
                     style = AppTypography.Headline2,
                     color = AppColor.text1
                 )
                 HorizontalDivider(modifier = Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
                 LearningGrassGrid(
-                    year = summaries?.history?.years[0] ?: 2026,
+                    year = historyYear,
                     dailySolvedCounts = summaries?.history?.dailySolvedCounts ?: emptyList()
                 )
                 Row(
@@ -699,7 +700,7 @@ fun SummaryUI(
                 )
                 {
                     var peek = summaries?.history?.peakLearningHour.toString()
-                    if (peek == "-1") {
+                    if (peek == "-1" && peek.isEmpty()) {
                         peek = "-"
                     }
                     Text(
