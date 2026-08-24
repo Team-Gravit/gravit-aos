@@ -124,17 +124,20 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable( //이거 문제집 네비
-                    route = "lesson/{lessonId}",
+                    route = "lesson/{lessonId}/{chapterId}",
                     arguments = listOf(
-                        navArgument("lessonId") { type = NavType.LongType }
+                        navArgument("lessonId") { type = NavType.LongType },
+                        navArgument("chapterId") { type = NavType.LongType }
                     )
                 ) { backStackEntry ->
                     val lessonId = backStackEntry.arguments!!.getLong("lessonId")
+                    val chapterId = backStackEntry.arguments!!.getLong("chapterId")
 
                     LessonScreen(
                         navController = innerNavController,
                         lessonId = lessonId,
-                        onSessionExpired = goToLoginChoice
+                        onSessionExpired = goToLoginChoice,
+                        chapterId = chapterId
                     )
                 }
 
@@ -157,22 +160,25 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable(
-                    route = "lesson/complete/{accuracy}/{learningTime}/{lessonId}",
+                    route = "lesson/complete/{accuracy}/{learningTime}/{lessonId}/{chapterId}",
                     arguments = listOf(
                         navArgument("accuracy") { type = NavType.IntType },
                         navArgument("learningTime") { type = NavType.IntType },
                         navArgument("lessonId") { type = NavType.LongType },
+                        navArgument("chapterId") { type = NavType.LongType },
                     )
                 ) { backStackEntry ->
                     val accuracy = backStackEntry.arguments!!.getInt("accuracy")
                     val learningTime = backStackEntry.arguments!!.getInt("learningTime")
                     val lessonId = backStackEntry.arguments!!.getLong("lessonId")
+                    val chapterId = backStackEntry.arguments!!.getLong("chapterId")
 
                     LessonComplete(
                         navController = innerNavController,
                         accuracy = accuracy,
                         learningTime = learningTime,
-                        lessonId = lessonId
+                        lessonId = lessonId,
+                        chapterId = chapterId
                     )
                 }
 

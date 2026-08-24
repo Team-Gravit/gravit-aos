@@ -115,13 +115,15 @@ fun LessonList(
             val lessonSummaries = s.lessonSummaries
             val bookmarkAccessible = s.bookmarkAccessible
             val wrongAnsweredNoteAccessible = s.wrongAnsweredNoteAccessible
+            val chapterId = s.chapterSummary.chapterId
             LessonListUI(
                 navController = navController,
                 unitId = unitId,
                 lessonSummaries = lessonSummaries,
                 bookmarkAccessible = bookmarkAccessible,
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
-                unitSummary = s.unitSummaryResponse
+                unitSummary = s.unitSummaryResponse,
+                chapterId = chapterId
             )
         }
         else -> Unit
@@ -136,7 +138,8 @@ fun LessonListUI(
     lessonSummaries: List<LessonSummaries>,
     bookmarkAccessible: Boolean,
     wrongAnsweredNoteAccessible: Boolean,
-    unitSummary: UnitSummaryResponse
+    unitSummary: UnitSummaryResponse,
+    chapterId: Long
 ){
     var snackBar by remember { mutableStateOf<String?>(null) }
     var sheetState by remember { mutableStateOf(SheetState.Hidden) }
@@ -216,19 +219,11 @@ fun LessonListUI(
                                 tint = AppColor.Main1
                             )
                             Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "개념노트",
-                                    style = AppTypography.Headline1,
-                                    color = AppColor.text2
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = "개념노트 설명??",
-                                    style = AppTypography.Label2,
-                                    color = AppColor.text3
-                                )
-                            }
+                            Text(
+                                text = "개념노트",
+                                style = AppTypography.Headline1,
+                                color = AppColor.text2
+                            )
                             Spacer(Modifier.weight(1f))
                             Image(
                                 painter = painterResource(R.drawable.chevron_right),
@@ -375,7 +370,7 @@ fun LessonListUI(
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
                                         ) {
-                                            navController.navigate("lesson/${lesson.lessonId}")
+                                            navController.navigate("lesson/${lesson.lessonId}/${chapterId}")
                                         }
                                         .background(PrimitiveColor.Gray200),
                                     contentAlignment = Alignment.CenterStart
