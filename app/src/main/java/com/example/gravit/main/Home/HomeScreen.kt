@@ -32,6 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +58,7 @@ import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.MainPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
@@ -165,6 +167,14 @@ fun HomeUI(
 
     val consecutiveDays = weeklyInfo.consecutiveSolvedDays
 
+    val systemUiController = rememberSystemUiController()
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = false
+        )
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
