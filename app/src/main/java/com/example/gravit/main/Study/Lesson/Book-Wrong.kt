@@ -30,7 +30,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.inuappcenter.gravit.api.ProblemSubmissionRequests
+import com.inuappcenter.gravit.api.ProblemSubmissionSaveRequests
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Study.Problem.LessonVMFactory
 import com.inuappcenter.gravit.main.Study.Problem.LessonViewModel
@@ -152,7 +152,7 @@ fun BookWrongScreen(
 
                 fun submitSingleProblem(problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) {
                     vm.submitProblemResults(
-                        ProblemSubmissionRequests(problemId, isCorrect, selectedOptionId, submittedContent)
+                        ProblemSubmissionSaveRequests(problemId, isCorrect, selectedOptionId, submittedContent)
                     ) { ok ->
 
                     }
