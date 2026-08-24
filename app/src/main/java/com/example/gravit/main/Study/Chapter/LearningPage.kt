@@ -278,11 +278,6 @@ data class ChapterButtonData(
     val planetRes: Int,
 )
 
-val csChapterName = mapOf(
-    1 to "data-structure",
-    2 to "algorithm",
-    3 to "network"
-)
 fun resolvePlanetRes(id: Long): Int {
     return planetById[id] ?: R.drawable.algorithm_chapter
 }
@@ -293,7 +288,7 @@ val planetById = mapOf(
     3L to R.drawable.computer_network_chapter,
     4L to R.drawable.database_chapter,
     5L to R.drawable.computer_security_chapter,
-    6L to R.drawable.sofftware_engineering_chapter,
+    6L to R.drawable.software_engineering_chapter,
     7L to R.drawable.opreating_system_chapter,
     8L to R.drawable.programming_language_chapter,
 )

@@ -12,7 +12,7 @@ import com.inuappcenter.gravit.api.LessonResultRequest
 import com.inuappcenter.gravit.api.LessonResultResponse
 import com.inuappcenter.gravit.api.LessonSubmissionSaveRequest
 import com.inuappcenter.gravit.api.ProblemResponse
-import com.inuappcenter.gravit.api.ProblemSubmissionRequests
+import com.inuappcenter.gravit.api.ProblemSubmissionSaveRequests
 import com.inuappcenter.gravit.api.Problems
 import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,7 +82,7 @@ class LessonViewModel(
     val submit = _submit.asStateFlow()
     fun submitResults(
         lessonSubmissionSaveRequest: LessonSubmissionSaveRequest?,
-        problemSubmissionRequests: List<ProblemSubmissionRequests>?,
+        problemSubmissionRequests: List<ProblemSubmissionSaveRequests>?,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
 
@@ -95,9 +95,10 @@ class LessonViewModel(
         }
         runCatching {
             val result = LessonResultRequest(lessonSubmissionSaveRequest, problemSubmissionRequests)
-           api.sendLessonResults(result, "Bearer ${session.accessToken}")
-        }.onSuccess { response ->
-            _submit.value = SubmitState.Success(response)
+            val response = api.sendLessonResults(result, "Bearer ${session.accessToken}")
+            api.getLessonResults("Bearer ${session.accessToken}", response.lessonSubmissionId)
+        }.onSuccess { res ->
+            _submit.value = SubmitState.Success(res)
             onDone(true)
         }.onFailure { e ->
             onDone(false)
@@ -123,7 +124,7 @@ class LessonViewModel(
     private val _problemSubmit = MutableStateFlow<ProblemSubmitState>(ProblemSubmitState.Idle)
     val problemSubmit = _problemSubmit.asStateFlow()
     fun submitProblemResults(
-        problemSubmissionRequests: ProblemSubmissionRequests,
+        problemSubmissionRequests: ProblemSubmissionSaveRequests,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
 

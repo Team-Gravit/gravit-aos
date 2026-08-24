@@ -32,7 +32,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.inuappcenter.gravit.api.ProblemSubmissionRequests
+import com.inuappcenter.gravit.api.ProblemSubmissionSaveRequests
 import com.inuappcenter.gravit.api.Problems
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Study.Problem.LessonVMFactory
@@ -49,7 +49,8 @@ import kotlin.math.roundToInt
 fun LessonScreen(
     navController: NavController,
     lessonId: Long,
-    onSessionExpired: () -> Unit
+    onSessionExpired: () -> Unit,
+    chapterId: Long
 ) {
     val swVm: StopwatchViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -67,7 +68,7 @@ fun LessonScreen(
             lifecycleOwner.lifecycle.removeObserver(obs)
         }
     }
-    val resultsMap = remember { mutableStateMapOf<Long, ProblemSubmissionRequests>() }
+    val resultsMap = remember { mutableStateMapOf<Long, ProblemSubmissionSaveRequests>() }
     var submitting by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -154,7 +155,7 @@ fun LessonScreen(
                 }
 
                 fun recordResult(problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) {
-                    resultsMap[problemId] = ProblemSubmissionRequests(
+                    resultsMap[problemId] = ProblemSubmissionSaveRequests(
                         problemId = problemId,
                         isCorrect = isCorrect,
                         selectedOptionId = selectedOptionId,
@@ -167,21 +168,21 @@ fun LessonScreen(
                     if (submitting) return
                     submitting = true
 
-                    val problemSubmissionRequests = resultsMap.values.toList()
-                    if (problemSubmissionRequests.isEmpty()) {
+                    val ProblemSubmissionSaveRequests = resultsMap.values.toList()
+                    if (ProblemSubmissionSaveRequests.isEmpty()) {
                         submitting = false
                         return
                     }
                     val learningTime = (swVm.state.value.elapsedMillis / 1000).toInt()
-                    val correctCount = problemSubmissionRequests.count { it.isCorrect }
+                    val correctCount = ProblemSubmissionSaveRequests.count { it.isCorrect }
                     val accuracy: Int = if(total > 0) { ((correctCount.toDouble()/total) * 100).roundToInt() } else 0
 
                     val homeEntry = navController.getBackStackEntry("home")
-                    homeEntry.savedStateHandle["problemList"] = ArrayList(problemSubmissionRequests)
+                    homeEntry.savedStateHandle["problemList"] = ArrayList(ProblemSubmissionSaveRequests)
                     navController.navigate(
-                        "lesson/complete/$accuracy/$learningTime/$lessonId"
+                        "lesson/complete/$accuracy/$learningTime/$lessonId/$chapterId"
                     ) {
-                        popUpTo("lesson/$lessonId") { inclusive = true }
+                        popUpTo("lessonList/${s.unitSummaryResponse.unitId}") { inclusive = false }
                         launchSingleTop = true
                     }
                 }

@@ -129,7 +129,7 @@ data class UnitSummaryResponse(
 
 //레슨리스트
 data class LessonListResponse(
-    val chapterSummaryResponse: ChapterSummary,
+    val chapterSummary: ChapterSummary,
     val unitSummaryResponse: UnitSummaryResponse,
     val lessonSummaries: List<LessonSummaries>,
     val bookmarkAccessible: Boolean,
@@ -176,15 +176,18 @@ data class OptionDto(
 //제출
 data class LessonResultRequest(
     val lessonSubmissionSaveRequest: LessonSubmissionSaveRequest?,
-    val problemSubmissionRequests: List<ProblemSubmissionRequests>?
+    val problemSubmissionSaveRequests: List<ProblemSubmissionSaveRequests>?
 )
 data class LessonSubmissionSaveRequest(
     val lessonId: Long,
     val learningTime: Int,
     val accuracy: Int
 )
+data class LessonSubmissionResponse(
+    val lessonSubmissionId: Long
+)
 @Parcelize
-data class ProblemSubmissionRequests(
+data class ProblemSubmissionSaveRequests(
     val problemId: Long,
     val isCorrect: Boolean,
     val selectedOptionId: Long?,
@@ -195,7 +198,7 @@ data class ProblemSubmissionRequests(
 data class LessonResultResponse(
     val leagueName: String,
     val userLevelResponse: UserLevelResponse,
-    val unitSummary: UnitSummaryResponse
+    val unitSummaryResponse: UnitSummaryResponse
 
 )
 data class UserLevelResponse(
@@ -617,10 +620,9 @@ interface ApiService {
     ) : ProblemResponse
     @POST("api/v1/problems/results") //문제 결과 저장
     suspend fun sendProblemResults(
-        @Body body: ProblemSubmissionRequests,
+        @Body body: ProblemSubmissionSaveRequests,
         @Header("Authorization") auth: String
     )
-
     //CS-Note API
     @GET("api/v1/cs-notes/{unitId}") //개념 노트 조회
     suspend fun getNotes(
@@ -638,6 +640,11 @@ interface ApiService {
     suspend fun sendLessonResults(
         @Body body: LessonResultRequest,
         @Header("Authorization") auth: String
+    ) : LessonSubmissionResponse
+    @GET("api/v1/lessons/results/{lessonSubmissionId}")
+    suspend fun getLessonResults(
+        @Header("Authorization") auth: String,
+        @Path("lessonSubmissionId") lessonSubmissionId: Long
     ) : LessonResultResponse
 
     //UserLeague API
