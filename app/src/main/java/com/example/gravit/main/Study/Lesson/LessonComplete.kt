@@ -4,62 +4,58 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.inuappcenter.gravit.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
+import com.example.gravit.ui.theme.ButtonState
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.LessonSubmissionSaveRequest
-import com.inuappcenter.gravit.api.ProblemSubmissionRequests
+import com.inuappcenter.gravit.api.ProblemSubmissionSaveRequests
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.main.Home.LevelGauge
+import com.inuappcenter.gravit.main.Home.RoundedGauge
 import com.inuappcenter.gravit.main.Study.Problem.FormatSeconds
 import com.inuappcenter.gravit.main.Study.Problem.LessonVMFactory
 import com.inuappcenter.gravit.main.Study.Problem.LessonViewModel
+import com.inuappcenter.gravit.main.User.RankInfo
 import com.inuappcenter.gravit.ui.theme.pretendard
 
 @SuppressLint("UnrememberedGetBackStackEntry")
@@ -69,9 +65,10 @@ fun LessonComplete(
     accuracy: Int,
     learningTime: Int,
     lessonId: Long,
+    chapterId: Long
 ){
     val homeEntry = navController.getBackStackEntry("home")
-    val problemList = homeEntry.savedStateHandle.get<ArrayList<ProblemSubmissionRequests>>("problemList")
+    val problemList = homeEntry.savedStateHandle.get<ArrayList<ProblemSubmissionSaveRequests>>("problemList")
     val lessonSubmission = LessonSubmissionSaveRequest(lessonId, learningTime, accuracy)
     val context = LocalContext.current
     val vm: LessonViewModel = viewModel(
@@ -80,7 +77,7 @@ fun LessonComplete(
 
     LaunchedEffect(Unit) {
         vm.submitResults(lessonSubmission, problemList)
-        homeEntry.savedStateHandle.remove<ArrayList<ProblemSubmissionRequests>>("problemList")
+        homeEntry.savedStateHandle.remove<ArrayList<ProblemSubmissionSaveRequests>>("problemList")
     }
 
     val submit by vm.submit.collectAsState()
@@ -108,159 +105,168 @@ fun LessonComplete(
     }
     val s = (submit as? LessonViewModel.SubmitState.Success)?.data
     val userLevelResponse = s?.userLevelResponse
-    val unitSummary = s?.unitSummary
+    val unitSummary = s?.unitSummaryResponse
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(WindowInsets.statusBars.asPaddingValues())
-        .background(Color(0xFFF2F2F2))
+    val systemUiController = rememberSystemUiController()
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = false
+        )
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Column {
+        Column(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(70.dp)
-                    .background(Color.White)
-            ) {
-                Text(
-                    text = unitSummary?.title ?: "",
-                    fontSize = 20.sp,
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF030303)
-                )
-
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "닫기",
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 16.dp)
-                        .size(24.dp)
-                        .clickable { navController.popBackStack("home", inclusive = false) },
-                    tint = Color(0xFF4D4D4D)
-                )
-            }
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.Center
-            ){
-                Row (modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PillShape(
-                        img = R.drawable.rank_cup,
-                        league = s?.leagueName ?: "Bronze1"
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    LevelGauge(
-                        lv = userLevelResponse?.currentLevel ?: 1,
-                        xp = userLevelResponse?.xp ?: 0,
-                    )
-                }
-            }
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)){
-                Box(modifier = Modifier
-                    .weight(3f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .background(
-                        color = Color.White,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFFDCDCDC),
-                        shape = RoundedCornerShape(16.dp)
-                    ),
-                    contentAlignment = Alignment.Center
-                ){
-                    Column (verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "${unitSummary?.title} 학습을 완료했어요!",
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 20.sp,
-                            color = Color(0xFF030303)
-
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "다음 레슨을 풀러 가볼까요?",
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
-                            color = Color(0xFF6D6D6D)
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Image(
-                            painter = painterResource(id = R.drawable.tokki),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(156.dp)
-                                .height(196.dp)
-                        )
-                    }
-                }
-            }
-
-            Column(
-                modifier = Modifier.weight(0.7f)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
-                        .weight(1f)
-                ) {
-                    RoundBox(
-                        title = "정답률",
-                        value = "${lessonSubmission.accuracy}%",
-                        img = R.drawable.books,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    RoundBox(
-                        title = "풀이시간",
-                        value = FormatSeconds(lessonSubmission.learningTime),
-                        img = R.drawable.play_button,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Box(modifier = Modifier
-                    .padding(horizontal = 20.dp)
+                    .background(AppColor.bg1)
                     .weight(1f)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.results_back),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(WindowInsets.statusBars.asPaddingValues())
+                        .padding(horizontal = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Button(
-                        onClick = { navController.popBackStack() },
+                    Spacer(Modifier.height(75.dp))
+                    Text(
+                        text = "${planetName[chapterId]} 정복에 더 가까워졌어요!",
+                        style = AppTypography.Heading1,
+                        color = AppColor.text1w
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "${unitSummary?.title?: ""} 학습 완료",
+                        style = AppTypography.Label2,
+                        color = AppColor.text2w
+                    )
+                    Spacer(Modifier.height(40.dp))
+
+                    val painter = painterResource(id = converterInt(chapterId))
+
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(63.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8100B3),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(10.dp)
+                            .padding(end = 22.dp)
+                            .align(Alignment.End)
+                            .size(113.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "계속하기",
-                            fontSize = 16.sp,
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.Bold
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier.size(113.dp),
+                            colorFilter = ColorFilter.tint(
+                                color = AppColor.bg0.copy(alpha = 0.2f),
+                                blendMode = BlendMode.SrcIn
+                            )
+                        )
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier.size(107.dp)
                         )
                     }
-                    Spacer(Modifier.height(25.dp))
+                    Spacer(Modifier.weight(1f))
+                    Column (modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                    ){
+                        Row (modifier = Modifier.fillMaxWidth()){
+                            Text(
+                                text = "${userLevelResponse?.xp}XP",
+                                style = AppTypography.Label1,
+                                color = AppColor.text3
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = "LV${userLevelResponse?.nextLevel?: 2}까지",
+                                style = AppTypography.Label1,
+                                color = AppColor.Main1
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        RoundedGauge(
+                            height = 8.dp,
+                            width = 0.dp,
+                            rate = userLevelResponse?.xp?.toDouble()?: 0.0,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color(0xFFFBF1FF)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(72.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(AppColor.bg0),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column {
+                                val resultsInfo = listOf(
+                                    "$accuracy%",
+                                    "정답률",
+                                    FormatSeconds(learningTime),
+                                    "풀이시간"
+                                ).chunked(2)
+                                val isLeague = false
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(64.dp)
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    resultsInfo.forEachIndexed { index, item ->
+                                        RankInfo(
+                                            value = item[0],
+                                            label = item[1],
+                                            modifier = Modifier.weight(1f),
+                                            color = if (index == 0 && isLeague) AppColor.Main1 else AppColor.text1
+                                        )
+                                        if (index != resultsInfo.lastIndex) {
+
+                                            VerticalDivider(
+                                                modifier = Modifier.height(40.dp),
+                                                thickness = 1.dp,
+                                                color = AppColor.divider1
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Row{
+                            BlockButton(
+                                state = ButtonState.Stroke,
+                                onClick = { navController.popBackStack("home", inclusive = false) },
+                                text = "홈으로",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(45.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            BlockButton(
+                                state = ButtonState.Default,
+                                onClick = { navController.popBackStack() },
+                                text = "이어서 학습하기",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(45.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -308,136 +314,27 @@ fun LessonComplete(
     }
 }
 
-@Composable
-fun RoundBox(
-    title: String,
-    value: String,
-    img: Int,
-    modifier: Modifier
-){
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            )
-
-    ){
-        Row (
-            modifier= Modifier.padding(start = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Image(
-                painter = painterResource(id = img),
-                contentDescription = null,
-                modifier = Modifier.size(50.dp)
-            )
-            Spacer(Modifier.width(1.dp))
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxHeight()
-            ){
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
-                    fontFamily = pretendard,
-                    color = Color.Black
-                )
-                Text(
-                    text = value,
-                    fontFamily = pretendard,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
-                )
-            }
-        }
-    }
+val planetName = mapOf(
+    1L to "수성",
+    2L to "금성",
+    3L to "지구",
+    4L to "화성",
+    5L to "목성",
+    6L to "토성",
+    7L to "천왕성",
+    8L to "해왕성"
+)
+fun converterInt(id: Long): Int {
+    return planetImg[id] ?: R.drawable.algorithm_chapter
 }
 
-@SuppressLint("ConfigurationScreenWidthHeight")
-@Composable
-fun PillShape(
-    modifier: Modifier = Modifier,
-    img: Int,
-    league: String = "",
-    xp: String = ""
-){
-    val config = LocalConfiguration.current
-    // Figma / 디자인 기준 해상도
-    val designWidth = 360f
-    val designHeight = 740f
-
-    val scaleW = config.screenWidthDp.toFloat() / designWidth
-    val scaleH = config.screenHeightDp.toFloat() / designHeight
-
-    fun dw(v: Float) = (v * scaleW).dp
-    fun dh(v: Float) = (v * scaleH).dp
-
-    Box(
-        modifier = modifier
-            .wrapContentWidth()
-            .height(dh(25f))
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(50)
-            )
-            .padding(
-                horizontal = dw(6f),
-                vertical = dh(4f)
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxHeight(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = img),
-                contentDescription = null,
-                modifier = Modifier.size(dh(16f))
-            )
-            Spacer(Modifier.width(dw(4f)))
-            if (league.isNotEmpty()) {
-                Text(
-                    text = league,
-                    style = TextStyle(
-                        fontFamily = pretendard,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF8100B3),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
-                    modifier = Modifier.padding(end = dw(2f))
-                )
-            } else {
-                Text(
-                    buildAnnotatedString {
-                        withStyle(
-                            SpanStyle(
-                                fontWeight = FontWeight.Bold
-                            )
-                        ) {
-                            append(xp)
-                        }
-                        withStyle(
-                            SpanStyle(
-                                fontWeight = FontWeight.Normal
-                            )
-                        ) {
-                            append("XP")
-                        }
-                    },
-                    style = TextStyle(
-                        fontFamily = pretendard,
-                        fontSize = 14.sp,
-                        color = Color(0xFF8100B3),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    )
-                )
-            }
-        }
-    }
-}
+val planetImg = mapOf(
+    1L to R.drawable.data_structure_planet,
+    2L to R.drawable.algorithm_planet,
+    3L to R.drawable.computer_network_planet,
+    4L to R.drawable.database_planet,
+    5L to R.drawable.computer_security_planet,
+    6L to R.drawable.software_engineering_planet,
+    7L to R.drawable.opreating_system_planet,
+    8L to R.drawable.programming_language_planet,
+)
