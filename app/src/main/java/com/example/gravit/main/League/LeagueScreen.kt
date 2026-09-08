@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -293,7 +292,12 @@ fun LeagueUI(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             contentPadding = PaddingValues(bottom = 80.dp)
                         ) {
-                            items(ui.items, key = { it.userId?: "" }) { item ->
+                            itemsIndexed(
+                                items = ui.items,
+                                key = { index, item ->
+                                    "${item.userId ?: "unknown"}$index"
+                                }
+                            ) { _, item ->
                                 RankCell(item = item, hazeState)
                             }
 
@@ -463,7 +467,9 @@ fun SeasonCompleted(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ){
                             Text(
-                                text = "${popupDetail.lastSeasonPopupDto?.rank}위",
+                                text = popupDetail.lastSeasonPopupDto?.rank
+                                    ?.let { "${it}위" }
+                                    ?: "-",
                                 style = AppTypography.Headline2,
                                 color = AppColor.text2
                             )
@@ -579,7 +585,9 @@ fun SeasonStart(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = popupDetail.lastSeasonPopupDto?.nextStartLp.toString(),
+                                text = popupDetail.lastSeasonPopupDto?.nextStartLp
+                                    ?.toString()
+                                    ?: "-",
                                 style = AppTypography.Headline2,
                                 color = AppColor.text2
                             )
@@ -656,7 +664,10 @@ private fun RankCell(
            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = item.rank.toString().padStart(3, '0'),
+                text = item.rank
+                    ?.toString()
+                    ?.padStart(3, '0')
+                    ?: "---",
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
@@ -714,7 +725,7 @@ private fun RankCell(
                         AppTypography.Label1.toSpanStyle()
                             .copy(color = PrimitiveColor.Purple300)
                     ) {
-                        append("${item.level}")
+                        append(item.level?.toString() ?: "-")
                     }
                 },
                 style = TextStyle(
@@ -738,7 +749,7 @@ private fun RankCell(
                         AppTypography.Label1.toSpanStyle()
                             .copy(color = PrimitiveColor.Purple300)
                     ) {
-                        append("${item.lp}")
+                        append(item.lp?.toString() ?: "-")
                     }
                 },
                 style = TextStyle(
