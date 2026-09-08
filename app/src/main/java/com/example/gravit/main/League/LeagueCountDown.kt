@@ -10,10 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-import com.inuappcenter.gravit.ui.theme.gmarketsans
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import java.util.TimeZone
@@ -40,10 +38,8 @@ fun WeeklyCountdown() {
 
     Text(
         text = timeText,
-        fontFamily = gmarketsans,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.Bold,
-        color = Color(0xFF494949),
+        style = AppTypography.Label1,
+        color = AppColor.text2
 
     )
 }
