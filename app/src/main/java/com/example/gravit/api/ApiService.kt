@@ -391,13 +391,13 @@ data class LeaguePageResponse<T>(
     val contents: List<T>
 )
 data class LeagueItem(
-    val rank: Int,
-    val userId: Long,
-    val lp: Int,
+    val rank: Int?,
+    val userId: Long?,
+    val lp: Int?,
     val nickname: String,
-    val profileImgNumber: Int,
-    val xp: Int,
-    val level: Int
+    val profileImgNumber: Int?,
+    val xp: Int?,
+    val level: Int?
 )
 data class MyLeague(
     val leagueId: Long,
@@ -420,17 +420,13 @@ data class CurrentSeason(
     val nowSeason: String
 )
 data class LastSeasonPopupDto(
-    val rank: Int,
+    val rank: Int?,
     val leagueName: String,
-    val profileImgNumber: Int,
+    val profileImgNumber: Int?,
     val nextLeagueName: String,
-    val nextStartLp: Int
+    val nextStartLp: Int?
 )
 
-data class SlicePage<T>(
-    val hasNextPage: Boolean,
-    val contents: List<T>
-)
 data class MyLeagueHistory(
     val currentSeasonRank: Int,
     val totalSeasonCount: Int,
