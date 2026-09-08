@@ -1,5 +1,6 @@
 package com.inuappcenter.gravit.main.Study.Problem
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,16 +14,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,11 +53,8 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -67,7 +64,6 @@ import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.AnswerResponse
 import com.inuappcenter.gravit.api.Problems
-import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.main.ConfirmDialog
 import kotlinx.coroutines.delay
@@ -89,12 +85,9 @@ fun ProblemUI(
     onRemoveWrongNote: (Long) -> Unit = {},
     unitId: Long
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
-
     var bookmarkSnackBar by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(bookmarkSnackBar) {
@@ -106,15 +99,60 @@ fun ProblemUI(
     val problemVm: ProblemViewModel = viewModel()
     val state by problemVm.uiState.collectAsState()
 
-    var index by rememberSaveable(total) { mutableIntStateOf(0) }
-    val current = problems[index]
-    val isLast = index == total - 1
+    var index by rememberSaveable { mutableIntStateOf(0) }
+    if (problems.isEmpty()) {
+        LaunchedEffect(Unit) {
+            onFinishLesson()
+        }
+        return
+    }
+    val safeIndex = index.coerceIn(0, problems.lastIndex)
+    val current = problems[safeIndex]
+    val isLast = safeIndex == problems.lastIndex
+    LaunchedEffect(problems.size) {
+        if (index != safeIndex) {
+            index = safeIndex
+        }
+    }
+
+    val currentAnswer = state.answers[current.problemId]?: ProblemViewModel.AnswerState()
 
     val isBookmark = bookmarkMap[current.problemId] ?: false
 
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
+    val isSubjective = current.problemType == "SUBJECTIVE"
+    val canSubmit = if (isSubjective) currentAnswer.shortText.isNotBlank() else currentAnswer.selectedIndex != null
+    val nextButtonEnabled = currentAnswer.submitted || canSubmit
+    val submitCurrentProblem: () -> Unit = {
+        if (isSubjective) {
+            val correct = isAnswerCorrect(currentAnswer.shortText, current.answerResponse)
+            problemVm.submit(problemId = current.problemId, isCorrect = correct)
+            onRecordResult(current.problemId, correct, null, currentAnswer.shortText)
+        } else {
+            val selectedIdx = currentAnswer.selectedIndex
+            if (selectedIdx != null) {
+                val selectedOption = current.options.getOrNull(selectedIdx)
+                if (selectedOption != null) {
+                    val correct = selectedOption.isAnswer
+                    problemVm.submit(problemId = current.problemId, isCorrect = correct)
+                    onRecordResult(current.problemId, correct, selectedOption.optionId, null)
+                }
+            }
+        }
+    }
+    val moveToNextProblem: () -> Unit = {
+        if (currentAnswer.submitted) {
+            if (!isLast) {
+                index++
+            } else {
+                onFinishLesson()
+            }
+        }
+    }
+
+    Log.d("can",canSubmit.toString())
     BackHandler(enabled = true) {
         if (showSheet) {
             showSheet = false
@@ -139,7 +177,7 @@ fun ProblemUI(
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
             .fillMaxSize()
-            .background(AppColor.bg1)
+            .background(AppColor.bg1),
         ) {
             //헤더
             Box(
@@ -148,11 +186,11 @@ fun ProblemUI(
                     .background(AppColor.bg0)
                     .windowInsetsPadding(WindowInsets.statusBars),
             ) {
-                Box (
+                Row (
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(51.dp),
-                    contentAlignment = Alignment.Center
+                    verticalAlignment = Alignment.CenterVertically
                 ){
                     Icon(
                         painter = painterResource(id = R.drawable.close),
@@ -160,7 +198,6 @@ fun ProblemUI(
                         modifier = Modifier
                             .padding(start = 12.dp)
                             .size(24.dp)
-                            .align(Alignment.CenterStart)
                             .clickable {
                                 swVm.pause()
                                 if (type == "normal") {
@@ -174,30 +211,27 @@ fun ProblemUI(
                             },
                         tint = AppColor.icon_default
                     )
-                    Text(
-                        text = unitTitle,
-                        style = AppTypography.Label1,
-                        color = AppColor.text2
-                    )
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.timer),
-                            contentDescription = "stopwatch",
-                            modifier = Modifier.size(20.dp),
-                            tint = AppColor.icon_default
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        painter = painterResource(id = R.drawable.timer),
+                        contentDescription = "stopwatch",
+                        modifier = Modifier.size(20.dp),
+                        tint = AppColor.Main1
 
-                        )
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Stopwatch(
-                            vm = swVm,
-                            autoStart = true
-                        )
-                    }
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Stopwatch(
+                        vm = swVm,
+                        autoStart = true
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    ReportDialog(
+                        navController = navController,
+                        problemId = current.problemId,
+                        onOverlayOpened = { swVm.pause() },
+                        onOverlayClosed = { swVm.start() },
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
                 }
             }
             Box(
@@ -216,68 +250,62 @@ fun ProblemUI(
                         .background(AppColor.Main1)
                 )
             }
-
+            Spacer(Modifier.height(20.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(AppColor.bg1)
-                    .weight(1f)
                     .padding(horizontal = 16.dp)
             ) {
-                Column (modifier = Modifier.fillMaxWidth()) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            painter = painterResource(
-                                if (isBookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(25.dp)
-                                .clickable {
-                                    bookmarkSnackBar = if (!isBookmark) {
-                                        "북마크에 추가되었어요."
-                                    } else {
-                                        "북마크에서 제거되었어요."
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 250.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg0)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Column{
+                        Row{
+                            Text(
+                                text = (index + 1).toString().padStart(2, '0'),
+                                style = AppTypography.Heading1,
+                                color = AppColor.text1
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Image(
+                                painter = painterResource(
+                                    if (isBookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
+                                ),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        bookmarkSnackBar = if (!isBookmark) {
+                                            "북마크에 추가되었어요."
+                                        } else {
+                                            "북마크에서 제거되었어요."
+                                        }
+                                        onBookmarkToggle(current.problemId)
+
                                     }
-                                    onBookmarkToggle(current.problemId)
-                                }
-                        )
-                        Spacer(Modifier.width(8.dp))
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "${index+1}/${total}",
-                            style = AppTypography.Heading2,
+                            text = current.instruction,
+                            style = AppTypography.Headline1,
                             color = AppColor.text1
                         )
-                        Spacer(modifier = Modifier.weight(1f))
-                        ReportDialog(
-                            navController = navController,
-                            problemId = current.problemId,
-                            onOverlayOpened = { swVm.pause() },
-                            onOverlayClosed = { swVm.start() }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = current.instruction,
-                        style = AppTypography.Headline2,
-                        color = AppColor.text1
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(AppColor.bg0)
-                            .verticalScroll(rememberScrollState())
-                    ) {
+                        Spacer(Modifier.height(20.dp))
                         InlineUnderlineText(
                             raw = current.content,
-                            modifier = Modifier.padding(16.dp),
-                            style = AppTypography.Body2_Reading.copy(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                            style = AppTypography.Body2_Reading.copy(
+                                platformStyle = PlatformTextStyle(
+                                    includeFontPadding = false
+                                )
+                            ),
                             strokeWidth = 1.dp,
                             color = AppColor.text1
                         )
@@ -293,34 +321,12 @@ fun ProblemUI(
             ) {
                 if(current.problemType == "SUBJECTIVE") {
                     ShortAnswer(
-                        submitted = state.submitted,
+                        submitted = currentAnswer.submitted,
+                        isCorrect = currentAnswer.isCorrect,
                         problemId = current.problemId,
-                        text = state.shortText,
+                        text = currentAnswer.shortText,
                         answer = current.answerResponse,
-                        onTextChange = { problemVm.updateText(it) },
-                        isCorrect = state.isCorrect,
-                        onSubmit = {
-                            val correct = isAnswerCorrect(
-                                state.shortText,
-                                current.answerResponse
-                            )
-                            problemVm.submit(correct)
-                            onRecordResult(
-                                current.problemId,
-                                correct,
-                                null,
-                                 state.shortText
-                                )
-                        },
-                        isLast = isLast,
-                        onNext = {
-                            if (!isLast) {
-                                index++
-                                problemVm.reset()
-                            } else {
-                                onFinishLesson()
-                            }
-                        },
+                        onTextChange = { problemVm.updateText(current.problemId, it) },
                         showRemoveFromWrongNote = (type == "wrong-answered-notes"),
                         onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
                         problemVm = problemVm
@@ -329,35 +335,33 @@ fun ProblemUI(
                     MultipleChoice(
                         options = current.options,
                         problemNum = current.problemId,
-                        selectedIndex = state.selectedIndex,
-                        submitted = state.submitted,
-                        isCorrect = state.isCorrect,
-                        onSelect = { problemVm.select(it) },
-                        onSubmit = { selectedIdx ->
-                            val selectedOption = current.options.getOrNull(selectedIdx)
-                                ?: return@MultipleChoice
-
-                            val correct = selectedOption.isAnswer
-
-                            problemVm.submit(correct)
-                            onRecordResult(current.problemId, correct, selectedOption.optionId, null)
-                        },
-                        isLast = isLast,
-                        onNext = {
-                            if (!isLast) {
-                                index++
-                                problemVm.reset()
-                            } else {
-                                onFinishLesson()
-                            }
-                        },
+                        selectedIndex = currentAnswer.selectedIndex,
+                        submitted = currentAnswer.submitted,
+                        isCorrect = currentAnswer.isCorrect,
+                        onSelect = { problemVm.select(current.problemId, it) },
                         showRemoveFromWrongNote = (type == "wrong-answered-notes"),
                         onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
-                        modifier = Modifier.fillMaxSize(),
                         problemVm = problemVm
                     )
                 }
             }
+            ReportButton(
+                text1 = "이전",
+                onClick1 = { if (index > 0) index-- },
+                text2 = "다음",
+                onClick2 = {
+                    if (currentAnswer.submitted) {
+                        moveToNextProblem()
+                    } else {
+                        submitCurrentProblem()
+                    }
+                },
+                enabled1 = index != 0,
+                enabled2 = nextButtonEnabled,
+                modifier1 = Modifier.height(48.dp).weight(1f),
+                modifier2 = Modifier.height(48.dp).weight(3f),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+            )
         }
         if (bookmarkSnackBar != null) {
             Box(
@@ -483,22 +487,20 @@ fun CustomSnackBar(
 ){
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(100.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.6f),
-            contentColor = Color.White
+            containerColor = PrimitiveColor.Gray1100,
+            contentColor = AppColor.text1w
         ),
     ){
         Box(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            modifier = Modifier.size(173.dp, 41.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = text,
-                fontFamily = pretendard,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
+                style = AppTypography.Label1,
+                color = AppColor.text1w
             )
         }
     }

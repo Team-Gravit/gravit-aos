@@ -7,38 +7,43 @@ import kotlinx.coroutines.flow.update
 
 class ProblemViewModel : ViewModel() {
 
-    data class UiState(
+    data class AnswerState(
         val selectedIndex: Int? = null,
         val submitted: Boolean = false,
         val isCorrect: Boolean? = null,
-        val shortText: String = "",
+        val shortText: String = ""
+    )
+
+    data class UiState(
+        val answers: Map<Long, AnswerState> = emptyMap(),
         val removedFromWrongNoteMap: Map<Long, Boolean> = emptyMap()
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
 
-    fun select(index: Int?) {
-        _uiState.update {
-            if (it.submitted) it else it.copy(selectedIndex = index)
+    fun select(problemId: Long, index: Int?) {
+        _uiState.update { state ->
+            val currentAnswer = state.answers[problemId] ?: AnswerState()
+
+            if (currentAnswer.submitted) state
+            else state.copy(answers = state.answers + (problemId to currentAnswer.copy(selectedIndex = index)))
         }
     }
+    fun updateText(problemId: Long, text: String) {
+        _uiState.update { state ->
+            val currentAnswer = state.answers[problemId] ?: AnswerState()
 
-    fun updateText(text: String) {
-        _uiState.update {
-            it.copy(shortText = text)
+            if (currentAnswer.submitted) state
+            else state.copy(answers = state.answers + (problemId to currentAnswer.copy(shortText = text)))
         }
     }
-
-    fun submit(isCorrect: Boolean) {
-        _uiState.update {
-            it.copy(
-                submitted = true,
-                isCorrect = isCorrect
-            )
+    fun submit(problemId: Long, isCorrect: Boolean) {
+        _uiState.update { state ->
+            val currentAnswer = state.answers[problemId] ?: AnswerState()
+            state.copy(answers = state.answers + (problemId to currentAnswer.copy(submitted = true, isCorrect = isCorrect)))
         }
     }
-
     fun removeFromWrongNote(problemId: Long) {
         _uiState.update { state ->
             state.copy(
@@ -46,7 +51,6 @@ class ProblemViewModel : ViewModel() {
             )
         }
     }
-
     fun isRemovedFromWrongNote(problemId: Long): Boolean {
         return _uiState.value.removedFromWrongNoteMap[problemId] == true
     }
