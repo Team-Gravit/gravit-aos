@@ -155,4 +155,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation(libs.firebase.messaging)
+
+    implementation("dev.chrisbanes.haze:haze:1.6.10")
 }
