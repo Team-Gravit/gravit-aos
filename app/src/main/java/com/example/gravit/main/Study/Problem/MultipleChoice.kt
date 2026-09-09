@@ -175,8 +175,9 @@ private fun OptionCell(
         }
     }
     val rowAlpha = if (showEye && !isSelected && !isOptionShown) 0.4f else 1f
+    val showExpandedResult = isSubmitted && isExpanded
     val showExplanation = !explanation.isNullOrBlank()
-    val showExpandedExplanation = isSubmitted && isExpanded && showExplanation
+    val showExpandedExplanation = showExpandedResult && showExplanation
 
     val showResultStyle = isSubmitted && isExpanded
     val borderColor1 = when {
@@ -273,7 +274,7 @@ private fun OptionCell(
                 )
             }
         }
-        if (showExpandedExplanation) {
+        if (showExpandedResult) {
             Spacer(Modifier.height(8.dp))
             if (isRight) {
                 Text(
@@ -302,21 +303,23 @@ private fun OptionCell(
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(AppColor.bg2)
-                    .padding(16.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text(
-                    text = explanation,
-                    style = AppTypography.Body2_Reading,
-                    color = AppColor.text1
-                )
+            if(showExplanation){
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg2)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = explanation,
+                        style = AppTypography.Body2_Reading,
+                        color = AppColor.text1
+                    )
+                }
             }
             if (showRemoveButton) {
                 Spacer(Modifier.height(8.dp))
