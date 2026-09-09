@@ -1,6 +1,5 @@
 package com.inuappcenter.gravit.main.Study.Problem
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,21 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.gravit.main.Study.Problem.ProblemViewModel
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
-import com.example.gravit.ui.theme.BlockButton
-import com.example.gravit.ui.theme.ButtonState
-import com.example.gravit.ui.theme.InlineButton
-import com.example.gravit.ui.theme.InlineButtonIcon
-import com.example.gravit.ui.theme.InlineButtonState
 import com.inuappcenter.gravit.api.OptionDto
-import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
@@ -43,10 +34,6 @@ fun MultipleChoice(
     selectedIndex: Int?,
     submitted: Boolean,
     onSelect: (Int?) -> Unit,
-    onSubmit: (Int) -> Unit,
-    isLast: Boolean,
-    onNext: () -> Unit,
-    modifier: Modifier = Modifier,
     isCorrect: Boolean?,
     showRemoveFromWrongNote: Boolean = false,
     onRemoveFromWrongNote: () -> Unit = {},
@@ -82,14 +69,13 @@ fun MultipleChoice(
             )
         }
     }
-    val correctIdx = remember(displayOptions) {
-        displayOptions.indexOfFirst { it.isAnswer }.takeIf { it >= 0 }
-    }
-
     val removedFromWrongNote = problemVm.isRemovedFromWrongNote(problemNum)
-    val isMyAnswerCorrect = submitted && selectedIndex == correctIdx
-    val useScroll = submitted && !isMyAnswerCorrect
-
+    val correctAnswerText = remember(displayOptions) {
+        displayOptions
+            .firstOrNull { it.isAnswer }
+            ?.text
+            .orEmpty()
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -100,38 +86,15 @@ fun MultipleChoice(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (submitted && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote) {
-                    Row (
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 16.dp),
-                        horizontalArrangement = Arrangement.End
-                    ){
-                        Text(
-                            text = "오답노트에서 제외하기",
-                            fontSize = 15.sp,
-                            fontFamily = pretendard,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFA8A8A8),
-                            textDecoration = TextDecoration.Underline,
-                            modifier = Modifier
-                                .padding(bottom = 8.dp)
-                                .clickable {
-                                    problemVm.removeFromWrongNote(problemNum)
-                                    onRemoveFromWrongNote()
-                                    removeSnackBarText = "오답노트에서 제거되었아요."
-                                }
-                        )
-                    }
-                }
                 displayOptions.forEachIndexed { idx, opt ->
                     val isSelected = selectedIndex == idx
                     val enabled = !submitted && opt.text.isNotBlank()
-                    val isRight = submitted && idx == correctIdx
-                    val isWrong = submitted && isSelected && idx != correctIdx
-                    val explanationToShow = if (isWrong) opt.explanation else null
+                    val isRight = submitted && opt.text.isNotBlank() && opt.isAnswer
+                    val isWrong = submitted && opt.text.isNotBlank() && !opt.isAnswer
+
                     OptionCell(
                         num = opt.badge,
                         answer = opt.text,
@@ -139,8 +102,7 @@ fun MultipleChoice(
                         isRight = isRight,
                         isWrong = isWrong,
                         enabled = enabled,
-                        showEye = !submitted && selectedIndex == null,
-                        explanation = if (useScroll) explanationToShow else null,
+                        showEye = !submitted,
                         onClick = {
                             if (!enabled) return@OptionCell
                             onSelect(idx)
@@ -150,100 +112,31 @@ fun MultipleChoice(
                             .padding(vertical = 6.dp),
                         problemNum = problemNum,
                         idx = idx,
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
-                InlineButton(
-                    text = "풀이보기",
-                    onClick = {},
-                    state = InlineButtonState.Stroke_Color,
-                    icon = InlineButtonIcon.L,
-                    style = AppTypography.Label2,
-                    color = AppColor.CTA,
-                    iconAsset = R.drawable.book,
-                    iconColor = AppColor.icon_color,
-                    modifier = Modifier
-                        .size(97.dp, 32.dp)
-                        .align(Alignment.End)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    BlockButton(
-                        text = "이전",
-                        onClick = {onNext()},
-                        state = ButtonState.Stroke,
-                        style = AppTypography.Headline2,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BlockButton(
-                        text = "다음",
-                        onClick = {
-                            selectedIndex?.let { index ->
-                                onSubmit(index)
-                            }
+                        explanation = if (submitted) {
+                            opt.explanation
+                        } else {
+                            null
                         },
-                        enabled = selectedIndex != null,
-                        style = AppTypography.Headline2,
-                        modifier = Modifier.weight(3f)
+                        isSubmitted = submitted,
+                        showRemoveButton = submitted && isSelected && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote,
+                        onRemoveFromWrongNote = {
+                            problemVm.removeFromWrongNote(problemNum)
+                            onRemoveFromWrongNote()
+                            removeSnackBarText = "오답노트에서 제거되었어요."
+                        },
+                        correctAnswerText = correctAnswerText,
                     )
                 }
             }
         }
-        if(submitted && isCorrect!=null){
-            val selectedOption = selectedIndex?.let { index -> displayOptions.getOrNull(index) }
-            val correct = options.first { it.isAnswer }
-            Feedback(
-                isCorrect = isCorrect,
-                answerText = correct.content,
-                onNext = onNext,
-                isLast = isLast,
-                explanation = selectedOption?.explanation.orEmpty()
-            )
-        }
-        /* if (submitted || removeSnackBarText != null) {
+        if (removeSnackBarText != null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 20.dp)
             ) {
-
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.next_on),
-                        contentDescription = "다음",
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clickable { onNext() }
-                    )
-                }
-
-                if (removeSnackBarText != null) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                    ) {
-                        CustomSnackBar(removeSnackBarText!!)
-                    }
-                }
+                CustomSnackBar(removeSnackBarText!!)
             }
-        } */
+        }
     }
 }
 
@@ -266,101 +159,201 @@ private fun OptionCell(
     showEye: Boolean,
     explanation: String?,
     problemNum: Long,
-    idx: Int
+    idx: Int,
+    isSubmitted: Boolean,
+    showRemoveButton: Boolean,
+    onRemoveFromWrongNote: () -> Unit,
+    correctAnswerText: String,
 ) {
-    var isShown by remember(problemNum, idx) { mutableStateOf(true) }
-    val rowAlpha = if (showEye && !isSelected && !isShown) 0.4f else 1f
+    var isOptionShown by remember(problemNum, idx) { mutableStateOf(true) }
+    var isExpanded by remember(problemNum, idx) { mutableStateOf(false) }
+    LaunchedEffect(problemNum, isSubmitted) {
+        isExpanded = if (isSubmitted) {
+            isSelected
+        } else {
+            false
+        }
+    }
+    val rowAlpha = if (showEye && !isSelected && !isOptionShown) 0.4f else 1f
+    val showExpandedResult = isSubmitted && isExpanded
     val showExplanation = !explanation.isNullOrBlank()
+    val showExpandedExplanation = showExpandedResult && showExplanation
 
-    LaunchedEffect(showEye) {
-        if (!showEye) isShown = true
+    val showResultStyle = isSubmitted && isExpanded
+    val borderColor1 = when {
+        showResultStyle && isRight -> AppColor.successColor
+        showResultStyle && isWrong -> AppColor.errorColor
+        !isSubmitted && isSelected -> AppColor.Main1
+        else -> Color.Transparent
+    }
+    val borderColor2 = when {
+        showResultStyle && isRight -> AppColor.successColor
+        showResultStyle && isWrong -> AppColor.errorColor
+        !isSubmitted && isSelected -> AppColor.Main1
+        else -> AppColor.text3
+    }
+    val textColor = when {
+        showResultStyle && isRight -> AppColor.successColor
+        showResultStyle && isWrong -> AppColor.errorColor
+        !isSubmitted && isSelected -> AppColor.bg0
+        else -> AppColor.text3
     }
 
-    Row(
-        modifier = modifier
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
             .heightIn(48.dp)
             .alpha(rowAlpha)
-            .clickable(enabled = enabled && isShown) { onClick() }
+            .clickable(
+                enabled = isSubmitted || (enabled && isOptionShown)
+            ) {
+                if (isSubmitted) {
+                    isExpanded = !isExpanded
+                } else {
+                    onClick()
+                }
+            }
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) Color(0xFFDCDCDC) else AppColor.bg0)
+            .background(AppColor.bg0)
+            .border(1.dp, borderColor1, RoundedCornerShape(8.dp))
             .padding(12.dp),
-        verticalAlignment = if (showExplanation) Alignment.Top else Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .width(24.dp)
-                .heightIn(min = 24.dp),
-            contentAlignment = Alignment.Center
-        ) {
+        Row {
             Box(
                 modifier = Modifier
                     .size(24.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(
-                        when {
-                            isRight -> Color(0xFF00A80B)
-                            isWrong -> Color(0xFFFF0000)
-                            else -> if (isSelected) Color(0xFFDCDCDC) else AppColor.bg0
-                        }
-                    )
-                    .border(1.dp, AppColor.text3, RoundedCornerShape(50)),
+                    .alignBy(FirstBaseline),
                 contentAlignment = Alignment.Center
             ) {
-                if(isWrong){
-                    Image(
-                        painter = painterResource(id = R.drawable.xicon),
-                        contentDescription = null
-                    )
-                }
-                else if(isRight){
-                    Image(
-                        painter = painterResource(id = R.drawable.checkicon),
-                        contentDescription = null
-                    )
-                } else{
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (isSelected && !isSubmitted) AppColor.Main1 else AppColor.bg0)
+                        .border(1.dp, borderColor2, RoundedCornerShape(50)),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = num,
-                        color= AppColor.text3,
+                        color = textColor,
                         style = AppTypography.Label2
                     )
                 }
-
             }
-        }
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.width(12.dp))
             Text(
                 text = answer,
                 style = AppTypography.Label2,
                 color = when {
-                    isRight -> AppColor.successColor
-                    isWrong -> AppColor.errorColor
+                    showResultStyle && isRight -> AppColor.successColor
+                    showResultStyle && isWrong -> AppColor.errorColor
                     else -> AppColor.text3
-                }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .alignByBaseline()
             )
-
-            if (showExplanation) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = explanation,
-                    fontFamily = pretendard,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
-                    color = Color(0xFFD00000),
+            Spacer(Modifier.width(12.dp))
+            if (showEye) {
+                Icon(
+                    painter = painterResource(id = if (isOptionShown) R.drawable.eye else R.drawable.close_eye),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            isOptionShown = !isOptionShown
+                        },
+                    tint = Color(0xFF6D6D6D)
+                )
+            } else if (isSubmitted) {
+                Icon(
+                    painter = painterResource(id = if (isExpanded) R.drawable.chevron_up else R.drawable.chevron_down),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = Color(0xFF6D6D6D)
                 )
             }
         }
-        if (showEye && !isSelected) {
-            Icon(
-                painter = painterResource(id = if (isShown) R.drawable.eye else R.drawable.close_eye),
-                contentDescription = null,
-                modifier = Modifier
-                    .padding(end = 4.dp)
-                    .size(24.dp)
-                    .clickable { isShown = !isShown },
-                tint = Color(0xFF6D6D6D)
-            )
+        if (showExpandedResult) {
+            Spacer(Modifier.height(8.dp))
+            if (isRight) {
+                Text(
+                    text = "👏🏻 정답입니다!",
+                    color = AppColor.successColor,
+                    style = AppTypography.Body1_Nomal
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = "❌ 정답: ",
+                        color = AppColor.errorColor,
+                        style = AppTypography.Body1_Nomal
+                    )
+
+                    Text(
+                        text = correctAnswerText,
+                        color = AppColor.errorColor,
+                        style = AppTypography.Body1_Nomal,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            if(showExplanation){
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg2)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = explanation,
+                        style = AppTypography.Body2_Reading,
+                        color = AppColor.text1
+                    )
+                }
+            }
+            if (showRemoveButton) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .size(width = 147.dp, height = 39.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg0)
+                        .border(
+                            width = 1.dp,
+                            color = AppColor.errorColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            onRemoveFromWrongNote()
+                        },
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.book),
+                        contentDescription = "오답노트 삭제",
+                        modifier = Modifier.size(16.dp),
+                        tint = AppColor.errorColor
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "오답노트 삭제",
+                        style = AppTypography.Headline2,
+                        color = AppColor.errorColor
+                    )
+                }
+            }
         }
     }
 }

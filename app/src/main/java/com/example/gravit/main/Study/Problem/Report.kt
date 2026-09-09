@@ -10,25 +10,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,19 +37,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.main.ResultDialog
 import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
+import com.example.gravit.ui.theme.ButtonState
+import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 
 @Composable
@@ -102,7 +94,7 @@ fun ReportDialog(
     var showConfirm by remember { mutableStateOf(false) }
 
     Icon(
-        painter = painterResource(id = R.drawable.report),
+        painter = painterResource(id = R.drawable.report_icon),
         contentDescription = "report",
         modifier = modifier
             .size(24.dp)
@@ -140,7 +132,7 @@ fun ReportDialog(
                     .padding(horizontal = 16.dp)
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFF8F8F8)
+                color = AppColor.bg1
             ){
                 Column {
                     Column(
@@ -160,13 +152,9 @@ fun ReportDialog(
 
                             Text(
                                 text = "신고하기",
-                                fontFamily = pretendard,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFFA8A8A8)
+                                style = AppTypography.Body2_Nomal,
+                                color = PrimitiveColor.Gray500
                             )
-
-
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = null,
@@ -180,14 +168,15 @@ fun ReportDialog(
                                     ) {
                                         showDialog = false
                                         onOverlayClosed()
-                                    }
+                                    },
+                                tint = AppColor.text1
                             )
                         }
                     }
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = 1.dp,
-                        color = Color(0xFFE5E5E5)
+                        color = AppColor.divider1
                     )
 
                     Column(
@@ -222,7 +211,7 @@ fun ReportDialog(
                                 .background(Color.White)
                                 .border(
                                     width = 1.dp,
-                                    color = Color(0xFFE0E0E0),
+                                    color = AppColor.divider1,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .padding(
@@ -235,14 +224,12 @@ fun ReportDialog(
                             ) {
                                 Text(
                                     text = "신고내용",
-                                    fontFamily = pretendard,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = AppColor.divider1
+                                    style = AppTypography.Caption1,
+                                    color = Color(0xFFA1A1A1)
                                 )
 
                                 Spacer(
-                                    modifier = Modifier.height(6.dp)
+                                    modifier = Modifier.height(4.dp)
                                 )
 
                                 BasicTextField(
@@ -254,81 +241,40 @@ fun ReportDialog(
                                         .fillMaxWidth()
                                         .weight(1f),
 
-                                    textStyle = TextStyle(
-                                        color = Color.Black,
-                                        fontFamily = pretendard,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 14.sp
-                                    )
+                                    textStyle = AppTypography.Body2_Reading.copy(color = AppColor.text1)
                                 )
                             }
                         }
                     }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 16.dp
+                    ReportButton(
+                        onClick1 = {
+                            showDialog = false
+                            onOverlayClosed()
+                        },
+                        text1 = "그만두기",
+                        onClick2 = {
+                            val selected =
+                                selectedIndex?.let { options[it] }
+                            val reportType = selected?.second ?: return@ReportButton
+                            vm.submit(
+                                reportType,
+                                text,
+                                problemId
                             )
-                    ) {
-                        ReportButton(
-                            onClick = {
+                            showDialog = false
+                            showConfirm = true
+                        },
+                        text2 = "제출하기",
+                        enabled2 = canSubmit,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
+                        modifier1 = Modifier
+                            .height(48.dp)
+                            .weight(1f),
+                        modifier2 = Modifier
+                            .height(48.dp)
+                            .weight(1f)
 
-                                showDialog = false
-                                onOverlayClosed()
-
-                            },
-
-                            text = "그만두기",
-
-                            bgC = Color(0xFFA8A8A8),
-
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(45.dp)
-                        )
-
-                        Spacer(
-                            modifier = Modifier.width(19.dp)
-                        )
-
-
-                        ReportButton(
-                            onClick = {
-
-                                val selected =
-                                    selectedIndex?.let { options[it] }
-
-                                val reportType =
-                                    selected?.second
-                                        ?: return@ReportButton
-
-                                vm.submit(
-                                    reportType,
-                                    text,
-                                    problemId
-                                )
-
-
-                                showDialog = false
-                                showConfirm = true
-                            },
-
-
-                            text = "제출하기",
-
-                            bgC = Color(0xFF8100B3),
-
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(45.dp),
-
-                            enabled = canSubmit
-                        )
-                    }
+                    )
                 }
             }
         }
@@ -364,31 +310,31 @@ fun ReportDialog(
 
 @Composable
 fun ReportButton(
-    text: String,
-    bgC: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    enabled: Boolean = true
+    modifier: Modifier,
+    onClick1: () -> Unit,
+    text1: String,
+    enabled1: Boolean = true,
+    onClick2: () -> Unit,
+    text2: String,
+    enabled2: Boolean = true,
+    modifier1: Modifier,
+    modifier2: Modifier
 ) {
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxHeight(),
-        shape = RoundedCornerShape(10.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = bgC,
-            contentColor = Color.White,
-            disabledContainerColor = bgC,
-            disabledContentColor = Color.White
-        ),
-        enabled = enabled
-    ) {
-        Text(
-            text = text,
-            fontFamily = pretendard,
-            fontWeight = FontWeight.Medium,
-            fontSize = 18.sp,
-            color = Color.White
+    Row(modifier = modifier.fillMaxWidth()) {
+        BlockButton(
+            state = ButtonState.Stroke,
+            onClick = onClick1,
+            text = text1,
+            enabled = enabled1,
+            modifier = modifier1
+        )
+        Spacer(Modifier.width(12.dp))
+        BlockButton(
+            state = ButtonState.Default,
+            onClick = onClick2,
+            text = text2,
+            enabled = enabled2,
+            modifier = modifier2
         )
     }
 }
@@ -408,7 +354,7 @@ fun Option(
                 indication = null
             ) { onClick() }
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.White)
+            .background(AppColor.bg0)
             .border(
                 width = 1.dp,
                 color = AppColor.divider1,
@@ -416,11 +362,9 @@ fun Option(
             ),
         verticalAlignment = Alignment.CenterVertically
     ){
-
         Spacer(
             Modifier.width(12.dp)
         )
-
         Image(
             painter = painterResource(
                 id = if(isChecked)
@@ -431,17 +375,13 @@ fun Option(
             contentDescription = null,
             modifier = Modifier.size(20.dp)
         )
-
         Spacer(
             Modifier.width(10.dp)
         )
-
         Text(
             text = text,
-            fontFamily = pretendard,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
-            color = Color(0xFF383838)
+            style = AppTypography.Body1_Nomal,
+            color = AppColor.text2
         )
     }
 }
