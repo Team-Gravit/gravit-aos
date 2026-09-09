@@ -126,7 +126,7 @@ fun ShortAnswer(
                                 .clickable{
                                     problemVm.removeFromWrongNote(problemId)
                                     onRemoveFromWrongNote()
-                                    removeSnackBarText = "오답노트에서 제거되었아요."
+                                    removeSnackBarText = "오답노트에서 제거되었어요."
                                 },
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
