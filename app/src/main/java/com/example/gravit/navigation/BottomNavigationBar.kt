@@ -72,7 +72,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                items.forEachIndexed { index, item ->
+                items.forEachIndexed { _, item ->
                     val selected = when (item.route) {
                         "chapter" -> inLearnStack
                         "user" -> inUserStack
@@ -87,9 +87,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                                 indication = null
                             ) {
                                 val current = navController.currentDestination?.route
-                                val target = item.route
-                                when {
-                                    target == "home" -> {
+                                when (val target = item.route) {
+                                    "home" -> {
                                         navController.navigate("home") {
                                             popUpTo(navController.graph.findStartDestination().id) {
                                                 inclusive = false
@@ -98,20 +97,17 @@ fun BottomNavigationBar(navController: NavHostController) {
                                             restoreState = false
                                         }
                                     }
-
-                                    target == "chapter" && current?.startsWith("chapter") == true -> {
+                                    "chapter" if current?.startsWith("chapter") == true -> {
                                         navController.navigate("chapter") {
                                             launchSingleTop = true
                                         }
                                     }
-
-                                    target == "user" && inUserStack -> {
+                                    "user" if inUserStack -> {
                                         navController.navigate("user") {
                                             launchSingleTop = true
                                             restoreState = false
                                         }
                                     }
-
                                     else -> {
                                         navController.navigate(target) {
                                             popUpTo(navController.graph.findStartDestination().id) {
@@ -146,5 +142,4 @@ fun BottomNavigationBar(navController: NavHostController) {
             }
         }
     }
-
 }
