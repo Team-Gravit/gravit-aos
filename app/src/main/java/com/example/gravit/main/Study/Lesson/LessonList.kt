@@ -22,6 +22,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -59,7 +60,8 @@ import kotlinx.coroutines.delay
 fun LessonList(
     unitId: Long,
     onSessionExpired: () -> Unit,
-    navController: NavController
+    navController: NavController,
+    onNoteSheetVisibilityChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val vm: LessonListVM = viewModel(factory = LessonListVMFactory(RetrofitInstance.api, context))
@@ -123,7 +125,8 @@ fun LessonList(
                 bookmarkAccessible = bookmarkAccessible,
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
                 unitSummary = s.unitSummaryResponse,
-                chapterId = chapterId
+                chapterId = chapterId,
+                onNoteSheetVisibilityChanged = onNoteSheetVisibilityChanged
             )
         }
         else -> Unit
@@ -139,11 +142,23 @@ fun LessonListUI(
     bookmarkAccessible: Boolean,
     wrongAnsweredNoteAccessible: Boolean,
     unitSummary: UnitSummaryResponse,
-    chapterId: Long
+    chapterId: Long,
+    onNoteSheetVisibilityChanged: (Boolean) -> Unit
 ){
     var snackBar by remember { mutableStateOf<String?>(null) }
     var sheetState by remember { mutableStateOf(SheetState.Hidden) }
 
+    LaunchedEffect(sheetState) {
+        onNoteSheetVisibilityChanged(
+            sheetState != SheetState.Hidden
+        )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            onNoteSheetVisibilityChanged(false)
+        }
+    }
     val systemUiController = rememberSystemUiController()
 
     SideEffect {

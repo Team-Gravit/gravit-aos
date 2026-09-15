@@ -4,8 +4,8 @@ import com.example.gravit.navigation.BottomNavigationBar
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -36,9 +36,17 @@ import com.inuappcenter.gravit.main.User.Setting.DeletionComplete
 import com.inuappcenter.gravit.main.User.Setting.DeletionGuard
 import com.inuappcenter.gravit.main.User.Setting.PrivacyPolicy
 import com.inuappcenter.gravit.ui.theme.statusBarStyleForMainRoute
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.gravit.main.User.Notice.Notification
 import com.inuappcenter.gravit.main.Study.Chapter.Learning
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
@@ -54,13 +62,19 @@ fun MainScreen(rootNavController: NavController) {
     val innerNavController = rememberNavController()
     val backStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
+    var isNoteSheetVisible by rememberSaveable { mutableStateOf(false) }
 
     val hideBottomBar = currentRoute.startsWith("lesson/") ||
                         currentRoute.startsWith("problem/") ||
                         currentRoute.startsWith("user/account") ||
                         currentRoute.startsWith("user/privacypolicy") ||
                         currentRoute.startsWith("error/") ||
-                        currentRoute.startsWith("user/deletion-complete")
+                        currentRoute.startsWith("user/deletion-complete") ||
+                        currentRoute.startsWith("inquiry") ||
+                        currentRoute.startsWith("user/notification") ||
+                        currentRoute.startsWith("user/setting") ||
+                        currentRoute.startsWith("user/notice") ||
+                        isNoteSheetVisible
 
     val goToLoginChoice: () -> Unit = {
         rootNavController.navigate("login choice") {
@@ -81,20 +95,23 @@ fun MainScreen(rootNavController: NavController) {
         )
     }
 
-    Scaffold(
-        bottomBar = { if (!hideBottomBar) { BottomNavigationBar(innerNavController) } },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding: PaddingValues ->
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
         DeletionGuard(navController = innerNavController) {
             NavHost(
                 navController = innerNavController,
                 startDestination = "home",
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.fillMaxSize()
             ) {
-                composable("home") { HomeScreen(innerNavController, goToLoginChoice) }
-
+                composable("home") {
+                    BottomBarScreen {
+                        HomeScreen(innerNavController, goToLoginChoice)
+                    }
+                }
                 //chapter
-                composable("chapter") { Learning(innerNavController, goToLoginChoice) }
+                composable("chapter") {
+                    BottomBarScreen { Learning(innerNavController, goToLoginChoice) } }
 
                 composable(
                     route = "unit/{chapterId}",
@@ -103,24 +120,34 @@ fun MainScreen(rootNavController: NavController) {
                     )
                 ) { backStackEntry ->
                     val chapterId = backStackEntry.arguments!!.getLong("chapterId")
-
-                    UnitList(
-                        chapterId = chapterId,
-                        navController = innerNavController,
-                        onSessionExpired = goToLoginChoice
-                    )
+                    BottomBarScreen {
+                        UnitList(
+                            chapterId = chapterId,
+                            navController = innerNavController,
+                            onSessionExpired = goToLoginChoice
+                        )
+                    }
                 }
 
                 composable(
                     route = "lessonList/{unitId}",
-                    arguments = listOf(navArgument("unitId") { type = NavType.LongType },)
+                    arguments = listOf(navArgument("unitId") { type = NavType.LongType }
+                    )
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getLong("unitId")
-                    LessonList(
-                        navController = innerNavController,
-                        onSessionExpired = goToLoginChoice,
-                        unitId = unitId
-                    )
+
+                    BottomBarScreen (
+                        showBottomBar = !isNoteSheetVisible
+                    ){
+                        LessonList(
+                            navController = innerNavController,
+                            onSessionExpired = goToLoginChoice,
+                            unitId = unitId,
+                            onNoteSheetVisibilityChanged = { visible ->
+                                isNoteSheetVisible = visible
+                            }
+                        )
+                    }
                 }
 
                 composable( //이거 문제집 네비
@@ -182,9 +209,9 @@ fun MainScreen(rootNavController: NavController) {
                     )
                 }
 
-                composable("league") { LeagueScreen(innerNavController, goToLoginChoice) }
+                composable("league") { BottomBarScreen { LeagueScreen(innerNavController, goToLoginChoice) } }
 
-                composable("user") { MyPage(innerNavController, goToLoginChoice) }
+                composable("user") { BottomBarScreen { MyPage(innerNavController, goToLoginChoice) } }
 
                 composable("user/setting") {
                     Setting(
@@ -245,10 +272,12 @@ fun MainScreen(rootNavController: NavController) {
                         FollowTab.Followers
                     }
 
-                    FollowList(
-                        navController = innerNavController,
-                        initialTab = initialTab
-                    )
+                    BottomBarScreen {
+                        FollowList(
+                            navController = innerNavController,
+                            initialTab = initialTab
+                        )
+                    }
                 }
 
 
@@ -256,5 +285,33 @@ fun MainScreen(rootNavController: NavController) {
                 composable("error/404") { NotFoundScreen(navController = innerNavController) }
             }
         }
+
+        if (!hideBottomBar) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                BottomNavigationBar(innerNavController)
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomBarScreen(
+    showBottomBar: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .padding(
+                bottom = if (showBottomBar) 76.dp else 0.dp
+            )
+            .background(Color.Transparent)
+    ) {
+        content()
     }
 }
