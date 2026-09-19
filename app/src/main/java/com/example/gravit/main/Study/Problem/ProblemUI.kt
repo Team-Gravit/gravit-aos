@@ -20,9 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -83,7 +85,8 @@ fun ProblemUI(
     onFinishLesson: () -> Unit,
     type: String = "normal",
     onRemoveWrongNote: (Long) -> Unit = {},
-    unitId: Long
+    unitId: Long,
+    unitOderText: String
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
@@ -186,16 +189,16 @@ fun ProblemUI(
                     .background(AppColor.bg0)
                     .windowInsetsPadding(WindowInsets.statusBars),
             ) {
-                Row (
+                Box (
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(51.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .height(51.dp)
                 ){
                     Icon(
                         painter = painterResource(id = R.drawable.close),
                         contentDescription = "닫기",
                         modifier = Modifier
+                            .align(Alignment.CenterStart)
                             .padding(start = 12.dp)
                             .size(24.dp)
                             .clickable {
@@ -211,29 +214,24 @@ fun ProblemUI(
                             },
                         tint = AppColor.icon_default
                     )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        painter = painterResource(id = R.drawable.timer),
-                        contentDescription = "stopwatch",
-                        modifier = Modifier.size(20.dp),
-                        tint = AppColor.Main1
-
+                    Text(
+                        text = "$unitOderText - $unitTitle",
+                        color = AppColor.text2,
+                        style = AppTypography.Label1,
+                        modifier = Modifier.align(Alignment.Center)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Stopwatch(
-                        vm = swVm,
-                        autoStart = true
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
                     ReportDialog(
                         navController = navController,
                         problemId = current.problemId,
                         onOverlayOpened = { swVm.pause() },
                         onOverlayClosed = { swVm.start() },
-                        modifier = Modifier.padding(end = 16.dp)
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 16.dp)
                     )
                 }
             }
+            //게이지
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -250,7 +248,36 @@ fun ProblemUI(
                         .background(AppColor.Main1)
                 )
             }
-            Spacer(Modifier.height(20.dp))
+            //타이머
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .padding(end = 16.dp)
+                    .size(71.dp, 25.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(PrimitiveColor.Purple100)
+                    .align(Alignment.End),
+                contentAlignment = Alignment.Center
+            ){
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Icon(
+                        painter = painterResource(id = R.drawable.timer),
+                        contentDescription = "stopwatch",
+                        modifier = Modifier.size(14.dp),
+                        tint = AppColor.Main1
+
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Stopwatch(
+                        vm = swVm,
+                        autoStart = true
+                    )
+                }
+            }
+            //문제
+            Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -260,10 +287,11 @@ fun ProblemUI(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 250.dp)
+                        .heightIn(min = 250.dp, max = 326.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(AppColor.bg0)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     Column{
@@ -312,6 +340,7 @@ fun ProblemUI(
                     }
                 }
             }
+            //선지, 입력
             Spacer(modifier=Modifier.height(16.dp))
             Box(
                 modifier = Modifier
@@ -345,6 +374,7 @@ fun ProblemUI(
                     )
                 }
             }
+            //버튼
             ReportButton(
                 text1 = "이전",
                 onClick1 = { if (index > 0) index-- },
@@ -358,8 +388,12 @@ fun ProblemUI(
                 },
                 enabled1 = index != 0,
                 enabled2 = nextButtonEnabled,
-                modifier1 = Modifier.height(48.dp).weight(1f),
-                modifier2 = Modifier.height(48.dp).weight(3f),
+                modifier1 = Modifier
+                    .height(48.dp)
+                    .weight(1f),
+                modifier2 = Modifier
+                    .height(48.dp)
+                    .weight(3f),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
             )
         }
