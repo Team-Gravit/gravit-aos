@@ -179,7 +179,7 @@ fun AnswerInputField(
         val indicator = when {
             submitted && isCorrect == true -> AppColor.successColor
             submitted && isCorrect == false -> AppColor.errorColor
-            hasInput || focused -> AppColor.text1
+            hasInput || focused -> AppColor.Main1
             else -> AppColor.divider1
         }
 
