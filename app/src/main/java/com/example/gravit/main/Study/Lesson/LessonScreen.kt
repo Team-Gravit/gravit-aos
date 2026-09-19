@@ -130,7 +130,6 @@ fun LessonScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             isLoading -> {
-                // LoadingScreen을 Box로 감싸서 크기 고정
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -197,7 +196,8 @@ fun LessonScreen(
                     onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
                     onRecordResult = ::recordResult,
                     onFinishLesson = ::finishLesson,
-                    unitId = s.unitSummaryResponse.unitId
+                    unitId = s.unitSummaryResponse.unitId,
+                    unitOderText = "Unit${s.unitSummaryResponse.displayOrder.toString().padStart(2, '0')}"
                 )
             }
 

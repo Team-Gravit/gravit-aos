@@ -47,6 +47,7 @@ import com.example.gravit.ui.theme.Cip
 import com.example.gravit.ui.theme.CipState
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.inuappcenter.gravit.api.ChapterSummary
 import com.inuappcenter.gravit.api.LessonSummaries
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.UnitSummaryResponse
@@ -113,20 +114,22 @@ fun LessonList(
         }
 
         is LessonListVM.UiState.Success -> {
-            val s = (ui as LessonListVM.UiState.Success).data
-            val lessonSummaries = s.lessonSummaries
-            val bookmarkAccessible = s.bookmarkAccessible
-            val wrongAnsweredNoteAccessible = s.wrongAnsweredNoteAccessible
-            val chapterId = s.chapterSummary.chapterId
+            val s = (ui as LessonListVM.UiState.Success)
+            val lessonSummaries = s.data.lessonSummaries
+            val bookmarkAccessible = s.data.bookmarkAccessible
+            val wrongAnsweredNoteAccessible = s.data.wrongAnsweredNoteAccessible
+            val chapterSummary = s.data.chapterSummary
+            val unitOderText = s.data.unitSummaryResponse.displayOrder
             LessonListUI(
                 navController = navController,
                 unitId = unitId,
                 lessonSummaries = lessonSummaries,
                 bookmarkAccessible = bookmarkAccessible,
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
-                unitSummary = s.unitSummaryResponse,
-                chapterId = chapterId,
-                onNoteSheetVisibilityChanged = onNoteSheetVisibilityChanged
+                unitSummary = s.data.unitSummaryResponse,
+                chapterSummary = chapterSummary,
+                onNoteSheetVisibilityChanged = onNoteSheetVisibilityChanged,
+                unitOderText = "Unit${unitOderText.toString().padStart(2, '0')}"
             )
         }
         else -> Unit
@@ -142,8 +145,9 @@ fun LessonListUI(
     bookmarkAccessible: Boolean,
     wrongAnsweredNoteAccessible: Boolean,
     unitSummary: UnitSummaryResponse,
-    chapterId: Long,
-    onNoteSheetVisibilityChanged: (Boolean) -> Unit
+    chapterSummary: ChapterSummary,
+    onNoteSheetVisibilityChanged: (Boolean) -> Unit,
+    unitOderText: String
 ){
     var snackBar by remember { mutableStateOf<String?>(null) }
     var sheetState by remember { mutableStateOf(SheetState.Hidden) }
@@ -178,7 +182,7 @@ fun LessonListUI(
         ) {
             TopBar(
                 navController = navController,
-                title = unitSummary.title,
+                title = chapterSummary.title,
                 useCloseIcon = false,
                 useAlarmIcon = true
             )
@@ -202,7 +206,7 @@ fun LessonListUI(
                 ) {
                     Spacer(Modifier.height(20.dp))
                     Text(
-                        text = unitSummary.title,
+                        text = unitOderText,
                         style = AppTypography.Headline2,
                         color = AppColor.text1
                     )
@@ -260,7 +264,7 @@ fun LessonListUI(
                                 .background(Color.White)
                                 .clickable {
                                     if (bookmarkAccessible) {
-                                        navController.navigate("problem/$unitId/bookmarks")
+                                        navController.navigate("problem/$unitId/bookmarks/$unitOderText")
                                     } else {
                                         snackBar = "북마크 문제가 없습니다."
                                     }
@@ -312,7 +316,7 @@ fun LessonListUI(
                                 .background(Color.White)
                                 .clickable {
                                     if (wrongAnsweredNoteAccessible) {
-                                        navController.navigate("problem/$unitId/wrong-answered-notes")
+                                        navController.navigate("problem/$unitId/wrong-answered-notes/$unitOderText")
                                     } else {
                                         snackBar = "오답노트 문제가 없습니다."
                                     }
@@ -385,7 +389,7 @@ fun LessonListUI(
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
                                         ) {
-                                            navController.navigate("lesson/${lesson.lessonId}/${chapterId}")
+                                            navController.navigate("lesson/${lesson.lessonId}/${chapterSummary.chapterId}/$unitOderText")
                                         }
                                         .background(PrimitiveColor.Gray200),
                                     contentAlignment = Alignment.CenterStart
@@ -409,11 +413,12 @@ fun LessonListUI(
                                         }
                                         Spacer(Modifier.weight(1f))
                                         Cip(
-                                            text = if(lesson.isSolved) "학습 완료" else "잠김",
+                                            text = if(lesson.isSolved) "학습 완료" else "학습 전",
                                             onClick = {},
                                             state = if(lesson.isSolved) CipState.Default else CipState.Disabled,
                                             modifier = Modifier.height(22.dp),
-                                            style = AppTypography.Caption1
+                                            style = AppTypography.Caption1,
+                                            enabled = false
                                         )
                                     }
 
