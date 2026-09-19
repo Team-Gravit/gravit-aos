@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -35,10 +34,8 @@ import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.ChapterSummaryResponse
 import com.inuappcenter.gravit.api.UnitDetailResponses
 import com.inuappcenter.gravit.main.User.TopBar
-import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 data class UnitUi(
     val unitId: Long,
@@ -54,10 +51,11 @@ fun toUnitUiList(dto: UnitPageResponse): List<UnitUi> {
         val ratePercent = detail.progressRate
         val rate = (ratePercent / 100.0).toFloat()
         val description = detail.unitSummaryResponse.description
+        val orderText = detail.unitSummaryResponse.displayOrder
 
         UnitUi(
             unitId = summary.unitId,
-            orderText = "Unit%02d".format(index + 1),
+            orderText = "Unit${orderText.toString().padStart(2, '0')}",
             title = summary.title,
             progressRate = rate,
             description = description
@@ -231,10 +229,6 @@ private fun UnitItemBox(
         max(0.05f, rawRate)
     }
 
-    val angle = Math.toRadians(44.97)
-    val endX = cos(angle).toFloat()
-    val endY = sin(angle).toFloat()
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -275,7 +269,8 @@ private fun UnitItemBox(
                 Text(
                     text = "${percent}%",
                     style = AppTypography.Headline2,
-                    color = AppColor.text4
+                    color = AppColor.text4,
+                    modifier = Modifier.width(44.dp)
                 )
 
                 Spacer(modifier = Modifier.width(4.dp))
@@ -289,7 +284,6 @@ private fun UnitItemBox(
                     Box(
                         modifier = Modifier
                             .fillMaxHeight()
-                            .padding(1.dp)
                             .fillMaxWidth(visualRate)
                             .clip(RoundedCornerShape(10.dp))
                             .background(
@@ -297,10 +291,7 @@ private fun UnitItemBox(
                                     colors = listOf(
                                         Color(0xFF8100B3),
                                         Color(0xFFDD00FF)
-                                    ),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(endX * 5f, endY * 100f)
-
+                                    )
                                 )
                             )
                     )

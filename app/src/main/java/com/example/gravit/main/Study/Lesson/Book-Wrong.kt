@@ -175,7 +175,8 @@ fun BookWrongScreen(
                             }
                         }
                     },
-                    unitId = unitId
+                    unitId = unitId,
+                    unitOderText = "Unit${s.unitSummaryResponse.displayOrder.toString().padStart(2, '0')}"
                 )
             }
 
