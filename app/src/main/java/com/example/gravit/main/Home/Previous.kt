@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -57,9 +56,9 @@ fun PreviousButton(
     units: List<Units> = emptyList()
 ) {
     val statusMap = mapOf(
-        "NOT_STARTED" to "진행전",
-        "IN_PROGRESS" to "진행중",
-        "COMPLETED" to "진행됨"
+        "NOT_STARTED" to "잠김",
+        "IN_PROGRESS" to "학습 중",
+        "COMPLETED" to "학습 완료"
     )
     var selectedUnit by remember { mutableStateOf<Units?>(null) }
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
@@ -82,26 +81,6 @@ fun PreviousButton(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            /* if (chapterId == 0) {
-                Row {
-                    CustomText(
-                        text = "새로운 학습을 시작하기",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight(600),
-                        color = Color.White,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                CustomText(
-                    text = "최근에 진행한 학습 정보가 없습니다.",
-                    fontWeight = FontWeight(500),
-                    fontSize = 14.sp,
-                    color = Color.White
-                )
-            } else { */
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -117,7 +96,6 @@ fun PreviousButton(
                     text = "전체 학습화면 보기",
                     style = AppTypography.Label2,
                     color = PrimitiveColor.Gray400,
-                    textDecoration = TextDecoration.Underline,
                     modifier = Modifier.clickable {
                         onViewAllClick()
                     }
@@ -138,7 +116,7 @@ fun PreviousButton(
                 )
 
                 Text(
-                    text = String.format(Locale.US,"%.1f%%", progressRate),
+                    text = String.format(Locale.US, "%.1f", progressRate).removeSuffix(".0") + "%",
                     style = AppTypography.Label1,
                     color = AppColor.Main1
                 )
@@ -247,7 +225,7 @@ fun PreviousButton(
                                             "IN_PROGRESS" -> CipState.Active
                                             else -> CipState.Default
                                         },
-                                    modifier = Modifier.size(55.dp, 26.dp),
+                                    modifier = Modifier.height(22.dp),
                                     style = AppTypography.App_Caption2
                                 )
                             }
@@ -256,7 +234,6 @@ fun PreviousButton(
                     }
                 }
             }
-            //}
             selectedIndex?.let {
                 Spacer(modifier = Modifier.height(16.dp))
                 BlockButton(
