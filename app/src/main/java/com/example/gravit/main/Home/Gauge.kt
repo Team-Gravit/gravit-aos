@@ -3,14 +3,12 @@ package com.inuappcenter.gravit.main.Home
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -146,6 +144,23 @@ fun LevelGauge(
     }
 }
 
+private val levelXpSteps = intArrayOf(0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700)
+
+fun calculateXpProgress(xp: Int): Double {
+    val safeXp = xp.coerceAtLeast(0)
+
+    val index = levelXpSteps
+        .indexOfLast { safeXp >= it }
+        .coerceAtLeast(0)
+
+    val startXp = levelXpSteps[index]
+    val endXp = levelXpSteps.getOrNull(index + 1)
+        ?: return 100.0
+
+    return ((safeXp - startXp).toDouble() / (endXp - startXp).toDouble() * 100.0)
+        .coerceIn(0.0, 100.0)
+}
+
 @Composable
 fun LeagueGauge(
     xp: Int,
@@ -190,31 +205,30 @@ fun RoundedGauge(
     width: Dp,
     height: Dp,
     modifier: Modifier = Modifier,
-    color: Color = Color.White
+    color: Color = Color.White,
 ) {
-    val percentage = rate.coerceIn(0.0, 100.0)
-    val ratio = (percentage / 100f).toFloat()
+    val ratio = (rate.coerceIn(0.0, 100.0) / 100.0).toFloat()
 
-    Column(
+    Box(
         modifier = modifier
-            .wrapContentHeight()
+            .height(height)
+            .clip(RoundedCornerShape(50))
+            .background(color)
     ) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(height)
-                .clip(RoundedCornerShape(50))
-                .background(color)
-        ) {
+        if (ratio > 0f) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth(if(ratio <0.05f) 0.05f else ratio)
+                    .fillMaxWidth(ratio)
                     .clip(RoundedCornerShape(50))
                     .background(
                         brush = Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
-                    ))
+                            colors = listOf(
+                                Color(0xFF8100B3),
+                                Color(0xFFDD00FF)
+                            )
+                        )
+                    )
             )
         }
     }
