@@ -264,7 +264,7 @@ fun LessonListUI(
                                 .background(Color.White)
                                 .clickable {
                                     if (bookmarkAccessible) {
-                                        navController.navigate("problem/$unitId/bookmarks/$unitOderText")
+                                        navController.navigate("problem/$unitId/bookmarks")
                                     } else {
                                         snackBar = "북마크 문제가 없습니다."
                                     }
@@ -316,7 +316,7 @@ fun LessonListUI(
                                 .background(Color.White)
                                 .clickable {
                                     if (wrongAnsweredNoteAccessible) {
-                                        navController.navigate("problem/$unitId/wrong-answered-notes/$unitOderText")
+                                        navController.navigate("problem/$unitId/wrong-answered-notes")
                                     } else {
                                         snackBar = "오답노트 문제가 없습니다."
                                     }
@@ -389,7 +389,7 @@ fun LessonListUI(
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
                                         ) {
-                                            navController.navigate("lesson/${lesson.lessonId}/${chapterSummary.chapterId}/$unitOderText")
+                                            navController.navigate("lesson/${lesson.lessonId}/${chapterSummary.chapterId}")
                                         }
                                         .background(PrimitiveColor.Gray200),
                                     contentAlignment = Alignment.CenterStart
