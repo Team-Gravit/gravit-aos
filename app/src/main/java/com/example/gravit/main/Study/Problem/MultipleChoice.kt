@@ -3,6 +3,7 @@ package com.inuappcenter.gravit.main.Study.Problem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.gravit.main.Study.Problem.ProblemViewModel
 import com.example.gravit.ui.theme.AppColor
@@ -167,19 +169,14 @@ private fun OptionCell(
 ) {
     var isOptionShown by remember(problemNum, idx) { mutableStateOf(true) }
     var isExpanded by remember(problemNum, idx) { mutableStateOf(false) }
-    LaunchedEffect(problemNum, isSubmitted) {
-        isExpanded = if (isSubmitted) {
-            isSelected
-        } else {
-            false
-        }
+    LaunchedEffect(problemNum, idx, isSubmitted, isRight) {
+        isExpanded = isSubmitted && isRight
     }
     val rowAlpha = if (showEye && !isSelected && !isOptionShown) 0.4f else 1f
     val showExpandedResult = isSubmitted && isExpanded
     val showExplanation = !explanation.isNullOrBlank()
-    val showExpandedExplanation = showExpandedResult && showExplanation
 
-    val showResultStyle = isSubmitted && isExpanded
+    val showResultStyle = isSubmitted && (isRight || (isSelected && isWrong) || isExpanded)
     val borderColor1 = when {
         showResultStyle && isRight -> AppColor.successColor
         showResultStyle && isWrong -> AppColor.errorColor
@@ -205,7 +202,9 @@ private fun OptionCell(
             .heightIn(48.dp)
             .alpha(rowAlpha)
             .clickable(
-                enabled = isSubmitted || (enabled && isOptionShown)
+                enabled = isSubmitted || (enabled && isOptionShown),
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
             ) {
                 if (isSubmitted) {
                     isExpanded = !isExpanded
@@ -277,11 +276,25 @@ private fun OptionCell(
         if (showExpandedResult) {
             Spacer(Modifier.height(8.dp))
             if (isRight) {
-                Text(
-                    text = "👏🏻 정답입니다!",
-                    color = AppColor.successColor,
-                    style = AppTypography.Body1_Nomal
-                )
+                Row {
+                    Text(
+                        text = "👏🏻 정답입니다!",
+                        color = AppColor.successColor,
+                        style = AppTypography.Body1_Nomal
+                    )
+                    Spacer(Modifier.weight(1f))
+                    if (showRemoveButton) {
+                        Text(
+                            text = "오답노트에서 제외하기",
+                            style = AppTypography.Body1_Nomal,
+                            color = AppColor.text3,
+                            modifier = Modifier.clickable {
+                                onRemoveFromWrongNote()
+                            },
+                            textDecoration = TextDecoration.Underline,
+                        )
+                    }
+                }
             } else {
                 Row(
                     modifier = Modifier
@@ -318,39 +331,6 @@ private fun OptionCell(
                         text = explanation,
                         style = AppTypography.Body2_Reading,
                         color = AppColor.text1
-                    )
-                }
-            }
-            if (showRemoveButton) {
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .size(width = 147.dp, height = 39.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(AppColor.bg0)
-                        .border(
-                            width = 1.dp,
-                            color = AppColor.errorColor,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clickable {
-                            onRemoveFromWrongNote()
-                        },
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.book),
-                        contentDescription = "오답노트 삭제",
-                        modifier = Modifier.size(16.dp),
-                        tint = AppColor.errorColor
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = "오답노트 삭제",
-                        style = AppTypography.Headline2,
-                        color = AppColor.errorColor
                     )
                 }
             }

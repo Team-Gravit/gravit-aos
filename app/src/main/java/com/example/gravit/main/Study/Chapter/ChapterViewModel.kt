@@ -23,7 +23,6 @@ class ChapterViewModel(
         data object Failed : UiState
         data object SessionExpired : UiState
         data object NotFound : UiState
-        data class InvalidChapterId(val id: Long) : UiState
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Loading)
@@ -41,15 +40,7 @@ class ChapterViewModel(
         runCatching {
             api.getChapterPage("Bearer ${session.accessToken}")
         }.onSuccess { res ->
-            val invalid = res
-                .map { it.chapterSummaryResponse.chapterId }
-                .firstOrNull { id -> planetById[id] == null }
-
-            if (invalid != null) {
-                _state.value = UiState.InvalidChapterId(invalid)
-            } else {
-                _state.value = UiState.Success(res)
-            }
+            _state.value = UiState.Success(res)
         }.onFailure { e ->
             handleApiFailure(
                 e = e,

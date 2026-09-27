@@ -123,6 +123,7 @@ data class UnitDetailResponses(
 
 data class UnitSummaryResponse(
     val unitId: Long,
+    val displayOrder: Int,
     val title: String,
     val description: String
 )
@@ -184,7 +185,9 @@ data class LessonSubmissionSaveRequest(
     val accuracy: Int
 )
 data class LessonSubmissionResponse(
-    val lessonSubmissionId: Long
+    val lessonSubmissionId: Long,
+    val isLevelUp: Boolean,
+    val isLeaguePromoted: Boolean
 )
 @Parcelize
 data class ProblemSubmissionSaveRequests(

@@ -350,7 +350,7 @@ fun ChapterButton(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(24.dp)
+                            .wrapContentHeight()
                     ) {
                         Text(
                             text = text,

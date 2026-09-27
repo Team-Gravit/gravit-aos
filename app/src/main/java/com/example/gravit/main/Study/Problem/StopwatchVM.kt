@@ -110,7 +110,7 @@ fun Stopwatch(
     ) {
         Text(
             text = Format(s.elapsedMillis),
-            color = AppColor.icon_color,
+            color = AppColor.Main1,
             style = AppTypography.Label1.copy(fontFeatureSettings = "enum")
         )
     }

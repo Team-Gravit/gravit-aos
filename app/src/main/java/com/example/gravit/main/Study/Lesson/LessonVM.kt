@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.collections.associate
+import kotlin.coroutines.cancellation.CancellationException
 
 class LessonViewModel(
     private val api: ApiService,
@@ -73,7 +74,11 @@ class LessonViewModel(
     sealed interface SubmitState{
         data object Idle : SubmitState
         data object Loading : SubmitState
-        data class Success(val data: LessonResultResponse) : SubmitState
+        data class Success(
+            val data: LessonResultResponse,
+            val isLevelUp: Boolean,
+            val isLeaguePromoted: Boolean
+        ) : SubmitState
         data object Failed : SubmitState
         data object SessionExpired : SubmitState
         data object NotFound : SubmitState
@@ -85,6 +90,7 @@ class LessonViewModel(
         problemSubmissionRequests: List<ProblemSubmissionSaveRequests>?,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
+        _submit.value = SubmitState.Loading
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
@@ -93,15 +99,24 @@ class LessonViewModel(
             onDone(false)
             return@launch
         }
-        runCatching {
-            val result = LessonResultRequest(lessonSubmissionSaveRequest, problemSubmissionRequests)
-            val response = api.sendLessonResults(result, "Bearer ${session.accessToken}")
-            api.getLessonResults("Bearer ${session.accessToken}", response.lessonSubmissionId)
-        }.onSuccess { res ->
-            _submit.value = SubmitState.Success(res)
+
+        val auth = "Bearer ${session.accessToken}"
+
+        try {
+            val request = LessonResultRequest(lessonSubmissionSaveRequest, problemSubmissionRequests)
+            val submissionResponse = api.sendLessonResults(request, auth)
+            val lessonResult = api.getLessonResults(auth, submissionResponse.lessonSubmissionId)
+            _submit.value = SubmitState.Success(
+                data = lessonResult,
+                isLevelUp = submissionResponse.isLevelUp,
+                isLeaguePromoted = submissionResponse.isLeaguePromoted
+            )
             onDone(true)
-        }.onFailure { e ->
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             onDone(false)
+
             handleApiFailure(
                 e = e,
                 appContext = appContext,
