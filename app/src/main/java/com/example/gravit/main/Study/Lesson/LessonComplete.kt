@@ -129,12 +129,14 @@ fun LessonComplete(
     val isLeaguePromoted = s?.isLeaguePromoted?: false
 
     var popupType by rememberSaveable { mutableStateOf<String?>(null) }
+    var popupInitialized by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(s) {
         popupType = when {
             isLevelUp -> "level"
             isLeaguePromoted -> "league"
             else -> null
         }
+        popupInitialized = true
     }
     val systemUiController = rememberSystemUiController()
 
