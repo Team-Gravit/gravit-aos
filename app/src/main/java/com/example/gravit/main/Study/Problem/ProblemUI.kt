@@ -112,6 +112,12 @@ fun ProblemUI(
     val safeIndex = index.coerceIn(0, problems.lastIndex)
     val current = problems[safeIndex]
     val isLast = safeIndex == problems.lastIndex
+
+    val scrollState = rememberScrollState()
+    LaunchedEffect(current.problemId) {
+        scrollState.scrollTo(0)
+    }
+
     LaunchedEffect(problems.size) {
         if (index != safeIndex) {
             index = safeIndex
@@ -291,7 +297,7 @@ fun ProblemUI(
                         .clip(RoundedCornerShape(8.dp))
                         .background(AppColor.bg0)
                         .padding(16.dp)
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(scrollState),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     Column{
