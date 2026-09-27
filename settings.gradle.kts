@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Gravit"
 include(":app")
+include(":benchmark")

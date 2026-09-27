@@ -7,6 +7,13 @@ val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     properties.load(FileInputStream(localPropertiesFile))
 }
+val devApiBaseUrl = properties.getProperty("DEV_API_BASE_URL")
+    ?.trim('"')
+    ?: ""
+
+val prodApiBaseUrl = properties.getProperty("PROD_API_BASE_URL")
+    ?.trim('"')
+    ?: ""
 
 plugins {
     alias(libs.plugins.android.application)
@@ -53,7 +60,7 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                properties.getProperty("DEV_API_BASE_URL") as String
+                "\"$devApiBaseUrl\""
             )
         }
 
@@ -61,15 +68,31 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                properties.getProperty("PROD_API_BASE_URL") as String
+                "\"$prodApiBaseUrl\""
             )
+
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"$devApiBaseUrl\""
+            )
+
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+        }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
