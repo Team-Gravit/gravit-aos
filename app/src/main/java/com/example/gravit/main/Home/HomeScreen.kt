@@ -67,7 +67,6 @@ import com.inuappcenter.gravit.main.Study.Chapter.resolvePlanetRes
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import com.inuappcenter.gravit.ui.theme.TierPalette
 import com.inuappcenter.gravit.ui.theme.pretendard
-import java.time.DayOfWeek
 import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -358,7 +357,6 @@ fun HomeUI(
                                     Text(
                                         text = "자세히 보기",
                                         style = AppTypography.Label2,
-                                        textDecoration = TextDecoration.Underline,
                                         color = PrimitiveColor.Gray400,
                                         modifier = Modifier.clickable(
                                             indication = null,
@@ -404,15 +402,15 @@ fun HomeUI(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    val currentDay = LocalDate.now().dayOfWeek
+
                                     val days = listOf(
-                                        Triple("월", DayOfWeek.MONDAY, weeklyInfo.MONDAY),
-                                        Triple("화", DayOfWeek.TUESDAY, weeklyInfo.TUESDAY),
-                                        Triple("수", DayOfWeek.WEDNESDAY, weeklyInfo.WEDNESDAY),
-                                        Triple("목", DayOfWeek.THURSDAY, weeklyInfo.THURSDAY),
-                                        Triple("금", DayOfWeek.FRIDAY, weeklyInfo.FRIDAY),
-                                        Triple("토", DayOfWeek.SATURDAY, weeklyInfo.SATURDAY),
-                                        Triple("일", DayOfWeek.SUNDAY, weeklyInfo.SUNDAY)
+                                        Triple("월", weeklyInfo.MONDAY.dayTiming, weeklyInfo.MONDAY.isCompleted),
+                                        Triple("화", weeklyInfo.TUESDAY.dayTiming, weeklyInfo.TUESDAY.isCompleted),
+                                        Triple("수", weeklyInfo.WEDNESDAY.dayTiming, weeklyInfo.WEDNESDAY.isCompleted),
+                                        Triple("목", weeklyInfo.THURSDAY.dayTiming, weeklyInfo.THURSDAY.isCompleted),
+                                        Triple("금", weeklyInfo.FRIDAY.dayTiming, weeklyInfo.FRIDAY.isCompleted),
+                                        Triple("토", weeklyInfo.SATURDAY.dayTiming, weeklyInfo.SATURDAY.isCompleted),
+                                        Triple("일", weeklyInfo.SUNDAY.dayTiming, weeklyInfo.SUNDAY.isCompleted)
                                     )
                                     days.forEach { (label, day, completed) ->
                                         Box(
@@ -420,15 +418,19 @@ fun HomeUI(
                                                 .size(32.dp)
                                                 .clip(RoundedCornerShape(4.dp))
                                                 .background(
-                                                    if (currentDay == day && completed) AppColor.Main1
-                                                    else if (completed) Color(0xFFFBF1FF)
-                                                    else Color.White
+                                                    when (day) {
+                                                        "TODAY" -> AppColor.Main1
+                                                        "PAST" if completed -> Color(0xFFFBF1FF)
+                                                        else -> Color.White
+                                                    }
                                                 )
                                                 .border(
                                                     width = 1.dp,
-                                                    color = if (currentDay == day && completed) AppColor.Main1
-                                                    else if (completed) AppColor.Main1
-                                                    else PrimitiveColor.Gray400,
+                                                    color = when (day) {
+                                                        "TODAY" -> AppColor.Main1
+                                                        "PAST" if completed -> AppColor.Main1
+                                                        else -> PrimitiveColor.Gray400
+                                                    },
                                                     shape = RoundedCornerShape(4.dp)
                                                 ),
                                             contentAlignment = Alignment.Center
@@ -436,9 +438,11 @@ fun HomeUI(
                                             Text(
                                                 text = label,
                                                 style = AppTypography.Label1,
-                                                color = if (currentDay == day && completed) PrimitiveColor.Gray50
-                                                else if (completed) Color(0xFF8100B3)
-                                                else PrimitiveColor.Gray500,
+                                                color = when (day) {
+                                                    "TODAY" -> AppColor.bg0
+                                                    "PAST" if completed -> AppColor.Main1
+                                                    else -> PrimitiveColor.Gray500
+                                                },
                                             )
                                         }
                                     }
@@ -514,12 +518,7 @@ fun HomeUI(
                                                 color = PrimitiveColor.Gray500
                                             )
                                             Text(
-                                                text = "${
-                                                    String.format(
-                                                        "%.1f",
-                                                        missionInfo.progressRate
-                                                    )
-                                                }%",
+                                                text = "${String.format("%.1f", missionInfo.progressRate).removeSuffix(".0")}%",
                                                 style = AppTypography.App_Caption2,
                                                 color = AppColor.Main1
                                             )

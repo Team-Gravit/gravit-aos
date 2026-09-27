@@ -83,13 +83,17 @@ data class MissionResponse(
 )
 data class WeeklyRecordResponse(
     val consecutiveSolvedDays: Int,
-    val MONDAY: Boolean,
-    val TUESDAY: Boolean,
-    val WEDNESDAY: Boolean,
-    val THURSDAY: Boolean,
-    val FRIDAY: Boolean,
-    val SATURDAY: Boolean,
-    val SUNDAY: Boolean
+    val MONDAY: DailyRecord,
+    val TUESDAY: DailyRecord,
+    val WEDNESDAY: DailyRecord,
+    val THURSDAY: DailyRecord,
+    val FRIDAY: DailyRecord,
+    val SATURDAY: DailyRecord,
+    val SUNDAY: DailyRecord
+)
+data class DailyRecord(
+    val dayTiming: String,
+    val isCompleted: Boolean
 )
 data class RecommendedUnitResponses(
     val unitId: Long,
