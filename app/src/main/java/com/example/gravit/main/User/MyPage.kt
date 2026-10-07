@@ -1,7 +1,6 @@
 package com.inuappcenter.gravit.main.User
 
 import android.annotation.SuppressLint
-import android.graphics.BlurMaskFilter
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -11,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -51,23 +52,22 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -217,7 +217,6 @@ fun MyPageUI(
 
             UserScreenVM.CongratulateUiState.Success -> {
                 vm.clearCongratulateState()
-                vm.loadSocial()
             }
             else -> Unit
         }
@@ -339,13 +338,8 @@ fun MyPageProfileHeader(
         modifier = Modifier
             .fillMaxWidth()
             .height(195.dp)
+            .background(Color(0xFF1D0C58))
     ){
-        Image(
-            painter = painterResource(id = R.drawable.mypage_bg),
-            contentDescription = "main back",
-            modifier = Modifier.fillMaxWidth(),
-            contentScale = ContentScale.Crop,
-        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -357,7 +351,7 @@ fun MyPageProfileHeader(
                     modifier = Modifier
                         .size(70.dp)
                         .clip(CircleShape)
-                        .background(ProfilePalette.idToColor(banner?.profileImgNumber ?: 0)),
+                        .background(ProfilePalette.idToColor(banner?.profileImageNumber ?: 0)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -578,6 +572,8 @@ fun SummaryUI(
 ) {
     val ui by vm.stateSummary.collectAsState()
     val summaries = (ui as? UserScreenVM.SummaryUiState.Success)?.data
+    var selectedYear by remember { mutableStateOf(2026) }
+    var expanded by remember { mutableStateOf(false) }
     val colorCube = listOf(AppColor.bg1, PrimitiveColor.Purple200, PrimitiveColor.Purple300,PrimitiveColor.Purple500,PrimitiveColor.Purple700)
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -652,15 +648,86 @@ fun SummaryUI(
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                val historyYear = summaries?.history?.years?.firstOrNull() ?: LocalDate.now().year
-                Text(
-                    text = "${historyYear}년",
-                    style = AppTypography.Headline2,
-                    color = AppColor.text1
-                )
+                Row {
+                    Text(
+                        text = "${selectedYear}년",
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp, 35.dp)
+                                .border(1.dp, AppColor.bg3, RoundedCornerShape(4.dp))
+                                .clickable {
+                                    expanded = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = selectedYear.toString(),
+                                    style = AppTypography.Body1_Nomal,
+                                    color = AppColor.text1
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Icon(
+                                    painter = painterResource(id = R.drawable.chevron_down),
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+                        val years = summaries?.history?.years.orEmpty()
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = {
+                                expanded = false
+                            },
+                            offset = DpOffset(
+                                x = 0.dp,
+                                y = 4.dp
+                            ),
+                            modifier = Modifier.width(100.dp),
+                            shadowElevation = 1.dp,
+                            shape = RoundedCornerShape(12.dp),
+                            containerColor = AppColor.bg0,
+
+                        ) {
+                            years.forEachIndexed { index, year ->
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(40.dp)
+                                        .clickable {
+                                            selectedYear = year
+                                            expanded = false
+                                            vm.selectYear(year)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = year.toString(),
+                                        style = AppTypography.Body1_Nomal,
+                                        color = AppColor.text1
+                                    )
+                                }
+                                if (index < years.lastIndex) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 6.dp),
+                                        color = AppColor.bg3
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 HorizontalDivider(modifier = Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
                 LearningGrassGrid(
-                    year = historyYear,
+                    year = selectedYear,
                     dailySolvedCounts = summaries?.history?.dailySolvedCounts ?: emptyList()
                 )
                 Row(
@@ -803,11 +870,6 @@ fun getGrassColor(count: Int): Color {
         else -> PrimitiveColor.Purple700
     }
 }
-data class DailySolvedCount(
-    val date: String,
-    val solvedLessonCount: Int
-)
-
 data class DailyStudy(
     val day: String,
     val count: Int
@@ -843,7 +905,10 @@ fun LearningTabUI(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(
+                        space = 8.dp,
+                        alignment = Alignment.CenterHorizontally
+                    ),
                 ) {
                     val daily = listOf(
                         DailyStudy("월", learning?.weeklyReport?.MONDAY ?: 0),
@@ -1177,34 +1242,6 @@ fun DailyGraph(
     }
 }
 @Composable
-fun ReportBox(
-    text: String,
-    onClick: () -> Unit,
-    image: Int
-){
-    Row (
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        verticalAlignment = Alignment.CenterVertically){
-        Image(painter = painterResource(id = image),
-            contentDescription = null,
-            modifier = Modifier.size(38.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = text,
-            style = AppTypography.Label1,
-            color = AppColor.text1
-        )
-        Spacer(Modifier.weight(1f))
-        Image(painter = painterResource(id = R.drawable.chevron_right),
-            contentDescription = null,
-            modifier = Modifier
-                .size(16.dp)
-                .clickable(onClick = onClick))
-    }
-}
-@Composable
 fun RankRow(
     rankInfo: List<List<String>>,
     isLeague: Boolean = false
@@ -1246,7 +1283,11 @@ fun RankInfo(
     onClick: () -> Unit = {}
 ) {
     Column(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick
+        ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -1358,10 +1399,10 @@ fun TierChart(
         val maxLabelHeight = labelLayouts.values.maxOf { it.size.height }.toFloat()
 
         val labelStartX = 30f
-        val labelGraphGap = 70f
+        val labelGraphGap = 50f
 
         val graphStartX = labelStartX + maxLabelWidth + labelGraphGap
-        val graphEndPadding = 70f
+        val graphEndPadding = 100f
         val graphWidth = size.width - graphStartX - graphEndPadding
 
         val xGap =
@@ -1405,17 +1446,18 @@ fun TierChart(
                     y = y - textLayout.size.height / 2f
                 )
             )
+            // 회색 선
             drawLine(
                 color = AppColor.divider1,
                 start = Offset(
-                    x = graphStartX - 50f,
+                    x = graphStartX - 30f,
                     y = y
                 ),
                 end = Offset(
-                    x = size.width - 50f,
+                    x = size.width - 40f,
                     y = y
                 ),
-                strokeWidth = 1f
+                strokeWidth = 2f
             )
         }
         val bottomY = orderToY[uniqueLeagues.last().sortOrder] ?: return@Canvas
@@ -1463,6 +1505,60 @@ fun TierChart(
                 y = y
             )
             if (history.isCurrent) {
+                val tierText = history.leagueName
+
+                val tierTextStyle = AppTypography.Label1
+                val tierTextLayout = textMeasurer.measure(
+                    text = tierText,
+                    style = tierTextStyle,
+                )
+
+                //박스 내부 여백
+                val horizontalPadding = 20f
+                val verticalPadding = 15f
+                val boxWidth =
+                    tierTextLayout.size.width + horizontalPadding * 2
+                val boxHeight =
+                    tierTextLayout.size.height + verticalPadding * 2
+
+                val boxGap = 50f
+
+                //point를 기준으로 가운데 정렬
+                val edgePadding = 20f
+
+                val boxLeft = (point.x - boxWidth / 2f)
+                    .coerceIn(
+                        minimumValue = edgePadding,
+                        maximumValue = size.width - boxWidth - edgePadding
+                    )
+                val boxTop = point.y - boxGap - boxHeight
+
+                drawRoundRect(
+                    color = AppColor.bg1,
+                    topLeft = Offset(
+                        x = boxLeft,
+                        y = boxTop
+                    ),
+                    size = Size(
+                        width = boxWidth,
+                        height = boxHeight
+                    ),
+                    cornerRadius = CornerRadius(
+                        x = 12f,
+                        y = 12f
+                    )
+                )
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text = tierText,
+                    style = tierTextStyle.copy(
+                        color = AppColor.text1
+                    ),
+                    topLeft = Offset(
+                        x = boxLeft + horizontalPadding,
+                        y = boxTop + verticalPadding
+                    )
+                )
                 drawLine(
                     color = AppColor.Main2,
                     start = point,
@@ -1470,27 +1566,12 @@ fun TierChart(
                         x = point.x,
                         y = bottomY
                     ),
-                    strokeWidth = 2f,
+                    strokeWidth = 3f,
+                    cap = StrokeCap.Round,
                     pathEffect = PathEffect.dashPathEffect(
                         intervals = floatArrayOf(10f, 7f)
                     )
                 )
-                drawIntoCanvas { canvas ->
-                    val glowPaint = Paint().asFrameworkPaint().apply {
-                        color = AppColor.Main2.toArgb()
-                        maskFilter = BlurMaskFilter(
-                            15f, // 퍼지는 정도
-                            BlurMaskFilter.Blur.NORMAL
-                        )
-                    }
-
-                    canvas.nativeCanvas.drawCircle(
-                        point.x,
-                        point.y,
-                        12f, // 글로우 반지름
-                        glowPaint
-                    )
-                }
 
                 drawCircle(
                     color = AppColor.bg1,
@@ -1503,7 +1584,7 @@ fun TierChart(
                 radius = 10f,
                 center = point
             )
-            val text = if(history.isCurrent) "현재" else "S${index + 1}"
+            val text = if (history.isCurrent) "현재" else history.displayKey
             val textLayout = textMeasurer.measure(
                 text = text,
                 style = orderTextStyle
@@ -1619,86 +1700,122 @@ fun SocialTabUI(
                         style = AppTypography.Label2,
                         color = PrimitiveColor.Gray500
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "팔로잉한 친구들의 최근 성취",
-                        style = AppTypography.Headline2,
-                        color = PrimitiveColor.Gray900
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(234.dp)
-                    ) {
-                        items(social?.feed?.contents ?: emptyList()) { feed ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(78.dp)
-                                    .padding(vertical = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    if(social?.feed?.contents?.isEmpty() == true){
+                        Spacer(Modifier.height(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(161.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Box(
+                                Text(
+                                    text = "임시",
+                                    style = AppTypography.Label1,
+                                    color = AppColor.text3w,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                BlockButton(
                                     modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(ProfilePalette.idToColor(feed.actorProfileImgNumber)),
-                                    contentAlignment = Alignment.Center
+                                        .size(136.dp, 47.dp),
+                                    text = "임시",
+                                    onClick = {navController.navigate("chapter")},
+                                    style = AppTypography.Headline2
+                                )
+                            }
+                        }
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "팔로잉한 친구들의 최근 성취",
+                            style = AppTypography.Headline2,
+                            color = PrimitiveColor.Gray900
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(234.dp)
+                        ) {
+                            items(social?.feed?.contents ?: emptyList()) { feed ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(78.dp)
+                                        .padding(vertical = 20.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.profile_logo),
-                                        contentDescription = "profile logo",
-                                        modifier = Modifier.size(18.dp, 20.dp)
-                                    )
-                                }
-
-                                Spacer(Modifier.width(12.dp))
-
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = feed.actorNickname,
-                                            style = AppTypography.Label1,
-                                            color = AppColor.text1
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            text = feed.timeAgo,
-                                            style = AppTypography.Caption1,
-                                            color = AppColor.text4
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clip(CircleShape)
+                                            .background(ProfilePalette.idToColor(feed.actorProfileImgNumber)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.profile_logo),
+                                            contentDescription = "profile logo",
+                                            modifier = Modifier.size(18.dp, 20.dp)
                                         )
                                     }
 
-                                    Spacer(Modifier.height(4.dp))
+                                    Spacer(Modifier.width(12.dp))
 
-                                    Text(
-                                        text = feed.message,
+                                    Column {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = feed.actorNickname,
+                                                style = AppTypography.Label1,
+                                                color = AppColor.text1
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                text = feed.timeAgo,
+                                                style = AppTypography.Caption1,
+                                                color = AppColor.text4
+                                            )
+                                        }
+
+                                        Spacer(Modifier.height(4.dp))
+
+                                        Text(
+                                            text = feed.message,
+                                            style = AppTypography.Label2,
+                                            color = AppColor.text3
+                                        )
+                                    }
+
+                                    Spacer(Modifier.weight(1f))
+                                    var isCongratulated by remember(feed.feedId) {
+                                        mutableStateOf(
+                                            false
+                                        )
+                                    }
+                                    InlineButton(
+                                        text = "축하하기",
+                                        state = if (isCongratulated) InlineButtonState.Stroke else InlineButtonState.Default,
+                                        onClick = {
+                                            vm.congratulate(feed.feedId)
+                                            isCongratulated = true
+                                        },
+                                        modifier = Modifier
+                                            .height(32.dp)
+                                            .width(77.dp),
                                         style = AppTypography.Label2,
-                                        color = AppColor.text3
+                                        color = if (isCongratulated) AppColor.text3 else AppColor.CTA_text
                                     )
                                 }
 
-                                Spacer(Modifier.weight(1f))
-
-                                InlineButton(
-                                    text = "축하하기",
-                                    state = InlineButtonState.Default,
-                                    onClick = { vm.congratulate(feed.feedId) },
-                                    modifier = Modifier
-                                        .height(32.dp)
-                                        .width(77.dp),
-                                    style = AppTypography.Label2,
-                                    color = AppColor.CTA_text
+                                HorizontalDivider(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    thickness = 1.dp,
+                                    color = AppColor.divider1
                                 )
                             }
-
-                            HorizontalDivider(
-                                modifier = Modifier.fillMaxWidth(),
-                                thickness = 1.dp,
-                                color = AppColor.divider1
-                            )
                         }
                     }
                 }
@@ -1706,7 +1823,7 @@ fun SocialTabUI(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
+                    .height(256.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(AppColor.bg0)
             ) {
@@ -1724,140 +1841,91 @@ fun SocialTabUI(
                             color = PrimitiveColor.Gray900
                         )
                     }
-                    Spacer(Modifier.height(16.dp))
-                    LazyRow(
-                        modifier = Modifier.fillMaxHeight(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) {
-                        items(social?.recommend.orEmpty()) { recommend ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .width(144.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(AppColor.bg1),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(
-                                        vertical = 12.dp,
-                                        horizontal = 20.dp
-                                    ),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                    if(social?.recommend?.isEmpty() == true){
+                        Text(
+                            text = "비슷한 레벨의 학습자들을\n찾지 못했어요.",
+                            style = AppTypography.Label1,
+                            color = AppColor.text3w,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    } else {
+                        Spacer(Modifier.height(16.dp))
+                        LazyRow(
+                            modifier = Modifier.fillMaxHeight(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp)
+                        ) {
+                            items(social?.recommend.orEmpty()) { recommend ->
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(144.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(AppColor.bg1),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(52.dp)
-                                            .clip(CircleShape)
-                                            .background(ProfilePalette.idToColor(recommend.profileImgNumber)),
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        modifier = Modifier.padding(
+                                            vertical = 12.dp,
+                                            horizontal = 20.dp
+                                        ),
+                                        horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.profile_logo),
-                                            contentDescription = "profile logo",
-                                            modifier = Modifier.size(21.dp, 26.dp)
+                                        Box(
+                                            modifier = Modifier
+                                                .size(52.dp)
+                                                .clip(CircleShape)
+                                                .background(ProfilePalette.idToColor(recommend.profileImgNumber)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.profile_logo),
+                                                contentDescription = "profile logo",
+                                                modifier = Modifier.size(30.dp, 35.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            text = recommend.nickname,
+                                            style = AppTypography.Label1,
+                                            color = AppColor.text1
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "${nickname}님 외 ${recommend.mutualFollowCount}명",
+                                            style = AppTypography.Caption1,
+                                            color = AppColor.text4
+                                        )
+                                        Spacer(Modifier.weight(1f))
+
+                                        var isFollowing by remember(recommend.userId) { mutableStateOf(false) }
+                                        InlineButton(
+                                            text = if (isFollowing) "팔로우 취소" else "팔로우",
+                                            onClick = {
+                                                if (isFollowing) {
+                                                    vm.unfollowRecommend(recommend.userId)
+                                                    isFollowing = false
+                                                } else {
+                                                    vm.followRecommend(recommend.userId)
+                                                    isFollowing = true
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .height(32.dp)
+                                                .width(104.dp),
+                                            style = AppTypography.Label2,
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = if(isFollowing) AppColor.text3 else AppColor.CTA_text,
+                                            state = if(isFollowing) InlineButtonState.Stroke else InlineButtonState.Default
                                         )
                                     }
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        text = recommend.nickname,
-                                        style = AppTypography.Label1,
-                                        color = AppColor.text1
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = "${nickname}님 외 ${recommend.mutualFollowCount}명",
-                                        style = AppTypography.Caption1,
-                                        color = AppColor.text4
-                                    )
-                                    Spacer(Modifier.weight(1f))
-                                    InlineButton(
-                                        text = "+ 팔로우",
-                                        state = InlineButtonState.Stroke_Color,
-                                        onClick = { vm.followRecommend(recommend.userId)},
-                                        modifier = Modifier
-                                            .height(26.dp)
-                                            .width(104.dp),
-                                        style = AppTypography.Caption2,
-                                        color = AppColor.Main2,
-                                        shape = RoundedCornerShape(4.dp),
-                                        padding = 4.dp
-                                    )
                                 }
                             }
                         }
                     }
+
                 }
             }
         }
     }
 }
-
-@Composable
-fun FriendsRow(
-){
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(78.dp)
-            .padding(vertical = 20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(ProfilePalette.idToColor(1)),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.profile_logo),
-                contentDescription = "profile logo",
-                modifier = Modifier.size(18.dp, 20.dp)
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "김나영",
-                    style = AppTypography.Label1,
-                    color = AppColor.text1
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = "2시간 전",
-                    style = AppTypography.Caption1,
-                    color = AppColor.text4
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "자료구조 행성을 정복했어요!",
-                style = AppTypography.Label2,
-                color = AppColor.text3
-            )
-        }
-        Spacer(Modifier.weight(1f))
-        InlineButton(
-            text = "축하하기",
-            state = InlineButtonState.Default,
-            onClick = {},
-            modifier = Modifier
-                .height(32.dp)
-                .width(77.dp),
-            style = AppTypography.Label2,
-            color = AppColor.CTA_text
-        )
-    }
-    HorizontalDivider(modifier = Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
-}
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Preview(showBackground = true)
-//@Composable
-//fun MyPagePreview() {
-//    MyPageUI()
-//}
