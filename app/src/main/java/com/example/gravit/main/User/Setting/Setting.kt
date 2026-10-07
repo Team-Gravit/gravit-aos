@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -114,11 +115,12 @@ fun Setting(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppColor.bg2),
+                .background(AppColor.bg0),
         ) {
             TopBar(
                 navController = navController,
@@ -126,55 +128,101 @@ fun Setting(
                 useCloseIcon = false,
                 height = 48.dp
             )
-
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .background(AppColor.bg1),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(AppColor.bg0)
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                item {
                     Column(
-                        modifier = Modifier.fillMaxWidth()
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "계정정보",
-                            style = AppTypography.Label2,
-                            color = AppColor.text3
-                        )
-                        RowNavigableItem("내 정보", { navController.navigate("user/account") })
-                        RowNavigableItem("공지사항", { navController.navigate("user/notice")})
-                        RowNavigableItem("개인정보 처리 방침", { navController.navigate("user/privacypolicy") })
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(AppColor.bg0)
+                                .padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 16.dp,
+                                    bottom = 8.dp
+                                )
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "계정정보",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3
+                                )
+
+                                RowNavigableItem(
+                                    "내 정보",
+                                    { navController.navigate("user/account") }
+                                )
+                                RowNavigableItem(
+                                    "공지사항",
+                                    { navController.navigate("user/notice") }
+                                )
+                                RowNavigableItem(
+                                    "개인정보 처리 방침",
+                                    { navController.navigate("user/privacypolicy") }
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(AppColor.bg0)
+                                .padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 16.dp,
+                                    bottom = 8.dp
+                                )
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "기타",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3
+                                )
+
+                                RowNavigableItem(
+                                    "문의하기",
+                                    { navController.navigate("inquiry") }
+                                )
+                                RowNavigableItem(
+                                    "로그아웃",
+                                    { logoutVM.logout { onLogout() } }
+                                )
+                                RowNavigableItem(
+                                    "탈퇴하기",
+                                    { showDeleteSheet = true }
+                                )
+                            }
+                        }
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(AppColor.bg0)
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "기타",
-                            style = AppTypography.Label2,
-                            color = AppColor.text3
-                        )
-                        RowNavigableItem("문의하기", { navController.navigate("inquiry") })
-                        RowNavigableItem("로그아웃", { logoutVM.logout { onLogout() } })
-                        RowNavigableItem("탈퇴하기", { showDeleteSheet = true })
-                    }
+
+                item {
+                    Image(
+                        painter = painterResource(R.drawable.logo),
+                        contentDescription = "앱센터 로고",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentWidth(Alignment.CenterHorizontally)
+                            .padding(top = 16.dp)
+                    )
                 }
             }
-
         }
         if (showDeleteSheet) {
             ConfirmDialog(
@@ -383,16 +431,6 @@ fun Setting(
                         )
                     }
                 }
-            }
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White))
-            {
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "앱센터 로고",
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
             }
         }
 
