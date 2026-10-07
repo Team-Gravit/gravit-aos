@@ -1,6 +1,7 @@
 package com.inuappcenter.gravit.main.User
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -103,6 +104,7 @@ class UserScreenVM (
         }.onSuccess { res ->
             _stateBanners.value = BannersUiState.Success(res)
         }.onFailure { e ->
+            Log.e("MYPAGE_SUMMARY", "loadSummary failed", e)
             handleApiFailure(
                 e = e,
                 appContext = appContext,
@@ -120,7 +122,8 @@ class UserScreenVM (
     )
     private val _stateSummary = MutableStateFlow<SummaryUiState>(SummaryUiState.Loading)
     val stateSummary = _stateSummary.asStateFlow()
-
+    private val _selectedYear = MutableStateFlow(2026)
+    val selectedYear = _selectedYear.asStateFlow()
     fun loadSummary() = viewModelScope.launch {
         _stateSummary.value = SummaryUiState.Loading
 
@@ -133,7 +136,7 @@ class UserScreenVM (
 
         runCatching {
             coroutineScope {
-                val history = async { api.getMyPageHistory("Bearer ${session.accessToken}") }
+                val history = async { api.getMyPageHistory("Bearer ${session.accessToken}",  _selectedYear.value) }
                 val summaries = async { api.getMyPageSummaries(auth = "Bearer ${session.accessToken}") }
                 MyPageSummary(
                     history = history.await(),
@@ -143,6 +146,38 @@ class UserScreenVM (
         }.onSuccess { res ->
             _stateSummary.value = SummaryUiState.Success(res)
         }.onFailure { e ->
+            Log.e("MYPAGE_SUMMARY", "loadSummary failed", e)
+            handleApiFailure(
+                e = e,
+                appContext = appContext,
+                onStateChange = { _stateSummary.value = it },
+                unauthorizedState = SummaryUiState.SessionExpired,
+                notFoundState = SummaryUiState.NotFound,
+                failedState = SummaryUiState.Failed
+            )
+        }
+    }
+    fun selectYear(year: Int) = viewModelScope.launch {
+        if (_selectedYear.value == year) return@launch
+
+        _selectedYear.value = year
+
+        val currentState = _stateSummary.value as? SummaryUiState.Success ?: return@launch
+
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _stateSummary.value = SummaryUiState.SessionExpired
+            return@launch
+        }
+
+        runCatching {
+            api.getMyPageHistory("Bearer ${session.accessToken}", year)
+        }.onSuccess { history ->
+            _stateSummary.value = SummaryUiState.Success(currentState.data.copy(history = history))
+        }.onFailure { e ->
+            Log.e("MYPAGE_HISTORY", "load history failed: year=$year", e)
+
             handleApiFailure(
                 e = e,
                 appContext = appContext,
@@ -259,7 +294,22 @@ class UserScreenVM (
                     AuthPrefs.clear(appContext)
                     _stateCongratulate.value = CongratulateUiState.SessionExpired
                 }
+                res.code() == 409 -> {
+                    val message = runCatching {
+                        res.errorBody()?.string()
+                            ?.let {
+                                Gson().fromJson(
+                                    it,
+                                    ErrorResponse::class.java
+                                ).message
+                            }
+                    }.getOrNull()
 
+                    _stateCongratulate.value =
+                        CongratulateUiState.Failed(
+                            message ?: "이미 축하한 피드입니다."
+                        )
+                }
                 else -> {
                     _stateCongratulate.value = CongratulateUiState.Failed("오류가 발생했습니다.")
                 }
@@ -435,6 +485,58 @@ class UserScreenVM (
             }
         }.onFailure { e ->
             _stateFollow.value = FollowUiState.Failed("오류가 발생했습니다.")
+        }
+    }
+    fun unfollowRecommend(targetUserId: Long) = viewModelScope.launch {
+
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _stateFollow.value = FollowUiState.SessionExpired
+            return@launch
+        }
+
+        val currentState = _stateSocial.value as? SocialUiState.Success ?: run {
+            _stateFollow.value = FollowUiState.Idle
+            return@launch
+        }
+
+        _stateFollow.value = FollowUiState.Loading
+
+        runCatching {
+            api.unfollow(
+                auth = "Bearer ${session.accessToken}",
+                followeeId = targetUserId
+            )
+        }.onSuccess { res ->
+            when {
+                res.isSuccessful -> {
+                    _stateFollow.value = FollowUiState.Success
+
+                    _stateSocial.value = currentState.copy(
+                        data = currentState.data.copy(
+                            count = currentState.data.count.copy(
+                                followingCount =
+                                    (currentState.data.count.followingCount - 1)
+                                        .coerceAtLeast(0)
+                            )
+                        )
+                    )
+                }
+
+                res.code() == 401 -> {
+                    AuthPrefs.clear(appContext)
+                    _stateFollow.value = FollowUiState.SessionExpired
+                }
+
+                else -> {
+                    _stateFollow.value =
+                        FollowUiState.Failed("팔로우 취소에 실패했습니다.")
+                }
+            }
+        }.onFailure {
+            _stateFollow.value =
+                FollowUiState.Failed("오류가 발생했습니다.")
         }
     }
 
