@@ -1,24 +1,32 @@
 package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
+import com.example.gravit.ui.theme.BlockButton
+import com.example.gravit.ui.theme.ButtonState
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.login.CustomButton
 import com.inuappcenter.gravit.login.NameInputFiled
 import com.inuappcenter.gravit.login.ProfileSwitcher
 import com.inuappcenter.gravit.login.isValidNickname
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
 import com.inuappcenter.gravit.main.User.TopBar
-import com.inuappcenter.gravit.ui.theme.pretendard
+import kotlinx.coroutines.delay
 
 @Composable
 fun Account(
@@ -34,65 +42,112 @@ fun Account(
 
     val nicknameValid = isValidNickname(ui.nickname)
     val canSave = nicknameValid && !ui.isSaving
+    var showSnackbar by remember { mutableStateOf(false) }
+    val systemUiController = rememberSystemUiController()
+    val isDarkMode = isSystemInDarkTheme()
 
+    LaunchedEffect(ui.errorMsg) {
+        if (ui.errorMsg != null) {
+            showSnackbar = true
+            delay(2000)
+            showSnackbar = false
+        }
+    }
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = !isDarkMode
+        )
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .navigationBarsPadding()
+            .background(AppColor.bg0)
     ) {
-        Column {
-
-            TopBar(navController, title = "내 정보 수정")
-
-            Spacer(Modifier.height(24.dp))
-            key(ui.profileId) {
-                ProfileSwitcher(
-                    selectedId = ui.profileId,
-                    onProfileSelected = vm::onProfileChange
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-            Column(Modifier.padding(horizontal = 24.dp)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopBar(
+                navController = navController,
+                title = "내 정보 수정"
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                key(ui.profileId) {
+                    ProfileSwitcher(
+                        selectedId = ui.profileId,
+                        onProfileSelected = vm::onProfileChange
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "닉네임 설정",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = pretendard,
-                    color = Color.Black
+                    style = AppTypography.Heading2,
+                    color = AppColor.text1
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 NameInputFiled(
                     text = ui.nickname,
                     onTextChange = vm::onNicknameChange
                 )
-                if (ui.errorMsg != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = ui.errorMsg ?: "",
-                        color = Color(0xFFFF0000),
-                        fontFamily = pretendard,
-                        fontSize = 13.sp
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BlockButton(
+                        text = "돌아가기",
+                        onClick = {
+                            AuthPrefs.clear(context)
+                            navController.popBackStack()
+                        },
+                        state = ButtonState.Stroke,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier
+                            .height(45.dp)
+                            .weight(1f)
+                    )
+                    BlockButton(
+                        text = "수정하기",
+                        onClick = {
+                            vm.save {
+                                navController.popBackStack()
+                            }
+                        },
+                        enabled = canSave,
+                        style = AppTypography.Headline2,
+                        modifier = Modifier
+                            .height(45.dp)
+                            .weight(1f)
                     )
                 }
             }
-
-            Spacer(Modifier.weight(1f))
-
-            CustomButton(
-                text = if (ui.isSaving) "저장 중..." else "수정하기",
-                onClick = {
-                    vm.save {
-                        navController.popBackStack()
-                    }
-                },
-                enabled = canSave,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-                    .height(56.dp)
-            )
+        }
+        if (showSnackbar) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(
+                    text = "다시 시도해 주세요.",
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+            }
         }
     }
 }
