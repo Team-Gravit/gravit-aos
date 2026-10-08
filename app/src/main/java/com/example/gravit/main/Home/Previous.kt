@@ -226,7 +226,7 @@ fun PreviousButton(
                                             else -> CipState.Default
                                         },
                                     modifier = Modifier.height(22.dp),
-                                    style = AppTypography.App_Caption2
+                                    style = AppTypography.Caption2
                                 )
                             }
 

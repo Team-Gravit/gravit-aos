@@ -232,7 +232,6 @@ fun Inquiry(
             TopBar(
                 navController = navController,
                 title = "문의하기",
-                useCloseIcon = false,
                 height = 48.dp
             )
             LazyColumn(
@@ -538,7 +537,7 @@ fun SupportUI(
                         ) {
                             Text(
                                 text = typeText,
-                                style = AppTypography.Body2_Nomal,
+                                style = AppTypography.Body2_Normal,
                                 color = AppColor.text1
                             )
                         }

@@ -96,7 +96,7 @@ fun ShortAnswer(
                     Text(
                         text = if (isCorrect) "👏🏻 정답입니다!" else "❌ 정답: ${answer.contents.joinToString(", ")}",
                         color = if (isCorrect) AppColor.successColor else AppColor.errorColor,
-                        style = AppTypography.Body1_Nomal
+                        style = AppTypography.Body1_Normal
                     )
                     Spacer(Modifier.height(8.dp))
                     Box(

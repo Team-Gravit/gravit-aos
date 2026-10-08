@@ -121,7 +121,7 @@ fun ProfileSetting(navController: NavController) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            TopBar(navController, title = "로그인", useCloseIcon = false, isOnboarding= true)
+            TopBar(navController, title = "로그인", isOnboarding= true)
 
             Column(
                 modifier = Modifier
