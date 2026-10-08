@@ -19,11 +19,14 @@ import com.inuappcenter.gravit.api.MyPageWeeklyReport
 import com.inuappcenter.gravit.api.SocialFeed
 import com.inuappcenter.gravit.api.SocialRecommend
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import kotlin.jvm.java
 
 class UserScreenVM (
@@ -160,8 +163,9 @@ class UserScreenVM (
         }
     }
 
-    private val _selectedYear = MutableStateFlow(2026)
+    private val _selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
     val selectedYear = _selectedYear.asStateFlow()
+    private var selectYearJob: Job? = null
 
     private val _yearChangeError = MutableStateFlow<String?>(null)
     val yearChangeError = _yearChangeError.asStateFlow()
@@ -171,42 +175,47 @@ class UserScreenVM (
     }
     fun selectYear(year: Int) = viewModelScope.launch {
         if (_selectedYear.value == year) return@launch
+        selectYearJob?.cancel()
 
-        val currentState = _stateSummary.value as? SummaryUiState.Success ?: return@launch
+        selectYearJob = viewModelScope.launch {
+            val currentState =
+                _stateSummary.value as? SummaryUiState.Success ?: return@launch
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _stateSummary.value = SummaryUiState.SessionExpired
-            return@launch
-        }
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _stateSummary.value = SummaryUiState.SessionExpired
+                return@launch
+            }
 
-        runCatching {
-            api.getMyPageHistory("Bearer ${session.accessToken}", year)
-        }.onSuccess { history ->
-            _selectedYear.value = year
-            _stateSummary.value = SummaryUiState.Success(currentState.data.copy(history = history))
-        }.onFailure { e ->
-            Log.e("MYPAGE_HISTORY", "load history failed: year=$year", e)
+            runCatching {
+                api.getMyPageHistory("Bearer ${session.accessToken}", year)
+            }.onSuccess { history ->
+                _selectedYear.value = year
+                _stateSummary.value =
+                    SummaryUiState.Success(currentState.data.copy(history = history))
+            }.onFailure { e ->
+                Log.e("MYPAGE_HISTORY", "load history failed: year=$year", e)
 
-            handleApiFailure(
-                e = e,
-                appContext = appContext,
-                onStateChange = { state ->
-                    when (state) {
-                        SummaryUiState.Failed -> {
-                            _yearChangeError.value = "오류가 발생했습니다."
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { state ->
+                        when (state) {
+                            SummaryUiState.Failed -> {
+                                _yearChangeError.value = "오류가 발생했습니다."
+                            }
+
+                            else -> {
+                                _stateSummary.value = state
+                            }
                         }
-
-                        else -> {
-                            _stateSummary.value = state
-                        }
-                    }
-                },
-                unauthorizedState = SummaryUiState.SessionExpired,
-                notFoundState = SummaryUiState.NotFound,
-                failedState = SummaryUiState.Failed
-            )
+                    },
+                    unauthorizedState = SummaryUiState.SessionExpired,
+                    notFoundState = SummaryUiState.NotFound,
+                    failedState = SummaryUiState.Failed
+                )
+            }
         }
     }
 
@@ -464,8 +473,10 @@ class UserScreenVM (
     }
 
     private val _stateFollow = MutableStateFlow<FollowUiState>(FollowUiState.Idle)
-
     val stateFollow = _stateFollow.asStateFlow()
+
+    private val _followingStates = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
+    val followingStates = _followingStates.asStateFlow()
 
     fun followRecommend(targetUserId: Long) = viewModelScope.launch {
 
@@ -498,6 +509,9 @@ class UserScreenVM (
                             )
                         )
                     )
+                    _followingStates.update {
+                        it + (targetUserId to true)
+                    }
                 }
 
                 res.code() == 400 -> {
@@ -561,6 +575,9 @@ class UserScreenVM (
                             )
                         )
                     )
+                    _followingStates.update {
+                        it + (targetUserId to false)
+                    }
                 }
 
                 res.code() == 401 -> {
