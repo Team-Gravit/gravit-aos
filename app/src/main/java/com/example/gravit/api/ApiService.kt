@@ -305,7 +305,7 @@ data class UserPageResponse(
 )
 
 data class MyPageBanner(
-    val profileImgNumber: Int? = null,
+    val profileImageNumber: Int? = null,
     val nickname: String? = null,
     val handle: String? = null,
     val level: Int? = null,
@@ -794,11 +794,12 @@ interface ApiService {
     ) : MyPageWeeklyReport
     @GET("api/v1/my-pages/learning/summaries")
     suspend fun getMyPageSummaries(
-        @Header("Authorization") auth: String,
+        @Header("Authorization") auth: String
     ): MyPageLearningSummary
     @GET("api/v1/my-pages/learning/history")
     suspend fun getMyPageHistory(
         @Header("Authorization") auth: String,
+        @Query("year") year: Int
     ): MyPageHistory
     @GET("api/v1/my-pages/learning/weak-concepts")
     suspend fun getMyPageWeakConcepts(
