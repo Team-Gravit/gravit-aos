@@ -125,7 +125,6 @@ fun Setting(
             TopBar(
                 navController = navController,
                 title = "환경설정",
-                useCloseIcon = false,
                 height = 48.dp
             )
             LazyColumn(
