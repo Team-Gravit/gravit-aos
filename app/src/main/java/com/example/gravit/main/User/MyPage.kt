@@ -1906,16 +1906,8 @@ fun SocialTabUI(
                                             color = AppColor.text4
                                         )
                                         Spacer(Modifier.weight(1f))
-
-                                        var isFollowing by remember(recommend.userId) { mutableStateOf(false) }
-                                        LaunchedEffect(followUi) {
-                                            val state = followUi
-
-                                            if (state is UserScreenVM.FollowUiState.Success && state.userId == recommend.userId)
-                                            {
-                                                isFollowing = state.isFollowing
-                                            }
-                                        }
+                                        val followingStates by vm.followingStates.collectAsState()
+                                        val isFollowing = followingStates[recommend.userId] ?: false
                                         InlineButton(
                                             text = if (isFollowing) "팔로우 취소" else "팔로우",
                                             onClick = {
