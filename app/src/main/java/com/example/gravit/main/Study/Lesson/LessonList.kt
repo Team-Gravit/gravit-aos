@@ -22,7 +22,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -61,8 +60,7 @@ import kotlinx.coroutines.delay
 fun LessonList(
     unitId: Long,
     onSessionExpired: () -> Unit,
-    navController: NavController,
-    onNoteSheetVisibilityChanged: (Boolean) -> Unit
+    navController: NavController
 ) {
     val context = LocalContext.current
     val vm: LessonListVM = viewModel(factory = LessonListVMFactory(RetrofitInstance.api, context))
@@ -128,7 +126,6 @@ fun LessonList(
                 wrongAnsweredNoteAccessible = wrongAnsweredNoteAccessible,
                 unitSummary = s.data.unitSummaryResponse,
                 chapterSummary = chapterSummary,
-                onNoteSheetVisibilityChanged = onNoteSheetVisibilityChanged,
                 unitOderText = "Unit${unitOderText.toString().padStart(2, '0')}"
             )
         }
@@ -146,23 +143,9 @@ fun LessonListUI(
     wrongAnsweredNoteAccessible: Boolean,
     unitSummary: UnitSummaryResponse,
     chapterSummary: ChapterSummary,
-    onNoteSheetVisibilityChanged: (Boolean) -> Unit,
     unitOderText: String
 ){
     var snackBar by remember { mutableStateOf<String?>(null) }
-    var sheetState by remember { mutableStateOf(SheetState.Hidden) }
-
-    LaunchedEffect(sheetState) {
-        onNoteSheetVisibilityChanged(
-            sheetState != SheetState.Hidden
-        )
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            onNoteSheetVisibilityChanged(false)
-        }
-    }
     val systemUiController = rememberSystemUiController()
 
     SideEffect {
@@ -223,7 +206,7 @@ fun LessonListUI(
                             .height(67.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(PrimitiveColor.Purple100)
-                            .clickable(onClick = { sheetState = SheetState.Half }),
+                            .clickable(onClick = { navController.navigate("cs-note/$unitId/${chapterSummary.title}") }),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -429,16 +412,6 @@ fun LessonListUI(
                 }
             }
         }
-        NoteSheetCustom(
-            unitId = unitId,
-            sheetState = sheetState,
-            onStateChange = { newState ->
-                sheetState = newState
-            },
-            onDismiss = {
-                sheetState = SheetState.Hidden
-            }
-        )
 
         if (snackBar != null) {
             Box(

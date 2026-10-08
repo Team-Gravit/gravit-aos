@@ -40,15 +40,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.gravit.main.User.Notice.Notification
 import com.inuappcenter.gravit.main.Study.Chapter.Learning
+import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
 
@@ -62,7 +60,6 @@ fun MainScreen(rootNavController: NavController) {
     val innerNavController = rememberNavController()
     val backStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
-    var isNoteSheetVisible by rememberSaveable { mutableStateOf(false) }
 
     val hideBottomBar = currentRoute.startsWith("lesson/") ||
                         currentRoute.startsWith("problem/") ||
@@ -74,7 +71,7 @@ fun MainScreen(rootNavController: NavController) {
                         currentRoute.startsWith("user/notification") ||
                         currentRoute.startsWith("user/setting") ||
                         currentRoute.startsWith("user/notice") ||
-                        isNoteSheetVisible
+                        currentRoute.startsWith("cs-note")
 
     val goToLoginChoice: () -> Unit = {
         rootNavController.navigate("login choice") {
@@ -136,18 +133,31 @@ fun MainScreen(rootNavController: NavController) {
                 ) { backStackEntry ->
                     val unitId = backStackEntry.arguments!!.getLong("unitId")
 
-                    BottomBarScreen (
-                        showBottomBar = !isNoteSheetVisible
-                    ){
+                    BottomBarScreen{
                         LessonList(
                             navController = innerNavController,
                             onSessionExpired = goToLoginChoice,
-                            unitId = unitId,
-                            onNoteSheetVisibilityChanged = { visible ->
-                                isNoteSheetVisible = visible
-                            }
+                            unitId = unitId
                         )
                     }
+                }
+
+                composable(
+                    route = "cs-note/{unitId}/{title}",
+                    arguments = listOf(
+                        navArgument("unitId") { type = NavType.LongType },
+                        navArgument("title") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val unitId = backStackEntry.arguments!!.getLong("unitId")
+                    val title = backStackEntry.arguments!!.getString("title").orEmpty()
+
+                    NotePage(
+                        navController = innerNavController,
+                        onSessionExpired = goToLoginChoice,
+                        unitId = unitId,
+                        title = title
+                    )
                 }
 
                 composable( //이거 문제집 네비
