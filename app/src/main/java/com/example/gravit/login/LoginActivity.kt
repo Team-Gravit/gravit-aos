@@ -118,7 +118,7 @@ fun LoginScreen (
 
                 Text(
                     text = "회원 서비스 이용을 위해 로그인 해주세요.",
-                    style = AppTypography.Body1_Nomal,
+                    style = AppTypography.Body1_Normal,
                     color = AppColor.text3,
                 )
 

@@ -428,7 +428,7 @@ fun MyPageProfileHeader(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(37.dp),
-                style = AppTypography.Body2_Nomal,
+                style = AppTypography.Body2_Normal,
                 color = AppColor.text3
             )
         }
@@ -1063,7 +1063,7 @@ fun LearningTabUI(
                                 ){
                                     Text(
                                         text = "${it.rank}",
-                                        style = AppTypography.Web_Btn_S_Caption1,
+                                        style = AppTypography.Body1_Normal,
                                         color = AppColor.text1w
                                     )
                                 }
@@ -1078,7 +1078,7 @@ fun LearningTabUI(
                                         Spacer(Modifier.weight(1f))
                                         Text(
                                             text = "${it.solvedLessonCount}개",
-                                            style = AppTypography.Body1_Nomal,
+                                            style = AppTypography.Body1_Normal,
                                             color = AppColor.text2
                                         )
                                     }
@@ -1161,7 +1161,7 @@ fun LearningTabUI(
                                 ) {
                                     Text(
                                         text = "${it.rank}",
-                                        style = AppTypography.Web_Btn_S_Caption1,
+                                        style = AppTypography.Body1_Normal,
                                         color = AppColor.text1w
                                     )
                                 }

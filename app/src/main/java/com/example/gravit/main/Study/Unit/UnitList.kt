@@ -162,7 +162,6 @@ private fun UnitListContent(
         TopBar(
             navController = navController,
             title = chapterData.title,
-            useCloseIcon = false,
             useAlarmIcon = true
         )
         Box(

@@ -318,7 +318,7 @@ fun HomeUI(
 
                         Text(
                             text = "그래빗과 함께 cs 지식을 마스터해요!",
-                            style = AppTypography.Body1_Nomal,
+                            style = AppTypography.Body1_Normal,
                             color = PrimitiveColor.Gray100,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -514,12 +514,12 @@ fun HomeUI(
                                         ) {
                                             Text(
                                                 text = "진행률",
-                                                style = AppTypography.App_Caption2,
+                                                style = AppTypography.Caption2,
                                                 color = PrimitiveColor.Gray500
                                             )
                                             Text(
                                                 text = "${String.format(Locale.US, "%.1f", missionInfo.progressRate).removeSuffix(".0")}%",
-                                                style = AppTypography.App_Caption2,
+                                                style = AppTypography.Caption2,
                                                 color = AppColor.Main1
                                             )
                                         }

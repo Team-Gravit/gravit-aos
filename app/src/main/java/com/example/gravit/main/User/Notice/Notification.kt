@@ -142,7 +142,6 @@ fun Notification(
             TopBar(
                 navController = navController,
                 title = "알림",
-                useCloseIcon = false,
                 height = 48.dp
             )
             Box(

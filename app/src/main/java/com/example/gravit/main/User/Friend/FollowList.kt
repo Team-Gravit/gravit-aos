@@ -92,7 +92,6 @@ fun FollowList(
         TopBar(
             navController = navController,
             title = "친구",
-            useCloseIcon = false,
             height = 48.dp
         )
         Box(

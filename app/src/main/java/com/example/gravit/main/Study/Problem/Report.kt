@@ -152,7 +152,7 @@ fun ReportDialog(
 
                             Text(
                                 text = "신고하기",
-                                style = AppTypography.Body2_Nomal,
+                                style = AppTypography.Body2_Normal,
                                 color = PrimitiveColor.Gray500
                             )
                             Icon(
@@ -380,7 +380,7 @@ fun Option(
         )
         Text(
             text = text,
-            style = AppTypography.Body1_Nomal,
+            style = AppTypography.Body1_Normal,
             color = AppColor.text2
         )
     }

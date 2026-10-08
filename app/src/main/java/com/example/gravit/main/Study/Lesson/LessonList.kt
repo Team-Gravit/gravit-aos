@@ -183,7 +183,6 @@ fun LessonListUI(
             TopBar(
                 navController = navController,
                 title = chapterSummary.title,
-                useCloseIcon = false,
                 useAlarmIcon = true
             )
             Box(
