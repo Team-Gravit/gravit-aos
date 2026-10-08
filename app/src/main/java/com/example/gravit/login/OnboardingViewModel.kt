@@ -58,13 +58,20 @@ class OnboardingViewModel(
                     failedState = UiState.Failed
                 )
 
-                if (e is HttpException && e.code() !in listOf(401, 404)) {
-                    val message = mapServerError(
-                        e.code(),
-                        e.response()?.errorBody()?.string()
-                    )
+                when (e) {
+                    is HttpException if e.code() in listOf(401, 404) -> {
+                    }
 
-                    _event.tryEmit(Event.ShowFailedSnack(message))
+                    is HttpException -> {
+                        val message = mapServerError(e.response()?.errorBody()?.string())
+                        _event.tryEmit(Event.ShowFailedSnack(message))
+                    }
+
+                    else -> {
+                        _event.tryEmit(
+                            Event.ShowFailedSnack("오류가 발생했습니다.")
+                        )
+                    }
                 }
             }
         }
