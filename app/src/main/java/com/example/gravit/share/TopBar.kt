@@ -55,7 +55,7 @@ fun TopBar(
         if (useIcon) {
             Icon(
                 painter = leadingIcon,
-                contentDescription = "뒤로가기",
+                contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(AppSpacing.spacing12)
