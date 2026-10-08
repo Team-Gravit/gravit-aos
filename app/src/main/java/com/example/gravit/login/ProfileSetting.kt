@@ -19,10 +19,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -44,10 +44,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
@@ -59,7 +56,6 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
-import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.main.User.TopBar
@@ -77,8 +73,6 @@ fun ProfileSetting(navController: NavController) {
 
     var nickname by remember { mutableStateOf("") }
     var profileNo by remember { mutableIntStateOf(ProfilePalette.DEFAULT_ID) }
-    var showSnackbar by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(ui) {
         when (ui) {
@@ -91,17 +85,22 @@ fun ProfileSetting(navController: NavController) {
         }
     }
 
+    var showSnackBar by remember { mutableStateOf(false) }
+    var snackBarText by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         vm.event.collect { event ->
             when (event) {
-                OnboardingViewModel.Event.ShowFailedSnack -> {
-                    showSnackbar = true
+                is OnboardingViewModel.Event.ShowFailedSnack -> {
+                    snackBarText = event.message
+                    showSnackBar = true
                     delay(2000)
-                    showSnackbar = false
+                    showSnackBar = false
                 }
             }
         }
     }
+
     val systemUiController = rememberSystemUiController()
     val isDarkMode = isSystemInDarkTheme()
 
@@ -127,6 +126,7 @@ fun ProfileSetting(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.Center
             ) {
@@ -173,8 +173,7 @@ fun ProfileSetting(navController: NavController) {
                         onClick = {
                             vm.submit(nickname, profileNo)
                         },
-                        enabled = isValidNickname(nickname) &&
-                                ui !is OnboardingViewModel.UiState.Loading,
+                        enabled = ui !is OnboardingViewModel.UiState.Loading,
                         style = AppTypography.Headline2,
                         modifier = Modifier.weight(3f)
                     )
@@ -190,16 +189,14 @@ fun ProfileSetting(navController: NavController) {
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
         }
-        if (showSnackbar) {
+        if (showSnackBar) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 CustomSnackBar(
-                    text = "다시 시도해 주세요.",
-                    modifier = Modifier
-                        .navigationBarsPadding()
-                        .padding(bottom = 10.dp)
+                    text = snackBarText,
+                    modifier = Modifier.padding(bottom = 10.dp)
                 )
             }
         }
@@ -262,7 +259,7 @@ fun ProfileSwitcher(
             Image(
                 painter = painterResource(id = R.drawable.profile_logo),
                 contentDescription = "profile logo",
-                modifier = Modifier.size(60.dp, 76.dp)
+                modifier = Modifier.size(195.dp, 97.dp)
             )
         }
         ImageButton(
@@ -344,40 +341,5 @@ fun NameInputFiled(
                 style = AppTypography.Caption1
             )
         }
-    }
-}
-
-@Composable
-fun CustomButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
-) {
-    val activeBackground = Color(0xFF8100B3)
-    val inactiveBackground = activeBackground.copy(alpha = 0.5f)
-    val activeTextColor = Color.White
-    val inactiveTextColor = Color.White.copy(alpha = 0.5f)
-
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(60.dp),
-        shape = RoundedCornerShape(10.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (enabled) activeBackground else inactiveBackground,
-            contentColor = if (enabled) activeTextColor else inactiveTextColor,
-            disabledContainerColor = inactiveBackground,
-            disabledContentColor = inactiveTextColor
-        ),
-        enabled = enabled
-    ) {
-        Text(
-            text = text,
-            style = TextStyle(
-                fontSize = 18.sp,
-                fontFamily = pretendard,
-                fontWeight = FontWeight.SemiBold
-            )
-        )
     }
 }

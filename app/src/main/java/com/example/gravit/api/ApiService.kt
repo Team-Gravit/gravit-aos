@@ -287,6 +287,7 @@ data class SocialFeedContents(
     val actorHandle: String,
     val message: String,
     val timeAgo: String,
+    val congratulated: Boolean,
     val canCongratulate: Boolean,
     val createdAt: String
 )
@@ -297,20 +298,20 @@ data class FriendsCount(
 
 //사용자
 data class UserPageResponse(
-    val nickname: String? = null,
-    val profileImgNumber: Int? = null,
-    val handle: String? = null,
-    val follower: Int? = null,
-    val following: Int? = null
+    val nickname: String,
+    val profileImgNumber: Int,
+    val handle: String,
+    val follower: Int,
+    val following: Int
 )
 
 data class MyPageBanner(
-    val profileImgNumber: Int? = null,
-    val nickname: String? = null,
-    val handle: String? = null,
-    val level: Int? = null,
-    val currentLeague: String? = null,
-    val consecutiveSolvedDays: Int? = null
+    val profileImageNumber: Int,
+    val nickname: String,
+    val handle: String,
+    val level: Int,
+    val currentLeague: String,
+    val consecutiveSolvedDays: Int
 )
 
 data class MyPageWeeklyReport(
@@ -505,7 +506,7 @@ data class InquiryDetail(
     val status: String,
     val createdAt: String,
     val updatedAt: String,
-    val answer: InquiryAnswer
+    val answer: InquiryAnswer?
 )
 data class InquiryAnswer(
     val content: String,
@@ -794,11 +795,12 @@ interface ApiService {
     ) : MyPageWeeklyReport
     @GET("api/v1/my-pages/learning/summaries")
     suspend fun getMyPageSummaries(
-        @Header("Authorization") auth: String,
+        @Header("Authorization") auth: String
     ): MyPageLearningSummary
     @GET("api/v1/my-pages/learning/history")
     suspend fun getMyPageHistory(
         @Header("Authorization") auth: String,
+        @Query("year") year: Int
     ): MyPageHistory
     @GET("api/v1/my-pages/learning/weak-concepts")
     suspend fun getMyPageWeakConcepts(

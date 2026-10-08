@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.gson.JsonParser
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.UpdateUserInfoRequest
@@ -59,7 +60,7 @@ class AccountVM(
             } else {
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    errorMsg = mapServerError(res.code(), res.errorBody()?.string())
+                    errorMsg = mapServerError(res.errorBody()?.string())
                 )
             }
         }
@@ -88,7 +89,6 @@ class AccountVM(
                     profilePhotoNumber = cur.profileId,
                     nickname = cur.nickname.trim()
                 )
-
                 val res = api.updateUserInfo(bearer, body)
                 if (res.isSuccessful) {
                     _state.value = _state.value.copy(isSaving = false, savedOnce = true)
@@ -96,23 +96,46 @@ class AccountVM(
                 } else {
                     _state.value = _state.value.copy(
                         isSaving = false,
-                        errorMsg = mapServerError(res.code(), res.errorBody()?.string())
+                        errorMsg = mapServerError(res.errorBody()?.string())
                     )
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(isSaving = false, errorMsg = e.message ?: "알 수 없는 오류")
+                _state.value = _state.value.copy(
+                    isSaving = false,
+                    errorMsg = "오류가 발생했습니다."
+                )
             }
         }
     }
 }
 
-private fun mapServerError(code: Int, raw: String?): String {
-    val text = raw.orEmpty()
-    return when {
-        "USER_4041" in text -> "존재하지 않는 유저입니다."
-        "GLOBAL_4001" in text -> "유효성 검사에 실패했습니다."
-        "GLOBAL_5001" in text -> "서버 오류가 발생했습니다."
-        else -> "요청 실패 ($code)"
+fun mapServerError(raw: String?): String {
+    if (raw.isNullOrBlank()) return "오류가 발생했습니다."
+
+    return try {
+        val json = JsonParser.parseString(raw).asJsonObject
+        val message = json.get("message")
+
+        val parsedMessage = when {
+            message == null || message.isJsonNull -> null
+
+            message.isJsonArray -> {
+                message.asJsonArray.joinToString("\n") { it.asString }
+            }
+
+            message.isJsonPrimitive -> {
+                message.asString
+            }
+
+            else -> null
+        }
+
+        parsedMessage
+            ?.takeIf { it.isNotBlank() }
+            ?: "오류가 발생했습니다."
+
+    } catch (e: Exception) {
+        "오류가 발생했습니다."
     }
 }
 

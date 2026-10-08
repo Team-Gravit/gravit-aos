@@ -1,6 +1,7 @@
 package com.inuappcenter.gravit.main.User
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,11 +19,14 @@ import com.inuappcenter.gravit.api.MyPageWeeklyReport
 import com.inuappcenter.gravit.api.SocialFeed
 import com.inuappcenter.gravit.api.SocialRecommend
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import kotlin.jvm.java
 
 class UserScreenVM (
@@ -76,7 +80,10 @@ class UserScreenVM (
     sealed interface FollowUiState {
         data object Idle : FollowUiState
         data object Loading : FollowUiState
-        data object Success : FollowUiState
+        data class Success(
+            val userId: Long,
+            val isFollowing: Boolean
+        ) : FollowUiState
         data object SessionExpired : FollowUiState
         data class Failed(val message: String) : FollowUiState
     }
@@ -103,6 +110,7 @@ class UserScreenVM (
         }.onSuccess { res ->
             _stateBanners.value = BannersUiState.Success(res)
         }.onFailure { e ->
+            Log.e("MYPAGE_SUMMARY", "loadSummary failed", e)
             handleApiFailure(
                 e = e,
                 appContext = appContext,
@@ -133,7 +141,7 @@ class UserScreenVM (
 
         runCatching {
             coroutineScope {
-                val history = async { api.getMyPageHistory("Bearer ${session.accessToken}") }
+                val history = async { api.getMyPageHistory("Bearer ${session.accessToken}",  _selectedYear.value) }
                 val summaries = async { api.getMyPageSummaries(auth = "Bearer ${session.accessToken}") }
                 MyPageSummary(
                     history = history.await(),
@@ -143,6 +151,7 @@ class UserScreenVM (
         }.onSuccess { res ->
             _stateSummary.value = SummaryUiState.Success(res)
         }.onFailure { e ->
+            Log.e("MYPAGE_SUMMARY", "loadSummary failed", e)
             handleApiFailure(
                 e = e,
                 appContext = appContext,
@@ -153,6 +162,63 @@ class UserScreenVM (
             )
         }
     }
+
+    private val _selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
+    val selectedYear = _selectedYear.asStateFlow()
+    private var selectYearJob: Job? = null
+
+    private val _yearChangeError = MutableStateFlow<String?>(null)
+    val yearChangeError = _yearChangeError.asStateFlow()
+
+    fun clearYearChangeError() {
+        _yearChangeError.value = null
+    }
+    fun selectYear(year: Int) = viewModelScope.launch {
+        if (_selectedYear.value == year) return@launch
+        selectYearJob?.cancel()
+
+        selectYearJob = viewModelScope.launch {
+            val currentState =
+                _stateSummary.value as? SummaryUiState.Success ?: return@launch
+
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _stateSummary.value = SummaryUiState.SessionExpired
+                return@launch
+            }
+
+            runCatching {
+                api.getMyPageHistory("Bearer ${session.accessToken}", year)
+            }.onSuccess { history ->
+                _selectedYear.value = year
+                _stateSummary.value =
+                    SummaryUiState.Success(currentState.data.copy(history = history))
+            }.onFailure { e ->
+                Log.e("MYPAGE_HISTORY", "load history failed: year=$year", e)
+
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { state ->
+                        when (state) {
+                            SummaryUiState.Failed -> {
+                                _yearChangeError.value = "오류가 발생했습니다."
+                            }
+
+                            else -> {
+                                _stateSummary.value = state
+                            }
+                        }
+                    },
+                    unauthorizedState = SummaryUiState.SessionExpired,
+                    notFoundState = SummaryUiState.NotFound,
+                    failedState = SummaryUiState.Failed
+                )
+            }
+        }
+    }
+
     private val _stateLeague = MutableStateFlow<LeagueUiState>(LeagueUiState.Loading)
     val stateLeague = _stateLeague.asStateFlow()
 
@@ -240,6 +306,23 @@ class UserScreenVM (
             when {
                 res.isSuccessful -> {
                     _stateCongratulate.value = CongratulateUiState.Success
+                    val currentState = _stateSocial.value as? SocialUiState.Success
+
+                    if (currentState != null) {
+                        _stateSocial.value = currentState.copy(
+                            data = currentState.data.copy(
+                                feed = currentState.data.feed.copy(
+                                    contents = currentState.data.feed.contents.map { feed ->
+                                        if (feed.feedId == feedId) {
+                                            feed.copy(congratulated = true)
+                                        } else {
+                                            feed
+                                        }
+                                    }
+                                )
+                            )
+                        )
+                    }
                 }
 
                 res.code() == 400 -> {
@@ -259,7 +342,22 @@ class UserScreenVM (
                     AuthPrefs.clear(appContext)
                     _stateCongratulate.value = CongratulateUiState.SessionExpired
                 }
+                res.code() == 409 -> {
+                    val message = runCatching {
+                        res.errorBody()?.string()
+                            ?.let {
+                                Gson().fromJson(
+                                    it,
+                                    ErrorResponse::class.java
+                                ).message
+                            }
+                    }.getOrNull()
 
+                    _stateCongratulate.value =
+                        CongratulateUiState.Failed(
+                            message ?: "이미 축하한 피드입니다."
+                        )
+                }
                 else -> {
                     _stateCongratulate.value = CongratulateUiState.Failed("오류가 발생했습니다.")
                 }
@@ -375,8 +473,10 @@ class UserScreenVM (
     }
 
     private val _stateFollow = MutableStateFlow<FollowUiState>(FollowUiState.Idle)
-
     val stateFollow = _stateFollow.asStateFlow()
+
+    private val _followingStates = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
+    val followingStates = _followingStates.asStateFlow()
 
     fun followRecommend(targetUserId: Long) = viewModelScope.launch {
 
@@ -401,7 +501,7 @@ class UserScreenVM (
         }.onSuccess { res ->
             when {
                 res.isSuccessful -> {
-                    _stateFollow.value = FollowUiState.Success
+                    _stateFollow.value = FollowUiState.Success(targetUserId, true)
                     _stateSocial.value = currentState.copy(
                         data = currentState.data.copy(
                             count = currentState.data.count.copy(
@@ -409,6 +509,9 @@ class UserScreenVM (
                             )
                         )
                     )
+                    _followingStates.update {
+                        it + (targetUserId to true)
+                    }
                 }
 
                 res.code() == 400 -> {
@@ -437,7 +540,64 @@ class UserScreenVM (
             _stateFollow.value = FollowUiState.Failed("오류가 발생했습니다.")
         }
     }
+    fun unfollowRecommend(targetUserId: Long) = viewModelScope.launch {
 
+        val session = AuthPrefs.load(appContext)
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _stateFollow.value = FollowUiState.SessionExpired
+            return@launch
+        }
+
+        val currentState = _stateSocial.value as? SocialUiState.Success ?: run {
+            _stateFollow.value = FollowUiState.Idle
+            return@launch
+        }
+
+        _stateFollow.value = FollowUiState.Loading
+
+        runCatching {
+            api.unfollow(
+                auth = "Bearer ${session.accessToken}",
+                followeeId = targetUserId
+            )
+        }.onSuccess { res ->
+            when {
+                res.isSuccessful -> {
+                    _stateFollow.value = FollowUiState.Success(targetUserId, false)
+
+                    _stateSocial.value = currentState.copy(
+                        data = currentState.data.copy(
+                            count = currentState.data.count.copy(
+                                followingCount =
+                                    (currentState.data.count.followingCount - 1)
+                                        .coerceAtLeast(0)
+                            )
+                        )
+                    )
+                    _followingStates.update {
+                        it + (targetUserId to false)
+                    }
+                }
+
+                res.code() == 401 -> {
+                    AuthPrefs.clear(appContext)
+                    _stateFollow.value = FollowUiState.SessionExpired
+                }
+
+                else -> {
+                    _stateFollow.value =
+                        FollowUiState.Failed("팔로우 취소에 실패했습니다.")
+                }
+            }
+        }.onFailure {
+            _stateFollow.value =
+                FollowUiState.Failed("오류가 발생했습니다.")
+        }
+    }
+    fun clearFollowState() {
+        _stateFollow.value = FollowUiState.Idle
+    }
     fun clearLoadMoreError() {
         val currentState = _stateSocial.value as? SocialUiState.Success ?: return
 

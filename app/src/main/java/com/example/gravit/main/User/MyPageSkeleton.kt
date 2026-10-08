@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -47,13 +48,8 @@ fun MyPageSkeletonUI(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(195.dp)
+                    .background(Color(0xFF1D0C58))
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.mypage_bg),
-                    contentDescription = "main back",
-                    modifier = Modifier.fillMaxWidth(),
-                    contentScale = ContentScale.Crop,
-                )
                 Column(
                     modifier = Modifier
                         .fillMaxSize()

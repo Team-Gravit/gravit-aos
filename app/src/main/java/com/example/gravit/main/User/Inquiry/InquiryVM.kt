@@ -10,6 +10,7 @@ import com.inuappcenter.gravit.api.InquiryDetail
 import com.inuappcenter.gravit.api.InquiryListResponses
 import com.inuappcenter.gravit.api.InquiryRequest
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -65,32 +66,36 @@ class InquiryVM (
         data object SessionExpired : LoadUiState
         data object NotFound : LoadUiState
     }
-    private var page = 1
-    private var hasNext = true
     private var isLoading = false
+    private var pendingPage: Int? = null
 
     private val _loadState = MutableStateFlow<LoadUiState>(LoadUiState.Idle)
     val loadState = _loadState.asStateFlow()
 
-    fun loadInquiryList() = viewModelScope.launch {
-        if (isLoading) return@launch
+    fun loadInquiryList(page: Int = 1): Job = viewModelScope.launch {
+        if (isLoading) {
+            pendingPage = page
+            return@launch
+        }
 
         isLoading = true
         _loadState.value = LoadUiState.Loading
 
         try {
             val session = AuthPrefs.load(appContext)
+
             if (session == null) {
                 AuthPrefs.clear(appContext)
                 _loadState.value = LoadUiState.SessionExpired
                 return@launch
             }
-            runCatching {
-               api.getInquiry("Bearer ${session.accessToken}", 1)
-            }.onSuccess { res ->
-                page = res.page
-                hasNext = res.hasNext
 
+            runCatching {
+                api.getInquiry(
+                    "Bearer ${session.accessToken}",
+                    page
+                )
+            }.onSuccess { res ->
                 _loadState.value = LoadUiState.Success(res)
             }.onFailure { e ->
                 handleApiFailure(
@@ -104,52 +109,18 @@ class InquiryVM (
             }
         } finally {
             isLoading = false
-        }
-    }
 
-    fun loadMoreInquiryList() = viewModelScope.launch {
-        if (isLoading || !hasNext) return@launch
+            // 로딩 중 요청된 마지막 페이지 로드
+            pendingPage?.let { nextPage ->
+                pendingPage = null
 
-        val currentState = _loadState.value as? LoadUiState.Success ?: return@launch
-
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _loadState.value = LoadUiState.SessionExpired
-            return@launch
-        }
-
-        isLoading = true
-
-        try {
-            runCatching {
-                api.getInquiry("Bearer ${session.accessToken}", page + 1)
-            }.onSuccess { next ->
-                page += 1
-                hasNext = next.hasNext
-
-                _loadState.value = currentState.copy(
-                    inquiryList = currentState.inquiryList.copy(
-                        page = next.page,
-                        totalPages = next.totalPages,
-                        contents = currentState.inquiryList.contents + next.contents,
-                        hasNext = next.hasNext
-                    )
-                )
-            }.onFailure { e ->
-                handleApiFailure(
-                    e = e,
-                    appContext = appContext,
-                    onStateChange = { _loadState.value = it },
-                    unauthorizedState = LoadUiState.SessionExpired,
-                    notFoundState = LoadUiState.NotFound,
-                    failedState = LoadUiState.Failed
-                )
+                if (nextPage != page) {
+                    loadInquiryList(nextPage)
+                }
             }
-        } finally {
-            isLoading = false
         }
     }
+
 
     sealed interface  InquiryDetailUiState {
         data object Idle : InquiryDetailUiState
@@ -160,27 +131,29 @@ class InquiryVM (
         data object NotFound : InquiryDetailUiState
     }
 
-    private val _inquiryDetailState = MutableStateFlow<InquiryDetailUiState>(InquiryDetailUiState.Idle)
-    val inquiryDetailState = _inquiryDetailState.asStateFlow()
-
+    private val _inquiryDetailStates = MutableStateFlow<Map<Long, InquiryDetailUiState>>(emptyMap())
+    val inquiryDetailStates = _inquiryDetailStates.asStateFlow()
     fun loadInquiryDetail(inquiryId: Long) = viewModelScope.launch {
-        _inquiryDetailState.value = InquiryDetailUiState.Loading
-
+        _inquiryDetailStates.value += (inquiryId to InquiryDetailUiState.Loading)
         val session = AuthPrefs.load(appContext)
         if (session == null) {
             AuthPrefs.clear(appContext)
-            _inquiryDetailState.value = InquiryDetailUiState.SessionExpired
+            _inquiryDetailStates.value += (inquiryId to InquiryDetailUiState.SessionExpired)
             return@launch
         }
         runCatching {
-            api.getInquiryDetail("Bearer ${session.accessToken}", inquiryId)
+            api.getInquiryDetail(
+                "Bearer ${session.accessToken}",
+                inquiryId
+            )
         }.onSuccess { res ->
-            _inquiryDetailState.value = InquiryDetailUiState.Success(res)
+            _inquiryDetailStates.value += (inquiryId to InquiryDetailUiState.Success(res))
         }.onFailure { e ->
+
             handleApiFailure(
                 e = e,
                 appContext = appContext,
-                onStateChange = { _inquiryDetailState.value = it },
+                onStateChange = { state -> _inquiryDetailStates.value += (inquiryId to state) },
                 unauthorizedState = InquiryDetailUiState.SessionExpired,
                 notFoundState = InquiryDetailUiState.NotFound,
                 failedState = InquiryDetailUiState.Failed

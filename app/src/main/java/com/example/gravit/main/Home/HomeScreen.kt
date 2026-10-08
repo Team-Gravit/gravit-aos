@@ -67,7 +67,7 @@ import com.inuappcenter.gravit.main.Study.Chapter.resolvePlanetRes
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import com.inuappcenter.gravit.ui.theme.TierPalette
 import com.inuappcenter.gravit.ui.theme.pretendard
-import java.time.LocalDate
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -518,7 +518,7 @@ fun HomeUI(
                                                 color = PrimitiveColor.Gray500
                                             )
                                             Text(
-                                                text = "${String.format("%.1f", missionInfo.progressRate).removeSuffix(".0")}%",
+                                                text = "${String.format(Locale.US, "%.1f", missionInfo.progressRate).removeSuffix(".0")}%",
                                                 style = AppTypography.Caption2,
                                                 color = AppColor.Main1
                                             )

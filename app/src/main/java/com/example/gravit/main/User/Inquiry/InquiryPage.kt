@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,17 +33,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
@@ -49,13 +55,15 @@ import com.inuappcenter.gravit.main.User.TapButton
 import com.inuappcenter.gravit.main.User.TopBar
 import androidx.compose.ui.unit.Velocity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gravit.ui.theme.Cip
+import com.example.gravit.ui.theme.CipState
+import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.InquiryListResponses
 import com.inuappcenter.gravit.api.InquiryResponses
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 
 enum class InquiryTab {
     Support,
@@ -70,12 +78,11 @@ fun Inquiry(
     val vm: InquiryVM = viewModel(factory = InquiryVMFactory(RetrofitInstance.api, context))
     val loadUi by vm.loadState.collectAsState()
     val submitUi by vm.submitState.collectAsState()
-    val detailUi by vm.inquiryDetailState.collectAsState()
+    val detailStates by vm.inquiryDetailStates.collectAsState()
+    var expandedInquiryIds by remember { mutableStateOf(setOf<Long>()) }
 
     var navigated by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-
-    var selectedInquiryId by remember { mutableStateOf<Long?>(null) }
 
     var selectedTab by remember { mutableStateOf(InquiryTab.Support) }
     var dropdownExpanded by remember { mutableStateOf(false) }
@@ -84,8 +91,11 @@ fun Inquiry(
     var snackBarText by remember { mutableStateOf("") }
 
     val isLoading =
-        loadUi == InquiryVM.LoadUiState.Loading || submitUi == InquiryVM.UiState.Loading || detailUi == InquiryVM.InquiryDetailUiState.Loading
-
+        loadUi == InquiryVM.LoadUiState.Loading ||
+                submitUi == InquiryVM.UiState.Loading ||
+                detailStates.values.any {
+                    it == InquiryVM.InquiryDetailUiState.Loading
+                }
     var resetSupportForm by remember { mutableStateOf(false) }
 
     LaunchedEffect(submitUi) {
@@ -133,7 +143,6 @@ fun Inquiry(
     LaunchedEffect(selectedTab) {
         dropdownExpanded = false
         vm.resetSubmitState()
-        selectedInquiryId = null
 
         if (selectedTab == InquiryTab.Check) {
             vm.loadInquiryList()
@@ -172,10 +181,10 @@ fun Inquiry(
             else -> Unit
         }
     }
-    LaunchedEffect(detailUi) {
+    LaunchedEffect(detailStates) {
         if (navigated) return@LaunchedEffect
 
-        when (detailUi) {
+        when (detailStates) {
             InquiryVM.InquiryDetailUiState.Failed -> {
                 snackBarText = "오류가 발생했습니다."
                 showSnackBar = true
@@ -206,28 +215,15 @@ fun Inquiry(
         }
     }
 
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            val total = listState.layoutInfo.totalItemsCount
-            if (last != null) last to total else null
-        }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .collect { (lastVisible, total) ->
-                if (lastVisible >= total - 3) {
-                    vm.loadMoreInquiryList()
-                }
-            }
-    }
-
     Box (
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
     ){
         Column (
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppColor.bg2)
+                .background(AppColor.bg0)
         ){
             TopBar(
                 navController = navController,
@@ -249,7 +245,7 @@ fun Inquiry(
                             .height(44.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(AppColor.bg1)
-                            .padding(4.dp),
+                            .padding(5.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         TapButton(
@@ -258,7 +254,9 @@ fun Inquiry(
                             onClick = {
                                 selectedTab = InquiryTab.Support
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .weight(1f)
                         )
                         TapButton(
                             text = "문의내역확인",
@@ -266,7 +264,9 @@ fun Inquiry(
                             onClick = {
                                 selectedTab = InquiryTab.Check
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .weight(1f)
                         )
                     }
                     Spacer(Modifier.height(12.dp))
@@ -293,19 +293,29 @@ fun Inquiry(
                     InquiryTab.Check -> {
                         when (val state = loadUi) {
                             is InquiryVM.LoadUiState.Success -> {
-                                items(state.inquiryList.contents) { inquiry ->
+                                item {
                                     CheckUI(
-                                        inquiry = inquiry,
-                                        onClick = { inquiryId ->
-                                            if (selectedInquiryId == inquiryId) {
-                                                selectedInquiryId = null
+                                        inquiry = state.inquiryList,
+                                        expandedInquiryIds = expandedInquiryIds,
+                                        detailStates = detailStates,
+                                        onInquiryClick = { inquiryId ->
+                                            if (inquiryId in expandedInquiryIds) {
+                                                expandedInquiryIds =
+                                                    expandedInquiryIds - inquiryId
                                             } else {
-                                                selectedInquiryId = inquiryId
+                                                expandedInquiryIds =
+                                                    expandedInquiryIds + inquiryId
+
                                                 vm.loadInquiryDetail(inquiryId)
                                             }
                                         },
-                                        expanded = selectedInquiryId == inquiry.id,
-                                        detailUi = detailUi,
+                                        onPageClick = { page ->
+                                            expandedInquiryIds = emptySet()
+                                            vm.loadInquiryList(page)
+                                        },
+                                        onSupportClick = {
+                                            selectedTab = InquiryTab.Support
+                                        }
                                     )
                                 }
                             }
@@ -344,72 +354,268 @@ fun Inquiry(
     }
 }
 
-//api 확인용 임시 ui
 @Composable
 fun CheckUI(
+    inquiry: InquiryListResponses,
+    expandedInquiryIds: Set<Long>,
+    detailStates: Map<Long, InquiryVM.InquiryDetailUiState>,
+    onInquiryClick: (Long) -> Unit,
+    onPageClick: (Int) -> Unit,
+    onSupportClick: () -> Unit
+) {
+    Box (
+        modifier = Modifier.fillMaxSize()
+    ){
+        Column {
+            Row (verticalAlignment = Alignment.CenterVertically){
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(color = AppColor.text1)) {
+                            append("문의 내역")
+                        }
+                        append(" ")
+                        withStyle(SpanStyle(color = AppColor.Main1)) {
+                            append("${inquiry.totalElements}")
+                        }
+                    },
+                    style = AppTypography.Headline2
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "최신순",
+                    style = AppTypography.Caption1,
+                    color = AppColor.text4
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            if(inquiry.totalElements.toInt() == 0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg0),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "등록된 문의 내역이 없어요",
+                            style = AppTypography.Headline1,
+                            color = AppColor.text2,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "궁금한 점이 있다면 문의하기를 통해 남겨주세요.",
+                            style = AppTypography.Label1,
+                            color = AppColor.text3w,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(32.dp))
+                        BlockButton(
+                            modifier = Modifier
+                                .size(136.dp, 47.dp),
+                            text = "문의하기",
+                            onClick = onSupportClick,
+                            style = AppTypography.Headline2
+                        )
+                    }
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AppColor.bg0)
+            ){
+                Column {
+                    inquiry.contents.forEachIndexed { index, item ->
+                        InquiryItem(
+                            inquiry = item,
+                            onClick = onInquiryClick,
+                            expanded = item.id in expandedInquiryIds,
+                            detailUi = detailStates[item.id] ?: InquiryVM.InquiryDetailUiState.Idle
+                        )
+                        if (index < inquiry.contents.lastIndex) {
+                            HorizontalDivider(
+                                color = AppColor.divider1
+                            )
+                        }
+                    }
+                }
+            }
+            if (inquiry.totalElements.toInt() > 0) {
+                InquiryPagination(
+                    currentPage = inquiry.page,
+                    totalPages = inquiry.totalPages,
+                    onPageClick = onPageClick
+                )
+            }
+        }
+    }
+}
+@Composable
+fun InquiryItem(
     inquiry: InquiryResponses,
     onClick: (Long) -> Unit,
     expanded: Boolean,
     detailUi: InquiryVM.InquiryDetailUiState,
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .clickable { onClick(inquiry.id) }
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .clickable { onClick(inquiry.id) }
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = inquiry.title,
-                modifier = Modifier.weight(1f)
-            )
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Cip(
+                        state = CipState.Default,
+                        text = inquiry.type,
+                        onClick = {},
+                        style = AppTypography.Caption1,
+                        modifier = Modifier.height(22.dp)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = inquiry.title,
+                        style = AppTypography.Headline2,
+                        color = AppColor.text1
+                    )
+                    Text(
+                        text = inquiry.createdAt.substringBefore("T"),
+                        style = AppTypography.Caption1,
+                        color = AppColor.text4
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                Cip(
+                    state = if (inquiry.status == "PENDING") CipState.Disabled else CipState.Active,
+                    text = if (inquiry.status == "PENDING") "답변 대기" else "답변 완료",
+                    onClick = {},
+                    style = AppTypography.Caption1,
+                    modifier = Modifier.height(22.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Image(
+                    painter = painterResource(
+                        id = if (expanded) R.drawable.chevron_up
+                        else R.drawable.chevron_down
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            AnimatedVisibility(visible = expanded) {
+                when (detailUi) {
+                    is InquiryVM.InquiryDetailUiState.Success -> {
+                        val detail = detailUi.inquiry
+                        Column {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(130.dp)
+                                    .background(AppColor.bg0)
+                                    .border(1.dp, AppColor.divider1, RoundedCornerShape(12.dp))
+                                    .padding(16.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "문의내용",
+                                        style = AppTypography.Caption1,
+                                        color = AppColor.text4
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = detail.content,
+                                        style = AppTypography.Body2_Reading,
+                                        color = AppColor.text1
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            if (detail.status == "ANSWERED") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(130.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(PrimitiveColor.Purple200)
+                                        .padding(16.dp)
+                                ) {
+                                    detail.answer.let { answer ->
+                                        Column {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = "답변",
+                                                    style = AppTypography.Caption1,
+                                                    color = AppColor.Main1
+                                                )
+                                                answer?.answeredAt?.substringBefore("T")?.let {
+                                                    Text(
+                                                        text = it,
+                                                        style = AppTypography.Caption1,
+                                                        color = AppColor.text4
+                                                    )
+                                                }
+                                            }
+                                            answer?.content?.let {
+                                                Text(
+                                                    text = it,
+                                                    style = AppTypography.Body2_Reading,
+                                                    color = AppColor.text1
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else{
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(130.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AppColor.bg1),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.timer),
+                                            contentDescription = "stopwatch",
+                                            modifier = Modifier.size(32.dp),
+                                            tint = AppColor.icon_default
 
-            Image(
-                painter = painterResource(
-                    id = if (expanded) R.drawable.chevron_up
-                    else R.drawable.chevron_down
-                ),
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            when (detailUi) {
-                is InquiryVM.InquiryDetailUiState.Success -> {
-                    val detail = detailUi.inquiry
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(AppColor.bg0)
-                            .padding(16.dp)
-                    ) {
-                        Text(text = detail.content)
-
-                        if (detail.status == "ANSWERED") {
-                            detail.answer.let { answer ->
-                                Text(text = "답변")
-                                Text(text = answer.content)
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "답변 대기 중입니다",
+                                            style = AppTypography.Label1,
+                                            color = AppColor.text3,
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "문의해주신 내용을 확인하고 있어요.\n순차적으로 답변드릴게요.",
+                                            style = AppTypography.Caption1,
+                                            color = AppColor.text4,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
+                    InquiryVM.InquiryDetailUiState.Failed -> {
+                        Text(
+                            text = "문의 내용을 불러오지 못했습니다.",
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    else -> Unit
                 }
-
-                InquiryVM.InquiryDetailUiState.Failed -> {
-                    Text(
-                        text = "문의 내용을 불러오지 못했습니다.",
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-
-                else -> Unit
             }
         }
     }
@@ -433,8 +639,8 @@ fun SupportUI(
 
     val inquiryTypes = listOf(
         "버그 신고" to "BUG_REPORT",
-        "콘텐츠 오류" to "CONTENT_ERROR",
         "기능 제안" to "FEATURE_SUGGESTION",
+        "콘텐츠 오류" to "CONTENT_ERROR",
         "기타" to "OTHER"
     )
 
@@ -595,5 +801,118 @@ fun SupportUI(
                 modifier = Modifier.height(56.dp)
             )
         }
+    }
+}
+@Composable
+fun PageNumber(
+    page: Int,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .then(
+                if (selected) {
+                    Modifier
+                        .border(1.dp, AppColor.Main1, RoundedCornerShape(6.dp))
+                        .background(PrimitiveColor.Purple50)
+                } else {
+                    Modifier
+                }
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = page.toString(),
+            style = AppTypography.Body2_Reading,
+            color = if (selected) {
+                AppColor.Main1
+            } else {
+                AppColor.text3
+            }
+        )
+    }
+}
+@Composable
+fun InquiryPagination(
+    currentPage: Int,
+    totalPages: Int,
+    onPageClick: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.chevron_left),
+            contentDescription = "이전 페이지",
+            tint = AppColor.icon_disabled,
+            modifier = Modifier
+                .size(24.dp)
+                .clickable(enabled = currentPage > 1) {
+                    onPageClick(currentPage - 1)
+                }
+        )
+        Spacer(Modifier.width(8.dp))
+
+        val startPage = when {
+            totalPages <= 5 -> 1
+            currentPage <= 3 -> 1
+            currentPage >= totalPages - 2 -> totalPages - 4
+            else -> currentPage - 2
+        }
+
+        val endPage = minOf(
+            startPage + 4,
+            totalPages
+        )
+
+        for (page in startPage..endPage) {
+            PageNumber(
+                page = page,
+                selected = page == currentPage,
+                onClick = {
+                    onPageClick(page)
+                }
+            )
+
+            Spacer(Modifier.width(8.dp))
+        }
+
+        if (endPage < totalPages) {
+            Text(
+                text = "•••",
+                style = AppTypography.Caption1,
+                color = AppColor.text3
+            )
+
+            Spacer(Modifier.width(8.dp))
+
+            PageNumber(
+                page = totalPages,
+                selected = currentPage == totalPages,
+                onClick = {
+                    onPageClick(totalPages)
+                }
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+
+        Icon(
+            painter = painterResource(R.drawable.chevron_right),
+            contentDescription = "다음 페이지",
+            tint = AppColor.icon_disabled,
+            modifier = Modifier
+                .size(24.dp)
+                .clickable(enabled = currentPage < totalPages) {
+                    onPageClick(currentPage + 1)
+                }
+        )
     }
 }

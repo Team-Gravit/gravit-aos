@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
@@ -524,7 +526,7 @@ fun InlineUnderlineText(
 fun CustomSnackBar(
     text: String,
     modifier: Modifier = Modifier
-){
+) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
@@ -532,15 +534,21 @@ fun CustomSnackBar(
             containerColor = PrimitiveColor.Gray1100,
             contentColor = AppColor.text1w
         ),
-    ){
+    ) {
         Box(
-            modifier = Modifier.size(173.dp, 41.dp),
+            modifier = Modifier
+                .widthIn(max = 280.dp)
+                .padding(
+                    horizontal = 16.dp,
+                    vertical = 12.dp
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = text,
                 style = AppTypography.Label1,
-                color = AppColor.text1w
+                color = AppColor.text1w,
+                textAlign = TextAlign.Center
             )
         }
     }

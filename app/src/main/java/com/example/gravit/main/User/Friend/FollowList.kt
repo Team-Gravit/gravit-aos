@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.InlineButton
 import com.example.gravit.ui.theme.InlineButtonState
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.navigation.FollowTab
@@ -74,69 +76,83 @@ fun FollowList(
             launchSingleTop = true
         }
     }
+    val systemUiController = rememberSystemUiController()
 
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = true
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppColor.bg1)
-            .navigationBarsPadding()
+            .background(AppColor.bg0)
     ) {
         TopBar(
             navController = navController,
             title = "친구",
             height = 48.dp
         )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(AppColor.bg1)
+                .weight(1f)
+        ) {
+            Column {
+                Spacer(Modifier.height(20.dp))
+                FriendTabBar(
+                    selectedTab = ui.selectedTab,
+                    followerCount = ui.followerCount,
+                    followingCount = ui.followingCount,
+                    onTabSelected = vm::setTab
+                )
+                if (ui.loading && ui.followerItems.isEmpty() && ui.followingItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFBA00FF))
+                    }
+                } else {
+                    when (ui.selectedTab) {
+                        FriendTab.Follower -> {
+                            FollowerListContent(
+                                items = ui.followerItems,
+                                hasNext = ui.followerHasNext,
+                                loadingMore = ui.loading,
+                                onLoadNext = { vm.loadFollowerNext() },
+                                onUnfollow = { vm.unfollowFromFollower(it) },
+                                onFollow = { vm.followFromFollower(it) }
+                            )
+                        }
 
-        Spacer(Modifier.height(20.dp))
-        FriendTabBar(
-            selectedTab = ui.selectedTab,
-            followerCount = ui.followerCount,
-            followingCount = ui.followingCount,
-            onTabSelected = vm::setTab
-        )
-
-        if (ui.loading && ui.followerItems.isEmpty() && ui.followingItems.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFFBA00FF))
-            }
-        } else {
-            when (ui.selectedTab) {
-                FriendTab.Follower -> {
-                    FollowerListContent(
-                        items = ui.followerItems,
-                        hasNext = ui.followerHasNext,
-                        loadingMore = ui.loading,
-                        onLoadNext = { vm.loadFollowerNext() },
-                        onUnfollow = { vm.unfollowFromFollower(it) },
-                        onFollow = { vm.followFromFollower(it) }
-                    )
+                        FriendTab.Following -> {
+                            FollowingListContent(
+                                items = ui.followingItems,
+                                hasNext = ui.followingHasNext,
+                                loadingMore = ui.loading,
+                                onLoadNext = { vm.loadFollowingNext() },
+                                onUnfollow = { vm.unfollowFromFollowing(it) }
+                            )
+                        }
+                    }
                 }
 
-                FriendTab.Following -> {
-                    FollowingListContent(
-                        items = ui.followingItems,
-                        hasNext = ui.followingHasNext,
-                        loadingMore = ui.loading,
-                        onLoadNext = { vm.loadFollowingNext() },
-                        onUnfollow = { vm.unfollowFromFollowing(it) }
+                if (ui.error != null) {
+                    Text(
+                        text = ui.error ?: "",
+                        color = Color.Red,
+                        fontFamily = pretendard,
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp, vertical = 8.dp)
                     )
                 }
             }
-        }
 
-        if (ui.error != null) {
-            Text(
-                text = ui.error ?: "",
-                color = Color.Red,
-                fontFamily = pretendard,
-                modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 8.dp)
-            )
         }
     }
 }
@@ -241,7 +257,7 @@ private fun FollowerListContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 30.dp)
         ) {
             if (items.isNotEmpty()) {
