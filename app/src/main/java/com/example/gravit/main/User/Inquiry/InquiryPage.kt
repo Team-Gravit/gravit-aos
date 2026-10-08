@@ -539,37 +539,6 @@ fun InquiryItem(
                                 }
                             }
                             Spacer(Modifier.height(12.dp))
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(130.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(AppColor.bg1),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.timer),
-                                        contentDescription = "stopwatch",
-                                        modifier = Modifier.size(32.dp),
-                                        tint = AppColor.icon_default
-
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = "답변 대기 중입니다",
-                                        style = AppTypography.Label1,
-                                        color = AppColor.text3,
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = "문의해주신 내용을 확인하고 있어요.\n순차적으로 답변드릴게요.",
-                                        style = AppTypography.Caption1,
-                                        color = AppColor.text4,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
                             if (detail.status == "ANSWERED") {
                                 Box(
                                     modifier = Modifier
@@ -587,18 +556,54 @@ fun InquiryItem(
                                                     style = AppTypography.Caption1,
                                                     color = AppColor.Main1
                                                 )
+                                                answer?.answeredAt?.substringBefore("T")?.let {
+                                                    Text(
+                                                        text = it,
+                                                        style = AppTypography.Caption1,
+                                                        color = AppColor.text4
+                                                    )
+                                                }
+                                            }
+                                            answer?.content?.let {
                                                 Text(
-                                                    text = answer.answeredAt.substringBefore("T"),
-                                                    style = AppTypography.Caption1,
-                                                    color = AppColor.text4
+                                                    text = it,
+                                                    style = AppTypography.Body2_Reading,
+                                                    color = AppColor.text1
                                                 )
                                             }
-                                            Text(
-                                                text = answer.content,
-                                                style = AppTypography.Body2_Reading,
-                                                color = AppColor.text1
-                                            )
                                         }
+                                    }
+                                }
+                            } else{
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(130.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AppColor.bg1),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.timer),
+                                            contentDescription = "stopwatch",
+                                            modifier = Modifier.size(32.dp),
+                                            tint = AppColor.icon_default
+
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "답변 대기 중입니다",
+                                            style = AppTypography.Label1,
+                                            color = AppColor.text3,
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "문의해주신 내용을 확인하고 있어요.\n순차적으로 답변드릴게요.",
+                                            style = AppTypography.Caption1,
+                                            color = AppColor.text4,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
                                 }
                             }
