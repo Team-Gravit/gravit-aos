@@ -287,6 +287,7 @@ data class SocialFeedContents(
     val actorHandle: String,
     val message: String,
     val timeAgo: String,
+    val congratulated: Boolean,
     val canCongratulate: Boolean,
     val createdAt: String
 )
@@ -505,7 +506,7 @@ data class InquiryDetail(
     val status: String,
     val createdAt: String,
     val updatedAt: String,
-    val answer: InquiryAnswer
+    val answer: InquiryAnswer?
 )
 data class InquiryAnswer(
     val content: String,
