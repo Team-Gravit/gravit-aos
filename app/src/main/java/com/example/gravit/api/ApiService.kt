@@ -449,29 +449,6 @@ data class SeasonHistory(
     val isCurrent: Boolean
 )
 
-//뱃지
-data class Badges(
-    val earnedCount: Int,
-    val totalCount: Int,
-    val badgeCategoryResponses: List<BadgeCategoryResponses>
-)
-data class BadgeCategoryResponses(
-    val categoryId: Int,
-    val categoryName: String,
-    val order: Int,
-    val categoryDescription: String,
-    val badgeResponses: List<BadgeResponses>
-)
-data class BadgeResponses(
-    val badgeId: Int,
-    val code: String,
-    val name: String,
-    val description: String,
-    val order: Int,
-    val iconId: Int,
-    val earned: Boolean
-)
-
 //북마크
 data class BookmarksRequest(
     val problemId: Long
@@ -627,7 +604,7 @@ interface ApiService {
         @Header("Authorization") auth: String
     )
     //CS-Note API
-    @GET("api/v1/cs-notes/{unitId}") //개념 노트 조회
+    @GET("api/v1/cs-notes/units/{unitId}") //개념 노트 조회
     suspend fun getNotes(
         @Header("Authorization") auth: String,
         @Path("unitId") unitId: Long
@@ -691,12 +668,6 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Path("page") page: Int
     ): NoticeSummaryPageResponse
-
-    //Badge API
-    @GET("api/v1/badges/me") //내 뱃지 목록 조회
-    suspend fun getBadges(
-        @Header("Authorization") auth: String,
-    ) : Badges
 
     //User Deletion API
     @POST("api/v1/users/deletion/request") //계정 삭제 요청
