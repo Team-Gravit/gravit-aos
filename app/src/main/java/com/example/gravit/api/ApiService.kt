@@ -298,20 +298,20 @@ data class FriendsCount(
 
 //사용자
 data class UserPageResponse(
-    val nickname: String? = null,
-    val profileImgNumber: Int? = null,
-    val handle: String? = null,
-    val follower: Int? = null,
-    val following: Int? = null
+    val nickname: String,
+    val profileImgNumber: Int,
+    val handle: String,
+    val follower: Int,
+    val following: Int
 )
 
 data class MyPageBanner(
-    val profileImageNumber: Int? = null,
-    val nickname: String? = null,
-    val handle: String? = null,
-    val level: Int? = null,
-    val currentLeague: String? = null,
-    val consecutiveSolvedDays: Int? = null
+    val profileImageNumber: Int,
+    val nickname: String,
+    val handle: String,
+    val level: Int,
+    val currentLeague: String,
+    val consecutiveSolvedDays: Int
 )
 
 data class MyPageWeeklyReport(
