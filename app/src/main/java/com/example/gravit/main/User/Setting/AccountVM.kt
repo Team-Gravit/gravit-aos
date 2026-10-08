@@ -60,7 +60,7 @@ class AccountVM(
             } else {
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    errorMsg = mapServerError(res.code(), res.errorBody()?.string())
+                    errorMsg = mapServerError(res.errorBody()?.string())
                 )
             }
         }
@@ -96,46 +96,46 @@ class AccountVM(
                 } else {
                     _state.value = _state.value.copy(
                         isSaving = false,
-                        errorMsg = mapServerError(res.code(), res.errorBody()?.string())
+                        errorMsg = mapServerError(res.errorBody()?.string())
                     )
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(isSaving = false, errorMsg = e.message ?: "알 수 없는 오류")
+                _state.value = _state.value.copy(
+                    isSaving = false,
+                    errorMsg = "오류가 발생했습니다."
+                )
             }
         }
     }
 }
 
-fun mapServerError(code: Int, raw: String?): String {
-    if (raw.isNullOrBlank()) {
-        return "요청 실패 ($code)"
-    }
+fun mapServerError(raw: String?): String {
+    if (raw.isNullOrBlank()) return "오류가 발생했습니다."
 
     return try {
         val json = JsonParser.parseString(raw).asJsonObject
         val message = json.get("message")
 
-        when {
-            message == null || message.isJsonNull -> {
-                "요청 실패 ($code)"
-            }
+        val parsedMessage = when {
+            message == null || message.isJsonNull -> null
 
             message.isJsonArray -> {
-                message.asJsonArray
-                    .map { it.asString }
-                    .joinToString("\n")
+                message.asJsonArray.joinToString("\n") { it.asString }
             }
 
             message.isJsonPrimitive -> {
                 message.asString
             }
 
-            else -> {
-                "요청 실패 ($code)"
-            }
+            else -> null
         }
+
+        parsedMessage
+            ?.takeIf { it.isNotBlank() }
+            ?: "오류가 발생했습니다."
+
     } catch (e: Exception) {
-        "요청 실패 ($code)"
+        "오류가 발생했습니다."
     }
 }
 
