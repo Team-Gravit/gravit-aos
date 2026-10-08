@@ -1,20 +1,15 @@
 package com.inuappcenter.gravit.main.Study.Lesson
 
 import android.widget.TextView
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,25 +19,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppRadius
+import com.example.gravit.ui.theme.AppSpacing
 import com.example.gravit.ui.theme.AppTypography
-import com.example.gravit.ui.theme.BlockButton
+import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.User.TopBar
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.html.HtmlPlugin
@@ -181,14 +177,12 @@ fun MarkdownContent(content: String) {
     }
 }
 
-enum class SheetState { Hidden, Half, Full }
-
 @Composable
-fun NoteSheetCustom(
+fun NotePage(
+    title: String,
     unitId: Long,
-    sheetState: SheetState,
-    onStateChange: (SheetState) -> Unit,
-    onDismiss: () -> Unit
+    navController: NavController,
+    onSessionExpired: () -> Unit,
 ) {
     val context = LocalContext.current
     val vm: NoteVM = viewModel(factory = NoteVMFactory(RetrofitInstance.api, context))
@@ -201,132 +195,45 @@ fun NoteSheetCustom(
     val noteText = (ui as? NoteVM.UiState.Success)?.data
         ?: "개념노트를 불러오지 못했습니다."
 
-    val targetRatio = when (sheetState) {
-        SheetState.Hidden -> 0f
-        SheetState.Half   -> 0.72f
-        SheetState.Full   -> 0.9f
-    }
-    val animatedRatio by animateFloatAsState(targetRatio, label = "sheetRatio")
-
-    var dragAmount by remember { mutableStateOf(0f) }
-
     Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        if (sheetState != SheetState.Hidden) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Color.Black.copy(alpha = 0.35f)
-                    )
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember {
-                            MutableInteractionSource()
-                        }
-                    ) {
-                        onStateChange(SheetState.Hidden)
-                    }
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg0)
+    ){
+        Column{
+            TopBar(
+                title = "개념노트",
+                icon = painterResource(id = R.drawable.close),
+                navController = navController
             )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(animatedRatio)
-                .align(Alignment.BottomCenter)
-                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                .background(Color.White)
-                .pointerInput(sheetState) {
-                    detectDragGestures(
-                        onDrag = { _, drag ->
-                            dragAmount += drag.y
-                        },
-                        onDragEnd = {
-                            val threshold = 60f
-                            when (sheetState) {
-                                SheetState.Half -> {
-                                    when {
-                                        dragAmount < -threshold -> onStateChange(SheetState.Full)
-                                        dragAmount > threshold -> onStateChange(SheetState.Hidden)
-                                        else -> onStateChange(SheetState.Half)
-                                    }
-                                }
-
-                                SheetState.Full -> {
-                                    when {
-                                        dragAmount > threshold -> onStateChange(SheetState.Half)
-                                        else -> onStateChange(SheetState.Full)
-                                    }
-                                }
-
-                                SheetState.Hidden -> onStateChange(SheetState.Hidden)
-                            }
-                            dragAmount = 0f
-                        }
-                    )
-                }
-        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 20.dp, horizontal = 16.dp)
+                    .navigationBarsPadding()
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color(0xFFC4C4C4))
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(53.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "개념노트",
-                        style = AppTypography.Headline2,
-                        color = AppColor.text1
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
+                        .wrapContentHeight()
+                        .clip(RoundedCornerShape(AppRadius.lg))
                         .background(AppColor.bg2)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
+                        .padding(AppSpacing.spacing16)
+                ){
+                    Column {
+                        Text(
+                            text = title,
+                            style = AppTypography.Label1,
+                            color = Color(0xFF555555)
+                        )
+                        Spacer(Modifier.height(16.dp))
                         MarkdownContent(noteText)
-                        Spacer(Modifier.height(60.dp))
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .height(88.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    BlockButton(
-                        text = "닫기",
-                        onClick = onDismiss,
-                        style = AppTypography.Headline2,
-                        modifier = Modifier.height(48.dp)
-                    )
-                }
+                Spacer(Modifier.height(30.dp))
             }
+
         }
     }
 }
