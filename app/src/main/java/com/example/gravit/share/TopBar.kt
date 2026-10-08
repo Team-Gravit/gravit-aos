@@ -10,21 +10,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppSpacing
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.AuthPrefs
@@ -35,61 +34,55 @@ fun TopBar(
     title: String,
     height: Dp = 48.dp,
     useIcon: Boolean = true,
-    useCloseIcon: Boolean = false,
+    icon: Painter? = null,
+    onIconClick: (() -> Unit)? = null,
     useAlarmIcon: Boolean = false,
     isOnboarding: Boolean = false
 ) {
     val context = LocalContext.current
+
+    val leadingIcon = icon ?: painterResource(
+        id = R.drawable.chevron_left
+    )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(WindowInsets.statusBars.asPaddingValues())
             .height(height)
-            .background(Color.White)
+            .background(AppColor.bg0)
     ) {
-        if(useIcon){
-            if(useCloseIcon){
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "닫기",
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 16.dp)
-                        .clickable {
-                            if(isOnboarding){
+        if (useIcon) {
+            Icon(
+                painter = leadingIcon,
+                contentDescription = "뒤로가기",
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(AppSpacing.spacing12)
+                    .size(24.dp)
+                    .clickable {
+                        if (onIconClick != null) {
+                            onIconClick()
+                        } else {
+                            if (isOnboarding) {
                                 AuthPrefs.clear(context)
                             }
                             navController.popBackStack()
-                        },
-                    tint = Color(0xFF4D4D4D)
-                )
-            } else {
-                Icon(
-                    painter = painterResource(id = R.drawable.chevron_left),
-                    contentDescription = "뒤로가기",
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(12.dp)
-                        .size(24.dp)
-                        .clickable {
-                            if(isOnboarding){
-                                AuthPrefs.clear(context)
-                            }
-                            navController.popBackStack()
-                        },
-                    tint = AppColor.icon_default
-                )
-            }
-            if(useAlarmIcon){
+                        }
+                    },
+                tint = AppColor.icon_default
+            )
+
+            if (useAlarmIcon) {
                 Icon(
                     painter = painterResource(id = R.drawable.bell),
                     contentDescription = "알림",
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 20.dp)
+                        .padding(end = AppSpacing.spacing20)
                         .size(24.dp)
                         .clickable {
-                            navController.navigate("user/notification"){
+                            navController.navigate("user/notification") {
                                 launchSingleTop = true
                             }
                         },
@@ -103,7 +96,7 @@ fun TopBar(
                 text = title,
                 modifier = Modifier.align(Alignment.Center),
                 style = AppTypography.Label1,
-                color = AppColor.text2,
+                color = AppColor.text2
             )
         }
     }
