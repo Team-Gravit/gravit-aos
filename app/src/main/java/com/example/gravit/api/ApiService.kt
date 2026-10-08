@@ -180,8 +180,8 @@ data class OptionDto(
 
 //제출
 data class LessonResultRequest(
-    val lessonSubmissionSaveRequest: LessonSubmissionSaveRequest?,
-    val problemSubmissionSaveRequests: List<ProblemSubmissionSaveRequests>?
+    val lessonSubmissionSaveRequest: LessonSubmissionSaveRequest,
+    val problemSubmissionSaveRequests: List<ProblemSubmissionSaveRequests>
 )
 data class LessonSubmissionSaveRequest(
     val lessonId: Long,
@@ -655,7 +655,7 @@ interface ApiService {
     suspend fun sendReport(
         @Body body: ReportRequest,
         @Header("Authorization") auth: String,
-    ) : ReportRequest
+    )
 
     //Notice Query API
     @GET("api/v1/notice/{noticeId}") //공지 상세 조회

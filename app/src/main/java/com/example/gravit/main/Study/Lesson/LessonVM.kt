@@ -86,8 +86,8 @@ class LessonViewModel(
     private val _submit = MutableStateFlow<SubmitState>(SubmitState.Idle)
     val submit = _submit.asStateFlow()
     fun submitResults(
-        lessonSubmissionSaveRequest: LessonSubmissionSaveRequest?,
-        problemSubmissionRequests: List<ProblemSubmissionSaveRequests>?,
+        lessonSubmissionSaveRequest: LessonSubmissionSaveRequest,
+        problemSubmissionRequests: List<ProblemSubmissionSaveRequests>,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
         _submit.value = SubmitState.Loading
