@@ -280,13 +280,13 @@ private fun OptionCell(
                     Text(
                         text = "👏🏻 정답입니다!",
                         color = AppColor.successColor,
-                        style = AppTypography.Body1_Nomal
+                        style = AppTypography.Body1_Normal
                     )
                     Spacer(Modifier.weight(1f))
                     if (showRemoveButton) {
                         Text(
                             text = "오답노트에서 제외하기",
-                            style = AppTypography.Body1_Nomal,
+                            style = AppTypography.Body1_Normal,
                             color = AppColor.text3,
                             modifier = Modifier.clickable {
                                 onRemoveFromWrongNote()
@@ -305,13 +305,13 @@ private fun OptionCell(
                     Text(
                         text = "❌ 정답: ",
                         color = AppColor.errorColor,
-                        style = AppTypography.Body1_Nomal
+                        style = AppTypography.Body1_Normal
                     )
 
                     Text(
                         text = correctAnswerText,
                         color = AppColor.errorColor,
-                        style = AppTypography.Body1_Nomal,
+                        style = AppTypography.Body1_Normal,
                         modifier = Modifier.weight(1f)
                     )
                 }

@@ -6,6 +6,8 @@ import androidx.compose.ui.unit.sp
 import com.inuappcenter.gravit.ui.theme.pretendard
 
 object AppTypography {
+
+    // Display
     val Display1 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Bold,
@@ -13,6 +15,7 @@ object AppTypography {
         lineHeight = 50.sp,
         letterSpacing = (-0.6).sp
     )
+
     val Display2 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Bold,
@@ -21,6 +24,7 @@ object AppTypography {
         letterSpacing = (-0.6).sp
     )
 
+    // Title
     val Title1 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Bold,
@@ -28,6 +32,7 @@ object AppTypography {
         lineHeight = 40.sp,
         letterSpacing = (-0.6).sp
     )
+
     val Title2 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Bold,
@@ -35,6 +40,7 @@ object AppTypography {
         lineHeight = 35.sp,
         letterSpacing = (-0.6).sp
     )
+
     val Title3 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Bold,
@@ -43,6 +49,7 @@ object AppTypography {
         letterSpacing = (-0.6).sp
     )
 
+    // Heading
     val Heading1 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
@@ -50,6 +57,7 @@ object AppTypography {
         lineHeight = 27.5.sp,
         letterSpacing = (-0.6).sp
     )
+
     val Heading2 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
@@ -58,6 +66,7 @@ object AppTypography {
         letterSpacing = (-0.6).sp
     )
 
+    // Headline
     val Headline1 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
@@ -65,6 +74,7 @@ object AppTypography {
         lineHeight = 22.5.sp,
         letterSpacing = (-0.6).sp
     )
+
     val Headline2 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
@@ -73,97 +83,66 @@ object AppTypography {
         letterSpacing = (-0.6).sp
     )
 
-    val Body1_Nomal = TextStyle(
+    // Body
+    val Body1_Normal = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        lineHeight = 24.sp
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp
     )
+
     val Body1_Reading = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        lineHeight = 25.6.sp
+        lineHeight = 25.6.sp,
+        letterSpacing = 0.sp
     )
-    val Body2_Nomal = TextStyle(
+
+    val Body2_Normal = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
-        lineHeight = 22.5.sp
+        lineHeight = 22.5.sp,
+        letterSpacing = 0.sp
     )
+
     val Body2_Reading = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
-        lineHeight = 24.sp
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp
     )
 
+    // Label
     val Label1 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
+        letterSpacing = 0.sp
     )
+
     val Label2 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
+        letterSpacing = 0.sp
     )
 
+    // Caption
     val Caption1 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
+        letterSpacing = 0.sp
     )
+
     val Caption2 = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
-    )
-
-    val App_Caption1 = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 21.sp
-    )
-    val App_Caption2 = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 18.sp,
-        letterSpacing = (-0.06).sp
-    )
-
-    val App_Btn2 = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 21.sp
-    )
-
-    val App_Btn1 = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp
-    )
-
-    val Web_Btn_L = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 20.sp,
-        lineHeight = 30.sp
-    )
-    val Web_Btn_S_Caption1 = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp
-    )
-    val Web_Caption2 = TextStyle(
-        fontFamily = pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 21.sp
+        letterSpacing = 0.sp
     )
 }

@@ -483,7 +483,7 @@ fun PopUpUi(
                             }
                         }
                         withStyle(
-                            AppTypography.Body2_Nomal.toSpanStyle()
+                            AppTypography.Body2_Normal.toSpanStyle()
                         ) {
                             if (type == "league") {
                                 append(" 로 승급했어요")
