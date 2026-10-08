@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.gson.JsonParser
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.UpdateUserInfoRequest
@@ -88,7 +89,6 @@ class AccountVM(
                     profilePhotoNumber = cur.profileId,
                     nickname = cur.nickname.trim()
                 )
-
                 val res = api.updateUserInfo(bearer, body)
                 if (res.isSuccessful) {
                     _state.value = _state.value.copy(isSaving = false, savedOnce = true)
@@ -106,13 +106,36 @@ class AccountVM(
     }
 }
 
-private fun mapServerError(code: Int, raw: String?): String {
-    val text = raw.orEmpty()
-    return when {
-        "USER_4041" in text -> "존재하지 않는 유저입니다."
-        "GLOBAL_4001" in text -> "유효성 검사에 실패했습니다."
-        "GLOBAL_5001" in text -> "서버 오류가 발생했습니다."
-        else -> "요청 실패 ($code)"
+fun mapServerError(code: Int, raw: String?): String {
+    if (raw.isNullOrBlank()) {
+        return "요청 실패 ($code)"
+    }
+
+    return try {
+        val json = JsonParser.parseString(raw).asJsonObject
+        val message = json.get("message")
+
+        when {
+            message == null || message.isJsonNull -> {
+                "요청 실패 ($code)"
+            }
+
+            message.isJsonArray -> {
+                message.asJsonArray
+                    .map { it.asString }
+                    .joinToString("\n")
+            }
+
+            message.isJsonPrimitive -> {
+                message.asString
+            }
+
+            else -> {
+                "요청 실패 ($code)"
+            }
+        }
+    } catch (e: Exception) {
+        "요청 실패 ($code)"
     }
 }
 

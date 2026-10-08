@@ -19,7 +19,6 @@ import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.login.NameInputFiled
 import com.inuappcenter.gravit.login.ProfileSwitcher
@@ -41,14 +40,14 @@ fun Account(
     LaunchedEffect(Unit) { vm.loadUserInfo() }
 
     val nicknameValid = isValidNickname(ui.nickname)
-    val canSave = nicknameValid && !ui.isSaving
     var showSnackbar by remember { mutableStateOf(false) }
     val systemUiController = rememberSystemUiController()
     val isDarkMode = isSystemInDarkTheme()
 
     LaunchedEffect(ui.errorMsg) {
+        showSnackbar = ui.errorMsg != null
+
         if (ui.errorMsg != null) {
-            showSnackbar = true
             delay(2000)
             showSnackbar = false
         }
@@ -113,7 +112,6 @@ fun Account(
                     BlockButton(
                         text = "돌아가기",
                         onClick = {
-                            AuthPrefs.clear(context)
                             navController.popBackStack()
                         },
                         state = ButtonState.Stroke,
@@ -129,7 +127,6 @@ fun Account(
                                 navController.popBackStack()
                             }
                         },
-                        enabled = canSave,
                         style = AppTypography.Headline2,
                         modifier = Modifier
                             .height(45.dp)
@@ -139,14 +136,16 @@ fun Account(
             }
         }
         if (showSnackbar) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                CustomSnackBar(
-                    text = "다시 시도해 주세요.",
-                    modifier = Modifier.padding(bottom = 10.dp)
-                )
+            ui.errorMsg?.let { message ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    CustomSnackBar(
+                        text = message,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                }
             }
         }
     }

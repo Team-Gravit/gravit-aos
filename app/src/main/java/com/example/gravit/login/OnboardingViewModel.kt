@@ -8,11 +8,13 @@ import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.OnboardingRequest
 import com.inuappcenter.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.main.User.Setting.mapServerError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class OnboardingViewModel(
     private val api: ApiService,
@@ -55,13 +57,21 @@ class OnboardingViewModel(
                     notFoundState = UiState.NotFound,
                     failedState = UiState.Failed
                 )
-                _event.tryEmit(Event.ShowFailedSnack)
+
+                if (e is HttpException && e.code() !in listOf(401, 404)) {
+                    val message = mapServerError(
+                        e.code(),
+                        e.response()?.errorBody()?.string()
+                    )
+
+                    _event.tryEmit(Event.ShowFailedSnack(message))
+                }
             }
         }
     }
 
     sealed interface Event {
-        data object ShowFailedSnack : Event
+        data class ShowFailedSnack(val message: String) : Event
     }
 
     private val _event = MutableSharedFlow<Event>(extraBufferCapacity = 1)
@@ -70,7 +80,7 @@ class OnboardingViewModel(
 
     fun testFailed() {
         _state.value = UiState.Failed
-        _event.tryEmit(Event.ShowFailedSnack)
+        _event.tryEmit(Event.ShowFailedSnack("스낵바 테스트"))
     }
 
 }
