@@ -77,7 +77,10 @@ class UserScreenVM (
     sealed interface FollowUiState {
         data object Idle : FollowUiState
         data object Loading : FollowUiState
-        data object Success : FollowUiState
+        data class Success(
+            val userId: Long,
+            val isFollowing: Boolean
+        ) : FollowUiState
         data object SessionExpired : FollowUiState
         data class Failed(val message: String) : FollowUiState
     }
@@ -122,8 +125,7 @@ class UserScreenVM (
     )
     private val _stateSummary = MutableStateFlow<SummaryUiState>(SummaryUiState.Loading)
     val stateSummary = _stateSummary.asStateFlow()
-    private val _selectedYear = MutableStateFlow(2026)
-    val selectedYear = _selectedYear.asStateFlow()
+
     fun loadSummary() = viewModelScope.launch {
         _stateSummary.value = SummaryUiState.Loading
 
@@ -157,10 +159,18 @@ class UserScreenVM (
             )
         }
     }
+
+    private val _selectedYear = MutableStateFlow(2026)
+    val selectedYear = _selectedYear.asStateFlow()
+
+    private val _yearChangeError = MutableStateFlow<String?>(null)
+    val yearChangeError = _yearChangeError.asStateFlow()
+
+    fun clearYearChangeError() {
+        _yearChangeError.value = null
+    }
     fun selectYear(year: Int) = viewModelScope.launch {
         if (_selectedYear.value == year) return@launch
-
-        _selectedYear.value = year
 
         val currentState = _stateSummary.value as? SummaryUiState.Success ?: return@launch
 
@@ -174,6 +184,7 @@ class UserScreenVM (
         runCatching {
             api.getMyPageHistory("Bearer ${session.accessToken}", year)
         }.onSuccess { history ->
+            _selectedYear.value = year
             _stateSummary.value = SummaryUiState.Success(currentState.data.copy(history = history))
         }.onFailure { e ->
             Log.e("MYPAGE_HISTORY", "load history failed: year=$year", e)
@@ -181,13 +192,24 @@ class UserScreenVM (
             handleApiFailure(
                 e = e,
                 appContext = appContext,
-                onStateChange = { _stateSummary.value = it },
+                onStateChange = { state ->
+                    when (state) {
+                        SummaryUiState.Failed -> {
+                            _yearChangeError.value = "오류가 발생했습니다."
+                        }
+
+                        else -> {
+                            _stateSummary.value = state
+                        }
+                    }
+                },
                 unauthorizedState = SummaryUiState.SessionExpired,
                 notFoundState = SummaryUiState.NotFound,
                 failedState = SummaryUiState.Failed
             )
         }
     }
+
     private val _stateLeague = MutableStateFlow<LeagueUiState>(LeagueUiState.Loading)
     val stateLeague = _stateLeague.asStateFlow()
 
@@ -275,6 +297,23 @@ class UserScreenVM (
             when {
                 res.isSuccessful -> {
                     _stateCongratulate.value = CongratulateUiState.Success
+                    val currentState = _stateSocial.value as? SocialUiState.Success
+
+                    if (currentState != null) {
+                        _stateSocial.value = currentState.copy(
+                            data = currentState.data.copy(
+                                feed = currentState.data.feed.copy(
+                                    contents = currentState.data.feed.contents.map { feed ->
+                                        if (feed.feedId == feedId) {
+                                            feed.copy(congratulated = true)
+                                        } else {
+                                            feed
+                                        }
+                                    }
+                                )
+                            )
+                        )
+                    }
                 }
 
                 res.code() == 400 -> {
@@ -451,7 +490,7 @@ class UserScreenVM (
         }.onSuccess { res ->
             when {
                 res.isSuccessful -> {
-                    _stateFollow.value = FollowUiState.Success
+                    _stateFollow.value = FollowUiState.Success(targetUserId, true)
                     _stateSocial.value = currentState.copy(
                         data = currentState.data.copy(
                             count = currentState.data.count.copy(
@@ -511,7 +550,7 @@ class UserScreenVM (
         }.onSuccess { res ->
             when {
                 res.isSuccessful -> {
-                    _stateFollow.value = FollowUiState.Success
+                    _stateFollow.value = FollowUiState.Success(targetUserId, false)
 
                     _stateSocial.value = currentState.copy(
                         data = currentState.data.copy(
@@ -539,7 +578,9 @@ class UserScreenVM (
                 FollowUiState.Failed("오류가 발생했습니다.")
         }
     }
-
+    fun clearFollowState() {
+        _stateFollow.value = FollowUiState.Idle
+    }
     fun clearLoadMoreError() {
         val currentState = _stateSocial.value as? SocialUiState.Success ?: return
 

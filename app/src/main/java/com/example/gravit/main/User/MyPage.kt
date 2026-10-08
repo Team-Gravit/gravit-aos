@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -139,6 +141,7 @@ fun MyPageUI(
     val learningUi by vm.stateLearning.collectAsState()
     val congratulateUi by vm.stateCongratulate.collectAsState()
     val followUi by vm.stateFollow.collectAsState()
+    val yearChangeError by vm.yearChangeError.collectAsState()
 
     val isSessionExpired = bannerUi == UserScreenVM.BannersUiState.SessionExpired ||
             when (selectedTab) {
@@ -213,6 +216,7 @@ fun MyPageUI(
             is UserScreenVM.CongratulateUiState.Failed -> {
                 snackBarText = state.message
                 showSnackBar = true
+                vm.clearCongratulateState()
             }
 
             UserScreenVM.CongratulateUiState.Success -> {
@@ -226,6 +230,7 @@ fun MyPageUI(
             is UserScreenVM.FollowUiState.Failed -> {
                 snackBarText = state.message
                 showSnackBar = true
+                vm.clearFollowState()
             }
             else -> Unit
         }
@@ -240,6 +245,14 @@ fun MyPageUI(
             vm.clearLoadMoreError()
         }
     }
+    LaunchedEffect(yearChangeError) {
+        yearChangeError?.let { message ->
+            snackBarText = message
+            showSnackBar = true
+            vm.clearYearChangeError()
+        }
+    }
+
     val initialSkeleton = selectedTab == MyPageTab.Summary && (bannerUi == UserScreenVM.BannersUiState.Loading || summaryUi == UserScreenVM.SummaryUiState.Loading)
     Box(
         modifier = Modifier.fillMaxSize()
@@ -572,9 +585,10 @@ fun SummaryUI(
 ) {
     val ui by vm.stateSummary.collectAsState()
     val summaries = (ui as? UserScreenVM.SummaryUiState.Success)?.data
-    var selectedYear by remember { mutableStateOf(2026) }
     var expanded by remember { mutableStateOf(false) }
     val colorCube = listOf(AppColor.bg1, PrimitiveColor.Purple200, PrimitiveColor.Purple300,PrimitiveColor.Purple500,PrimitiveColor.Purple700)
+    val selectedYear by vm.selectedYear.collectAsState()
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -671,7 +685,7 @@ fun SummaryUI(
                             ) {
                                 Text(
                                     text = selectedYear.toString(),
-                                    style = AppTypography.Body1_Nomal,
+                                    style = AppTypography.Body1_Normal,
                                     color = AppColor.text1
                                 )
                                 Spacer(Modifier.weight(1f))
@@ -703,7 +717,6 @@ fun SummaryUI(
                                         .fillMaxWidth()
                                         .height(40.dp)
                                         .clickable {
-                                            selectedYear = year
                                             expanded = false
                                             vm.selectYear(year)
                                         },
@@ -711,7 +724,7 @@ fun SummaryUI(
                                 ) {
                                     Text(
                                         text = year.toString(),
-                                        style = AppTypography.Body1_Nomal,
+                                        style = AppTypography.Body1_Normal,
                                         color = AppColor.text1
                                     )
                                 }
@@ -1611,6 +1624,7 @@ fun SocialTabUI(
     val ui by vm.stateSocial.collectAsState()
     val social = (ui as? UserScreenVM.SocialUiState.Success)?.data
     val listState = rememberLazyListState()
+    val followUi by vm.stateFollow.collectAsState()
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -1739,9 +1753,9 @@ fun SocialTabUI(
                             state = listState,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(234.dp)
+                                .heightIn(max = 327.dp)
                         ) {
-                            items(social?.feed?.contents ?: emptyList()) { feed ->
+                            itemsIndexed(social?.feed?.contents ?: emptyList()) {index, feed ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1759,7 +1773,7 @@ fun SocialTabUI(
                                         Image(
                                             painter = painterResource(id = R.drawable.profile_logo),
                                             contentDescription = "profile logo",
-                                            modifier = Modifier.size(18.dp, 20.dp)
+                                            modifier = Modifier.size(20.dp, 22.dp)
                                         )
                                     }
 
@@ -1790,31 +1804,26 @@ fun SocialTabUI(
                                     }
 
                                     Spacer(Modifier.weight(1f))
-                                    var isCongratulated by remember(feed.feedId) {
-                                        mutableStateOf(
-                                            false
-                                        )
-                                    }
                                     InlineButton(
                                         text = "축하하기",
-                                        state = if (isCongratulated) InlineButtonState.Stroke else InlineButtonState.Default,
+                                        state = if (feed.congratulated) InlineButtonState.Stroke else InlineButtonState.Default,
                                         onClick = {
                                             vm.congratulate(feed.feedId)
-                                            isCongratulated = true
                                         },
                                         modifier = Modifier
                                             .height(32.dp)
                                             .width(77.dp),
                                         style = AppTypography.Label2,
-                                        color = if (isCongratulated) AppColor.text3 else AppColor.CTA_text
+                                        color = if (feed.congratulated) AppColor.text3 else AppColor.CTA_text
                                     )
                                 }
-
-                                HorizontalDivider(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    thickness = 1.dp,
-                                    color = AppColor.divider1
-                                )
+                                if (index < (social?.feed?.contents?.lastIndex ?: 0)) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        thickness = 1.dp,
+                                        color = AppColor.divider1
+                                    )
+                                }
                             }
                         }
                     }
@@ -1899,15 +1908,21 @@ fun SocialTabUI(
                                         Spacer(Modifier.weight(1f))
 
                                         var isFollowing by remember(recommend.userId) { mutableStateOf(false) }
+                                        LaunchedEffect(followUi) {
+                                            val state = followUi
+
+                                            if (state is UserScreenVM.FollowUiState.Success && state.userId == recommend.userId)
+                                            {
+                                                isFollowing = state.isFollowing
+                                            }
+                                        }
                                         InlineButton(
                                             text = if (isFollowing) "팔로우 취소" else "팔로우",
                                             onClick = {
                                                 if (isFollowing) {
                                                     vm.unfollowRecommend(recommend.userId)
-                                                    isFollowing = false
                                                 } else {
                                                     vm.followRecommend(recommend.userId)
-                                                    isFollowing = true
                                                 }
                                             },
                                             modifier = Modifier
@@ -1926,6 +1941,7 @@ fun SocialTabUI(
 
                 }
             }
+            Spacer(Modifier.height(100.dp))
         }
     }
 }
