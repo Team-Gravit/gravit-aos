@@ -94,8 +94,17 @@ fun LessonComplete(
     val vm: LessonViewModel = viewModel(factory = LessonVMFactory(RetrofitInstance.api, context))
 
     LaunchedEffect(Unit) {
-        vm.submitResults(lessonSubmission, problemList)
-        homeEntry.savedStateHandle.remove<ArrayList<ProblemSubmissionSaveRequests>>("problemList")
+        problemList?.let { list ->
+            vm.submitResults(
+                lessonSubmissionSaveRequest = lessonSubmission,
+                problemSubmissionRequests = list
+            ) { success ->
+                if (success) {
+                    homeEntry.savedStateHandle
+                        .remove<ArrayList<ProblemSubmissionSaveRequests>>("problemList")
+                }
+            }
+        }
     }
 
     val submit by vm.submit.collectAsState()
