@@ -10,6 +10,7 @@ import com.inuappcenter.gravit.api.InquiryDetail
 import com.inuappcenter.gravit.api.InquiryListResponses
 import com.inuappcenter.gravit.api.InquiryRequest
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -66,25 +67,34 @@ class InquiryVM (
         data object NotFound : LoadUiState
     }
     private var isLoading = false
+    private var pendingPage: Int? = null
 
     private val _loadState = MutableStateFlow<LoadUiState>(LoadUiState.Idle)
     val loadState = _loadState.asStateFlow()
 
-    fun loadInquiryList(page: Int = 1) = viewModelScope.launch {
-        if (isLoading) return@launch
+    fun loadInquiryList(page: Int = 1): Job = viewModelScope.launch {
+        if (isLoading) {
+            pendingPage = page
+            return@launch
+        }
 
         isLoading = true
         _loadState.value = LoadUiState.Loading
 
         try {
             val session = AuthPrefs.load(appContext)
+
             if (session == null) {
                 AuthPrefs.clear(appContext)
                 _loadState.value = LoadUiState.SessionExpired
                 return@launch
             }
+
             runCatching {
-               api.getInquiry("Bearer ${session.accessToken}", page)
+                api.getInquiry(
+                    "Bearer ${session.accessToken}",
+                    page
+                )
             }.onSuccess { res ->
                 _loadState.value = LoadUiState.Success(res)
             }.onFailure { e ->
@@ -99,6 +109,15 @@ class InquiryVM (
             }
         } finally {
             isLoading = false
+
+            // 로딩 중 요청된 마지막 페이지 로드
+            pendingPage?.let { nextPage ->
+                pendingPage = null
+
+                if (nextPage != page) {
+                    loadInquiryList(nextPage)
+                }
+            }
         }
     }
 
