@@ -185,9 +185,7 @@ fun LoginScreen (
                     }
                 )
                 Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(17.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ){
                     Text(
@@ -197,7 +195,7 @@ fun LoginScreen (
                         modifier = Modifier.clickable( onClick = { navController.navigate("user/privacypolicy") } )
                     )
                     Spacer(Modifier.width(16.dp))
-                    VerticalDivider(modifier = Modifier.fillMaxHeight(), 1.dp, AppColor.divider1)
+                    VerticalDivider(modifier = Modifier.height(16.dp), 1.dp, AppColor.divider1)
                     Spacer(Modifier.width(16.dp))
                     Text(
                         text = "이용약관",
