@@ -4,23 +4,28 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -34,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.exceptions.NoCredentialException
 import com.inuappcenter.gravit.R
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -74,15 +80,7 @@ fun LoginScreen (
             }
         }
     }
-    val systemUiController = rememberSystemUiController()
-    val isDarkMode = isSystemInDarkTheme()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = !isDarkMode
-        )
-    }
+    StatusBarStyle(darkIcons = true)
 
     Box(
         modifier = Modifier
@@ -186,6 +184,28 @@ fun LoginScreen (
                         )
                     }
                 )
+                Row (
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(17.dp),
+                    horizontalArrangement = Arrangement.Center
+                ){
+                    Text(
+                        text = "개인 정보 처리 방침",
+                        style = AppTypography.Label1,
+                        color = AppColor.text4,
+                        modifier = Modifier.clickable( onClick = { navController.navigate("user/privacypolicy") } )
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    VerticalDivider(modifier = Modifier.fillMaxHeight(), 1.dp, AppColor.divider1)
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        text = "이용약관",
+                        style = AppTypography.Label1,
+                        color = AppColor.text4,
+                        modifier = Modifier.clickable( onClick = { navController.navigate("user/termsOfService") } )
+                    )
+                }
             }
             Spacer(Modifier.height(40.dp))
         }
