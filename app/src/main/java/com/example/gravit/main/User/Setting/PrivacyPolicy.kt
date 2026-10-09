@@ -1,188 +1,456 @@
 package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.gravit.share.PolicyBody
+import com.example.gravit.share.PolicyHeading
+import com.example.gravit.share.PolicyHeadline
+import com.example.gravit.share.PolicySectionSpace
+import com.example.gravit.share.StatusBarStyle
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.main.User.TopBar
-import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
-fun PrivacyPolicy(navController: NavController){
-
-    val scrollState = rememberScrollState()
+fun PrivacyPolicy(navController: NavController) {
+    StatusBarStyle(darkIcons = true)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
             .background(Color.White)
-    ){
+            .navigationBarsPadding()
+    ) {
         Column {
-            TopBar(navController, title = "개인정보 처리방침")
-            Text(modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 20.dp),
-                text = "개인정보처리방침\n" +
-                        "\n" +
-                        "본 개인정보처리방침은 Gravit(이하 \"서비스 제공자\")가 무료 서비스로 제작한 모바일 디바이스용 Gravit 앱(이하 \"애플리케이션\")에 적용됩니다. 본 서비스는 \"있는 그대로\" 사용하도록 제공됩니다.\n" +
-                        "\n" +
-                        "정보 수집 및 이용\n" +
-                        "\n" +
-                        "애플리케이션은 사용자가 다운로드하고 사용할 때 정보를 수집합니다. 수집되는 정보에는 다음과 같은 정보가 포함될 수 있습니다:\n" +
-                        "\n" +
-                        "- 사용자 디바이스의 인터넷 프로토콜 주소(예: IP 주소)\n" +
-                        "- 사용자가 방문한 애플리케이션 페이지, 방문 시간 및 날짜, 해당 페이지에서 소요한 시간\n" +
-                        "- 애플리케이션에서 소요한 시간\n" +
-                        "- 모바일 디바이스에서 사용하는 운영체제\n" +
-                        "\n" +
-                        "애플리케이션은 사용자 모바일 디바이스의 정확한 위치 정보를 수집하지 않습니다.\n" +
-                        "\n" +
-                        "서비스 제공자는 사용자가 제공한 정보를 사용하여 중요한 정보, 필수 공지사항 및 마케팅 프로모션을 제공하기 위해 수시로 연락할 수 있습니다.\n" +
-                        "\n" +
-                        "더 나은 경험을 위해 애플리케이션을 사용하는 동안 서비스 제공자는 특정 개인식별정보를 제공하도록 요구할 수 있습니다. 서비스 제공자가 요청하는 정보는 본 개인정보처리방침에 설명된 대로 보관되고 사용됩니다.\n" +
-                        "\n" +
-                        "제3자 접근\n" +
-                        "\n" +
-                        "서비스 제공자가 애플리케이션 및 서비스 개선에 도움이 되도록 집계되고 익명화된 데이터만 주기적으로 외부 서비스에 전송됩니다. 서비스 제공자는 본 개인정보처리방침에 설명된 방식으로 사용자의 정보를 제3자와 공유할 수 있습니다.\n" +
-                        "\n" +
-                        "애플리케이션은 데이터 처리에 대한 자체 개인정보처리방침을 가진 제3자 서비스를 이용한다는 점에 유의하시기 바랍니다. 애플리케이션에서 사용하는 제3자 서비스 제공업체의 개인정보처리방침 링크는 다음과 같습니다:\n" +
-                        "\n" +
-                        "- Google Play Services\n" +
-                        "- Firebase Crashlytics\n" +
-                        "\n" +
-                        "서비스 제공자는 다음과 같은 경우 사용자 제공 정보 및 자동 수집 정보를 공개할 수 있습니다:\n" +
-                        "\n" +
-                        "- 소환장 또는 유사한 법적 절차를 준수하는 등 법률에 의해 요구되는 경우\n" +
-                        "- 자신의 권리를 보호하고, 사용자의 안전이나 타인의 안전을 보호하며, 사기를 조사하거나 정부 요청에 응답하기 위해 공개가 필요하다고 선의로 믿는 경우\n" +
-                        "- 서비스 제공자를 대신하여 업무를 수행하고, 공개된 정보를 독립적으로 사용하지 않으며, 본 개인정보처리방침에 명시된 규칙을 준수하기로 동의한 신뢰할 수 있는 서비스 제공업체와의 경우\n" +
-                        "\n" +
-                        "거부 권리\n" +
-                        "\n" +
-                        "애플리케이션을 제거하여 모든 정보 수집을 쉽게 중단할 수 있습니다. 모바일 디바이스의 일부로 제공되거나 모바일 애플리케이션 마켓플레이스 또는 네트워크를 통해 제공될 수 있는 표준 제거 프로세스를 사용할 수 있습니다.\n" +
-                        "\n" +
-                        "데이터 보관 정책\n" +
-                        "\n" +
-                        "서비스 제공자는 사용자가 애플리케이션을 사용하는 동안과 그 이후 합리적인 기간 동안 사용자 제공 데이터를 보관합니다. 애플리케이션을 통해 제공한 사용자 제공 데이터의 삭제를 원하는 경우 ahh010145@gmail.com으로 연락하시면 합리적인 시간 내에 응답하겠습니다.\n" +
-                        "\n" +
-                        "아동\n" +
-                        "\n" +
-                        "서비스 제공자는 13세 미만의 아동으로부터 의도적으로 데이터를 수집하거나 마케팅하기 위해 애플리케이션을 사용하지 않습니다.\n" +
-                        "\n" +
-                        "애플리케이션은 13세 미만의 누구에게도 해당되지 않습니다. 서비스 제공자는 13세 미만 아동으로부터 의도적으로 개인식별정보를 수집하지 않습니다. 서비스 제공자가 13세 미만의 아동이 개인정보를 제공했다는 것을 발견한 경우, 즉시 서버에서 이를 삭제합니다. 부모 또는 보호자이시고 자녀가 개인정보를 제공했다는 것을 알고 계신 경우, 필요한 조치를 취할 수 있도록 서비스 제공자(ahh010145@gmail.com)에게 연락해 주시기 바랍니다.\n" +
-                        "\n" +
-                        "보안\n" +
-                        "\n" +
-                        "서비스 제공자는 사용자 정보의 기밀성 보호에 관심을 가지고 있습니다. 서비스 제공자는 처리하고 유지하는 정보를 보호하기 위해 물리적, 전자적, 절차적 보안장치를 제공합니다.\n" +
-                        "\n" +
-                        "변경사항\n" +
-                        "\n" +
-                        "본 개인정보처리방침은 어떤 이유로든 수시로 업데이트될 수 있습니다. 서비스 제공자는 새로운 개인정보처리방침으로 본 페이지를 업데이트하여 개인정보처리방침의 변경사항을 알려드립니다. 지속적인 사용은 모든 변경사항에 대한 승인으로 간주되므로, 변경사항이 있는지 정기적으로 본 개인정보처리방침을 확인하시기 바랍니다.\n" +
-                        "\n" +
-                        "본 개인정보처리방침은 2025-09-02부터 유효합니다.\n" +
-                        "\n" +
-                        "귀하의 동의\n" +
-                        "\n" +
-                        "애플리케이션을 사용함으로써 현재와 향후 수정될 본 개인정보처리방침에 명시된 대로 귀하의 정보 처리에 동의하는 것입니다.\n" +
-                        "\n" +
-                        "연락처\n" +
-                        "\n" +
-                        "애플리케이션 사용 중 개인정보와 관련하여 질문이 있거나 관행에 대한 질문이 있는 경우, ahh010145@gmail.com으로 서비스 제공자에게 이메일로 연락하시기 바랍니다."+
-                        "\n" +
-                        "Privacy Policy\n" +
-                        "\n" +
-                        "This privacy policy applies to the Gravit app (hereby referred to as \"Application\") for mobile devices that was created by Joon Seo Han (hereby referred to as \"Service Provider\") as a Free service. This service is intended for use \"AS IS\".\n" +
-                        "\n" +
-                        "Information Collection and Use*\n" +
-                        "\n" +
-                        "The Application collects information when you download and use it. This information may include information such as\n" +
-                        "\n" +
-                        "- Your device's Internet Protocol address (e.g. IP address)\n" +
-                        "- The pages of the Application that you visit, the time and date of your visit, the time spent on those pages\n" +
-                        "- The time spent on the Application\n" +
-                        "- The operating system you use on your mobile device\n" +
-                        "\n" +
-                        "The Application does not gather precise information about the location of your mobile device.\n" +
-                        "\n" +
-                        "The Service Provider may use the information you provided to contact you from time to time to provide you with important information, required notices and marketing promotions.\n" +
-                        "\n" +
-                        "For a better experience, while using the Application, the Service Provider may require you to provide us with certain personally identifiable information. The information that the Service Provider request will be retained by them and used as described in this privacy policy.\n" +
-                        "\n" +
-                        "Third Party Access\n" +
-                        "\n" +
-                        "Only aggregated, anonymized data is periodically transmitted to external services to aid the Service Provider in improving the Application and their service. The Service Provider may share your information with third parties in the ways that are described in this privacy statement.\n" +
-                        "\n" +
-                        "Please note that the Application utilizes third-party services that have their own Privacy Policy about handling data. Below are the links to the Privacy Policy of the third-party service providers used by the Application:\n" +
-                        "\n" +
-                        "- [Google Play Services](https://www.google.com/policies/privacy/)\n" +
-                        "- [Firebase Crashlytics](https://firebase.google.com/support/privacy/)\n" +
-                        "\n" +
-                        "The Service Provider may disclose User Provided and Automatically Collected Information:\n" +
-                        "\n" +
-                        "- as required by law, such as to comply with a subpoena, or similar legal process;\n" +
-                        "- when they believe in good faith that disclosure is necessary to protect their rights, protect your safety or the safety of others, investigate fraud, or respond to a government request;\n" +
-                        "- with their trusted services providers who work on their behalf, do not have an independent use of the information we disclose to them, and have agreed to adhere to the rules set forth in this privacy statement.\n" +
-                        "\n" +
-                        "Opt-Out Rights\n" +
-                        "\n" +
-                        "You can stop all collection of information by the Application easily by uninstalling it. You may use the standard uninstall processes as may be available as part of your mobile device or via the mobile application marketplace or network.\n" +
-                        "\n" +
-                        "Data Retention Policy\n" +
-                        "\n" +
-                        "The Service Provider will retain User Provided data for as long as you use the Application and for a reasonable time thereafter. If you'd like them to delete User Provided Data that you have provided via the Application, please contact them at ahh010145@gmail.com and they will respond in a reasonable time.\n" +
-                        "\n" +
-                        "Children\n" +
-                        "\n" +
-                        "The Service Provider does not use the Application to knowingly solicit data from or market to children under the age of 13.\n" +
-                        "\n" +
-                        "The Application does not address anyone under the age of 13. The Service Provider does not knowingly collect personally identifiable information from children under 13 years of age. In the case the Service Provider discover that a child under 13 has provided personal information, the Service Provider will immediately delete this from their servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact the Service Provider (ahh010145@gmail.com) so that they will be able to take the necessary actions.\n" +
-                        "\n" +
-                        "Security\n" +
-                        "\n" +
-                        "The Service Provider is concerned about safeguarding the confidentiality of your information. The Service Provider provides physical, electronic, and procedural safeguards to protect information the Service Provider processes and maintains.\n" +
-                        "\n" +
-                        "Changes\n" +
-                        "\n" +
-                        "This Privacy Policy may be updated from time to time for any reason. The Service Provider will notify you of any changes to the Privacy Policy by updating this page with the new Privacy Policy. You are advised to consult this Privacy Policy regularly for any changes, as continued use is deemed approval of all changes.\n" +
-                        "\n" +
-                        "This privacy policy is effective as of 2025-09-02\n" +
-                        "\n" +
-                        "Your Consent\n" +
-                        "\n" +
-                        "By using the Application, you are consenting to the processing of your information as set forth in this Privacy Policy now and as amended by us.\n" +
-                        "\n" +
-                        "Contact Us\n" +
-                        "\n" +
-                        "If you have any questions regarding privacy while using the Application, or have questions about the practices, please contact the Service Provider via email at ahh010145@gmail.com."
-                ,
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = pretendard,
-                    lineHeight = 23.sp,
-                ),
-                color = Color.Black,
+            TopBar(
+                navController,
+                title = "개인정보 처리방침"
             )
+
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
+            ) {
+                PolicyBody(
+                    """
+                    Gravit(이하 "서비스")은 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보 처리방침을 수립·공개합니다.
+                    
+                    최종 수정일: 2026년 2월 2일
+                    """.trimIndent()
+                )
+
+                PolicySectionSpace()
+
+                // 1
+                PolicyHeading("1. 개인정보의 수집 항목 및 수집 방법")
+
+                PolicyHeadline("1.1 수집 항목")
+
+                PolicyHeadline("회원가입 시 수집하는 정보")
+
+                PolicyBody(
+                    """
+                    • 필수 항목: 이메일 주소
+                    • 소셜 로그인 이용 시: 카카오/구글/네이버 계정 정보(이메일, 프로필 정보)
+                    
+                    """.trimIndent()
+                )
+
+                PolicyHeadline("서비스 이용 과정에서 자동 수집되는 정보")
+
+                PolicyBody(
+                    """
+                    • 학습 기록(학습한 개념, 문제 풀이 결과)
+                    • 리그 포인트(LP) 및 순위 정보
+                    • 면접 시뮬레이터 이용 시 음성 데이터
+                    • 서비스 이용 기록, 접속 로그, 쿠키, 접속 IP 정보
+                    
+                    """.trimIndent()
+                )
+
+                PolicyHeadline("1.2 수집 방법")
+
+                PolicyBody(
+                    """
+                    • 회원가입 및 서비스 이용 과정에서 사용자가 직접 입력
+                    • 소셜 로그인(카카오, 구글, 네이버) API를 통한 제공
+                    • 서비스 이용 과정에서 자동 생성·수집
+                    """.trimIndent()
+                )
+
+                PolicySectionSpace()
+
+                // 2
+                PolicyHeading("2. 개인정보의 수집 및 이용 목적")
+
+                PolicyBody("서비스는 수집한 개인정보를 다음의 목적으로 이용합니다.")
+                Spacer(Modifier.height(10.dp))
+                PolicyBody(
+                    """
+                    • 회원 식별 및 본인 확인
+                    • CS 학습 콘텐츠 제공 및 학습 기록 관리
+                    • 리그 경쟁 시스템 운영(LP 관리, 순위 산정)
+                    • 면접 시뮬레이터 기능 제공
+                    • 서비스 개선 및 신규 서비스 개발
+                    • 문의 및 고객 지원
+                    • 부정 이용 방지 및 서비스 안정성 확보
+                    """.trimIndent()
+                )
+
+                PolicySectionSpace()
+
+                // 3
+                PolicyHeading("3. 개인정보의 보유 및 이용 기간")
+
+                PolicyBody(
+                    """
+                    • 회원 탈퇴 시: 즉시 파기 (단, 관련 법령에 따라 보관이 필요한 경우 예외)
+                    • 법령에 따른 보관: 전자상거래법 등 관련 법령에 따라 일정 기간 보관
+                        • 계약 또는 청약철회 등에 관한 기록: 5년
+                        • 대금결제 및 재화 등의 공급에 관한 기록: 5년
+                        • 소비자 불만 또는 분쟁처리에 관한 기록: 3년
+                    """.trimIndent()
+                )
+
+                PolicySectionSpace()
+
+                // 4
+                PolicyHeading("4. 개인정보의 제3자 제공")
+                PolicyBody("서비스는 원칙적으로 사용자의 개인정보를 제3자에게 제공하지 않습니다.")
+                Spacer(Modifier.height(10.dp))
+                PolicyBody("  단, 다음의 경우는 예외로 합니다.")
+                Spacer(Modifier.height(10.dp))
+                PolicyBody(
+                    """
+                    • 사용자가 사전에 동의한 경우
+                    • 법령의 규정에 의거하거나, 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우
+                    """.trimIndent()
+                )
+
+                PolicySectionSpace()
+
+                // 5
+                PolicyHeading("5. 개인정보 처리 위탁")
+
+                PolicyBody(
+                    "서비스는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리 업무를 위탁하고 있습니다."
+                )
+                Spacer(Modifier.height(10.dp))
+                PrivacyOutsourcingTable()
+                Spacer(Modifier.height(15.dp))
+                PolicyBody("위탁 업체 변경 시 개인정보 처리방침을 통해 공지합니다.")
+                PolicySectionSpace()
+
+                // 6
+                PolicyHeading("6. 정보주체의 권리·의무 및 행사 방법")
+                PolicyBody("  사용자는 언제든지 다음의 권리를 행사할 수 있습니다.")
+                Spacer(Modifier.height(10.dp))
+
+                PolicyBody(
+                    """
+                    • 개인정보 열람 요구
+                    • 개인정보 정정·삭제 요구
+                    • 개인정보 처리 정지 요구
+                    • 회원 탈퇴(동의 철회)
+                    """.trimIndent()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                PrivacyEmailText(
+                    prefix = "권리 행사는 서비스 내 설정 메뉴 또는 고객센터(",
+                    email = "xunssoie@gmail.com",
+                    suffix = ")를 통해 가능합니다."
+                )
+
+                PolicySectionSpace()
+
+                // 7
+                PolicyHeading("7. 개인정보의 파기")
+
+                PolicyBody(
+                    "서비스는 개인정보 보유 기간의 경과, 처리 목적 달성 등 개인정보가 불필요하게 되었을 때 지체 없이 해당 개인정보를 파기합니다."
+                )
+                Spacer(Modifier.height(10.dp))
+                PolicyHeadline("파기 절차")
+
+                PolicyBody(
+                    "• 이용자가 입력한 정보는 목적 달성 후 내부 방침 및 관련 법령에 따라 일정 기간 저장 후 파기"
+                )
+
+                PolicyHeadline("파기 방법")
+
+                PolicyBody(
+                    """
+                    • 전자적 파일 형태: 복구 불가능한 방법으로 영구 삭제
+                    • 종이 문서: 분쇄 또는 소각
+                    """.trimIndent()
+                )
+
+                PolicySectionSpace()
+
+                // 8
+                PolicyHeading("8. 개인정보 보호책임자")
+
+                PolicyBody(
+                    "서비스는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만 처리 및 피해구제를 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다."
+                )
+                Spacer(Modifier.height(10.dp))
+
+                PolicyHeadline("개인정보 보호책임자")
+
+                PolicyBody("• 성명: 한준서")
+
+                PrivacyEmailText(
+                    prefix = "• 이메일: ",
+                    email = "xunssoie@gmail.com"
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                PolicyBody(
+                    "개인정보 침해에 대한 신고나 상담이 필요하신 경우 아래 기관에 문의하실 수 있습니다."
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                PrivacyContactLinks()
+
+                PolicySectionSpace()
+
+                // 9
+                PolicyHeading("9. 개인정보 처리방침의 변경")
+
+                PolicyBody(
+                    "본 개인정보 처리방침은 법령·정책 또는 보안기술의 변경에 따라 내용의 추가·삭제 및 수정이 있을 시 시행일자 최소 7일 전에 서비스 공지사항을 통해 고지합니다."
+                )
+
+                PolicySectionSpace()
+
+                HorizontalDivider(Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
+                PolicySectionSpace()
+                PolicyBody(
+                    """
+                    공고일자: 2026년 2월 2일
+                    시행일자: 2026년 2월 2일
+                    """.trimIndent()
+                )
+
+                Spacer(Modifier.height(20.dp))
+            }
         }
     }
+}
+@Composable
+private fun PrivacyOutsourcingTable() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = AppColor.divider1
+            )
+    ) {
+        PrivacyTableRow(
+            left = "수탁업체",
+            right = "위탁 업무 내용",
+            isHeader = true
+        )
 
+        PrivacyTableRow(
+            left = "카카오",
+            right = "소셜 로그인 인증"
+        )
+
+        PrivacyTableRow(
+            left = "구글",
+            right = "소셜 로그인 인증"
+        )
+
+        PrivacyTableRow(
+            left = "네이버",
+            right = "소셜 로그인 인증",
+            showBottomBorder = false
+        )
+    }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PrivacyPolicyPreview() {
-    val navController = rememberNavController()
-    PrivacyPolicy(navController = navController)
+private fun PrivacyTableRow(
+    left: String,
+    right: String,
+    isHeader: Boolean = false,
+    showBottomBorder: Boolean = true
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (showBottomBorder) {
+                    Modifier.border(
+                        width = 1.dp,
+                        color = AppColor.divider1
+                    )
+                } else {
+                    Modifier
+                }
+            )
+    ) {
+        Text(
+            text = left,
+            style = if (isHeader) {
+                AppTypography.Headline2
+            } else {
+                AppTypography.Body2_Reading
+            },
+            color = AppColor.text2,
+            modifier = Modifier
+                .weight(1f)
+                .padding(12.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .height(IntrinsicSize.Min)
+                .background(AppColor.divider1)
+        )
+
+        Text(
+            text = right,
+            style = if (isHeader) {
+                AppTypography.Headline2
+            } else {
+                AppTypography.Body2_Reading
+            },
+            color = AppColor.text2,
+            modifier = Modifier
+                .weight(1.5f)
+                .padding(12.dp)
+        )
+    }
+}
+@Composable
+private fun PrivacyEmailText(
+    prefix: String,
+    email: String,
+    suffix: String = ""
+) {
+    Text(
+        text = buildAnnotatedString {
+            append(prefix)
+
+            withLink(
+                LinkAnnotation.Url(
+                    url = "mailto:$email",
+                    styles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = AppColor.Main1,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    )
+                )
+            ) {
+                append(email)
+            }
+
+            append(suffix)
+        },
+        style = AppTypography.Body2_Reading,
+        color = AppColor.text2
+    )
+}
+@Composable
+private fun PrivacyContactLinks() {
+    val linkStyle = TextLinkStyles(
+        style = SpanStyle(
+            color = AppColor.Main1,
+            textDecoration = TextDecoration.Underline
+        )
+    )
+
+    Text(
+        text = buildAnnotatedString {
+            append("• 개인정보침해신고센터: (국번없이) 118 (")
+
+            withLink(
+                LinkAnnotation.Url(
+                    url = "https://privacy.kisa.or.kr/",
+                    styles = linkStyle
+                )
+            ) {
+                append("privacy.kisa.or.kr")
+            }
+
+            append(")\n")
+
+            append("• 개인정보분쟁조정위원회: (국번없이) 1833-6972 (")
+
+            withLink(
+                LinkAnnotation.Url(
+                    url = "https://www.kopico.go.kr/",
+                    styles = linkStyle
+                )
+            ) {
+                append("www.kopico.go.kr")
+            }
+
+            append(")\n")
+
+            append("• 대검찰청 사이버수사과: (국번없이) 1301 (")
+
+            withLink(
+                LinkAnnotation.Url(
+                    url = "https://www.spo.go.kr/",
+                    styles = linkStyle
+                )
+            ) {
+                append("www.spo.go.kr")
+            }
+
+            append(")\n")
+
+            append("• 경찰청 사이버안전국: (국번없이) 182 (")
+
+            withLink(
+                LinkAnnotation.Url(
+                    url = "https://ecrm.cyber.go.kr/",
+                    styles = linkStyle
+                )
+            ) {
+                append("ecrm.cyber.go.kr")
+            }
+
+            append(")")
+        },
+        style = AppTypography.Body2_Reading,
+        color = AppColor.text2
+    )
 }
