@@ -12,6 +12,8 @@ import com.inuappcenter.gravit.login.LoginScreen
 import com.inuappcenter.gravit.login.LoginViewModel
 import com.inuappcenter.gravit.login.ProfileFinish
 import com.inuappcenter.gravit.login.ProfileSetting
+import com.inuappcenter.gravit.main.User.Setting.PrivacyPolicy
+import com.inuappcenter.gravit.main.User.Setting.TermsOfService
 import com.inuappcenter.gravit.splash.SplashScreen
 
 
@@ -29,7 +31,8 @@ fun AppNavigation(
             val loginViewModel = viewModel<LoginViewModel>()
             LoginScreen(rootnavController, loginViewModel)
         }
-
+        composable("user/privacypolicy") { PrivacyPolicy(rootnavController) }
+        composable("user/termsOfService") { TermsOfService(rootnavController) }
         composable("profile setting") { ProfileSetting(rootnavController) }
         composable("profile finish") { ProfileFinish(rootnavController) }
         composable("main") {
