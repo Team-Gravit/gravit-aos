@@ -95,12 +95,12 @@ fun ProblemUI(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
-    var bookmarkSnackBar by remember { mutableStateOf<String?>(null) }
+    var snackBarText by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(bookmarkSnackBar) {
-        if (bookmarkSnackBar != null) {
+    LaunchedEffect(snackBarText) {
+        if (snackBarText != null) {
             delay(2000)
-            bookmarkSnackBar = null
+            snackBarText = null
         }
     }
     val problemVm: ProblemViewModel = viewModel()
@@ -117,9 +117,11 @@ fun ProblemUI(
     val current = problems[safeIndex]
     val isLast = safeIndex == problems.lastIndex
 
-    val scrollState = rememberScrollState()
+    val outerScrollState = rememberScrollState()
+    val problemScrollState = rememberScrollState()
     LaunchedEffect(current.problemId) {
-        scrollState.scrollTo(0)
+        outerScrollState.scrollTo(0)
+        problemScrollState.scrollTo(0)
     }
 
     LaunchedEffect(problems.size) {
@@ -263,7 +265,7 @@ fun ProblemUI(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(outerScrollState)
             ) {
                 //타이머
                 Spacer(modifier = Modifier.height(8.dp))
@@ -308,7 +310,7 @@ fun ProblemUI(
                             .clip(RoundedCornerShape(8.dp))
                             .background(AppColor.bg0)
                             .padding(16.dp)
-                            .verticalScroll(scrollState),
+                            .verticalScroll(problemScrollState),
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Column{
@@ -327,7 +329,7 @@ fun ProblemUI(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clickable {
-                                            bookmarkSnackBar = if (!isBookmark) {
+                                            snackBarText = if (!isBookmark) {
                                                 "북마크에 추가되었어요."
                                             } else {
                                                 "북마크에서 제거되었어요."
@@ -373,7 +375,10 @@ fun ProblemUI(
                             answer = current.answerResponse,
                             onTextChange = { problemVm.updateText(current.problemId, it) },
                             showRemoveFromWrongNote = (type == "wrong-answered-notes"),
-                            onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
+                            onRemoveFromWrongNote = {
+                                onRemoveWrongNote(current.problemId)
+                                snackBarText = "오답노트에서 제거되었어요."
+                            },
                             problemVm = problemVm
                         )
                     } else{
@@ -385,7 +390,10 @@ fun ProblemUI(
                             isCorrect = currentAnswer.isCorrect,
                             onSelect = { problemVm.select(current.problemId, it) },
                             showRemoveFromWrongNote = (type == "wrong-answered-notes"),
-                            onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
+                            onRemoveFromWrongNote = {
+                                onRemoveWrongNote(current.problemId)
+                                snackBarText = "오답노트에서 제거되었어요."
+                            },
                             problemVm = problemVm
                         )
                     }
@@ -414,14 +422,14 @@ fun ProblemUI(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
             )
         }
-        if (bookmarkSnackBar != null) {
+        if (snackBarText != null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 45.dp),
+                    .padding(bottom = 60.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                CustomSnackBar(text = bookmarkSnackBar!!)
+                CustomSnackBar(text = snackBarText!!)
             }
         }
         if (showSheet) {

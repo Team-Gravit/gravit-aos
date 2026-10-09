@@ -23,7 +23,6 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.OptionDto
 import com.inuappcenter.gravit.R
-import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank
 
@@ -39,15 +38,6 @@ fun MultipleChoice(
     onRemoveFromWrongNote: () -> Unit = {},
     problemVm: ProblemViewModel,
 ) {
-    var removeSnackBarText by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(removeSnackBarText) {
-        if (removeSnackBarText != null) {
-            delay(1500)
-            removeSnackBarText = null
-        }
-    }
-
     val mcOptions = remember(options) {
         options.mapIndexed { idx, o ->
             MCOption(
@@ -116,18 +106,9 @@ fun MultipleChoice(
                     onRemoveFromWrongNote = {
                         problemVm.removeFromWrongNote(problemNum)
                         onRemoveFromWrongNote()
-                        removeSnackBarText = "오답노트에서 제거되었어요."
                     },
                     correctAnswerText = correctAnswerText,
                 )
-            }
-        }
-        if (removeSnackBarText != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-            ) {
-                CustomSnackBar(removeSnackBarText!!)
             }
         }
     }

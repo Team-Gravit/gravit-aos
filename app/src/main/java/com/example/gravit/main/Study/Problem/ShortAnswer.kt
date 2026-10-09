@@ -29,7 +29,6 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.AnswerResponse
-import kotlinx.coroutines.delay
 
 @Composable
 fun ShortAnswer(
@@ -44,14 +43,6 @@ fun ShortAnswer(
     problemVm: ProblemViewModel
 
 ) {
-    var removeSnackBarText by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(removeSnackBarText) {
-        if (removeSnackBarText != null) {
-            delay(1500)
-            removeSnackBarText = null
-        }
-    }
     val removedFromWrongNote = problemVm.isRemovedFromWrongNote(problemId)
 
     val keyboard = LocalSoftwareKeyboardController.current
@@ -118,7 +109,6 @@ fun ShortAnswer(
                             .clickable{
                                 problemVm.removeFromWrongNote(problemId)
                                 onRemoveFromWrongNote()
-                                removeSnackBarText = "오답노트에서 제거되었어요."
                             },
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
@@ -137,13 +127,6 @@ fun ShortAnswer(
                         )
                     }
                 }
-            }
-        }
-        if (removeSnackBarText != null) {
-            Box(
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                CustomSnackBar(removeSnackBarText!!)
             }
         }
     }
