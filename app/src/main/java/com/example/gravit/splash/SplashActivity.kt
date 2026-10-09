@@ -6,16 +6,25 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,14 +40,20 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.inuappcenter.gravit.BuildConfig
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.R
 import kotlinx.coroutines.delay
 import androidx.core.net.toUri
+import com.example.gravit.share.StatusBarStyle
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.RetrofitInstance.api
+import com.inuappcenter.gravit.main.Study.Problem.ReportButton
 import com.kakao.sdk.common.util.Utility
 import kotlinx.coroutines.launch
 
@@ -82,7 +97,7 @@ fun SplashScreen(
         showNetworkErrorDialog = false
 
         try {
-            delay(300)
+            delay(1000)
 
             val versionResponse = api.getVersion()
 
@@ -137,7 +152,7 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         startSplash()
     }
-
+    StatusBarStyle(darkIcons = false)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -202,32 +217,67 @@ fun ForceUpdateDialog(
     onUpdateClick: () -> Unit,
     onCloseClick: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = {
-        },
-        confirmButton = {
-            TextButton(onClick = onUpdateClick) {
-                Text("업데이트")
-            }
-        },
-        title = {
-            Text("업데이트가 필요합니다")
-        },
-        text = {
-            Text("안정적인 서비스 이용을 위해 최신 버전으로 업데이트해 주세요.")
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onCloseClick
-            ) {
-                Text("닫기")
-            }
-        },
+    Dialog(
+        onDismissRequest = {},
         properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
         )
-    )
+    ) {
+        BackHandler {
+            onCloseClick()
+        }
+        Surface(
+            modifier = Modifier
+                .width(328.dp)
+                .padding(bottom = 16.dp)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(10.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier
+                    .width(328.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    text = "업데이트가 필요합니다",
+                    style = AppTypography.Heading1,
+                    textAlign = TextAlign.Center,
+                    color = AppColor.text1
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "안정적인 서비스 이용을 위해\n최신 버전으로 업데이트해 주세요.",
+                    style = AppTypography.Label1,
+                    color = AppColor.text4,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(20.dp))
+                ReportButton(
+                    onClick1 = onCloseClick,
+                    text1 = "닫기",
+                    onClick2 = onUpdateClick,
+                    text2 = "업데이트",
+                    modifier = Modifier,
+                    modifier1 = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    modifier2 = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+
+                    )
+            }
+        }
+    }
 }
 fun openPlayStore(context: Context) {
     val packageName = context.packageName
@@ -259,31 +309,64 @@ fun NetworkErrorDialog(
     onRetryClick: () -> Unit,
     onCloseClick: () -> Unit
 ) {
-    AlertDialog(
+    Dialog(
         onDismissRequest = {},
-        title = {
-            Text("네트워크 문제")
-        },
-        text = {
-            Text("인터넷 연결이 원활하지 않습니다.")
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onRetryClick
-            ) {
-                Text("다시 시도")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onCloseClick
-            ) {
-                Text("닫기")
-            }
-        },
         properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
         )
-    )
+    ) {
+        BackHandler {
+            onCloseClick()
+        }
+        Surface(
+            modifier = Modifier
+                .width(328.dp)
+                .padding(bottom = 16.dp)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(10.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier
+                    .width(328.dp)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "네트워크 문제",
+                    style = AppTypography.Heading1,
+                    textAlign = TextAlign.Center,
+                    color = AppColor.text1
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "연결이 원활하지 않습니다.",
+                    style = AppTypography.Label1,
+                    color = AppColor.text4,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(20.dp))
+                ReportButton(
+                    onClick1 = onCloseClick,
+                    text1 = "닫기",
+                    onClick2 = onRetryClick,
+                    text2 = "다시 시도",
+                    modifier = Modifier,
+                    modifier1 = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    modifier2 = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+
+                    )
+            }
+        }
+    }
 }
