@@ -28,11 +28,9 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -55,10 +52,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.MainPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
@@ -152,28 +149,24 @@ fun HomeUI(
 
     val level = userLevelInfo.level
     val leagueName = userLeagueInfo.leagueName
+
     val levelRate = userLevelInfo.levelRate
-    val levelProgress = (levelRate / 100f).coerceIn(0.0, 1.0).toFloat()
+    val levelProgress = (levelRate / 100.0)
+        .coerceIn(0.0, 1.0)
 
     val leagueId = userLeagueInfo.leagueId
-    val lpRange = (userLeagueInfo.maxLP - userLeagueInfo.minLP).toFloat()
-    val leagueProgress = if (lpRange > 0f) {
-        ((userLeagueInfo.currentLP - userLeagueInfo.minLP).toFloat() / lpRange)
-            .coerceIn(0f, 1f)
+    val lpRange = (userLeagueInfo.maxLP - userLeagueInfo.minLP).toDouble()
+
+    val leagueProgress = if (lpRange > 0.0) {
+        ((userLeagueInfo.currentLP - userLeagueInfo.minLP).toDouble() / lpRange)
+            .coerceIn(0.0, 1.0)
     } else {
-        0f
+        0.0
     }
 
     val consecutiveDays = weeklyInfo.consecutiveSolvedDays
 
-    val systemUiController = rememberSystemUiController()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = false
-        )
-    }
+    StatusBarStyle(darkIcons = false)
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -204,31 +197,13 @@ fun HomeUI(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier.size(40.dp),
+                                modifier = Modifier.size( 36.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator(
-                                    progress = { 1f },
-                                    modifier = Modifier.size(36.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.2.dp
-                                )
-
-                                CircularProgressIndicator(
-                                    progress = { levelProgress },
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .graphicsLayer {
-                                            scaleX = -1f
-                                        },
-                                    color = Color(0xFFDD00FF),
-                                    strokeWidth = 2.2.dp
-                                )
-
+                                LeagueGauge(levelProgress, modifier = Modifier.size(32.dp))
                                 Box(
                                     modifier = Modifier
-                                        .padding(1.5.dp)
-                                        .size(25.dp)
+                                        .size(24.dp)
                                         .clip(CircleShape)
                                         .background(ProfilePalette.idToColor(home.mainProfile.profileImgNumber)),
                                     contentAlignment = Alignment.Center
@@ -236,9 +211,7 @@ fun HomeUI(
                                     Image(
                                         painter = painterResource(id = R.drawable.profile_logo),
                                         contentDescription = "profile logo",
-                                        modifier = Modifier
-                                            .padding(6.dp)
-                                            .fillMaxSize()
+                                        modifier = Modifier.size(15.dp, 17.dp)
                                     )
                                 }
                             }
@@ -257,24 +230,7 @@ fun HomeUI(
                                 modifier = Modifier.size(36.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator(
-                                    progress = { 1f },
-                                    modifier = Modifier
-                                        .size(36.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.2.dp
-                                )
-
-                                CircularProgressIndicator(
-                                    progress = { leagueProgress },
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .graphicsLayer {
-                                            scaleX = -1f
-                                        },
-                                    color = Color(0xFFDD00FF),
-                                    strokeWidth = 2.2.dp
-                                )
+                                LeagueGauge(leagueProgress, modifier = Modifier.size(32.dp))
 
                                 Box(
                                     contentAlignment = Alignment.Center,
@@ -282,9 +238,7 @@ fun HomeUI(
                                     Image(
                                         painter = TierPalette.painterFor(leagueId),
                                         contentDescription = "tier",
-                                        modifier = Modifier
-                                            .size(30.dp)
-                                            .padding(1.5.dp)
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
