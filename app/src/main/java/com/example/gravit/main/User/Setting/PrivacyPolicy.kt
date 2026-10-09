@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -312,6 +313,7 @@ private fun PrivacyTableRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .then(
                 if (showBottomBorder) {
                     Modifier.border(
@@ -339,7 +341,7 @@ private fun PrivacyTableRow(
         Box(
             modifier = Modifier
                 .width(1.dp)
-                .height(IntrinsicSize.Min)
+                .fillMaxHeight()
                 .background(AppColor.divider1)
         )
 
