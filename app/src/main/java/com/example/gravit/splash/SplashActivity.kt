@@ -89,15 +89,16 @@ fun SplashScreen(
 
     val activity = context as? Activity
 
-    suspend fun startSplash() {
-        Log.d("KAKAO", Utility.getKeyHash(context))
+    suspend fun startSplash(showSplashDelay: Boolean) {
         if (isChecking) return
 
         isChecking = true
         showNetworkErrorDialog = false
 
         try {
-            delay(1000)
+            if (showSplashDelay) {
+                delay(1000)
+            }
 
             val versionResponse = api.getVersion()
 
@@ -150,7 +151,7 @@ fun SplashScreen(
     }
 
     LaunchedEffect(Unit) {
-        startSplash()
+        startSplash(showSplashDelay = true)
     }
     StatusBarStyle(darkIcons = false)
     Box(
@@ -183,7 +184,7 @@ fun SplashScreen(
         NetworkErrorDialog(
             onRetryClick = {
                 coroutineScope.launch {
-                    startSplash()
+                    startSplash(showSplashDelay = false)
                 }
             },
             onCloseClick = {
