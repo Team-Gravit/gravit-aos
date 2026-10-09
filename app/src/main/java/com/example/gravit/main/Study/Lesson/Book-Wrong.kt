@@ -166,13 +166,18 @@ fun BookWrongScreen(
                     swVm = swVm,
                     onRecordResult = ::submitSingleProblem,
                     bookmarkMap = bookmarkMap,
-                    onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
+                    onBookmarkToggle = { problemId, onResult ->
+                        vm.toggleBookmark(problemId, onResult)
+                    },
                     onFinishLesson = { navController.popBackStack() },
                     type = type,
-                    onRemoveWrongNote = { problemId ->
+                    onRemoveWrongNote = { problemId, onResult ->
                         if (type == "wrong-answered-notes") {
                             vm.removeWrongAnswered(problemId) { ok ->
+                                onResult(ok)
                             }
+                        } else {
+                            onResult(false)
                         }
                     },
                     unitId = unitId,

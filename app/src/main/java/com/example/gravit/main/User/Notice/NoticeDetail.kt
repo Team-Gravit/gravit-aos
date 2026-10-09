@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.ui.theme.pretendard
 
@@ -28,7 +29,7 @@ fun NoticeDetail(
     val ui by vm.state.collectAsState()
 
     LaunchedEffect(noticeId) { vm.load(noticeId) }
-
+    StatusBarStyle(darkIcons = true)
     Column(
         modifier = Modifier
             .fillMaxSize()

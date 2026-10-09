@@ -47,12 +47,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
 import com.example.gravit.ui.theme.PrimitiveColor
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
@@ -101,15 +101,7 @@ fun ProfileSetting(navController: NavController) {
         }
     }
 
-    val systemUiController = rememberSystemUiController()
-    val isDarkMode = isSystemInDarkTheme()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = !isDarkMode
-        )
-    }
+    StatusBarStyle(darkIcons = true)
 
     Box(
         modifier = Modifier

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -63,6 +64,7 @@ import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.main.Study.Problem.ProblemViewModel
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
@@ -82,23 +84,25 @@ fun ProblemUI(
     total: Int,
     swVm: StopwatchViewModel,
     bookmarkMap: Map<Long, Boolean>,
-    onBookmarkToggle: (Long) -> Unit,
+    onBookmarkToggle: (Long, (Boolean) -> Unit) -> Unit,
     onRecordResult: (problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) -> Unit,
     onFinishLesson: () -> Unit,
     type: String = "normal",
-    onRemoveWrongNote: (Long) -> Unit = {},
+    onRemoveWrongNote: (Long, (Boolean) -> Unit) -> Unit = { _, onResult ->
+        onResult(false)
+    },
     unitId: Long,
     unitOderText: String
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
-    var bookmarkSnackBar by remember { mutableStateOf<String?>(null) }
+    var snackBarText by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(bookmarkSnackBar) {
-        if (bookmarkSnackBar != null) {
+    LaunchedEffect(snackBarText) {
+        if (snackBarText != null) {
             delay(2000)
-            bookmarkSnackBar = null
+            snackBarText = null
         }
     }
     val problemVm: ProblemViewModel = viewModel()
@@ -115,9 +119,11 @@ fun ProblemUI(
     val current = problems[safeIndex]
     val isLast = safeIndex == problems.lastIndex
 
-    val scrollState = rememberScrollState()
+    val outerScrollState = rememberScrollState()
+    val problemScrollState = rememberScrollState()
     LaunchedEffect(current.problemId) {
-        scrollState.scrollTo(0)
+        outerScrollState.scrollTo(0)
+        problemScrollState.scrollTo(0)
     }
 
     LaunchedEffect(problems.size) {
@@ -184,11 +190,12 @@ fun ProblemUI(
             }
         }
     }
-
+    StatusBarStyle(darkIcons = true)
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
             .fillMaxSize()
-            .background(AppColor.bg1),
+            .background(AppColor.bg1)
+            .navigationBarsPadding(),
         ) {
             //헤더
             Box(
@@ -256,130 +263,158 @@ fun ProblemUI(
                         .background(AppColor.Main1)
                 )
             }
-            //타이머
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
+            Column(
                 modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(71.dp, 25.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(PrimitiveColor.Purple100)
-                    .align(Alignment.End),
-                contentAlignment = Alignment.Center
-            ){
-                Row (
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    Icon(
-                        painter = painterResource(id = R.drawable.timer),
-                        contentDescription = "stopwatch",
-                        modifier = Modifier.size(14.dp),
-                        tint = AppColor.Main1
-
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Stopwatch(
-                        vm = swVm,
-                        autoStart = true
-                    )
-                }
-            }
-            //문제
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .background(AppColor.bg1)
-                    .padding(horizontal = 16.dp)
+                    .verticalScroll(outerScrollState)
             ) {
+                //타이머
+                Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 250.dp, max = 326.dp)
+                        .padding(end = 16.dp)
+                        .size(71.dp, 25.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(AppColor.bg0)
-                        .padding(16.dp)
-                        .verticalScroll(scrollState),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    Column{
-                        Row{
-                            Text(
-                                text = (index + 1).toString().padStart(2, '0'),
-                                style = AppTypography.Heading1,
-                                color = AppColor.text1
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Image(
-                                painter = painterResource(
-                                    if (isBookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
-                                ),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        bookmarkSnackBar = if (!isBookmark) {
-                                            "북마크에 추가되었어요."
-                                        } else {
-                                            "북마크에서 제거되었어요."
-                                        }
-                                        onBookmarkToggle(current.problemId)
+                        .background(PrimitiveColor.Purple100)
+                        .align(Alignment.End),
+                    contentAlignment = Alignment.Center
+                ){
+                    Row (
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Icon(
+                            painter = painterResource(id = R.drawable.timer),
+                            contentDescription = "stopwatch",
+                            modifier = Modifier.size(14.dp),
+                            tint = AppColor.Main1
 
-                                    }
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = current.instruction,
-                            style = AppTypography.Headline1,
-                            color = AppColor.text1
                         )
-                        Spacer(Modifier.height(20.dp))
-                        InlineUnderlineText(
-                            raw = current.content,
-                            style = AppTypography.Body2_Reading.copy(
-                                platformStyle = PlatformTextStyle(
-                                    includeFontPadding = false
-                                )
-                            ),
-                            strokeWidth = 1.dp,
-                            color = AppColor.text1
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Stopwatch(
+                            vm = swVm,
+                            autoStart = true
                         )
                     }
                 }
-            }
-            //선지, 입력
-            Spacer(modifier=Modifier.height(16.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(AppColor.bg1)
-                    .weight(1f)
-            ) {
-                if(current.problemType == "SUBJECTIVE") {
-                    ShortAnswer(
-                        submitted = currentAnswer.submitted,
-                        isCorrect = currentAnswer.isCorrect,
-                        problemId = current.problemId,
-                        text = currentAnswer.shortText,
-                        answer = current.answerResponse,
-                        onTextChange = { problemVm.updateText(current.problemId, it) },
-                        showRemoveFromWrongNote = (type == "wrong-answered-notes"),
-                        onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
-                        problemVm = problemVm
-                    )
-                } else{
-                    MultipleChoice(
-                        options = current.options,
-                        problemNum = current.problemId,
-                        selectedIndex = currentAnswer.selectedIndex,
-                        submitted = currentAnswer.submitted,
-                        isCorrect = currentAnswer.isCorrect,
-                        onSelect = { problemVm.select(current.problemId, it) },
-                        showRemoveFromWrongNote = (type == "wrong-answered-notes"),
-                        onRemoveFromWrongNote = { onRemoveWrongNote(current.problemId) },
-                        problemVm = problemVm
-                    )
+                //문제
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(AppColor.bg1)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 250.dp, max = 326.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(AppColor.bg0)
+                            .padding(16.dp)
+                            .verticalScroll(problemScrollState),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Column{
+                            Row{
+                                Text(
+                                    text = (index + 1).toString().padStart(2, '0'),
+                                    style = AppTypography.Heading1,
+                                    color = AppColor.text1
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Image(
+                                    painter = painterResource(
+                                        if (isBookmark) R.drawable.bookmark_on else R.drawable.bookmark_off
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            val wasBookmarked = isBookmark
+
+                                            onBookmarkToggle(current.problemId) { success ->
+                                                snackBarText = if (success) {
+                                                    if (wasBookmarked) {
+                                                        "북마크에서 제거되었어요."
+                                                    } else {
+                                                        "북마크에 추가되었어요."
+                                                    }
+                                                } else {
+                                                    "오류가 발생했습니다."
+                                                }
+                                            }
+                                        }
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = current.instruction,
+                                style = AppTypography.Headline1,
+                                color = AppColor.text1
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            InlineUnderlineText(
+                                raw = current.content,
+                                style = AppTypography.Body2_Reading.copy(
+                                    platformStyle = PlatformTextStyle(
+                                        includeFontPadding = false
+                                    )
+                                ),
+                                strokeWidth = 1.dp,
+                                color = AppColor.text1
+                            )
+                        }
+                    }
+                }
+                //선지, 입력
+                Spacer(modifier=Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(AppColor.bg1)
+                ) {
+                    if(current.problemType == "SUBJECTIVE") {
+                        ShortAnswer(
+                            submitted = currentAnswer.submitted,
+                            isCorrect = currentAnswer.isCorrect,
+                            problemId = current.problemId,
+                            text = currentAnswer.shortText,
+                            answer = current.answerResponse,
+                            onTextChange = { problemVm.updateText(current.problemId, it) },
+                            showRemoveFromWrongNote = (type == "wrong-answered-notes"),
+                            onRemoveFromWrongNote = {
+                                onRemoveWrongNote(current.problemId) { success ->
+                                    snackBarText = if (success) {
+                                        "오답노트에서 제거되었어요."
+                                    } else {
+                                        "오류가 발생했습니다."
+                                    }
+                                }
+                            },
+                            problemVm = problemVm
+                        )
+                    } else{
+                        MultipleChoice(
+                            options = current.options,
+                            problemNum = current.problemId,
+                            selectedIndex = currentAnswer.selectedIndex,
+                            submitted = currentAnswer.submitted,
+                            isCorrect = currentAnswer.isCorrect,
+                            onSelect = { problemVm.select(current.problemId, it) },
+                            showRemoveFromWrongNote = (type == "wrong-answered-notes"),
+                            onRemoveFromWrongNote = {
+                                onRemoveWrongNote(current.problemId) { success ->
+                                    snackBarText = if (success) {
+                                        "오답노트에서 제거되었어요."
+                                    } else {
+                                        "오류가 발생했습니다."
+                                    }
+                                }
+                            },
+                            problemVm = problemVm
+                        )
+                    }
                 }
             }
             //버튼
@@ -405,14 +440,14 @@ fun ProblemUI(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
             )
         }
-        if (bookmarkSnackBar != null) {
+        if (snackBarText != null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 45.dp),
+                    .padding(bottom = 60.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                CustomSnackBar(text = bookmarkSnackBar!!)
+                CustomSnackBar(text = snackBarText!!)
             }
         }
         if (showSheet) {

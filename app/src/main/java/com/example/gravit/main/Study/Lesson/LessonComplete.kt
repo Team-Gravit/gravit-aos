@@ -61,11 +61,11 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.LessonSubmissionSaveRequest
 import com.inuappcenter.gravit.api.ProblemSubmissionSaveRequests
 import com.inuappcenter.gravit.api.RetrofitInstance
@@ -147,14 +147,7 @@ fun LessonComplete(
         }
         popupInitialized = true
     }
-    val systemUiController = rememberSystemUiController()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = false
-        )
-    }
+    StatusBarStyle(darkIcons = false)
 
     Box(
         modifier = Modifier.fillMaxSize()

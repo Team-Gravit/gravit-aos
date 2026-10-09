@@ -6,9 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +23,6 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.OptionDto
 import com.inuappcenter.gravit.R
-import kotlinx.coroutines.delay
 import kotlin.collections.mapIndexed
 import kotlin.text.isNotBlank
 
@@ -41,15 +38,6 @@ fun MultipleChoice(
     onRemoveFromWrongNote: () -> Unit = {},
     problemVm: ProblemViewModel,
 ) {
-    var removeSnackBarText by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(removeSnackBarText) {
-        if (removeSnackBarText != null) {
-            delay(1500)
-            removeSnackBarText = null
-        }
-    }
-
     val mcOptions = remember(options) {
         options.mapIndexed { idx, o ->
             MCOption(
@@ -78,65 +66,49 @@ fun MultipleChoice(
             ?.text
             .orEmpty()
     }
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                displayOptions.forEachIndexed { idx, opt ->
-                    val isSelected = selectedIndex == idx
-                    val enabled = !submitted && opt.text.isNotBlank()
-                    val isRight = submitted && opt.text.isNotBlank() && opt.isAnswer
-                    val isWrong = submitted && opt.text.isNotBlank() && !opt.isAnswer
+            displayOptions.forEachIndexed { idx, opt ->
+                val isSelected = selectedIndex == idx
+                val enabled = !submitted && opt.text.isNotBlank()
+                val isRight = submitted && opt.text.isNotBlank() && opt.isAnswer
+                val isWrong = submitted && opt.text.isNotBlank() && !opt.isAnswer
 
-                    OptionCell(
-                        num = opt.badge,
-                        answer = opt.text,
-                        isSelected = isSelected,
-                        isRight = isRight,
-                        isWrong = isWrong,
-                        enabled = enabled,
-                        showEye = !submitted,
-                        onClick = {
-                            if (!enabled) return@OptionCell
-                            onSelect(idx)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        problemNum = problemNum,
-                        idx = idx,
-                        explanation = if (submitted) {
-                            opt.explanation
-                        } else {
-                            null
-                        },
-                        isSubmitted = submitted,
-                        showRemoveButton = submitted && isSelected && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote,
-                        onRemoveFromWrongNote = {
-                            problemVm.removeFromWrongNote(problemNum)
-                            onRemoveFromWrongNote()
-                            removeSnackBarText = "오답노트에서 제거되었어요."
-                        },
-                        correctAnswerText = correctAnswerText,
-                    )
-                }
-            }
-        }
-        if (removeSnackBarText != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-            ) {
-                CustomSnackBar(removeSnackBarText!!)
+                OptionCell(
+                    num = opt.badge,
+                    answer = opt.text,
+                    isSelected = isSelected,
+                    isRight = isRight,
+                    isWrong = isWrong,
+                    enabled = enabled,
+                    showEye = !submitted,
+                    onClick = {
+                        if (!enabled) return@OptionCell
+                        onSelect(idx)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    problemNum = problemNum,
+                    idx = idx,
+                    explanation = if (submitted) {
+                        opt.explanation
+                    } else {
+                        null
+                    },
+                    isSubmitted = submitted,
+                    showRemoveButton = submitted && isSelected && isCorrect == true && showRemoveFromWrongNote && !removedFromWrongNote,
+                    onRemoveFromWrongNote = {
+                        problemVm.removeFromWrongNote(problemNum)
+                        onRemoveFromWrongNote()
+                    },
+                    correctAnswerText = correctAnswerText,
+                )
             }
         }
     }

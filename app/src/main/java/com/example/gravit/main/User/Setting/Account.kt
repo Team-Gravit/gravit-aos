@@ -9,16 +9,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.login.NameInputFiled
 import com.inuappcenter.gravit.login.ProfileSwitcher
@@ -41,8 +40,6 @@ fun Account(
 
     val nicknameValid = isValidNickname(ui.nickname)
     var showSnackbar by remember { mutableStateOf(false) }
-    val systemUiController = rememberSystemUiController()
-    val isDarkMode = isSystemInDarkTheme()
 
     LaunchedEffect(ui.errorMsg) {
         showSnackbar = ui.errorMsg != null
@@ -53,12 +50,7 @@ fun Account(
         }
     }
 
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = !isDarkMode
-        )
-    }
+    StatusBarStyle(darkIcons = true)
     Box(
         modifier = Modifier
             .fillMaxSize()

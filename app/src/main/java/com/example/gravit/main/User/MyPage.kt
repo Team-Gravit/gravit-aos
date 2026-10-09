@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
@@ -139,8 +140,6 @@ fun MyPageUI(
     val leagueUi by vm.stateLeague.collectAsState()
     val summaryUi by vm.stateSummary.collectAsState()
     val learningUi by vm.stateLearning.collectAsState()
-    val congratulateUi by vm.stateCongratulate.collectAsState()
-    val followUi by vm.stateFollow.collectAsState()
     val yearChangeError by vm.yearChangeError.collectAsState()
 
     val isSessionExpired = bannerUi == UserScreenVM.BannersUiState.SessionExpired ||
@@ -148,10 +147,7 @@ fun MyPageUI(
                 MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.SessionExpired
                 MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.SessionExpired
                 MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.SessionExpired
-                MyPageTab.Social ->
-                    socialUi == UserScreenVM.SocialUiState.SessionExpired ||
-                            followUi == UserScreenVM.FollowUiState.SessionExpired ||
-                            congratulateUi == UserScreenVM.CongratulateUiState.SessionExpired
+                MyPageTab.Social -> socialUi == UserScreenVM.SocialUiState.SessionExpired
             }
     val isNotFound = bannerUi == UserScreenVM.BannersUiState.NotFound ||
             when (selectedTab) {
@@ -211,28 +207,59 @@ fun MyPageUI(
         snackBarText = "오류가 발생했습니다."
         showSnackBar = true
     }
-    LaunchedEffect(congratulateUi) {
-        when (val state = congratulateUi) {
-            is UserScreenVM.CongratulateUiState.Failed -> {
-                snackBarText = state.message
-                showSnackBar = true
-                vm.clearCongratulateState()
-            }
 
-            UserScreenVM.CongratulateUiState.Success -> {
-                vm.clearCongratulateState()
+    LaunchedEffect(Unit) {
+        vm.congratulateEvent.collect { event ->
+            when (event) {
+                is UserScreenVM.CongratulateEvent.Success -> Unit
+
+                is UserScreenVM.CongratulateEvent.Failed -> {
+                    snackBarText = event.message
+                    showSnackBar = true
+                }
+
+                UserScreenVM.CongratulateEvent.SessionExpired -> {
+                    if (!navigated) {
+                        navigated = true
+                        navController.navigate("error/401") {
+                            popUpTo(
+                                navController.currentBackStackEntry?.destination?.id
+                                    ?: return@navigate
+                            ) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }
             }
-            else -> Unit
         }
     }
-    LaunchedEffect(followUi) {
-        when (val state = followUi) {
-            is UserScreenVM.FollowUiState.Failed -> {
-                snackBarText = state.message
-                showSnackBar = true
-                vm.clearFollowState()
+    LaunchedEffect(Unit) {
+        vm.followEvent.collect { event ->
+            when (event) {
+                is UserScreenVM.FollowEvent.Success -> Unit
+
+                is UserScreenVM.FollowEvent.Failed -> {
+                    snackBarText = event.message
+                    showSnackBar = true
+                }
+
+                UserScreenVM.FollowEvent.SessionExpired -> {
+                    if (!navigated) {
+                        navigated = true
+                        navController.navigate("error/401") {
+                            popUpTo(
+                                navController.currentBackStackEntry?.destination?.id
+                                    ?: return@navigate
+                            ) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }
             }
-            else -> Unit
         }
     }
     LaunchedEffect(socialUi) {
@@ -303,6 +330,7 @@ private fun MyPageContent(
     navController: NavController,
     socialUi: UserScreenVM.SocialUiState
 ) {
+    StatusBarStyle(darkIcons = true)
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -1624,7 +1652,9 @@ fun SocialTabUI(
     val ui by vm.stateSocial.collectAsState()
     val social = (ui as? UserScreenVM.SocialUiState.Success)?.data
     val listState = rememberLazyListState()
-    val followUi by vm.stateFollow.collectAsState()
+    val congratulatingIds by vm.congratulatingIds.collectAsState()
+    val followingStates by vm.followingStates.collectAsState()
+    val followingRequestIds by vm.followingRequestIds.collectAsState()
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -1714,6 +1744,12 @@ fun SocialTabUI(
                         style = AppTypography.Label2,
                         color = PrimitiveColor.Gray500
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "팔로잉한 친구들의 최근 성취",
+                        style = AppTypography.Headline2,
+                        color = PrimitiveColor.Gray900
+                    )
                     if(social?.feed?.contents?.isEmpty() == true){
                         Spacer(Modifier.height(16.dp))
                         Box(
@@ -1726,28 +1762,14 @@ fun SocialTabUI(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text(
-                                    text = "임시",
+                                    text = "아직 활동한 친구가 없어요.\n더 많은 사용자들과 친구가 되어 보세요!",
                                     style = AppTypography.Label1,
                                     color = AppColor.text3w,
                                     textAlign = TextAlign.Center
                                 )
-                                Spacer(Modifier.height(16.dp))
-                                BlockButton(
-                                    modifier = Modifier
-                                        .size(136.dp, 47.dp),
-                                    text = "임시",
-                                    onClick = {navController.navigate("chapter")},
-                                    style = AppTypography.Headline2
-                                )
                             }
                         }
                     } else {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "팔로잉한 친구들의 최근 성취",
-                            style = AppTypography.Headline2,
-                            color = PrimitiveColor.Gray900
-                        )
                         Spacer(Modifier.height(8.dp))
                         LazyColumn(
                             state = listState,
@@ -1808,7 +1830,9 @@ fun SocialTabUI(
                                         text = "축하하기",
                                         state = if (feed.congratulated) InlineButtonState.Stroke else InlineButtonState.Default,
                                         onClick = {
-                                            vm.congratulate(feed.feedId)
+                                            if (feed.feedId !in congratulatingIds) {
+                                                vm.congratulate(feed.feedId)
+                                            }
                                         },
                                         modifier = Modifier
                                             .height(32.dp)
@@ -1906,15 +1930,17 @@ fun SocialTabUI(
                                             color = AppColor.text4
                                         )
                                         Spacer(Modifier.weight(1f))
-                                        val followingStates by vm.followingStates.collectAsState()
                                         val isFollowing = followingStates[recommend.userId] ?: false
+                                        val isRequesting = recommend.userId in followingRequestIds
                                         InlineButton(
                                             text = if (isFollowing) "팔로우 취소" else "팔로우",
                                             onClick = {
-                                                if (isFollowing) {
-                                                    vm.unfollowRecommend(recommend.userId)
-                                                } else {
-                                                    vm.followRecommend(recommend.userId)
+                                                if (!isRequesting) {
+                                                    if (isFollowing) {
+                                                        vm.unfollowRecommend(recommend.userId)
+                                                    } else {
+                                                        vm.followRecommend(recommend.userId)
+                                                    }
                                                 }
                                             },
                                             modifier = Modifier

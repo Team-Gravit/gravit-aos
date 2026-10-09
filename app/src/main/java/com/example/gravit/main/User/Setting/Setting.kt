@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.main.ResultDialog
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.RetrofitInstance
@@ -112,6 +113,7 @@ fun Setting(
             else -> Unit
         }
     }
+    StatusBarStyle(darkIcons = true)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -227,10 +229,10 @@ fun Setting(
             ConfirmDialog(
                 onDismiss = { showDeleteSheet = false },
                 imageRes = R.drawable.study_popup,
-                titleText = "정말 탈퇴하실건가요?",
-                descriptionText = "계정을 삭제하면 저장된\n 모든 데이터가 사라져요.\n 정말로 계정을 삭제하실건가요?",
-                confirmButtonText = "돌아가기",
-                cancelButtonText = "탈퇴하기",
+                titleText = "정말로...\n탈퇴하실건가요?",
+                descriptionText = "탈퇴 시, 모든 데이터가 삭제됩니다.",
+                confirmButtonText = "그만두기",
+                cancelButtonText = "계속하기",
                 onConfirm = {
                     showDeleteSheet = false
                 },

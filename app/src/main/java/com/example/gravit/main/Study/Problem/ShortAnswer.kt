@@ -6,11 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,7 +29,6 @@ import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.AnswerResponse
-import kotlinx.coroutines.delay
 
 @Composable
 fun ShortAnswer(
@@ -46,14 +43,6 @@ fun ShortAnswer(
     problemVm: ProblemViewModel
 
 ) {
-    var removeSnackBarText by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(removeSnackBarText) {
-        if (removeSnackBarText != null) {
-            delay(1500)
-            removeSnackBarText = null
-        }
-    }
     val removedFromWrongNote = problemVm.isRemovedFromWrongNote(problemId)
 
     val keyboard = LocalSoftwareKeyboardController.current
@@ -63,7 +52,7 @@ fun ShortAnswer(
 
 
     Box(modifier = Modifier
-        .fillMaxSize()
+        .fillMaxWidth()
         .padding(horizontal = 16.dp)
         .pointerInput(Unit) {
             detectTapGestures(onTap = {
@@ -72,87 +61,72 @@ fun ShortAnswer(
             })
         }
     ) {
-        Column (modifier = Modifier.fillMaxSize()){
-            Column (
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-            ){
-                AnswerInputField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    submitted = submitted,
-                    focusRequester = focusRequester,
-                    onFocusChange = { inputFocused = it },
-                    onImeDone = {
-                        focusManager.clearFocus()
-                        keyboard?.hide()
-                    },
-                    isCorrect = isCorrect
+        Column (modifier = Modifier.fillMaxWidth()) {
+            AnswerInputField(
+                value = text,
+                onValueChange = onTextChange,
+                submitted = submitted,
+                focusRequester = focusRequester,
+                onFocusChange = { inputFocused = it },
+                onImeDone = {
+                    focusManager.clearFocus()
+                    keyboard?.hide()
+                },
+                isCorrect = isCorrect
+            )
+            Spacer(Modifier.height(16.dp))
+            if (submitted && isCorrect != null) {
+                Text(
+                    text = if (isCorrect) "👏🏻 정답입니다!" else "❌ 정답: ${answer.contents.joinToString(", ")}",
+                    color = if (isCorrect) AppColor.successColor else AppColor.errorColor,
+                    style = AppTypography.Body1_Normal
                 )
-                Spacer(Modifier.height(16.dp))
-                if (submitted && isCorrect != null) {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.bg2)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
                     Text(
-                        text = if (isCorrect) "👏🏻 정답입니다!" else "❌ 정답: ${answer.contents.joinToString(", ")}",
-                        color = if (isCorrect) AppColor.successColor else AppColor.errorColor,
-                        style = AppTypography.Body1_Normal
+                        text = answer.explanation,
+                        style = AppTypography.Body2_Reading,
+                        color = AppColor.text1
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Box(
+                }
+                Spacer(Modifier.height(12.dp))
+                if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
+                            .size(147.dp, 39.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(AppColor.bg2)
-                            .padding(16.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
+                            .border(1.dp, AppColor.errorColor, RoundedCornerShape(8.dp))
+                            .background(AppColor.bg0)
+                            .align(Alignment.End)
+                            .clickable{
+                                problemVm.removeFromWrongNote(problemId)
+                                onRemoveFromWrongNote()
+                            },
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Icon(
+                            painter = painterResource(id = R.drawable.book),
+                            contentDescription = "개념노트",
+                            modifier = Modifier.size(16.dp),
+                            tint = AppColor.errorColor
+                        )
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text = answer.explanation,
-                            style = AppTypography.Body2_Reading,
-                            color = AppColor.text1
+                            text = "오답노트 삭제",
+                            style = AppTypography.Headline2,
+                            color = AppColor.errorColor
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
-                    if (showRemoveFromWrongNote && isCorrect && !removedFromWrongNote) {
-                        Row(
-                            modifier = Modifier
-                                .size(147.dp, 39.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .border(1.dp, AppColor.errorColor, RoundedCornerShape(8.dp))
-                                .background(AppColor.bg0)
-                                .align(Alignment.End)
-                                .clickable{
-                                    problemVm.removeFromWrongNote(problemId)
-                                    onRemoveFromWrongNote()
-                                    removeSnackBarText = "오답노트에서 제거되었어요."
-                                },
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Icon(
-                                painter = painterResource(id = R.drawable.book),
-                                contentDescription = "개념노트",
-                                modifier = Modifier.size(16.dp),
-                                tint = AppColor.errorColor
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "오답노트 삭제",
-                                style = AppTypography.Headline2,
-                                color = AppColor.errorColor
-                            )
-                        }
-                    }
                 }
-            }
-        }
-        if (removeSnackBarText != null) {
-            Box(
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                CustomSnackBar(removeSnackBarText!!)
             }
         }
     }

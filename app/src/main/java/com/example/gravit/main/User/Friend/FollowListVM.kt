@@ -11,6 +11,7 @@ import com.inuappcenter.gravit.api.FollowingSliceResponse
 import com.inuappcenter.gravit.api.FriendCountResponse
 import com.inuappcenter.gravit.api.FriendFollowerItem
 import com.inuappcenter.gravit.api.FriendUFollowingItem
+import com.inuappcenter.gravit.api.RetrofitInstance.api
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +46,8 @@ class FriendListVM(
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
+    private val _followingRequestIds = MutableStateFlow<Set<Long>>(emptySet())
+    val followingRequestIds = _followingRequestIds.asStateFlow()
 
     private suspend fun <T> safeCall(block: suspend () -> T): Result<T> {
         return runCatching { block() }
@@ -247,87 +250,107 @@ class FriendListVM(
         }
     }
 
-    /* fun rejectFollower(followerId: Long) {
-        viewModelScope.launch {
-            val auth = getAuth() ?: return@launch
-
-            val result: Result<Response<Unit>> = safeCall {
-                api.rejectFollowing(auth = auth, followerId = followerId)
-            }
-
-            result.fold(
-                onSuccess = { res ->
-                    if (res.code() == 401) {
-                        _state.update { it.copy(sessionExpired = true) }
-                        return@fold
-                    }
-
-                    if (!res.isSuccessful) {
-                        _state.update {
-                            it.copy(error = "팔로워를 거절하지 못했어요. (${res.code()})")
-                        }
-                        return@fold
-                    }
-
-                    _state.update { prev ->
-                        prev.copy(
-                            followerItems = prev.followerItems.filterNot { it.id == followerId },
-                            followerCount = (prev.followerCount - 1).coerceAtLeast(0)
-                        )
-                    }
-                },
-                onFailure = {
-                    _state.update {
-                        it.copy(error = "팔로워를 거절하지 못했어요.")
-                   }
-                }
-            )
-        }
-    } */
-
     fun unfollowFromFollowing(followeeId: Long) {
         viewModelScope.launch {
-            val auth = getAuth() ?: return@launch
+            if (followeeId in _followingRequestIds.value) return@launch
+            _followingRequestIds.update { it + followeeId }
 
-            val result: Result<Response<Unit>> = safeCall {
-                api.unfollow(auth = auth, followeeId = followeeId)
-            }
+            try {
+                val auth = getAuth() ?: return@launch
 
-            result.fold(
-                onSuccess = { res ->
-                    if (res.code() == 401) {
-                        _state.update { it.copy(sessionExpired = true) }
-                        return@fold
-                    }
-
-                    if (!res.isSuccessful) {
-                        _state.update {
-                            it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
-                        }
-                        return@fold
-                    }
-
-                    _state.update { prev ->
-                        prev.copy(
-                            followingItems = prev.followingItems.filterNot { it.id == followeeId },
-                            followingCount = (prev.followingCount - 1).coerceAtLeast(0)
-                        )
-                    }
-                },
-                onFailure = {
-                    _state.update {
-                        it.copy(error = "팔로우를 취소하지 못했어요.")
-                    }
+                val result: Result<Response<Unit>> = safeCall {
+                    api.unfollow(auth = auth, followeeId = followeeId)
                 }
-            )
+
+                result.fold(
+                    onSuccess = { res ->
+                        if (res.code() == 401) {
+                            _state.update { it.copy(sessionExpired = true) }
+                            return@fold
+                        }
+
+                        if (!res.isSuccessful) {
+                            _state.update {
+                                it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
+                            }
+                            return@fold
+                        }
+
+                        _state.update { prev ->
+                            prev.copy(
+                                followingItems = prev.followingItems.filterNot {
+                                    it.id == followeeId
+                                },
+                                followingCount = (prev.followingCount - 1).coerceAtLeast(0)
+                            )
+                        }
+                    },
+                    onFailure = {
+                        _state.update {
+                            it.copy(error = "팔로우를 취소하지 못했어요.")
+                        }
+                    }
+                )
+            } finally {
+                _followingRequestIds.update { it - followeeId }
+            }
         }
     }
     fun unfollowFromFollower(followeeId: Long) {
         viewModelScope.launch {
+            if (followeeId in _followingRequestIds.value) return@launch
+            _followingRequestIds.update { it + followeeId }
+
+            try {
+                val auth = getAuth() ?: return@launch
+                val result: Result<Response<Unit>> =
+                    safeCall { api.unfollow(auth = auth, followeeId = followeeId) }
+                result.fold(
+                    onSuccess = { res ->
+                        if (res.code() == 401) {
+                            _state.update { it.copy(sessionExpired = true) }
+                            return@fold
+                        }
+
+                        if (!res.isSuccessful) {
+                            _state.update {
+                                it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
+                            }
+                            return@fold
+                        }
+
+                        _state.update { prev ->
+                            prev.copy(
+                                followerItems = prev.followerItems.map {
+                                    if (it.id == followeeId) {
+                                        it.copy(isFollowing = false)
+                                    } else {
+                                        it
+                                    }
+                                },
+                                followingCount = (prev.followingCount - 1).coerceAtLeast(0)
+                            )
+                        }
+                    },
+                    onFailure = {
+                        _state.update { it.copy(error = "팔로우를 취소하지 못했어요.") }
+                    }
+                )
+            } finally {
+                _followingRequestIds.update { it - followeeId }
+            }
+        }
+    }
+
+    fun followFromFollower(userId: Long) = viewModelScope.launch {
+        if (userId in _followingRequestIds.value) return@launch
+        _followingRequestIds.update { it + userId }
+
+        try {
             val auth = getAuth() ?: return@launch
 
-            val result: Result<Response<Unit>> = safeCall {
-                api.unfollow(auth = auth, followeeId = followeeId)
+            val result = safeCall {
+                api.follow(auth = auth, followeeId = userId)
             }
 
             result.fold(
@@ -339,7 +362,7 @@ class FriendListVM(
 
                     if (!res.isSuccessful) {
                         _state.update {
-                            it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
+                            it.copy(error = "팔로우하지 못했어요. (${res.code()})")
                         }
                         return@fold
                     }
@@ -347,41 +370,24 @@ class FriendListVM(
                     _state.update { prev ->
                         prev.copy(
                             followerItems = prev.followerItems.map {
-                                if (it.id == followeeId) {
-                                    it.copy(isFollowing = false)
+                                if (it.id == userId) {
+                                    it.copy(isFollowing = true)
                                 } else {
                                     it
                                 }
                             },
-                            followingCount = (prev.followingCount - 1).coerceAtLeast(0)
+                            followingCount = prev.followingCount + 1
                         )
                     }
                 },
                 onFailure = {
                     _state.update {
-                        it.copy(error = "팔로우를 취소하지 못했어요.")
+                        it.copy(error = "팔로우하지 못했어요.")
                     }
                 }
             )
-        }
-    }
-    fun followFromFollower(userId: Long) = viewModelScope.launch {
-        runCatching {
-            val session = AuthPrefs.load(appContext) ?: return@launch
-            api.follow(
-                auth = "Bearer ${session.accessToken}",
-                followeeId = userId
-            )
-        }.onSuccess { res ->
-            if (res.isSuccessful) {
-                _state.value = _state.value.copy(
-                    followerItems = _state.value.followerItems.map {
-                        if (it.id == userId) it.copy(isFollowing = true)
-                        else it
-                    },
-                    followingCount = _state.value.followingCount + 1
-                )
-            }
+        } finally {
+            _followingRequestIds.update { it - userId }
         }
     }
 }

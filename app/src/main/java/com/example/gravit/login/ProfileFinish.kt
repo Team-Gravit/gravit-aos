@@ -20,31 +20,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.R
 
 @Composable
 fun ProfileFinish(navController: NavController) {
 
-    val systemUiController = rememberSystemUiController()
-    val isDarkMode = isSystemInDarkTheme()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = !isDarkMode
-        )
-    }
+    StatusBarStyle(darkIcons = true)
 
     Box(
         modifier = Modifier

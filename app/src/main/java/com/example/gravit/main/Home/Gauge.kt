@@ -4,15 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -20,129 +16,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import com.inuappcenter.gravit.ui.theme.pretendard
-
-@Composable
-fun LevelGauge(
-    lv: Int,
-    xp: Int,
-    modifier: Modifier = Modifier
-        .fillMaxWidth()
-        .height(25.dp)
-) {
-    val levelRanges = listOf(
-        0 to 99,
-        100 to 199,
-        200 to 399,
-        400 to 699,
-        700 to 1099,
-        1100 to 1599,
-        1600 to 2199,
-        2200 to 2899,
-        2900 to 3699,
-        3700 to Int.MAX_VALUE
-    )
-
-    val (startXp, endXp) = levelRanges.getOrNull(lv - 1) ?: (0 to 0)
-
-    val isMaxLevel = lv >= 10
-
-    val progress = when {
-        isMaxLevel -> 1f
-        endXp > startXp -> {
-            val p = (xp - startXp).toFloat() / (endXp - startXp).toFloat()
-            p.coerceIn(0f, 1f)
-        }
-        else -> 0f
-    }
-    val shape = RoundedCornerShape(16.dp)
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(shape)
-            .background(Color.White, shape)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(if(progress == 0f) 0.05f else progress)
-                .fillMaxHeight()
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
-                    ),
-                    shape = shape
-                )
-
-        )
-        Box (
-            modifier = Modifier
-                .padding(start = 15.dp)
-                .align(Alignment.CenterStart),
-        ){
-            if (progress < 0.23f) {
-                Text(
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(
-                            fontWeight = FontWeight.Normal,
-
-                            )) {
-                            append("LV")
-                        }
-                        withStyle(SpanStyle(
-                            fontWeight = FontWeight.Bold)) {
-                            append("$lv")
-                        }
-                    },
-                    fontSize = 14.sp,
-                    fontFamily = pretendard,
-                    color = Color.Transparent,
-                    style = TextStyle(
-                        drawStyle = Stroke(width = 8f, join = StrokeJoin.Round),
-                        brush = Brush.linearGradient(
-                            listOf(Color(0xFF8100B3), Color(0xFFDD00FF))
-                        )
-                    ),
-                    modifier = Modifier.align(Alignment.CenterStart),
-                    letterSpacing = 0.5.sp
-                )
-            }
-            Text(
-                buildAnnotatedString {
-                    withStyle(
-                        SpanStyle(
-                            fontWeight = FontWeight.Normal
-                        )
-                    ) {
-                        append("LV")
-                    }
-                    withStyle(
-                        SpanStyle(
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append("${lv}")
-                    }
-                },
-                fontSize = 14.sp,
-                fontFamily = pretendard,
-                color = Color.White,
-            )
-        }
-
-
-    }
-}
 
 private val levelXpSteps = intArrayOf(0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700)
 
@@ -163,38 +39,56 @@ fun calculateXpProgress(xp: Int): Double {
 
 @Composable
 fun LeagueGauge(
-    xp: Int,
-    modifier: Modifier = Modifier.size(64.dp)
+    progress: Double,
+    modifier: Modifier = Modifier.size(32.dp)
 ) {
-    val steps = intArrayOf(0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700)
-
-    val idx = steps.indexOfLast { xp >= it }.coerceAtLeast(0)
-    val start = steps[idx]
-    val end = steps.getOrNull(idx + 1) ?: Int.MAX_VALUE
-
-    val progress = if (end == Int.MAX_VALUE) {
-        1f
-    } else {
-        ((xp - start).toFloat() / (end - start).toFloat()).coerceIn(0f, 1f)
-    }
+    val safeProgress = progress.coerceIn(0.0, 1.0)
 
     Canvas(modifier = modifier) {
-        val strokeWidth = 5.dp.toPx()
+        val strokeWidth = 1.6.dp.toPx()
         val radius = size.minDimension / 2 - strokeWidth / 2
 
+        val arcSize = Size(
+            width = radius * 2,
+            height = radius * 2
+        )
+
+        val topLeft = Offset(
+            x = (size.width - radius * 2) / 2,
+            y = (size.height - radius * 2) / 2
+        )
+
+        //흰색 원
+        drawArc(
+            color = Color.White,
+            startAngle = -90f,
+            sweepAngle = -360f,
+            useCenter = false,
+            style = Stroke(
+                width = strokeWidth,
+                cap = StrokeCap.Butt
+            ),
+            size = arcSize,
+            topLeft = topLeft
+        )
+
+        //보라색 그라디언트
         drawArc(
             brush = Brush.linearGradient(
-                colors = listOf(Color(0xFFDD00FF), Color(0xFF8100B3)),
+                colors = listOf(
+                    Color(0xFFDD00FF),
+                    Color(0xFF8100B3)
+                )
             ),
             startAngle = -90f,
-            sweepAngle = -360f * progress,
+            sweepAngle = -360f * safeProgress.toFloat(),
             useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            size = Size(radius * 2, radius * 2),
-            topLeft = Offset(
-                (size.width - radius * 2) / 2,
-                (size.height - radius * 2) / 2
-            )
+            style = Stroke(
+                width = strokeWidth,
+                cap = StrokeCap.Round
+            ),
+            size = arcSize,
+            topLeft = topLeft
         )
     }
 }

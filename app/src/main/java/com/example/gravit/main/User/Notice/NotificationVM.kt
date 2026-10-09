@@ -9,8 +9,11 @@ import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.Notifications
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class NotificationVM(
@@ -54,76 +57,129 @@ class NotificationVM(
         }
     }
 
-    sealed interface ActionUiState{
-        data object Idle: ActionUiState
-        data object Loading : ActionUiState
-        data object Success : ActionUiState
-        data class Failed(val message: String) : ActionUiState
-        data object SessionExpired : ActionUiState
-        data object NotFound : ActionUiState
+    sealed interface FollowEvent {
+        data class Success(val targetId: Long) : FollowEvent
+        data class Failed(
+            val targetId: Long,
+            val message: String
+        ) : FollowEvent
+
+        data object SessionExpired : FollowEvent
     }
 
+    private val _followEvent = MutableSharedFlow<FollowEvent>()
+    val followEvent = _followEvent.asSharedFlow()
+
+    private val _followingRequestIds = MutableStateFlow<Set<Long>>(emptySet())
+    val followingRequestIds = _followingRequestIds.asStateFlow()
     data class ErrorResponse(
         val error: String,
         val message: String
     )
 
-    private val _stateAction = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
-    val stateAction = _stateAction.asStateFlow()
-
     fun toggleFollow(targetId: Long, actionType: String) = viewModelScope.launch {
-        val session = AuthPrefs.load(appContext)
-        if(session == null){
-            AuthPrefs.clear(appContext)
-            _stateAction.value = ActionUiState.SessionExpired
-            return@launch
-        }
-        runCatching {
-            if(actionType=="FOLLOW_BACK")
-                api.follow("Bearer ${session.accessToken}", targetId)
-            else
-                api.unfollow("Bearer ${session.accessToken}", targetId)
-        }.onSuccess { res ->
-            val message = runCatching {
-                res.errorBody()?.string()
-                    ?.let { Gson().fromJson(it, ErrorResponse::class.java).message }
-            }.getOrNull()
-            when {
-                res.isSuccessful -> {
-                    _stateAction.value = ActionUiState.Success
-                }
-                res.code() == 401 -> {
-                    AuthPrefs.clear(appContext)
-                    _stateAction.value = ActionUiState.SessionExpired
-                }
+        if (targetId in _followingRequestIds.value) return@launch
 
-                res.code() == 400 -> {
-                    _stateAction.value = ActionUiState.Failed(
-                        message ?: "자기 자신에게 팔로우는 불가능합니다."
-                    )
-                }
+        _followingRequestIds.update { it + targetId }
 
-                res.code() == 404 -> {
-                    _stateAction.value = ActionUiState.Failed(
-                        message ?: "팔로우 내역이 존재하지 않습니다."
-                    )
-                }
+        try {
+            val session = AuthPrefs.load(appContext)
 
-                res.code() == 409 -> {
-                    _stateAction.value = ActionUiState.Failed(
-                        message ?: "이미 팔로잉을 한 유저입니다."
-                    )
-                }
-
-                else -> {
-                    _stateAction.value = ActionUiState.Failed("오류가 발생했습니다.")
-                }
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _followEvent.emit(FollowEvent.SessionExpired)
+                return@launch
             }
-        }.onFailure {
-            _stateAction.value = ActionUiState.Failed("오류가 발생했습니다.")
+
+            runCatching {
+                if (actionType == "FOLLOW_BACK") {
+                    api.follow("Bearer ${session.accessToken}", targetId)
+                } else {
+                    api.unfollow("Bearer ${session.accessToken}", targetId)
+                }
+            }.onSuccess { res ->
+                val message = runCatching {
+                    res.errorBody()?.string()
+                        ?.let {
+                            Gson().fromJson(it, ErrorResponse::class.java).message
+                        }
+                }.getOrNull()
+
+                when {
+                    res.isSuccessful -> {
+                        _followEvent.emit(FollowEvent.Success(targetId))
+                        load()
+                    }
+
+                    res.code() == 401 -> {
+                        AuthPrefs.clear(appContext)
+                        _followEvent.emit(FollowEvent.SessionExpired)
+                    }
+
+                    res.code() == 400 -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                targetId,
+                                message ?: "자기 자신에게 팔로우는 불가능합니다."
+                            )
+                        )
+                    }
+
+                    res.code() == 404 -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                targetId,
+                                message ?: "팔로우 내역이 존재하지 않습니다."
+                            )
+                        )
+                    }
+
+                    res.code() == 409 -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                targetId,
+                                message ?: "이미 팔로잉을 한 유저입니다."
+                            )
+                        )
+                    }
+
+                    else -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                targetId,
+                                "오류가 발생했습니다."
+                            )
+                        )
+                    }
+                }
+            }.onFailure {
+                _followEvent.emit(
+                    FollowEvent.Failed(
+                        targetId,
+                        "오류가 발생했습니다."
+                    )
+                )
+            }
+        } finally {
+            _followingRequestIds.update { it - targetId }
         }
     }
+    fun markCongratulated(targetId: Long) {
+        val currentState = _state.value as? UiState.Success ?: return
 
+        _state.value = UiState.Success(
+            currentState.data.map { notification ->
+                if (
+                    notification.actionType == "CONGRATULATE" &&
+                    notification.targetId == targetId
+                ) {
+                    notification.copy(congratulated = true)
+                } else {
+                    notification
+                }
+            }
+        )
+    }
 }
 
 @Suppress("UNCHECKED_CAST")

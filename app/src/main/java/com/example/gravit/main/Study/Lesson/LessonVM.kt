@@ -173,7 +173,7 @@ class LessonViewModel(
     private val _bookmark = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
     val bookmark = _bookmark.asStateFlow()
 
-    fun toggleBookmark(problemId: Long) = viewModelScope.launch {
+    fun toggleBookmark(problemId: Long, onDone: (Boolean) -> Unit = {}) = viewModelScope.launch {
         val current = _bookmark.value[problemId] ?: false
         val newValue = !current
 
@@ -188,6 +188,7 @@ class LessonViewModel(
             _bookmark.value = _bookmark.value.toMutableMap().apply {
                 put(problemId, current)
             }
+            onDone(false)
             return@launch
         }
 
@@ -199,11 +200,16 @@ class LessonViewModel(
             } else {
                 api.removeBookmark("Bearer ${session.accessToken}", request)
             }
+        }.onSuccess {
+            onDone(true)
         }.onFailure { e ->
-            Log.e("Bookmark", "removeBookmark failed", e)
+            Log.e("Bookmark", "toggleBookmark failed", e)
+
             _bookmark.value = _bookmark.value.toMutableMap().apply {
                 put(problemId, current)
             }
+
+            onDone(false)
         }
     }
     fun initBookmarks(problems: List<Problems>) {

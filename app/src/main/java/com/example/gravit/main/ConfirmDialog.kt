@@ -3,6 +3,7 @@ package com.inuappcenter.gravit.main
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -16,10 +17,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.ui.theme.pretendard
 
 @Composable
@@ -43,18 +46,20 @@ fun ConfirmDialog(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .width(328.dp)
+                .padding(bottom = 16.dp)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(10.dp),
             color = Color.White
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 28.dp, vertical = 32.dp),
+                    .width(328.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
+                Spacer(Modifier.height(20.dp))
                 imageRes?.let {
                     Image(
                         painter = painterResource(id = it),
@@ -68,20 +73,17 @@ fun ConfirmDialog(
 
                 Text(
                     text = titleText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = pretendard,
+                    style = AppTypography.Heading1,
+                    color = AppColor.text1,
                     textAlign = TextAlign.Center,
-                    color = Color(0xFF222222)
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 Text(
                     text = descriptionText,
-                    fontSize = 16.sp,
-                    fontFamily = pretendard,
-                    color = Color(0xFF6D6D6D),
+                    style = AppTypography.Label2,
+                    color = AppColor.text4,
                     textAlign = TextAlign.Center
                 )
 
