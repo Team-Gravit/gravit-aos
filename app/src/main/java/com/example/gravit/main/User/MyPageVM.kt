@@ -1,5 +1,6 @@
 package com.inuappcenter.gravit.main.User
 
+import android.R.id.message
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -22,7 +23,9 @@ import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -69,23 +72,27 @@ class UserScreenVM (
         data object SessionExpired : LeagueUiState
         data object NotFound : LeagueUiState
     }
-    sealed interface CongratulateUiState {
-        data object Idle : CongratulateUiState
-        data object Loading : CongratulateUiState
-        data object Success : CongratulateUiState
-        data object SessionExpired : CongratulateUiState
-        data class Failed(val message: String) : CongratulateUiState
+    sealed interface CongratulateEvent {
+        data class Success(
+            val targetId: Long
+        ) : CongratulateEvent
+        data class Failed(
+            val targetId: Long,
+            val message: String
+        ) : CongratulateEvent
+        data object SessionExpired : CongratulateEvent
     }
 
-    sealed interface FollowUiState {
-        data object Idle : FollowUiState
-        data object Loading : FollowUiState
+    sealed interface FollowEvent {
         data class Success(
             val userId: Long,
             val isFollowing: Boolean
-        ) : FollowUiState
-        data object SessionExpired : FollowUiState
-        data class Failed(val message: String) : FollowUiState
+        ) : FollowEvent
+        data class Failed(
+            val userId: Long,
+            val message: String
+        ) : FollowEvent
+        data object SessionExpired : FollowEvent
     }
 
     data class ErrorResponse(
@@ -289,30 +296,38 @@ class UserScreenVM (
             )
         }
     }
-    private val _stateCongratulate = MutableStateFlow<CongratulateUiState>(CongratulateUiState.Idle)
-    val stateCongratulate = _stateCongratulate.asStateFlow()
+    private val _congratulateEvent = MutableSharedFlow<CongratulateEvent>(extraBufferCapacity = 16)
+    val congratulateEvent = _congratulateEvent.asSharedFlow()
+    private val _congratulatingIds = MutableStateFlow<Set<Long>>(emptySet())
+    val congratulatingIds = _congratulatingIds.asStateFlow()
 
     fun congratulate(feedId: Long) = viewModelScope.launch {
-        _stateCongratulate.value = CongratulateUiState.Loading
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _stateCongratulate.value = CongratulateUiState.SessionExpired
-            return@launch
-        }
-        runCatching {
+        if (feedId in _congratulatingIds.value) return@launch
+
+        _congratulatingIds.update { it + feedId }
+
+        try {
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _congratulateEvent.emit(
+                    CongratulateEvent.SessionExpired
+                )
+                return@launch
+            }
+            runCatching {
             api.getCongratulate(auth = "Bearer ${session.accessToken}", feedId = feedId)
         }.onSuccess { res ->
             when {
                 res.isSuccessful -> {
-                    _stateCongratulate.value = CongratulateUiState.Success
-                    val currentState = _stateSocial.value as? SocialUiState.Success
+                    _stateSocial.update { state ->
+                        val success = state as? SocialUiState.Success
+                            ?: return@update state
 
-                    if (currentState != null) {
-                        _stateSocial.value = currentState.copy(
-                            data = currentState.data.copy(
-                                feed = currentState.data.feed.copy(
-                                    contents = currentState.data.feed.contents.map { feed ->
+                        success.copy(
+                            data = success.data.copy(
+                                feed = success.data.feed.copy(
+                                    contents = success.data.feed.contents.map { feed ->
                                         if (feed.feedId == feedId) {
                                             feed.copy(congratulated = true)
                                         } else {
@@ -323,6 +338,9 @@ class UserScreenVM (
                             )
                         )
                     }
+                    _congratulateEvent.emit(
+                        CongratulateEvent.Success(feedId)
+                    )
                 }
 
                 res.code() == 400 -> {
@@ -331,16 +349,28 @@ class UserScreenVM (
                             ?.let { Gson().fromJson(it, ErrorResponse::class.java).message }
                     }.getOrNull()
 
-                    _stateCongratulate.value = CongratulateUiState.Failed(message ?: "오늘 축하 횟수를 모두 사용했어요.")
+                    _congratulateEvent.emit(
+                        CongratulateEvent.Failed(
+                            targetId = feedId,
+                            message = message ?: "오늘 축하 횟수를 모두 사용했어요."
+                        )
+                    )
                 }
 
                 res.code() == 404 -> {
-                    _stateCongratulate.value = CongratulateUiState.Failed("피드를 찾을 수 없습니다.")
+                    _congratulateEvent.emit(
+                        CongratulateEvent.Failed(
+                            targetId = feedId,
+                            message = "피드를 찾을 수 없습니다."
+                        )
+                    )
                 }
 
                 res.code() == 401 -> {
                     AuthPrefs.clear(appContext)
-                    _stateCongratulate.value = CongratulateUiState.SessionExpired
+                    _congratulateEvent.emit(
+                        CongratulateEvent.SessionExpired
+                    )
                 }
                 res.code() == 409 -> {
                     val message = runCatching {
@@ -353,17 +383,32 @@ class UserScreenVM (
                             }
                     }.getOrNull()
 
-                    _stateCongratulate.value =
-                        CongratulateUiState.Failed(
-                            message ?: "이미 축하한 피드입니다."
+                    _congratulateEvent.emit(
+                        CongratulateEvent.Failed(
+                            targetId = feedId,
+                            message = message ?: "이미 축하한 피드입니다."
                         )
+                    )
                 }
                 else -> {
-                    _stateCongratulate.value = CongratulateUiState.Failed("오류가 발생했습니다.")
+                    _congratulateEvent.emit(
+                        CongratulateEvent.Failed(
+                            targetId = feedId,
+                            message = "오류가 발생했습니다."
+                        )
+                    )
                 }
             }
         }.onFailure {
-            _stateCongratulate.value = CongratulateUiState.Failed("오류가 발생했습니다.")
+            _congratulateEvent.emit(
+                CongratulateEvent.Failed(
+                    targetId = feedId,
+                    message = "오류가 발생했습니다."
+                )
+            )
+        }
+        } finally {
+            _congratulatingIds.update { it - feedId }
         }
     }
     data class Social(
@@ -472,131 +517,191 @@ class UserScreenVM (
         }
     }
 
-    private val _stateFollow = MutableStateFlow<FollowUiState>(FollowUiState.Idle)
-    val stateFollow = _stateFollow.asStateFlow()
+    private val _followEvent = MutableSharedFlow<FollowEvent>(extraBufferCapacity = 16)
+    val followEvent = _followEvent.asSharedFlow()
 
     private val _followingStates = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
     val followingStates = _followingStates.asStateFlow()
+    private val _followingRequestIds = MutableStateFlow<Set<Long>>(emptySet())
+    val followingRequestIds = _followingRequestIds.asStateFlow()
 
     fun followRecommend(targetUserId: Long) = viewModelScope.launch {
+        if (targetUserId in _followingRequestIds.value) return@launch
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _stateFollow.value = FollowUiState.SessionExpired
-            return@launch
-        }
-        val currentState = _stateSocial.value as? SocialUiState.Success ?: run {
-                    _stateFollow.value = FollowUiState.Idle
-                    return@launch
-        }
+        _followingRequestIds.update { it + targetUserId }
 
-        _stateFollow.value = FollowUiState.Loading
+        try {
+            val session = AuthPrefs.load(appContext)
 
-        runCatching {
-            api.followSocial(
-                auth = "Bearer ${session.accessToken}",
-                userId = targetUserId
-            )
-        }.onSuccess { res ->
-            when {
-                res.isSuccessful -> {
-                    _stateFollow.value = FollowUiState.Success(targetUserId, true)
-                    _stateSocial.value = currentState.copy(
-                        data = currentState.data.copy(
-                            count = currentState.data.count.copy(
-                                followingCount = currentState.data.count.followingCount + 1
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _followEvent.emit(FollowEvent.SessionExpired)
+                return@launch
+            }
+
+            runCatching {
+                api.followSocial(
+                    auth = "Bearer ${session.accessToken}",
+                    userId = targetUserId
+                )
+            }.onSuccess { res ->
+                when {
+                    res.isSuccessful -> {
+                        _stateSocial.update { state ->
+                            val success = state as? SocialUiState.Success
+                                ?: return@update state
+
+                            success.copy(
+                                data = success.data.copy(
+                                    count = success.data.count.copy(
+                                        followingCount =
+                                            success.data.count.followingCount + 1
+                                    )
+                                )
+                            )
+                        }
+
+                        _followingStates.update {
+                            it + (targetUserId to true)
+                        }
+
+                        _followEvent.emit(
+                            FollowEvent.Success(
+                                userId = targetUserId,
+                                isFollowing = true
                             )
                         )
-                    )
-                    _followingStates.update {
-                        it + (targetUserId to true)
+                    }
+
+                    res.code() == 400 -> {
+                        val message = runCatching {
+                            res.errorBody()?.string()
+                                ?.let {
+                                    Gson().fromJson(
+                                        it,
+                                        ErrorResponse::class.java
+                                    ).message
+                                }
+                        }.getOrNull()
+
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                userId = targetUserId,
+                                message = message
+                                    ?: "자기 자신에게 팔로잉은 불가능합니다."
+                            )
+                        )
+                    }
+
+                    res.code() == 409 -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                userId = targetUserId,
+                                message = "이미 팔로잉을 한 유저입니다."
+                            )
+                        )
+                    }
+
+                    res.code() == 401 -> {
+                        AuthPrefs.clear(appContext)
+                        _followEvent.emit(FollowEvent.SessionExpired)
+                    }
+
+                    else -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                userId = targetUserId,
+                                message = "오류가 발생했습니다."
+                            )
+                        )
                     }
                 }
-
-                res.code() == 400 -> {
-                    val message = runCatching {
-                        res.errorBody()?.string()
-                            ?.let { Gson().fromJson(it, ErrorResponse::class.java).message }
-                    }.getOrNull()
-
-                    _stateFollow.value = FollowUiState.Failed(message ?: "자기 자신에게 팔로잉은 불가능합니다.")
-                }
-
-                res.code() == 409 -> {
-                    _stateFollow.value = FollowUiState.Failed("이미 팔로잉을 한 유저입니다.")
-                }
-
-                res.code() == 401 -> {
-                    AuthPrefs.clear(appContext)
-                    _stateFollow.value = FollowUiState.SessionExpired
-                }
-
-                else -> {
-                    _stateFollow.value = FollowUiState.Failed("오류가 발생했습니다.")
-                }
+            }.onFailure {
+                _followEvent.emit(
+                    FollowEvent.Failed(
+                        userId = targetUserId,
+                        message = "오류가 발생했습니다."
+                    )
+                )
             }
-        }.onFailure { e ->
-            _stateFollow.value = FollowUiState.Failed("오류가 발생했습니다.")
+        } finally {
+            _followingRequestIds.update { it - targetUserId }
         }
     }
     fun unfollowRecommend(targetUserId: Long) = viewModelScope.launch {
+        if (targetUserId in _followingRequestIds.value) return@launch
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _stateFollow.value = FollowUiState.SessionExpired
-            return@launch
-        }
+        _followingRequestIds.update { it + targetUserId }
 
-        val currentState = _stateSocial.value as? SocialUiState.Success ?: run {
-            _stateFollow.value = FollowUiState.Idle
-            return@launch
-        }
+        try {
+            val session = AuthPrefs.load(appContext)
 
-        _stateFollow.value = FollowUiState.Loading
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _followEvent.emit(FollowEvent.SessionExpired)
+                return@launch
+            }
 
-        runCatching {
-            api.unfollow(
-                auth = "Bearer ${session.accessToken}",
-                followeeId = targetUserId
-            )
-        }.onSuccess { res ->
-            when {
-                res.isSuccessful -> {
-                    _stateFollow.value = FollowUiState.Success(targetUserId, false)
+            runCatching {
+                api.unfollow(
+                    auth = "Bearer ${session.accessToken}",
+                    followeeId = targetUserId
+                )
+            }.onSuccess { res ->
+                when {
+                    res.isSuccessful -> {
+                        _stateSocial.update { state ->
+                            val success = state as? SocialUiState.Success
+                                ?: return@update state
 
-                    _stateSocial.value = currentState.copy(
-                        data = currentState.data.copy(
-                            count = currentState.data.count.copy(
-                                followingCount =
-                                    (currentState.data.count.followingCount - 1)
-                                        .coerceAtLeast(0)
+                            success.copy(
+                                data = success.data.copy(
+                                    count = success.data.count.copy(
+                                        followingCount =
+                                            (success.data.count.followingCount - 1)
+                                                .coerceAtLeast(0)
+                                    )
+                                )
+                            )
+                        }
+
+                        _followingStates.update {
+                            it + (targetUserId to false)
+                        }
+
+                        _followEvent.emit(
+                            FollowEvent.Success(
+                                userId = targetUserId,
+                                isFollowing = false
                             )
                         )
-                    )
-                    _followingStates.update {
-                        it + (targetUserId to false)
+                    }
+
+                    res.code() == 401 -> {
+                        AuthPrefs.clear(appContext)
+                        _followEvent.emit(FollowEvent.SessionExpired)
+                    }
+
+                    else -> {
+                        _followEvent.emit(
+                            FollowEvent.Failed(
+                                userId = targetUserId,
+                                message = "팔로우 취소에 실패했습니다."
+                            )
+                        )
                     }
                 }
-
-                res.code() == 401 -> {
-                    AuthPrefs.clear(appContext)
-                    _stateFollow.value = FollowUiState.SessionExpired
-                }
-
-                else -> {
-                    _stateFollow.value =
-                        FollowUiState.Failed("팔로우 취소에 실패했습니다.")
-                }
-            }
         }.onFailure {
-            _stateFollow.value =
-                FollowUiState.Failed("오류가 발생했습니다.")
+            _followEvent.emit(
+                FollowEvent.Failed(
+                    userId = targetUserId,
+                    message = "오류가 발생했습니다."
+                )
+            )
         }
-    }
-    fun clearFollowState() {
-        _stateFollow.value = FollowUiState.Idle
+        } finally {
+            _followingRequestIds.update { it - targetUserId }
+        }
     }
     fun clearLoadMoreError() {
         val currentState = _stateSocial.value as? SocialUiState.Success ?: return
@@ -606,9 +711,6 @@ class UserScreenVM (
                 loadMoreError = null
             )
         )
-    }
-    fun clearCongratulateState() {
-        _stateCongratulate.value = CongratulateUiState.Idle
     }
 }
 

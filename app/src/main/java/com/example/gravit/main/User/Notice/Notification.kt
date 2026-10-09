@@ -66,35 +66,22 @@ fun Notification(
     navController: NavController,
 ){
     val date = LocalDate.now()
+    val dateText = date.format(DateTimeFormatter.ofPattern("yyyy. MM. dd (E)", Locale.KOREAN))
 
-    val dateText = date.format(
-        DateTimeFormatter.ofPattern("yyyy. MM. dd (E)", Locale.KOREAN)
-    )
     val context = LocalContext.current
-    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(
-        RetrofitInstance.api,
-        context
-    )
-    )
+    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(RetrofitInstance.api, context))
     val notificationUi by notificationVM.state.collectAsState()
-
     val congratulateVM: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, context))
-    val congratulateUi by congratulateVM.stateCongratulate.collectAsState()
-
-    val actionUi by notificationVM.stateAction.collectAsState()
 
     var navigated by remember { mutableStateOf(false) }
+
     var showSnackBar by remember { mutableStateOf(false) }
     var snackBarText by remember { mutableStateOf("") }
-    var congratulatingTargetId by remember { mutableStateOf<Long?>(null) }
 
-    val isLoading = notificationUi == NotificationVM.UiState.Loading ||
-                    congratulateUi == UserScreenVM.CongratulateUiState.Loading ||
-                    actionUi == NotificationVM.ActionUiState.Loading
+    val isLoading = notificationUi == NotificationVM.UiState.Loading
+    val isSessionExpired = notificationUi == NotificationVM.UiState.SessionExpired
 
-    val isSessionExpired = notificationUi == NotificationVM.UiState.SessionExpired ||
-            congratulateUi == UserScreenVM.CongratulateUiState.SessionExpired ||
-            actionUi == NotificationVM.ActionUiState.SessionExpired
+    val followingRequestIds by notificationVM.followingRequestIds.collectAsState()
 
     LaunchedEffect(Unit) {
         notificationVM.load()
@@ -128,27 +115,61 @@ fun Notification(
             else -> Unit
         }
     }
-
-    LaunchedEffect(congratulateUi) {
-        when (val state = congratulateUi) {
-            is UserScreenVM.CongratulateUiState.Success -> {
-                congratulatingTargetId?.let { targetId ->
-                    notificationVM.markCongratulated(targetId)
+    LaunchedEffect(Unit) {
+        congratulateVM.congratulateEvent.collect { event ->
+            when (event) {
+                is UserScreenVM.CongratulateEvent.Success -> {
+                    notificationVM.markCongratulated(event.targetId)
                 }
 
-                congratulatingTargetId = null
-                congratulateVM.clearCongratulateState()
+                is UserScreenVM.CongratulateEvent.Failed -> {
+                    snackBarText = event.message
+                    showSnackBar = true
+                }
+
+                UserScreenVM.CongratulateEvent.SessionExpired -> {
+                    if (!navigated) {
+                        navigated = true
+                        navController.navigate("error/401") {
+                            popUpTo(
+                                navController.currentBackStackEntry?.destination?.id
+                                    ?: return@navigate
+                            ) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }
             }
+        }
+    }
+    LaunchedEffect(Unit) {
+        notificationVM.followEvent.collect { event ->
+            when (event) {
+                is NotificationVM.FollowEvent.Success -> Unit
 
-            is UserScreenVM.CongratulateUiState.Failed -> {
-                snackBarText = state.message
-                showSnackBar = true
+                is NotificationVM.FollowEvent.Failed -> {
+                    snackBarText = event.message
+                    showSnackBar = true
+                }
 
-                congratulatingTargetId = null
-                congratulateVM.clearCongratulateState()
+                NotificationVM.FollowEvent.SessionExpired -> {
+                    if (!navigated) {
+                        navigated = true
+
+                        navController.navigate("error/401") {
+                            popUpTo(
+                                navController.currentBackStackEntry?.destination?.id
+                                    ?: return@navigate
+                            ) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }
             }
-
-            else -> Unit
         }
     }
 
@@ -299,13 +320,6 @@ fun Notification(
                                                             },
                                                         onClick = {
                                                             when (notification.actionType) {
-                                                                "FOLLOW_BACK" -> {
-                                                                    notificationVM.toggleFollow(
-                                                                        notification.targetId ?: 0,
-                                                                        notification.actionType
-                                                                    )
-                                                                }
-
                                                                 "GO_TO_LEARNING" -> {
                                                                     if (notification.targetId == null)
                                                                         navController.navigate("chapter")
@@ -316,16 +330,19 @@ fun Notification(
                                                                     navController.navigate("user/notice/detail/${notification.targetId}")
                                                                 }
 
-                                                                "UNFOLLOW" -> {
-                                                                    notificationVM.toggleFollow(
-                                                                        notification.targetId ?: 0,
-                                                                        notification.actionType
-                                                                    )
+                                                                "FOLLOW_BACK", "UNFOLLOW" -> {
+                                                                    notification.targetId?.let { targetId ->
+                                                                        if (targetId !in followingRequestIds) {
+                                                                            notificationVM.toggleFollow(
+                                                                                targetId = targetId,
+                                                                                actionType = notification.actionType
+                                                                            )
+                                                                        }
+                                                                    }
                                                                 }
 
                                                                 "CONGRATULATE" -> {
                                                                     notification.targetId?.let { targetId ->
-                                                                        congratulatingTargetId = targetId
                                                                         congratulateVM.congratulate(targetId)
                                                                     }
                                                                 }

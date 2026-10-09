@@ -47,13 +47,9 @@ fun FollowList(
     initialTab: FollowTab
 ) {
     val ctx = LocalContext.current
-    val vm: FriendListVM = viewModel(
-        factory = FriendListVMFactory(
-            api = RetrofitInstance.api,
-            appContext = ctx.applicationContext
-        )
-    )
+    val vm: FriendListVM = viewModel(factory = FriendListVMFactory(api = RetrofitInstance.api, appContext = ctx.applicationContext))
     val ui by vm.state.collectAsState()
+    val followingRequestIds by vm.followingRequestIds.collectAsState()
 
     LaunchedEffect(initialTab) {
         vm.init()
@@ -124,6 +120,7 @@ fun FollowList(
                                 items = ui.followerItems,
                                 hasNext = ui.followerHasNext,
                                 loadingMore = ui.loading,
+                                followingRequestIds = followingRequestIds,
                                 onLoadNext = { vm.loadFollowerNext() },
                                 onUnfollow = { vm.unfollowFromFollower(it) },
                                 onFollow = { vm.followFromFollower(it) }
@@ -135,6 +132,7 @@ fun FollowList(
                                 items = ui.followingItems,
                                 hasNext = ui.followingHasNext,
                                 loadingMore = ui.loading,
+                                followingRequestIds = followingRequestIds,
                                 onLoadNext = { vm.loadFollowingNext() },
                                 onUnfollow = { vm.unfollowFromFollowing(it) }
                             )
@@ -246,6 +244,7 @@ private fun FollowerListContent(
     items: List<FriendFollowerItem>,
     hasNext: Boolean,
     loadingMore: Boolean,
+    followingRequestIds: Set<Long>,
     onLoadNext: () -> Unit,
     onUnfollow: (Long) -> Unit,
     onFollow: (Long) -> Unit
@@ -262,7 +261,12 @@ private fun FollowerListContent(
         ) {
             if (items.isNotEmpty()) {
                 items(items) { user ->
-                    FollowerRow(user = user, onUnfollow = { onUnfollow(user.id) }, onFollow = { onFollow(user.id) })
+                    FollowerRow(
+                        user = user,
+                        isRequesting = user.id in followingRequestIds,
+                        onUnfollow = { onUnfollow(user.id) },
+                        onFollow = { onFollow(user.id) }
+                    )
                 }
             }
         }
@@ -298,6 +302,7 @@ private fun FollowingListContent(
     items: List<FriendUFollowingItem>,
     hasNext: Boolean,
     loadingMore: Boolean,
+    followingRequestIds: Set<Long>,
     onLoadNext: () -> Unit,
     onUnfollow: (Long) -> Unit
 ) {
@@ -313,7 +318,11 @@ private fun FollowingListContent(
         ) {
             if (items.isNotEmpty()) {
                 items(items) { user ->
-                    FollowingRow(user = user, onUnfollow = { onUnfollow(user.id) })
+                    FollowingRow(
+                        user = user,
+                        isRequesting = user.id in followingRequestIds,
+                        onUnfollow = { onUnfollow(user.id) }
+                    )
                 }
             }
         }
@@ -347,6 +356,7 @@ private fun FollowingListContent(
 @Composable
 private fun FollowerRow(
     user: FriendFollowerItem,
+    isRequesting: Boolean,
     onUnfollow: () -> Unit,
     onFollow: () -> Unit
 ) {
@@ -388,7 +398,11 @@ private fun FollowerRow(
         if(user.isFollowing){
             InlineButton(
                 text = "팔로우 취소",
-                onClick = onUnfollow,
+                onClick = {
+                    if (!isRequesting) {
+                        onUnfollow()
+                    }
+                },
                 style = AppTypography.Label2,
                 color = AppColor.text3,
                 state = InlineButtonState.Stroke,
@@ -397,7 +411,11 @@ private fun FollowerRow(
         } else {
             InlineButton(
                 text = "팔로우",
-                onClick = onFollow,
+                onClick = {
+                    if (!isRequesting) {
+                        onFollow()
+                    }
+                },
                 style = AppTypography.Label2,
                 modifier = Modifier.size(66.dp, 32.dp),
                 color = AppColor.CTA_text
@@ -410,6 +428,7 @@ private fun FollowerRow(
 @Composable
 private fun FollowingRow(
     user: FriendUFollowingItem,
+    isRequesting: Boolean,
     onUnfollow: () -> Unit
 ) {
     Row(
@@ -450,7 +469,11 @@ private fun FollowingRow(
 
         InlineButton(
             text = "팔로우 취소",
-            onClick = onUnfollow,
+            onClick = {
+                if (!isRequesting) {
+                    onUnfollow()
+                }
+            },
             style = AppTypography.Label2,
             color = AppColor.text3,
             state = InlineButtonState.Stroke,
