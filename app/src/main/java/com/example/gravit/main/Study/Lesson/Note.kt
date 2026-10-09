@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.AsyncImage
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppRadius
 import com.example.gravit.ui.theme.AppSpacing
@@ -194,7 +195,7 @@ fun NotePage(
 
     val noteText = (ui as? NoteVM.UiState.Success)?.data
         ?: "개념노트를 불러오지 못했습니다."
-
+    StatusBarStyle(darkIcons = true)
     Box(
         modifier = Modifier
             .fillMaxSize()

@@ -71,12 +71,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.BlockButton
 import com.example.gravit.ui.theme.ButtonState
 import com.example.gravit.ui.theme.PrimitiveColor
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.LeagueItem
 import com.inuappcenter.gravit.api.MyLeague
 import com.inuappcenter.gravit.api.RetrofitInstance
@@ -212,14 +212,7 @@ fun LeagueUI(
     seasonState: LeagueViewModel.SeasonPopupState
 ){
     val hazeState = rememberHazeState()
-    val systemUiController = rememberSystemUiController()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = false
-        )
-    }
+    StatusBarStyle(darkIcons = false)
 
     Box(
         modifier = Modifier.fillMaxSize()

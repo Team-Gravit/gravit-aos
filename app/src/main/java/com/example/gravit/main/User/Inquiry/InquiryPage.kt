@@ -55,6 +55,7 @@ import com.inuappcenter.gravit.main.User.TapButton
 import com.inuappcenter.gravit.main.User.TopBar
 import androidx.compose.ui.unit.Velocity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.Cip
 import com.example.gravit.ui.theme.CipState
 import com.example.gravit.ui.theme.PrimitiveColor
@@ -214,7 +215,7 @@ fun Inquiry(
             else -> Unit
         }
     }
-
+    StatusBarStyle(darkIcons = true)
     Box (
         modifier = Modifier
             .fillMaxSize()

@@ -56,10 +56,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.ChapterPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Home.RoundedGauge
@@ -139,14 +139,7 @@ private fun LearningUI(
     selectedTab: LearningTab,
     onTabSelected: (LearningTab) -> Unit
 ){
-    val systemUiController = rememberSystemUiController()
-
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = true
-        )
-    }
+    StatusBarStyle(darkIcons = true)
 
     Column(
         modifier = Modifier
