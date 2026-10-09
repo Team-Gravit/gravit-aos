@@ -84,11 +84,13 @@ fun ProblemUI(
     total: Int,
     swVm: StopwatchViewModel,
     bookmarkMap: Map<Long, Boolean>,
-    onBookmarkToggle: (Long) -> Unit,
+    onBookmarkToggle: (Long, (Boolean) -> Unit) -> Unit,
     onRecordResult: (problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) -> Unit,
     onFinishLesson: () -> Unit,
     type: String = "normal",
-    onRemoveWrongNote: (Long) -> Unit = {},
+    onRemoveWrongNote: (Long, (Boolean) -> Unit) -> Unit = { _, onResult ->
+        onResult(false)
+    },
     unitId: Long,
     unitOderText: String
 ) {
@@ -329,13 +331,19 @@ fun ProblemUI(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clickable {
-                                            snackBarText = if (!isBookmark) {
-                                                "북마크에 추가되었어요."
-                                            } else {
-                                                "북마크에서 제거되었어요."
-                                            }
-                                            onBookmarkToggle(current.problemId)
+                                            val wasBookmarked = isBookmark
 
+                                            onBookmarkToggle(current.problemId) { success ->
+                                                snackBarText = if (success) {
+                                                    if (wasBookmarked) {
+                                                        "북마크에서 제거되었어요."
+                                                    } else {
+                                                        "북마크에 추가되었어요."
+                                                    }
+                                                } else {
+                                                    "오류가 발생했습니다."
+                                                }
+                                            }
                                         }
                                 )
                             }
@@ -376,8 +384,13 @@ fun ProblemUI(
                             onTextChange = { problemVm.updateText(current.problemId, it) },
                             showRemoveFromWrongNote = (type == "wrong-answered-notes"),
                             onRemoveFromWrongNote = {
-                                onRemoveWrongNote(current.problemId)
-                                snackBarText = "오답노트에서 제거되었어요."
+                                onRemoveWrongNote(current.problemId) { success ->
+                                    snackBarText = if (success) {
+                                        "오답노트에서 제거되었어요."
+                                    } else {
+                                        "오류가 발생했습니다."
+                                    }
+                                }
                             },
                             problemVm = problemVm
                         )
@@ -391,8 +404,13 @@ fun ProblemUI(
                             onSelect = { problemVm.select(current.problemId, it) },
                             showRemoveFromWrongNote = (type == "wrong-answered-notes"),
                             onRemoveFromWrongNote = {
-                                onRemoveWrongNote(current.problemId)
-                                snackBarText = "오답노트에서 제거되었어요."
+                                onRemoveWrongNote(current.problemId) { success ->
+                                    snackBarText = if (success) {
+                                        "오답노트에서 제거되었어요."
+                                    } else {
+                                        "오류가 발생했습니다."
+                                    }
+                                }
                             },
                             problemVm = problemVm
                         )

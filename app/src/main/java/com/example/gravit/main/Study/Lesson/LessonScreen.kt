@@ -193,7 +193,9 @@ fun LessonScreen(
                     total = total,
                     swVm = swVm,
                     bookmarkMap = bookmarkMap,
-                    onBookmarkToggle = { problemId -> vm.toggleBookmark(problemId) },
+                    onBookmarkToggle = { problemId, onResult ->
+                        vm.toggleBookmark(problemId, onResult)
+                    },
                     onRecordResult = ::recordResult,
                     onFinishLesson = ::finishLesson,
                     unitId = s.unitSummaryResponse.unitId,
