@@ -42,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.InlineButton
@@ -85,6 +86,8 @@ fun Notification(
     var navigated by remember { mutableStateOf(false) }
     var showSnackBar by remember { mutableStateOf(false) }
     var snackBarText by remember { mutableStateOf("") }
+    var congratulatingTargetId by remember { mutableStateOf<Long?>(null) }
+
     val isLoading = notificationUi == NotificationVM.UiState.Loading ||
                     congratulateUi == UserScreenVM.CongratulateUiState.Loading ||
                     actionUi == NotificationVM.ActionUiState.Loading
@@ -126,9 +129,32 @@ fun Notification(
         }
     }
 
+    LaunchedEffect(congratulateUi) {
+        when (val state = congratulateUi) {
+            is UserScreenVM.CongratulateUiState.Success -> {
+                congratulatingTargetId?.let { targetId ->
+                    notificationVM.markCongratulated(targetId)
+                }
+
+                congratulatingTargetId = null
+                congratulateVM.clearCongratulateState()
+            }
+
+            is UserScreenVM.CongratulateUiState.Failed -> {
+                snackBarText = state.message
+                showSnackBar = true
+
+                congratulatingTargetId = null
+                congratulateVM.clearCongratulateState()
+            }
+
+            else -> Unit
+        }
+    }
+
     val listState = rememberLazyListState()
     val notifications = (notificationUi as? NotificationVM.UiState.Success)?.data
-
+    StatusBarStyle(darkIcons = true)
     Box (
         modifier = Modifier
             .fillMaxSize()
@@ -178,7 +204,6 @@ fun Notification(
                                             modifier = Modifier
                                                 .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                                                 .fillMaxWidth()
-                                                .height(114.dp)
                                                 .clip(RoundedCornerShape(8.dp))
                                                 .background(AppColor.bg0)
                                                 .border(
@@ -191,7 +216,7 @@ fun Notification(
                                             Column(
                                             ) {
                                                 if (notification.type == "FOLLOW" || notification.actionType == "UNFOLLOW") {
-                                                    Row() {
+                                                    Row {
                                                         Box(
                                                             modifier = Modifier
                                                                 .size(38.dp)
@@ -225,44 +250,42 @@ fun Notification(
                                                                 )
                                                             }
                                                             Spacer(Modifier.height(4.dp))
-                                                            notification.message?.let {
-                                                                Text(
-                                                                    text = it,
-                                                                    style = AppTypography.Label2,
-                                                                    maxLines = 2,
-                                                                    color = AppColor.text3
-                                                                )
-                                                            }
+                                                            Text(
+                                                                text = notification.message,
+                                                                style = AppTypography.Label2,
+                                                                maxLines = 2,
+                                                                color = AppColor.text3
+                                                            )
                                                         }
                                                     }
                                                 } else {
                                                     Box(
                                                         modifier = Modifier.fillMaxWidth()
                                                     ) {
-                                                        notification.message?.let {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
                                                             Text(
-                                                                text = it,
+                                                                text = notification.message,
                                                                 style = AppTypography.Label1,
                                                                 color = AppColor.text1,
                                                                 maxLines = 2,
                                                                 overflow = TextOverflow.Ellipsis,
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(end = 43.dp)
+                                                            )
+                                                            Spacer(Modifier.width(4.dp))
+                                                            Text(
+                                                                text = notification.timeAgo,
+                                                                style = AppTypography.Caption1,
+                                                                color = AppColor.text4
                                                             )
                                                         }
 
-                                                        Text(
-                                                            text = notification.timeAgo,
-                                                            style = AppTypography.Caption1,
-                                                            color = AppColor.text4,
-                                                            maxLines = 1,
-                                                            modifier = Modifier.align(Alignment.TopEnd)
-                                                        )
                                                     }
                                                 }
                                                 if (notification.actionType != "NONE") {
+                                                    Spacer(Modifier.height(12.dp))
                                                     Spacer(Modifier.weight(1f))
+                                                    val isCongratulated = notification.actionType == "CONGRATULATE" && notification.congratulated == true
                                                     InlineButton(
                                                         text =
                                                             when (notification.actionType) {
@@ -301,9 +324,10 @@ fun Notification(
                                                                 }
 
                                                                 "CONGRATULATE" -> {
-                                                                    congratulateVM.congratulate(
-                                                                        notification.targetId ?: 0
-                                                                    )
+                                                                    notification.targetId?.let { targetId ->
+                                                                        congratulatingTargetId = targetId
+                                                                        congratulateVM.congratulate(targetId)
+                                                                    }
                                                                 }
 
                                                                 "GO_TO_INQUIRY" -> {
@@ -317,8 +341,27 @@ fun Notification(
                                                             .fillMaxWidth()
                                                             .height(32.dp),
                                                         style = AppTypography.Label2,
-                                                        color = if (notification.actionType == "UNFOLLOW") AppColor.CTA else AppColor.CTA_text,
-                                                        state = if (notification.actionType == "UNFOLLOW") InlineButtonState.Stroke_Color else InlineButtonState.Default
+                                                        state = when {
+                                                            notification.actionType == "UNFOLLOW" ->
+                                                                InlineButtonState.Stroke_Color
+
+                                                            isCongratulated ->
+                                                                InlineButtonState.Stroke
+
+                                                            else ->
+                                                                InlineButtonState.Default
+                                                        },
+
+                                                        color = when {
+                                                            notification.actionType == "UNFOLLOW" ->
+                                                                AppColor.CTA
+
+                                                            isCongratulated ->
+                                                                AppColor.text3
+
+                                                            else ->
+                                                                AppColor.CTA_text
+                                                        }
                                                     )
                                                 }
                                             }

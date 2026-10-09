@@ -91,6 +91,7 @@ class NotificationVM(
             when {
                 res.isSuccessful -> {
                     _stateAction.value = ActionUiState.Success
+                    load()
                 }
                 res.code() == 401 -> {
                     AuthPrefs.clear(appContext)
@@ -124,6 +125,22 @@ class NotificationVM(
         }
     }
 
+    fun markCongratulated(targetId: Long) {
+        val currentState = _state.value as? UiState.Success ?: return
+
+        _state.value = UiState.Success(
+            currentState.data.map { notification ->
+                if (
+                    notification.actionType == "CONGRATULATE" &&
+                    notification.targetId == targetId
+                ) {
+                    notification.copy(congratulated = true)
+                } else {
+                    notification
+                }
+            }
+        )
+    }
 }
 
 @Suppress("UNCHECKED_CAST")
