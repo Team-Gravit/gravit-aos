@@ -17,12 +17,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.inuappcenter.gravit.share.skeleton.SkeletonBox
 
 @Composable
 fun ChapterSkeletonUI() {
-
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val columnCount = when {
+        screenWidth >= 840 -> 4
+        screenWidth >= 600 -> 3
+        else -> 2
+    }
     Column(
         modifier = Modifier
             .background(Color(0xFFF2F2F2))
@@ -38,21 +44,20 @@ fun ChapterSkeletonUI() {
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                ChapterSkeletonCard(
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(160f / 166f)
-                )
+                repeat(columnCount) { index ->
+                    ChapterSkeletonCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(160f / 166f)
+                    )
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                ChapterSkeletonCard(
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(160f / 166f)
-                )
+                    if (index != columnCount - 1) {
+                        Spacer(
+                            modifier = Modifier.width(12.dp)
+                        )
+                    }
+                }
             }
-
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
