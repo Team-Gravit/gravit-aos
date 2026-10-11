@@ -1,4 +1,4 @@
-package com.example.gravit.main.Study.Problem
+package com.inuappcenter.gravit.main.Study.Problem
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
