@@ -155,7 +155,11 @@ fun LessonComplete(
             submit as? LessonViewModel.SubmitState.Success
                 ?: return@LaunchedEffect
 
-        popupType = "level"
+        popupType = when {
+            success.isLevelUp -> "level"
+            success.isLeaguePromoted -> "league"
+            else -> null
+        }
     }
 
     StatusBarStyle(darkIcons = false)
@@ -201,7 +205,10 @@ fun LessonComplete(
                 tierName = leagueName,
                 level = userLevelResponse?.currentLevel,
                 onContinue = {
-                    popupType = if (currentType == "level") {
+                    popupType = if (
+                        currentType == "level" &&
+                        isLeaguePromoted
+                    ) {
                         "league"
                     } else {
                         null
