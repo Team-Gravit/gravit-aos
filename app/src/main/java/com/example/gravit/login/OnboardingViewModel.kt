@@ -8,7 +8,7 @@ import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.OnboardingRequest
 import com.inuappcenter.gravit.error.handleApiFailure
-import com.inuappcenter.gravit.main.User.Setting.mapServerError
+import com.inuappcenter.gravit.error.mapServerError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -39,11 +39,16 @@ class OnboardingViewModel(
 
             val session = AuthPrefs.load(appContext)
             if (session == null) {
+                AuthPrefs.clear(appContext)
                 _state.value = UiState.SessionExpired
                 return@launch
             }
+
             runCatching {
-                api.completeOnboarding(OnboardingRequest(nickname, profileNumber), "Bearer ${session.accessToken}")
+                api.completeOnboarding(
+                    OnboardingRequest(nickname, profileNumber),
+                    "Bearer ${session.accessToken}"
+                )
             }.onSuccess {
                 //성공이면 온보딩 true
                 AuthPrefs.setOnboarded(appContext, true)
@@ -58,13 +63,15 @@ class OnboardingViewModel(
                     failedState = UiState.Failed
                 )
 
-                when (e) {
-                    is HttpException if e.code() in listOf(401, 404) -> {
-                    }
+                when {
+                    e is HttpException && e.code() in listOf(401, 404) -> Unit
 
-                    is HttpException -> {
-                        val message = mapServerError(e.response()?.errorBody()?.string())
-                        _event.tryEmit(Event.ShowFailedSnack(message))
+                    e is HttpException -> {
+                        _event.tryEmit(
+                            Event.ShowFailedSnack(
+                                mapServerError(e.response()?.errorBody()?.string())
+                            )
+                        )
                     }
 
                     else -> {
@@ -83,12 +90,6 @@ class OnboardingViewModel(
 
     private val _event = MutableSharedFlow<Event>(extraBufferCapacity = 1)
     val event = _event.asSharedFlow()
-
-
-    fun testFailed() {
-        _state.value = UiState.Failed
-        _event.tryEmit(Event.ShowFailedSnack("스낵바 테스트"))
-    }
 
 }
 
