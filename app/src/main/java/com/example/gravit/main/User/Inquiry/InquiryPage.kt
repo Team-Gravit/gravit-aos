@@ -118,22 +118,12 @@ fun Inquiry(
             InquiryVM.UiState.SessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
             InquiryVM.UiState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404"){
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
@@ -156,26 +146,17 @@ fun Inquiry(
             InquiryVM.LoadUiState.Failed -> {
                 snackBarText = "오류가 발생했습니다."
                 showSnackBar = true
+                vm.resetLoadState()
             }
             InquiryVM.LoadUiState.SessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
             InquiryVM.LoadUiState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404"){
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
@@ -185,34 +166,38 @@ fun Inquiry(
     LaunchedEffect(detailStates) {
         if (navigated) return@LaunchedEffect
 
-        when (detailStates) {
-            InquiryVM.InquiryDetailUiState.Failed -> {
-                snackBarText = "오류가 발생했습니다."
-                showSnackBar = true
-            }
-            InquiryVM.InquiryDetailUiState.SessionExpired -> {
+        when {
+            detailStates.values.any {
+                it == InquiryVM.InquiryDetailUiState.SessionExpired
+            } -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
-            InquiryVM.InquiryDetailUiState.NotFound -> {
+
+            detailStates.values.any {
+                it == InquiryVM.InquiryDetailUiState.NotFound
+            } -> {
                 navigated = true
-                navController.navigate("error/404"){
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
+                navController.navigate("error/404") {
                     launchSingleTop = true
                 }
             }
-            else -> Unit
+
+            else -> {
+                val failedInquiryId = detailStates.entries
+                    .firstOrNull {
+                        it.value == InquiryVM.InquiryDetailUiState.Failed
+                    }
+                    ?.key
+
+                if (failedInquiryId != null) {
+                    snackBarText = "오류가 발생했습니다."
+                    showSnackBar = true
+                    vm.resetInquiryDetailState(failedInquiryId)
+                }
+            }
         }
     }
     StatusBarStyle(darkIcons = true)
@@ -609,12 +594,6 @@ fun InquiryItem(
                             }
                         }
                     }
-                    InquiryVM.InquiryDetailUiState.Failed -> {
-                        Text(
-                            text = "문의 내용을 불러오지 못했습니다.",
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
                     else -> Unit
                 }
             }
@@ -755,6 +734,7 @@ fun SupportUI(
                 value = title,
                 onValueChange = { title = it },
                 singleLine = true,
+                textStyle = AppTypography.Label1.copy(color = AppColor.text1),
                 placeholder = {
                     Text(
                         text = "제목을 입력해주세요.",
@@ -776,6 +756,7 @@ fun SupportUI(
                 singleLine = false,
                 minLines = 5,
                 maxLines = 5,
+                textStyle = AppTypography.Label1.copy(color = AppColor.text1),
                 placeholder = {
                     Text(
                         text = "문의 내용을 입력해주세요.",

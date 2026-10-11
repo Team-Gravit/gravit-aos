@@ -12,10 +12,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,11 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.InlineButton
 import com.example.gravit.ui.theme.InlineButtonState
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.navigation.FollowTab
@@ -39,6 +40,8 @@ import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.FriendFollowerItem
 import com.inuappcenter.gravit.api.FriendUFollowingItem
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
+import kotlinx.coroutines.delay
 import kotlin.collections.isNotEmpty
 
 @Composable
@@ -47,9 +50,13 @@ fun FollowList(
     initialTab: FollowTab
 ) {
     val ctx = LocalContext.current
+
     val vm: FriendListVM = viewModel(factory = FriendListVMFactory(api = RetrofitInstance.api, appContext = ctx.applicationContext))
     val ui by vm.state.collectAsState()
     val followingRequestIds by vm.followingRequestIds.collectAsState()
+
+    var snackBarText by remember { mutableStateOf<String?>(null) }
+    var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(initialTab) {
         vm.init()
@@ -62,95 +69,119 @@ fun FollowList(
         vm.setTab(mappedTab)
     }
 
-    if (ui.sessionExpired) {
-        navController.navigate("error/404"){
-            popUpTo(
-                navController.currentBackStackEntry?.destination?.id ?: return@navigate
-            ) {
-                inclusive = true
+    LaunchedEffect(ui.sessionExpired) {
+        if (ui.sessionExpired && !navigated) {
+            navigated = true
+
+            navController.navigate("error/401") {
+                launchSingleTop = true
             }
-            launchSingleTop = true
+        }
+
+        if (!ui.sessionExpired) {
+            navigated = false
         }
     }
-    val systemUiController = rememberSystemUiController()
 
-    SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = true
-        )
+    LaunchedEffect(ui.error) {
+        val error = ui.error ?: return@LaunchedEffect
+
+        snackBarText = error
+        vm.clearError()
     }
-    Column(
+    LaunchedEffect(snackBarText) {
+        if (snackBarText != null) {
+            delay(2000)
+            snackBarText = null
+        }
+    }
+
+   StatusBarStyle(true)
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColor.bg0)
     ) {
-        TopBar(
-            navController = navController,
-            title = "친구",
-            height = 48.dp
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(AppColor.bg1)
-                .weight(1f)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column {
-                Spacer(Modifier.height(20.dp))
-                FriendTabBar(
-                    selectedTab = ui.selectedTab,
-                    followerCount = ui.followerCount,
-                    followingCount = ui.followingCount,
-                    onTabSelected = vm::setTab
-                )
-                if (ui.loading && ui.followerItems.isEmpty() && ui.followingItems.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFFBA00FF))
-                    }
-                } else {
-                    when (ui.selectedTab) {
-                        FriendTab.Follower -> {
-                            FollowerListContent(
-                                items = ui.followerItems,
-                                hasNext = ui.followerHasNext,
-                                loadingMore = ui.loading,
-                                followingRequestIds = followingRequestIds,
-                                onLoadNext = { vm.loadFollowerNext() },
-                                onUnfollow = { vm.unfollowFromFollower(it) },
-                                onFollow = { vm.followFromFollower(it) }
-                            )
-                        }
+            TopBar(
+                navController = navController,
+                title = "친구",
+                height = 48.dp
+            )
 
-                        FriendTab.Following -> {
-                            FollowingListContent(
-                                items = ui.followingItems,
-                                hasNext = ui.followingHasNext,
-                                loadingMore = ui.loading,
-                                followingRequestIds = followingRequestIds,
-                                onLoadNext = { vm.loadFollowingNext() },
-                                onUnfollow = { vm.unfollowFromFollowing(it) }
-                            )
-                        }
-                    }
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppColor.bg1)
+                    .weight(1f)
+            ) {
+                Column {
+                    Spacer(Modifier.height(20.dp))
 
-                if (ui.error != null) {
-                    Text(
-                        text = ui.error ?: "",
-                        color = Color.Red,
-                        fontFamily = pretendard,
-                        modifier = Modifier
-                            .padding(horizontal = 20.dp, vertical = 8.dp)
+                    FriendTabBar(
+                        selectedTab = ui.selectedTab,
+                        followerCount = ui.followerCount,
+                        followingCount = ui.followingCount,
+                        onTabSelected = vm::setTab
                     )
+
+                    if (
+                        ui.loading &&
+                        ui.followerItems.isEmpty() &&
+                        ui.followingItems.isEmpty()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color(0xFFBA00FF)
+                            )
+                        }
+                    } else {
+                        when (ui.selectedTab) {
+                            FriendTab.Follower -> {
+                                FollowerListContent(
+                                    items = ui.followerItems,
+                                    hasNext = ui.followerHasNext,
+                                    loadingMore = ui.loading,
+                                    followingRequestIds = followingRequestIds,
+                                    onLoadNext = { vm.loadFollowerNext() },
+                                    onUnfollow = { vm.unfollowFromFollower(it) },
+                                    onFollow = { vm.followFromFollower(it) }
+                                )
+                            }
+
+                            FriendTab.Following -> {
+                                FollowingListContent(
+                                    items = ui.followingItems,
+                                    hasNext = ui.followingHasNext,
+                                    loadingMore = ui.loading,
+                                    followingRequestIds = followingRequestIds,
+                                    onLoadNext = { vm.loadFollowingNext() },
+                                    onUnfollow = { vm.unfollowFromFollowing(it) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
+        }
 
+        if (snackBarText != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 60.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(text = snackBarText!!)
+            }
         }
     }
 }

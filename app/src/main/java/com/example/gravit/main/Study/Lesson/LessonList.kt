@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.Cip
@@ -76,37 +77,23 @@ fun LessonList(
             LessonListVM.UiState.SessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
             LessonListVM.UiState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
-            LessonListVM.UiState.Failed -> {
-                navigated = true
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                    launchSingleTop = true
-                }
+            else -> {
+                navigated = false
             }
-            else -> Unit
         }
     }
 
     when (ui) {
+        LessonListVM.UiState.Idle,
         LessonListVM.UiState.Loading -> {
             LessonListSkeletonUI(navController)
         }
@@ -128,6 +115,19 @@ fun LessonList(
                 chapterSummary = chapterSummary,
                 unitOderText = "Unit${unitOderText.toString().padStart(2, '0')}"
             )
+        }
+        LessonListVM.UiState.Failed -> {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                LessonListSkeletonUI(navController)
+
+                LoadFailedDialog(
+                    onRetryClick = {
+                        vm.load(unitId)
+                    }
+                )
+            }
         }
         else -> Unit
     }

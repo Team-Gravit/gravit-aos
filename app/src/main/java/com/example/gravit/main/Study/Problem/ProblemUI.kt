@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.main.Study.Problem.ProblemViewModel
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -85,7 +84,13 @@ fun ProblemUI(
     swVm: StopwatchViewModel,
     bookmarkMap: Map<Long, Boolean>,
     onBookmarkToggle: (Long, (Boolean) -> Unit) -> Unit,
-    onRecordResult: (problemId: Long, isCorrect: Boolean, selectedOptionId: Long?, submittedContent: String?) -> Unit,
+    onRecordResult: (
+        problemId: Long,
+        isCorrect: Boolean,
+        selectedOptionId: Long?,
+        submittedContent: String?,
+        onResult: (Boolean) -> Unit
+    ) -> Unit,
     onFinishLesson: () -> Unit,
     type: String = "normal",
     onRemoveWrongNote: (Long, (Boolean) -> Unit) -> Unit = { _, onResult ->
@@ -145,16 +150,58 @@ fun ProblemUI(
     val submitCurrentProblem: () -> Unit = {
         if (isSubjective) {
             val correct = isAnswerCorrect(currentAnswer.shortText, current.answerResponse)
-            problemVm.submit(problemId = current.problemId, isCorrect = correct)
-            onRecordResult(current.problemId, correct, null, currentAnswer.shortText)
+
+            if (type == "normal") {
+                problemVm.submit(problemId = current.problemId, isCorrect = correct)
+                onRecordResult(current.problemId, correct, null, currentAnswer.shortText) { }
+            } else {
+                onRecordResult(current.problemId, correct, null, currentAnswer.shortText)
+                { success ->
+                    if (success) {
+                        problemVm.submit(problemId = current.problemId, isCorrect = correct)
+                    } else {
+                        snackBarText = "오류가 발생했습니다."
+                    }
+                }
+            }
         } else {
             val selectedIdx = currentAnswer.selectedIndex
+
             if (selectedIdx != null) {
                 val selectedOption = current.options.getOrNull(selectedIdx)
+
                 if (selectedOption != null) {
                     val correct = selectedOption.isAnswer
-                    problemVm.submit(problemId = current.problemId, isCorrect = correct)
-                    onRecordResult(current.problemId, correct, selectedOption.optionId, null)
+
+                    if (type == "normal") {
+                        problemVm.submit(
+                            problemId = current.problemId,
+                            isCorrect = correct
+                        )
+
+                        onRecordResult(
+                            current.problemId,
+                            correct,
+                            selectedOption.optionId,
+                            null
+                        ) { }
+                    } else {
+                        onRecordResult(
+                            current.problemId,
+                            correct,
+                            selectedOption.optionId,
+                            null
+                        ) { success ->
+                            if (success) {
+                                problemVm.submit(
+                                    problemId = current.problemId,
+                                    isCorrect = correct
+                                )
+                            } else {
+                                snackBarText = "오류가 발생했습니다."
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -242,7 +289,8 @@ fun ProblemUI(
                         onOverlayClosed = { swVm.start() },
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = 16.dp)
+                            .padding(end = 16.dp),
+                        onReportFailed = { snackBarText = "오류가 발생했습니다." }
                     )
                 }
             }

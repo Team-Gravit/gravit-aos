@@ -37,8 +37,8 @@ import kotlin.math.min
 
 @Composable
 fun Notice(navController: NavController) {
-    val ctx = LocalContext.current
-    val vm: NoticeListVM = viewModel(factory = NoticeListVMFactory(ctx))
+    val context = LocalContext.current
+    val vm: NoticeListVM = viewModel(factory = NoticeListVMFactory(context))
     val ui by vm.state.collectAsState()
 
     val pageSize = 4
@@ -48,7 +48,11 @@ fun Notice(navController: NavController) {
         vm.loadAll()
     }
 
-    val totalItems = ui.items.size
+    val noticeItems = when (val state = ui) {
+        is NoticeListVM.UiState.Success -> state.items
+        else -> emptyList()
+    }
+    val totalItems = noticeItems.size
     val totalPages = max(1, (totalItems + pageSize - 1) / pageSize)
 
     LaunchedEffect(totalPages) {
@@ -60,10 +64,11 @@ fun Notice(navController: NavController) {
     val startIndex = currentPage * pageSize
     val endIndex = min(startIndex + pageSize, totalItems)
     val pageItems = if (startIndex < endIndex) {
-        ui.items.subList(startIndex, endIndex)
+        noticeItems.subList(startIndex, endIndex)
     } else {
         emptyList()
     }
+
     StatusBarStyle(darkIcons = true)
     Column(
         modifier = Modifier

@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -32,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.AsyncImage
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppRadius
@@ -183,7 +186,6 @@ fun NotePage(
     title: String,
     unitId: Long,
     navController: NavController,
-    onSessionExpired: () -> Unit,
 ) {
     val context = LocalContext.current
     val vm: NoteVM = viewModel(factory = NoteVMFactory(RetrofitInstance.api, context))
@@ -193,48 +195,121 @@ fun NotePage(
         vm.load(unitId)
     }
 
-    val noteText = (ui as? NoteVM.UiState.Success)?.data
-        ?: "개념노트를 불러오지 못했습니다."
+    var navigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(ui) {
+        when (ui) {
+            NoteVM.UiState.SessionExpired -> {
+                if (!navigated) {
+                    navigated = true
+
+                    navController.navigate("error/401") {
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            NoteVM.UiState.NotFound -> {
+                if (!navigated) {
+                    navigated = true
+
+                    navController.navigate("error/404") {
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            else -> {
+                navigated = false
+            }
+        }
+    }
+
     StatusBarStyle(darkIcons = true)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColor.bg0)
-    ){
-        Column{
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             TopBar(
                 title = "개념노트",
                 icon = painterResource(id = R.drawable.close),
                 navController = navController
             )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 20.dp, horizontal = 16.dp)
-                    .navigationBarsPadding()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .clip(RoundedCornerShape(AppRadius.lg))
-                        .background(AppColor.bg2)
-                        .padding(AppSpacing.spacing16)
-                ){
-                    Column {
-                        Text(
-                            text = title,
-                            style = AppTypography.Label1,
-                            color = Color(0xFF555555)
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        MarkdownContent(noteText)
-                    }
-                }
-                Spacer(Modifier.height(30.dp))
-            }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                when (val state = ui) {
+                    NoteVM.UiState.Idle,
+                    NoteVM.UiState.Loading -> Unit
+
+                    is NoteVM.UiState.Success -> {
+                        NoteSuccessUI(
+                            title = title,
+                            noteText = state.data
+                        )
+                    }
+
+                    NoteVM.UiState.Failed -> {
+                        LoadFailedDialog(
+                            onRetryClick = {
+                                vm.load(unitId)
+                            }
+                        )
+                    }
+
+                    NoteVM.UiState.SessionExpired,
+                    NoteVM.UiState.NotFound -> Unit
+                }
+            }
         }
+    }
+}
+@Composable
+private fun NoteSuccessUI(
+    title: String,
+    noteText: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(
+                vertical = 20.dp,
+                horizontal = 16.dp
+            )
+            .navigationBarsPadding()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(AppRadius.lg))
+                .background(AppColor.bg2)
+                .padding(AppSpacing.spacing16)
+        ) {
+            Column {
+                Text(
+                    text = title,
+                    style = AppTypography.Label1,
+                    color = Color(0xFF555555)
+                )
+
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
+
+                MarkdownContent(noteText)
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(30.dp)
+        )
     }
 }

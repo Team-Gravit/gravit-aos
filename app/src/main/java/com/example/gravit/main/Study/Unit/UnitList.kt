@@ -10,9 +10,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,12 +26,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.UnitPageResponse
-import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.ChapterSummaryResponse
 import com.inuappcenter.gravit.api.UnitDetailResponses
@@ -70,6 +72,7 @@ fun UnitList(
     onSessionExpired: () -> Unit
 ) {
     val context = LocalContext.current
+
     val vm: UnitListVM = viewModel(
         factory = UnitListVMFactory(
             api = RetrofitInstance.api,
@@ -80,51 +83,62 @@ fun UnitList(
 
     val uiState by vm.state.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(chapterId) {
         vm.load()
     }
 
+    var navigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            UnitListVM.UiState.SessionExpired -> {
+                if (!navigated) {
+                    navigated = true
+
+                    navController.navigate("error/401") {
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            UnitListVM.UiState.NotFound -> {
+                if (!navigated) {
+                    navigated = true
+
+                    navController.navigate("error/404") {
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            else -> {
+                navigated = false
+            }
+        }
+    }
+
     when (val state = uiState) {
-        UnitListVM.UiState.Loading,
-        UnitListVM.UiState.Idle -> {
+        UnitListVM.UiState.Idle,
+        UnitListVM.UiState.Loading -> {
             UnitListSkeletonUI(navController)
         }
 
-        UnitListVM.UiState.SessionExpired -> {
-            navController.navigate("error/401") {
-                popUpTo(
-                    navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                ) {
-                    inclusive = true
-                }
-                launchSingleTop = true
-            }
-        }
-
-        UnitListVM.UiState.NotFound -> {
-            navController.navigate("error/404") {
-                popUpTo(
-                    navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                ) {
-                    inclusive = true
-                }
-                launchSingleTop = true
-            }
-        }
         UnitListVM.UiState.Failed -> {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(
-                    text = "유닛 정보를 불러오지 못했어요.",
-                    color = Color.Black,
-                    fontFamily = pretendard
+                UnitListSkeletonUI(navController)
+
+                LoadFailedDialog(
+                    onRetryClick = {
+                        vm.load()
+                    }
                 )
             }
         }
+
+        UnitListVM.UiState.SessionExpired,
+        UnitListVM.UiState.NotFound -> Unit
 
         is UnitListVM.UiState.Success -> {
             val data = state.data
@@ -138,7 +152,6 @@ fun UnitList(
         }
     }
 }
-
 @Composable
 private fun UnitListContent(
     chapterData: ChapterSummaryResponse,

@@ -78,9 +78,24 @@ fun ProfileSetting(navController: NavController) {
         when (ui) {
             OnboardingViewModel.UiState.Success -> {
                 navController.navigate("profile finish") {
-                    popUpTo(0); launchSingleTop = true; restoreState = false
+                    popUpTo(0)
+                    launchSingleTop = true
+                    restoreState = false
                 }
             }
+
+            OnboardingViewModel.UiState.SessionExpired -> {
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+
+            OnboardingViewModel.UiState.NotFound -> {
+                navController.navigate("error/404") {
+                    launchSingleTop = true
+                }
+            }
+
             else -> Unit
         }
     }
