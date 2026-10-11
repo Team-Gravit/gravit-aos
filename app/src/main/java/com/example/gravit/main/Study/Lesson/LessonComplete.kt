@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -147,18 +148,14 @@ fun LessonComplete(
     val unitSummary = successState?.data?.unitSummaryResponse
     val isLeaguePromoted = successState?.isLeaguePromoted ?: false
 
-    var popupType by rememberSaveable { mutableStateOf<String?>(null) }
+    var popupType by rememberSaveable { mutableStateOf<String?>("level") }
 
     LaunchedEffect(submit) {
         val success =
             submit as? LessonViewModel.SubmitState.Success
                 ?: return@LaunchedEffect
 
-        popupType = when {
-            success.isLevelUp -> "level"
-            success.isLeaguePromoted -> "league"
-            else -> null
-        }
+        popupType = "level"
     }
 
     StatusBarStyle(darkIcons = false)
@@ -204,10 +201,7 @@ fun LessonComplete(
                 tierName = leagueName,
                 level = userLevelResponse?.currentLevel,
                 onContinue = {
-                    popupType = if (
-                        currentType == "level" &&
-                        isLeaguePromoted
-                    ) {
+                    popupType = if (currentType == "level") {
                         "league"
                     } else {
                         null
@@ -234,7 +228,7 @@ private fun LessonCompleteSuccessUI(
             .navigationBarsPadding()
     ) {
         val designWidth = 420.dp
-        val designHeight = 800.dp
+        val designHeight = 740.dp
 
         val screenWidth = maxWidth
         val screenHeight = maxHeight
@@ -562,130 +556,145 @@ fun PopUpUi(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(
-                    Color.Black.copy(alpha = 0.6f)
-                )
+                .background(Color.Black.copy(alpha = 0.6f))
         )
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth()
-                .height(468.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .fillMaxSize()
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(R.drawable.popup_card),
-                contentDescription = null,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.FillBounds
-            )
-
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(R.drawable.level_confetti)
-                    .crossfade(false)
-                    .build(),
-                imageLoader = imageLoader,
-                contentDescription = null,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.Crop
-            )
-
-            if (type == "league") {
-                TierWithGlow(
-                    tierId = tierIdFromNameKor(safeTierName),
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 36.dp)
-                        .fillMaxWidth()
-                        .height(204.dp)
-                )
-            } else {
-                Image(
-                    painter = painterResource(R.drawable.level_rabbit),
-                    contentDescription = "레벨업 캐릭터",
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .height(270.dp)
-                        .graphicsLayer {
-                            scaleX = 1.25f
-                            scaleY = 1.25f
-                        },
-                    contentScale = ContentScale.Fit
-                )
-            }
-
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = if (type == "league") {
-                        "🎉 축하해요! 🎉"
-                    } else {
-                        "🎉 레벨업! 🎉" },
-                    color = AppColor.bg0,
-                    style = AppTypography.Title3
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            AppTypography.Headline2.toSpanStyle()
-                        ) {
-                            if (type == "league") {
-                                append("$safeTierName 티어")
-                            } else {
-                                append("LV.$safeLevel")
-                            }
-                        }
-                        withStyle(
-                            AppTypography.Body2_Normal.toSpanStyle()
-                        ) {
-                            if (type == "league") {
-                                append(" 로 승급했어요")
-                            } else {
-                                append(" 으로 올라왔어요")
-                            }
-                        } },
-                    color = AppColor.bg0
-                )
-                Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp)
+                        .width(328.dp)
+                        .height(468.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .border(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = 0.16f),
-                            shape = RoundedCornerShape(8.dp)
-                        ),
-                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (type == "league") {
-                            "다음 티어도 노려봐요. 충분히 가능해요."
-                        } else {
-                            "한 걸음씩, 확실하게 성장하고 있어요." },
-                        color = AppColor.bg0,
-                        style = AppTypography.Caption1
+                    Image(
+                        painter = painterResource(R.drawable.popup_card),
+                        contentDescription = null,
+                        modifier = Modifier.matchParentSize(),
+                        contentScale = ContentScale.FillBounds
                     )
+
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(R.drawable.level_confetti)
+                            .crossfade(false)
+                            .build(),
+                        imageLoader = imageLoader,
+                        contentDescription = null,
+                        modifier = Modifier.matchParentSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    if (type == "league") {
+                        TierWithGlow(
+                            tierId = tierIdFromNameKor(safeTierName),
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 36.dp)
+                                .fillMaxWidth()
+                                .height(204.dp)
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(R.drawable.level_rabbit),
+                            contentDescription = "레벨업 캐릭터",
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth()
+                                .height(270.dp)
+                                .graphicsLayer {
+                                    scaleX = 1.25f
+                                    scaleY = 1.25f
+                                },
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (type == "league") {
+                                "🎉 축하해요! 🎉"
+                            } else {
+                                "🎉 레벨업! 🎉"
+                            },
+                            color = AppColor.bg0,
+                            style = AppTypography.Title3
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    AppTypography.Headline2.toSpanStyle()
+                                ) {
+                                    if (type == "league") {
+                                        append("$safeTierName 티어")
+                                    } else {
+                                        append("LV.$safeLevel")
+                                    }
+                                }
+                                withStyle(
+                                    AppTypography.Body2_Normal.toSpanStyle()
+                                ) {
+                                    if (type == "league") {
+                                        append(" 로 승급했어요")
+                                    } else {
+                                        append(" 으로 올라왔어요")
+                                    }
+                                }
+                            },
+                            color = AppColor.bg0
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.White.copy(alpha = 0.16f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (type == "league") {
+                                    "다음 티어도 노려봐요. 충분히 가능해요."
+                                } else {
+                                    "한 걸음씩, 확실하게 성장하고 있어요."
+                                },
+                                color = AppColor.bg0,
+                                style = AppTypography.Caption1
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        BlockButton(
+                            state = ButtonState.Stroke_Secondary,
+                            onClick = onContinue,
+                            text = "계속하기",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
-                BlockButton(
-                    state = ButtonState.Stroke_Secondary,
-                    onClick = onContinue,
-                    text = "계속하기",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                )
             }
         }
     }
