@@ -3,11 +3,11 @@ package com.inuappcenter.gravit.main.Study.Lesson
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,16 +21,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,12 +44,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,6 +59,7 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -76,7 +75,6 @@ import com.inuappcenter.gravit.main.Study.Problem.LessonVMFactory
 import com.inuappcenter.gravit.main.Study.Problem.LessonViewModel
 import com.inuappcenter.gravit.main.User.RankInfo
 import com.inuappcenter.gravit.ui.theme.TierPalette.painterFor
-import com.inuappcenter.gravit.ui.theme.pretendard
 
 @SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
@@ -86,266 +84,120 @@ fun LessonComplete(
     learningTime: Int,
     lessonId: Long,
     chapterId: Long
-){
+) {
     val homeEntry = navController.getBackStackEntry("home")
     val problemList = homeEntry.savedStateHandle.get<ArrayList<ProblemSubmissionSaveRequests>>("problemList")
     val lessonSubmission = LessonSubmissionSaveRequest(lessonId, learningTime, accuracy)
+
     val context = LocalContext.current
     val vm: LessonViewModel = viewModel(factory = LessonVMFactory(RetrofitInstance.api, context))
+    val submit by vm.submit.collectAsState()
 
-    LaunchedEffect(Unit) {
-        problemList?.let { list ->
-            vm.submitResults(
-                lessonSubmissionSaveRequest = lessonSubmission,
-                problemSubmissionRequests = list
-            ) { success ->
-                if (success) {
-                    homeEntry.savedStateHandle
-                        .remove<ArrayList<ProblemSubmissionSaveRequests>>("problemList")
-                }
+    fun submitLessonResult() {
+        val list = problemList ?: return
+
+        vm.submitResults(
+            lessonSubmissionSaveRequest = lessonSubmission,
+            problemSubmissionRequests = list
+        ) { success ->
+            if (success) {
+                homeEntry.savedStateHandle
+                    .remove<ArrayList<ProblemSubmissionSaveRequests>>(
+                        "problemList"
+                    )
             }
         }
     }
 
-    val submit by vm.submit.collectAsState()
+    LaunchedEffect(Unit) { submitLessonResult() }
+
+    var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(submit) {
         when (submit) {
-            LessonViewModel.SubmitState.SessionExpired ->  {
-                navController.navigate("error/401") {
-                    popUpTo(navController.currentBackStackEntry?.destination?.id ?: return@navigate) {
-                        inclusive = true
+            LessonViewModel.SubmitState.SessionExpired -> {
+                if (!navigated) {
+                    navigated = true
+
+                    navController.navigate("error/401") {
+                        launchSingleTop = true
                     }
-                    launchSingleTop = true
                 }
             }
+
             LessonViewModel.SubmitState.NotFound -> {
-                navController.navigate("error/404") {
-                    popUpTo(navController.currentBackStackEntry?.destination?.id ?: return@navigate) {
-                        inclusive = true
+                if (!navigated) {
+                    navigated = true
+
+                    navController.navigate("error/404") {
+                        launchSingleTop = true
                     }
-                    launchSingleTop = true
                 }
             }
-            else -> Unit
+
+            else -> {
+                navigated = false
+            }
         }
     }
-    val s = (submit as? LessonViewModel.SubmitState.Success)
-    val leagueName = s?.data?.leagueName
-    val userLevelResponse = s?.data?.userLevelResponse
-    val unitSummary = s?.data?.unitSummaryResponse
-    val isLevelUp = s?.isLevelUp?: false
-    val isLeaguePromoted = s?.isLeaguePromoted?: false
+
+    val successState = submit as? LessonViewModel.SubmitState.Success
+    val leagueName = successState?.data?.leagueName
+    val userLevelResponse = successState?.data?.userLevelResponse
+    val unitSummary = successState?.data?.unitSummaryResponse
+    val isLeaguePromoted = successState?.isLeaguePromoted ?: false
 
     var popupType by rememberSaveable { mutableStateOf<String?>(null) }
-    var popupInitialized by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(s) {
+
+    LaunchedEffect(submit) {
+        val success =
+            submit as? LessonViewModel.SubmitState.Success
+                ?: return@LaunchedEffect
+
         popupType = when {
-            isLevelUp -> "level"
-            isLeaguePromoted -> "league"
+            success.isLevelUp -> "level"
+            success.isLeaguePromoted -> "league"
             else -> null
         }
-        popupInitialized = true
     }
+
     StatusBarStyle(darkIcons = false)
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(AppColor.bg1)
-                    .weight(1f)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.results_back),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+        when (submit) {
+            LessonViewModel.SubmitState.Idle,
+            LessonViewModel.SubmitState.Loading -> {
+                LessonCompleteSkeleton()
+            }
+
+            is LessonViewModel.SubmitState.Success -> {
+                LessonCompleteSuccessUI(
+                    navController = navController,
+                    accuracy = accuracy,
+                    learningTime = learningTime,
+                    chapterId = chapterId,
+                    unitTitle = unitSummary?.title.orEmpty(),
+                    xp = userLevelResponse?.xp ?: 0,
+                    nextLevel = userLevelResponse?.nextLevel ?: 2
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(WindowInsets.statusBars.asPaddingValues())
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(Modifier.height(75.dp))
-                    Text(
-                        text = "${planetName[chapterId]} 정복에 더 가까워졌어요!",
-                        style = AppTypography.Heading1,
-                        color = AppColor.text1w
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "${unitSummary?.title?: ""} 학습 완료",
-                        style = AppTypography.Label2,
-                        color = AppColor.text2w
-                    )
-                    Spacer(Modifier.height(40.dp))
-
-                    val painter = painterResource(id = converterInt(chapterId))
-
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 22.dp)
-                            .align(Alignment.End)
-                            .size(113.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            modifier = Modifier.size(113.dp),
-                            colorFilter = ColorFilter.tint(
-                                color = AppColor.bg0.copy(alpha = 0.2f),
-                                blendMode = BlendMode.SrcIn
-                            )
-                        )
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            modifier = Modifier.size(107.dp)
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Column (modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                    ){
-                        Row (modifier = Modifier.fillMaxWidth()){
-                            Text(
-                                text = "${userLevelResponse?.xp}XP",
-                                style = AppTypography.Label1,
-                                color = AppColor.text3
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Text(
-                                text = "LV${userLevelResponse?.nextLevel?: 2}까지",
-                                style = AppTypography.Label1,
-                                color = AppColor.Main1
-                            )
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        val xp = userLevelResponse?.xp ?: 0
-                        val progress = calculateXpProgress(xp)
-                        RoundedGauge(
-                            rate = progress,
-                            height = 8.dp,
-                            width = 0.dp,
-                            modifier = Modifier.fillMaxWidth(),
-                            color = Color(0xFFFBF1FF)
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(72.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(AppColor.bg0),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column {
-                                val resultsInfo = listOf(
-                                    "$accuracy%",
-                                    "정답률",
-                                    FormatSeconds(learningTime),
-                                    "풀이시간"
-                                ).chunked(2)
-                                val isLeague = false
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(64.dp)
-                                        .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    resultsInfo.forEachIndexed { index, item ->
-                                        RankInfo(
-                                            value = item[0],
-                                            label = item[1],
-                                            modifier = Modifier.weight(1f),
-                                            color = if (index == 0 && isLeague) AppColor.Main1 else AppColor.text1
-                                        )
-                                        if (index != resultsInfo.lastIndex) {
-
-                                            VerticalDivider(
-                                                modifier = Modifier.height(40.dp),
-                                                thickness = 1.dp,
-                                                color = AppColor.divider1
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(20.dp))
-                        Row{
-                            BlockButton(
-                                state = ButtonState.Stroke,
-                                onClick = { navController.popBackStack("home", inclusive = false) },
-                                text = "홈으로",
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(45.dp)
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            BlockButton(
-                                state = ButtonState.Default,
-                                onClick = { navController.popBackStack() },
-                                text = "이어서 학습하기",
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(45.dp)
-                            )
-                        }
-                    }
-                }
             }
-        }
-        if (submit is LessonViewModel.SubmitState.Loading) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.25f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+
+            LessonViewModel.SubmitState.Failed -> {
+                LessonCompleteSkeleton()
+
+                LoadFailedDialog(
+                    onRetryClick = {
+                        submitLessonResult()
+                    }
+                )
             }
+
+            LessonViewModel.SubmitState.SessionExpired,
+            LessonViewModel.SubmitState.NotFound -> Unit
         }
 
-        if(submit is LessonViewModel.SubmitState.Failed) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF2F2F2)),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally){
-                    Text(
-                        text = "오류가 발생했습니다.\n다시 시도해 주세요.",
-                        fontFamily = pretendard,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Button(
-                        border = BorderStroke(1.dp, Color.Black),
-                        colors = ButtonDefaults.buttonColors(
-                            contentColor = Color.Black,
-                            containerColor = Color(0xFFF2F2F2)
-                        ),
-                        onClick = { navController.popBackStack() },
-                    ) {
-                        Text(
-                            text = "이전으로",
-                            fontFamily = pretendard
-                        )
-                    }
-                }
-            }
-        }
         popupType?.let { currentType ->
             PopUpUi(
                 type = currentType,
@@ -361,6 +213,314 @@ fun LessonComplete(
                         null
                     }
                 }
+            )
+        }
+    }
+}
+@Composable
+private fun LessonCompleteSuccessUI(
+    navController: NavController,
+    accuracy: Int,
+    learningTime: Int,
+    chapterId: Long,
+    unitTitle: String,
+    xp: Int,
+    nextLevel: Int
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg1)
+            .navigationBarsPadding()
+    ) {
+        val designWidth = 420.dp
+        val designHeight = 800.dp
+
+        val screenWidth = maxWidth
+        val screenHeight = maxHeight
+
+        val widthScale = screenWidth / designWidth
+        val heightScale = screenHeight / designHeight
+
+        val contentScale = minOf(
+            widthScale,
+            heightScale
+        ).coerceIn(1f, 1.5f)
+
+        val scaledWidth = designWidth * contentScale
+        val scaledHeight = designHeight * contentScale
+
+        Image(
+            painter = painterResource(R.drawable.lesson_result_bg_mobile),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(
+                modifier = Modifier.height(
+                    (screenHeight - scaledHeight).coerceAtLeast(0.dp)
+                )
+            )
+
+            Box(
+                modifier = Modifier
+                    .width(scaledWidth)
+                    .height(scaledHeight),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(designWidth)
+                        .height(designHeight)
+                        .graphicsLayer {
+                            scaleX = contentScale
+                            scaleY = contentScale
+                            transformOrigin = TransformOrigin(
+                                pivotFractionX = 0.5f,
+                                pivotFractionY = 0f
+                            )
+                        }
+                ) {
+                    Image(
+                        painter = painterResource(
+                            R.drawable.lesson_result_rabbit
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .graphicsLayer {
+                                scaleX = 1.5f
+                                scaleY = 1.5f
+                                translationY = 24.dp.toPx()
+                            },
+                        contentScale = ContentScale.FillWidth
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .padding(
+                                top = WindowInsets.statusBars
+                                    .asPaddingValues()
+                                    .calculateTopPadding() + 75.dp
+                            )
+                            .padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "${planetName[chapterId].orEmpty()} 정복에 더 가까워졌어요!",
+                            style = AppTypography.Heading1,
+                            color = AppColor.text1w,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(4.dp)
+                        )
+
+                        Text(
+                            text = "$unitTitle 학습 완료",
+                            style = AppTypography.Label2,
+                            color = AppColor.text2w
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(40.dp)
+                        )
+
+                        val planetPainter = painterResource(
+                            converterInt(chapterId)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(end = 22.dp)
+                                .size(113.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = planetPainter,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                colorFilter = ColorFilter.tint(
+                                    color = AppColor.bg0.copy(alpha = 0.2f),
+                                    blendMode = BlendMode.SrcIn
+                                )
+                            )
+
+                            Image(
+                                painter = planetPainter,
+                                contentDescription = null,
+                                modifier = Modifier.size(107.dp),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+                    }
+
+                    LessonCompleteBottomContent(
+                        navController = navController,
+                        accuracy = accuracy,
+                        learningTime = learningTime,
+                        xp = xp,
+                        nextLevel = nextLevel,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 24.dp
+                            )
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun LessonCompleteBottomContent(
+    navController: NavController,
+    accuracy: Int,
+    learningTime: Int,
+    xp: Int,
+    nextLevel: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "${xp}XP",
+                style = AppTypography.Label1,
+                color = AppColor.text3
+            )
+
+            Spacer(
+                modifier = Modifier.weight(1f)
+            )
+
+            Text(
+                text = "LV${nextLevel}까지",
+                style = AppTypography.Label1,
+                color = AppColor.Main1
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(4.dp)
+        )
+
+        val progress = calculateXpProgress(xp)
+
+        RoundedGauge(
+            rate = progress,
+            height = 8.dp,
+            width = 0.dp,
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFFFBF1FF)
+        )
+
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(AppColor.bg0),
+            contentAlignment = Alignment.Center
+        ) {
+            val resultsInfo = listOf(
+                "$accuracy%",
+                "정답률",
+                FormatSeconds(learningTime),
+                "풀이시간"
+            ).chunked(2)
+
+            val isLeague = false
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                resultsInfo.forEachIndexed { index, item ->
+                    RankInfo(
+                        value = item[0],
+                        label = item[1],
+                        modifier = Modifier.weight(1f),
+                        color = if (
+                            index == 0 && isLeague
+                        ) {
+                            AppColor.Main1
+                        } else {
+                            AppColor.text1
+                        }
+                    )
+
+                    if (index != resultsInfo.lastIndex) {
+                        VerticalDivider(
+                            modifier = Modifier.height(40.dp),
+                            thickness = 1.dp,
+                            color = AppColor.divider1
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            BlockButton(
+                state = ButtonState.Stroke,
+                onClick = {
+                    navController.popBackStack(
+                        "home",
+                        inclusive = false
+                    )
+                },
+                text = "홈으로",
+                modifier = Modifier
+                    .weight(1f)
+                    .height(45.dp)
+            )
+
+            Spacer(
+                modifier = Modifier.width(12.dp)
+            )
+
+            BlockButton(
+                state = ButtonState.Default,
+                onClick = {
+                    navController.popBackStack()
+                },
+                text = "이어서 학습하기",
+                modifier = Modifier
+                    .weight(1f)
+                    .height(45.dp)
             )
         }
     }
