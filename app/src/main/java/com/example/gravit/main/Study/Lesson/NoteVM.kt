@@ -1,7 +1,6 @@
 package com.inuappcenter.gravit.main.Study.Lesson
 
 import android.content.Context
-import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,7 +10,6 @@ import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 
 class NoteVM(
     private val api: ApiService,

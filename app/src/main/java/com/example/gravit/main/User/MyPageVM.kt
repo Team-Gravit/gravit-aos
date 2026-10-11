@@ -1,12 +1,9 @@
 package com.inuappcenter.gravit.main.User
 
-import android.R.id.message
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.FriendsCount
@@ -20,6 +17,7 @@ import com.inuappcenter.gravit.api.MyPageWeeklyReport
 import com.inuappcenter.gravit.api.SocialFeed
 import com.inuappcenter.gravit.api.SocialRecommend
 import com.inuappcenter.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.error.mapServerError
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -30,7 +28,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import kotlin.jvm.java
 
 class UserScreenVM (
     private val api: ApiService,
@@ -95,10 +92,6 @@ class UserScreenVM (
         data object SessionExpired : FollowEvent
     }
 
-    data class ErrorResponse(
-        val error: String,
-        val message: String
-    )
     private val _stateBanners = MutableStateFlow<BannersUiState>(BannersUiState.Loading)
     val stateBanners = _stateBanners.asStateFlow()
 
@@ -117,7 +110,6 @@ class UserScreenVM (
         }.onSuccess { res ->
             _stateBanners.value = BannersUiState.Success(res)
         }.onFailure { e ->
-            Log.e("MYPAGE_SUMMARY", "loadSummary failed", e)
             handleApiFailure(
                 e = e,
                 appContext = appContext,
@@ -136,7 +128,11 @@ class UserScreenVM (
     private val _stateSummary = MutableStateFlow<SummaryUiState>(SummaryUiState.Loading)
     val stateSummary = _stateSummary.asStateFlow()
 
-    fun loadSummary() = viewModelScope.launch {
+    fun loadSummary(force: Boolean = false) = viewModelScope.launch {
+        if (!force && _stateSummary.value is SummaryUiState.Success) {
+            return@launch
+        }
+
         _stateSummary.value = SummaryUiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -148,8 +144,19 @@ class UserScreenVM (
 
         runCatching {
             coroutineScope {
-                val history = async { api.getMyPageHistory("Bearer ${session.accessToken}",  _selectedYear.value) }
-                val summaries = async { api.getMyPageSummaries(auth = "Bearer ${session.accessToken}") }
+                val history = async {
+                    api.getMyPageHistory(
+                        "Bearer ${session.accessToken}",
+                        _selectedYear.value
+                    )
+                }
+
+                val summaries = async {
+                    api.getMyPageSummaries(
+                        auth = "Bearer ${session.accessToken}"
+                    )
+                }
+
                 MyPageSummary(
                     history = history.await(),
                     summaries = summaries.await()
@@ -158,7 +165,6 @@ class UserScreenVM (
         }.onSuccess { res ->
             _stateSummary.value = SummaryUiState.Success(res)
         }.onFailure { e ->
-            Log.e("MYPAGE_SUMMARY", "loadSummary failed", e)
             handleApiFailure(
                 e = e,
                 appContext = appContext,
@@ -202,8 +208,6 @@ class UserScreenVM (
                 _stateSummary.value =
                     SummaryUiState.Success(currentState.data.copy(history = history))
             }.onFailure { e ->
-                Log.e("MYPAGE_HISTORY", "load history failed: year=$year", e)
-
                 handleApiFailure(
                     e = e,
                     appContext = appContext,
@@ -229,7 +233,11 @@ class UserScreenVM (
     private val _stateLeague = MutableStateFlow<LeagueUiState>(LeagueUiState.Loading)
     val stateLeague = _stateLeague.asStateFlow()
 
-    fun loadLeague() = viewModelScope.launch {
+    fun loadLeague(force: Boolean = false) = viewModelScope.launch {
+        if (!force && _stateLeague.value is LeagueUiState.Success) {
+            return@launch
+        }
+
         _stateLeague.value = LeagueUiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -262,7 +270,11 @@ class UserScreenVM (
     private val _stateLearning = MutableStateFlow<LearningUiState>(LearningUiState.Loading)
     val stateLearning = _stateLearning.asStateFlow()
 
-    fun loadLearning() = viewModelScope.launch {
+    fun loadLearning(force: Boolean = false) = viewModelScope.launch {
+        if (!force && _stateLearning.value is LearningUiState.Success) {
+            return@launch
+        }
+
         _stateLearning.value = LearningUiState.Loading
 
         val session = AuthPrefs.load(appContext)
@@ -274,9 +286,16 @@ class UserScreenVM (
 
         runCatching {
             coroutineScope {
-                val weeklyReport = async { api.getMyPageWeeklyReport("Bearer ${session.accessToken}")}
-                val weakConcept = async { api.getMyPageWeakConcepts("Bearer ${session.accessToken}")}
-                val topChapter = async { api.getMyPageTopChapters("Bearer ${session.accessToken}")}
+                val weeklyReport = async {
+                    api.getMyPageWeeklyReport("Bearer ${session.accessToken}")
+                }
+                val weakConcept = async {
+                    api.getMyPageWeakConcepts("Bearer ${session.accessToken}")
+                }
+                val topChapter = async {
+                    api.getMyPageTopChapters("Bearer ${session.accessToken}")
+                }
+
                 MyPageLearning(
                     weeklyReport = weeklyReport.await(),
                     weakConcepts = weakConcept.await(),
@@ -308,105 +327,71 @@ class UserScreenVM (
 
         try {
             val session = AuthPrefs.load(appContext)
+
             if (session == null) {
                 AuthPrefs.clear(appContext)
-                _congratulateEvent.emit(
-                    CongratulateEvent.SessionExpired
-                )
+                _congratulateEvent.emit(CongratulateEvent.SessionExpired)
                 return@launch
             }
-            runCatching {
-            api.getCongratulate(auth = "Bearer ${session.accessToken}", feedId = feedId)
-        }.onSuccess { res ->
-            when {
-                res.isSuccessful -> {
-                    _stateSocial.update { state ->
-                        val success = state as? SocialUiState.Success
-                            ?: return@update state
 
-                        success.copy(
-                            data = success.data.copy(
-                                feed = success.data.feed.copy(
-                                    contents = success.data.feed.contents.map { feed ->
-                                        if (feed.feedId == feedId) {
-                                            feed.copy(congratulated = true)
-                                        } else {
-                                            feed
+            runCatching {
+                api.getCongratulate(
+                    auth = "Bearer ${session.accessToken}",
+                    feedId = feedId
+                )
+            }.onSuccess { res ->
+                when {
+                    res.isSuccessful -> {
+                        _stateSocial.update { state ->
+                            val success = state as? SocialUiState.Success
+                                ?: return@update state
+
+                            success.copy(
+                                data = success.data.copy(
+                                    feed = success.data.feed.copy(
+                                        contents = success.data.feed.contents.map { feed ->
+                                            if (feed.feedId == feedId) {
+                                                feed.copy(congratulated = true)
+                                            } else {
+                                                feed
+                                            }
                                         }
-                                    }
+                                    )
+                                )
+                            )
+                        }
+
+                        _congratulateEvent.emit(
+                            CongratulateEvent.Success(feedId)
+                        )
+                    }
+
+                    res.code() == 401 -> {
+                        AuthPrefs.clear(appContext)
+                        _congratulateEvent.emit(
+                            CongratulateEvent.SessionExpired
+                        )
+                    }
+
+                    else -> {
+                        _congratulateEvent.emit(
+                            CongratulateEvent.Failed(
+                                targetId = feedId,
+                                message = mapServerError(
+                                    res.errorBody()?.string()
                                 )
                             )
                         )
                     }
-                    _congratulateEvent.emit(
-                        CongratulateEvent.Success(feedId)
-                    )
                 }
-
-                res.code() == 400 -> {
-                    val message = runCatching {
-                        res.errorBody()?.string()
-                            ?.let { Gson().fromJson(it, ErrorResponse::class.java).message }
-                    }.getOrNull()
-
-                    _congratulateEvent.emit(
-                        CongratulateEvent.Failed(
-                            targetId = feedId,
-                            message = message ?: "오늘 축하 횟수를 모두 사용했어요."
-                        )
+            }.onFailure {
+                _congratulateEvent.emit(
+                    CongratulateEvent.Failed(
+                        targetId = feedId,
+                        message = "오류가 발생했습니다."
                     )
-                }
-
-                res.code() == 404 -> {
-                    _congratulateEvent.emit(
-                        CongratulateEvent.Failed(
-                            targetId = feedId,
-                            message = "피드를 찾을 수 없습니다."
-                        )
-                    )
-                }
-
-                res.code() == 401 -> {
-                    AuthPrefs.clear(appContext)
-                    _congratulateEvent.emit(
-                        CongratulateEvent.SessionExpired
-                    )
-                }
-                res.code() == 409 -> {
-                    val message = runCatching {
-                        res.errorBody()?.string()
-                            ?.let {
-                                Gson().fromJson(
-                                    it,
-                                    ErrorResponse::class.java
-                                ).message
-                            }
-                    }.getOrNull()
-
-                    _congratulateEvent.emit(
-                        CongratulateEvent.Failed(
-                            targetId = feedId,
-                            message = message ?: "이미 축하한 피드입니다."
-                        )
-                    )
-                }
-                else -> {
-                    _congratulateEvent.emit(
-                        CongratulateEvent.Failed(
-                            targetId = feedId,
-                            message = "오류가 발생했습니다."
-                        )
-                    )
-                }
-            }
-        }.onFailure {
-            _congratulateEvent.emit(
-                CongratulateEvent.Failed(
-                    targetId = feedId,
-                    message = "오류가 발생했습니다."
                 )
-            )
-        }
+            }
         } finally {
             _congratulatingIds.update { it - feedId }
         }
@@ -426,8 +411,13 @@ class UserScreenVM (
     private val _stateSocial = MutableStateFlow<SocialUiState>(SocialUiState.Loading)
     val stateSocial = _stateSocial.asStateFlow()
 
-    fun loadSocial() = viewModelScope.launch {
+    fun loadSocial(force: Boolean = false) = viewModelScope.launch {
         if (isLoading) return@launch
+
+        if (!force && _stateSocial.value is SocialUiState.Success) {
+            return@launch
+        }
+
         _stateSocial.value = SocialUiState.Loading
         isLoading = true
 
@@ -438,15 +428,24 @@ class UserScreenVM (
                 _stateSocial.value = SocialUiState.SessionExpired
                 return@launch
             }
+
             runCatching {
                 coroutineScope {
-                    val socialRecommend = async { api.getSocialRecommend("Bearer ${session.accessToken}") }
-                    val socialFeed = async { api.getSocialFeed(
-                        auth = "Bearer ${session.accessToken}",
-                        page = 0
-                    )
+                    val socialRecommend = async {
+                        api.getSocialRecommend("Bearer ${session.accessToken}")
                     }
-                    val count = async { api.getFriendsCount( "Bearer ${session.accessToken}") }
+
+                    val socialFeed = async {
+                        api.getSocialFeed(
+                            auth = "Bearer ${session.accessToken}",
+                            page = 0
+                        )
+                    }
+
+                    val count = async {
+                        api.getFriendsCount("Bearer ${session.accessToken}")
+                    }
+
                     Social(
                         recommend = socialRecommend.await(),
                         feed = socialFeed.await(),
@@ -472,6 +471,7 @@ class UserScreenVM (
             isLoading = false
         }
     }
+
     fun loadMoreSocial() = viewModelScope.launch {
         if (isLoading || !hasNext) return@launch
 
@@ -573,57 +573,32 @@ class UserScreenVM (
                         )
                     }
 
-                    res.code() == 400 -> {
-                        val message = runCatching {
-                            res.errorBody()?.string()
-                                ?.let {
-                                    Gson().fromJson(
-                                        it,
-                                        ErrorResponse::class.java
-                                    ).message
-                                }
-                        }.getOrNull()
-
-                        _followEvent.emit(
-                            FollowEvent.Failed(
-                                userId = targetUserId,
-                                message = message
-                                    ?: "자기 자신에게 팔로잉은 불가능합니다."
-                            )
-                        )
-                    }
-
-                    res.code() == 409 -> {
-                        _followEvent.emit(
-                            FollowEvent.Failed(
-                                userId = targetUserId,
-                                message = "이미 팔로잉을 한 유저입니다."
-                            )
-                        )
-                    }
-
                     res.code() == 401 -> {
                         AuthPrefs.clear(appContext)
-                        _followEvent.emit(FollowEvent.SessionExpired)
+                        _followEvent.emit(
+                            FollowEvent.SessionExpired
+                        )
                     }
 
                     else -> {
                         _followEvent.emit(
                             FollowEvent.Failed(
                                 userId = targetUserId,
-                                message = "오류가 발생했습니다."
+                                message = mapServerError(
+                                    res.errorBody()?.string()
+                                )
                             )
                         )
                     }
                 }
             }.onFailure {
-                _followEvent.emit(
-                    FollowEvent.Failed(
-                        userId = targetUserId,
-                        message = "오류가 발생했습니다."
+                    _followEvent.emit(
+                        FollowEvent.Failed(
+                            userId = targetUserId,
+                            message = "오류가 발생했습니다."
+                        )
                     )
-                )
-            }
+                }
         } finally {
             _followingRequestIds.update { it - targetUserId }
         }

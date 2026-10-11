@@ -4,16 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.google.gson.JsonParser
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.UpdateUserInfoRequest
-import com.inuappcenter.gravit.api.UserInfoResponse
+import com.inuappcenter.gravit.error.mapServerError
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import retrofit2.Response
 
 class AccountVM(
     private val api: ApiService,
@@ -26,80 +24,167 @@ class AccountVM(
         val nickname: String = "",
         val profileId: Int = ProfilePalette.DEFAULT_ID,
         val errorMsg: String? = null,
-        val savedOnce: Boolean = false
+        val savedOnce: Boolean = false,
+        val sessionExpired: Boolean = false,
+        val loadFailed: Boolean = false,
+        val notFound: Boolean = false
     )
 
     private val _state = MutableStateFlow(UiState())
-    val state: StateFlow<UiState> = _state
+    val state = _state.asStateFlow()
 
-    private fun bearerOrNull(): String? {
-        val token = AuthPrefs.load(appContext)?.accessToken ?: return null
-        return "Bearer $token"
-    }
+    fun loadUserInfo() = viewModelScope.launch {
+        _state.value = _state.value.copy(
+            isLoading = true,
+            errorMsg = null,
+            loadFailed = false,
+            sessionExpired = false,
+            notFound = false
+        )
 
-    fun loadUserInfo() {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, errorMsg = null)
-            val bearer = bearerOrNull() ?: run {
-                _state.value = _state.value.copy(isLoading = false, errorMsg = "세션 만료")
-                return@launch
-            }
-            val res: Response<UserInfoResponse> = api.userInfo(bearer)
-            if (res.isSuccessful) {
-                val body = res.body()
-                if (body != null) {
+        val session = AuthPrefs.load(appContext)
+
+        if (session == null) {
+            AuthPrefs.clear(appContext)
+            _state.value = _state.value.copy(
+                isLoading = false,
+                sessionExpired = true
+            )
+            return@launch
+        }
+
+        runCatching {
+            api.userInfo("Bearer ${session.accessToken}")
+        }.onSuccess { res ->
+            when {
+                res.isSuccessful -> {
+                    val body = res.body()
+
+                    if (body != null) {
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            nickname = body.nickname,
+                            profileId = body.profileImgNumber,
+                            errorMsg = null
+                        )
+                    } else {
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            loadFailed = true
+                        )
+                    }
+                }
+
+                res.code() == 401 -> {
+                    AuthPrefs.clear(appContext)
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        nickname = body.nickname,
-                        profileId = body.profileImgNumber,
-                        errorMsg = null
+                        sessionExpired = true
                     )
-                } else {
-                    _state.value = _state.value.copy(isLoading = false, errorMsg = "응답 바디가 비었습니다.")
                 }
-            } else {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    errorMsg = mapServerError(res.errorBody()?.string())
-                )
+
+                res.code() == 404 -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        notFound = true
+                    )
+                }
+
+                else -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        loadFailed = true
+                    )
+                }
             }
+        }.onFailure {
+            _state.value = _state.value.copy(
+                isLoading = false,
+                loadFailed = true
+            )
         }
+    }
+    fun clearError() {
+        _state.value = _state.value.copy(
+            errorMsg = null
+        )
     }
 
     fun onNicknameChange(newNickname: String) {
-        _state.value = _state.value.copy(nickname = newNickname, savedOnce = false, errorMsg = null)
+        _state.value = _state.value.copy(
+            nickname = newNickname,
+            savedOnce = false,
+            errorMsg = null
+        )
     }
 
     fun onProfileChange(newId: Int) {
-        _state.value = _state.value.copy(profileId = newId, savedOnce = false, errorMsg = null)
+        _state.value = _state.value.copy(
+            profileId = newId,
+            savedOnce = false,
+            errorMsg = null
+        )
     }
-
 
     fun save(onSuccess: () -> Unit = {}) {
         val cur = _state.value
-        viewModelScope.launch {
-            _state.value = cur.copy(isSaving = true, errorMsg = null, savedOnce = false)
-            try {
-                val bearer = bearerOrNull() ?: run {
-                    _state.value = _state.value.copy(isSaving = false, errorMsg = "세션 만료")
-                    return@launch
-                }
 
-                val body = UpdateUserInfoRequest(
-                    profilePhotoNumber = cur.profileId,
-                    nickname = cur.nickname.trim()
+        viewModelScope.launch {
+            _state.value = cur.copy(
+                isSaving = true,
+                errorMsg = null,
+                savedOnce = false
+            )
+
+            val session = AuthPrefs.load(appContext)
+
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _state.value = _state.value.copy(
+                    isSaving = false,
+                    sessionExpired = true
                 )
-                val res = api.updateUserInfo(bearer, body)
-                if (res.isSuccessful) {
-                    _state.value = _state.value.copy(isSaving = false, savedOnce = true)
-                    onSuccess()
-                } else {
-                    _state.value = _state.value.copy(
-                        isSaving = false,
-                        errorMsg = mapServerError(res.errorBody()?.string())
-                    )
+                return@launch
+            }
+
+            val body = UpdateUserInfoRequest(
+                profilePhotoNumber = cur.profileId,
+                nickname = cur.nickname.trim()
+            )
+
+            runCatching {
+                api.updateUserInfo(
+                    "Bearer ${session.accessToken}",
+                    body
+                )
+            }.onSuccess { res ->
+                when {
+                    res.isSuccessful -> {
+                        _state.value = _state.value.copy(
+                            isSaving = false,
+                            savedOnce = true
+                        )
+                        onSuccess()
+                    }
+
+                    res.code() == 401 -> {
+                        AuthPrefs.clear(appContext)
+                        _state.value = _state.value.copy(
+                            isSaving = false,
+                            sessionExpired = true
+                        )
+                    }
+
+                    else -> {
+                        _state.value = _state.value.copy(
+                            isSaving = false,
+                            errorMsg = mapServerError(
+                                res.errorBody()?.string()
+                            )
+                        )
+                    }
                 }
-            } catch (e: Exception) {
+            }.onFailure {
                 _state.value = _state.value.copy(
                     isSaving = false,
                     errorMsg = "오류가 발생했습니다."
@@ -109,42 +194,16 @@ class AccountVM(
     }
 }
 
-fun mapServerError(raw: String?): String {
-    if (raw.isNullOrBlank()) return "오류가 발생했습니다."
-
-    return try {
-        val json = JsonParser.parseString(raw).asJsonObject
-        val message = json.get("message")
-
-        val parsedMessage = when {
-            message == null || message.isJsonNull -> null
-
-            message.isJsonArray -> {
-                message.asJsonArray.joinToString("\n") { it.asString }
-            }
-
-            message.isJsonPrimitive -> {
-                message.asString
-            }
-
-            else -> null
-        }
-
-        parsedMessage
-            ?.takeIf { it.isNotBlank() }
-            ?: "오류가 발생했습니다."
-
-    } catch (e: Exception) {
-        "오류가 발생했습니다."
-    }
-}
-
 @Suppress("UNCHECKED_CAST")
 class AccountVMFactory(
     private val api: ApiService,
     private val context: Context
 ) : ViewModelProvider.Factory {
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return AccountVM(api, context.applicationContext) as T
+        return AccountVM(
+            api = api,
+            appContext = context.applicationContext
+        ) as T
     }
 }

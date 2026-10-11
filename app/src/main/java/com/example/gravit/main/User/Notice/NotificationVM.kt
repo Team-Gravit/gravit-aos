@@ -1,10 +1,9 @@
-package com.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import com.inuappcenter.gravit.api.ApiService
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.Notifications
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.inuappcenter.gravit.error.mapServerError
 
 class NotificationVM(
     private val api: ApiService,
@@ -72,10 +72,6 @@ class NotificationVM(
 
     private val _followingRequestIds = MutableStateFlow<Set<Long>>(emptySet())
     val followingRequestIds = _followingRequestIds.asStateFlow()
-    data class ErrorResponse(
-        val error: String,
-        val message: String
-    )
 
     fun toggleFollow(targetId: Long, actionType: String) = viewModelScope.launch {
         if (targetId in _followingRequestIds.value) return@launch
@@ -98,13 +94,6 @@ class NotificationVM(
                     api.unfollow("Bearer ${session.accessToken}", targetId)
                 }
             }.onSuccess { res ->
-                val message = runCatching {
-                    res.errorBody()?.string()
-                        ?.let {
-                            Gson().fromJson(it, ErrorResponse::class.java).message
-                        }
-                }.getOrNull()
-
                 when {
                     res.isSuccessful -> {
                         _followEvent.emit(FollowEvent.Success(targetId))
@@ -116,38 +105,15 @@ class NotificationVM(
                         _followEvent.emit(FollowEvent.SessionExpired)
                     }
 
-                    res.code() == 400 -> {
-                        _followEvent.emit(
-                            FollowEvent.Failed(
-                                targetId,
-                                message ?: "자기 자신에게 팔로우는 불가능합니다."
-                            )
-                        )
-                    }
-
-                    res.code() == 404 -> {
-                        _followEvent.emit(
-                            FollowEvent.Failed(
-                                targetId,
-                                message ?: "팔로우 내역이 존재하지 않습니다."
-                            )
-                        )
-                    }
-
-                    res.code() == 409 -> {
-                        _followEvent.emit(
-                            FollowEvent.Failed(
-                                targetId,
-                                message ?: "이미 팔로잉을 한 유저입니다."
-                            )
-                        )
-                    }
-
                     else -> {
+                        val message = mapServerError(
+                            res.errorBody()?.string()
+                        )
+
                         _followEvent.emit(
                             FollowEvent.Failed(
-                                targetId,
-                                "오류가 발생했습니다."
+                                targetId = targetId,
+                                message = message
                             )
                         )
                     }

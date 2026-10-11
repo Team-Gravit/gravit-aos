@@ -2,7 +2,6 @@ package com.inuappcenter.gravit.main.League
 
 import android.content.Context
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import androidx.core.content.edit
+import com.inuappcenter.gravit.error.mapServerError
 
 class LeagueViewModel(
     private val api: ApiService,
@@ -83,6 +83,7 @@ class LeagueViewModel(
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
+            AuthPrefs.clear(appContext)
             _myLeague.value = MyLeagueState.SessionExpired
             return@launch
         }
@@ -128,7 +129,8 @@ class LeagueViewModel(
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
-            _sessionExpired.value = true
+            AuthPrefs.clear(appContext)
+            _myLeague.value = MyLeagueState.SessionExpired
             return@launch
         }
 
@@ -142,18 +144,35 @@ class LeagueViewModel(
                 is Source.Tier    -> api.getLeagues_tier("Bearer ${session.accessToken}", s.leagueId, nextPage)
             }
         }.getOrElse { e ->
-            val code = (e as? HttpException)?.code()
-            when (code) {
-                401 -> {
+            _ui.update { it.copy(isLoading = false) }
+
+            when {
+                e is HttpException && e.code() == 401 -> {
+                    AuthPrefs.clear(appContext)
                     _sessionExpired.value = true
                 }
-                404 -> {
+
+                e is HttpException && e.code() == 404 -> {
                     _notFound.value = true
                 }
+
+                e is HttpException -> {
+                    _ui.update {
+                        it.copy(
+                            error = mapServerError(
+                                e.response()?.errorBody()?.string()
+                            )
+                        )
+                    }
+                }
+
                 else -> {
-                    _ui.update { it.copy(isLoading = false, error = e.message ?: "불러오기 실패") }
+                    _ui.update {
+                        it.copy(error = "오류가 발생했습니다.")
+                    }
                 }
             }
+
             return@launch
         }
 
@@ -204,16 +223,16 @@ class LeagueViewModel(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun loadSeasonPopup() = viewModelScope.launch {
         _seasonPopup.value = SeasonPopupState.Loading
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
-            _sessionExpired.value = true
+            AuthPrefs.clear(appContext)
             _seasonPopup.value = SeasonPopupState.SessionExpired
             return@launch
         }
+
         runCatching { api.getLeagueHome("Bearer ${session.accessToken}") }
             .onSuccess { res ->
                 val seasonId = res.currentSeason.nowSeason

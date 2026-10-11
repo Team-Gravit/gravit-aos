@@ -1,72 +1,81 @@
 package com.inuappcenter.gravit.main.User.Notice
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.NoticeSummaryItem
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
+class NoticeListVM(
+    private val appContext: Context
+) : ViewModel() {
 
-    data class UiState(
-        val items: List<NoticeSummaryItem> = emptyList(),
-        val loading: Boolean = false,
-        val error: String? = null
-    )
+    sealed interface UiState {
+        data object Idle : UiState
+        data object Loading : UiState
+        data class Success(val items: List<NoticeSummaryItem>) : UiState
+        data object Failed : UiState
+        data object SessionExpired : UiState
+        data object NotFound : UiState
+    }
 
-    private val _state = MutableStateFlow(UiState())
-    val state: StateFlow<UiState> = _state
+    private val _state = MutableStateFlow<UiState>(UiState.Idle)
+    val state = _state.asStateFlow()
 
     fun loadAll() {
-        val cur = _state.value
-        if (cur.loading) return
+        if (_state.value == UiState.Loading) return
 
-        _state.value = UiState(loading = true)
+        _state.value = UiState.Loading
 
         viewModelScope.launch {
-            var page = 1
-            var allItems: List<NoticeSummaryItem> = emptyList()
-            var hasNext = true
-            var totalPages = Int.MAX_VALUE
+            val session = AuthPrefs.load(appContext)
+
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _state.value = UiState.SessionExpired
+                return@launch
+            }
 
             val result = runCatching {
+                var page = 1
+                var hasNext = true
+                var totalPages = Int.MAX_VALUE
+                val allItems = mutableListOf<NoticeSummaryItem>()
+
                 while (hasNext && page <= totalPages) {
-                    val res = repo.fetchSummaries(page).getOrThrow()
-
-                    val list = res.content ?: emptyList()
-                    allItems = allItems + list
-
-                    hasNext = res.hasNext
-                    totalPages = res.totalPages
-
-                    Log.d(
-                        "NoticeListVM",
-                        "loadAll: serverPage=$page, got=${list.size}, hasNext=$hasNext, totalPages=$totalPages"
+                    val response = RetrofitInstance.api.getNoticeSummaries(
+                        auth = "Bearer ${session.accessToken}",
+                        page = page
                     )
 
-                    page += 1
+                    allItems += response.content.orEmpty()
+
+                    hasNext = response.hasNext
+                    totalPages = response.totalPages
+                    page++
                 }
-                allItems
+
+                allItems.toList()
             }
 
             result
                 .onSuccess { items ->
-                    _state.value = UiState(
-                        items = items,
-                        loading = false,
-                        error = null
-                    )
+                    _state.value = UiState.Success(items)
                 }
                 .onFailure { e ->
-                    Log.e("NoticeListVM", "loadAll error: ${e.message}", e)
-                    _state.value = UiState(
-                        items = emptyList(),
-                        loading = false,
-                        error = e.message ?: "로드 실패"
+                    handleApiFailure(
+                        e = e,
+                        appContext = appContext,
+                        onStateChange = { _state.value = it },
+                        unauthorizedState = UiState.SessionExpired,
+                        notFoundState = UiState.NotFound,
+                        failedState = UiState.Failed
                     )
                 }
         }
@@ -74,9 +83,13 @@ class NoticeListVM(private val repo: NoticeRepository) : ViewModel() {
 }
 
 @Suppress("UNCHECKED_CAST")
-class NoticeListVMFactory(context: Context) : ViewModelProvider.Factory {
-    private val repo = NoticeRepository(context.applicationContext)
+class NoticeListVMFactory(
+    context: Context
+) : ViewModelProvider.Factory {
+
+    private val appContext = context.applicationContext
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return NoticeListVM(repo) as T
+        return NoticeListVM(appContext) as T
     }
 }

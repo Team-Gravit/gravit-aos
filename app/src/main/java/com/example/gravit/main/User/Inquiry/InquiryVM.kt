@@ -109,8 +109,6 @@ class InquiryVM (
             }
         } finally {
             isLoading = false
-
-            // 로딩 중 요청된 마지막 페이지 로드
             pendingPage?.let { nextPage ->
                 pendingPage = null
 
@@ -163,6 +161,12 @@ class InquiryVM (
 
     fun resetSubmitState() {
         _submitState.value = UiState.Idle
+    }
+    fun resetInquiryDetailState(inquiryId: Long) {
+        _inquiryDetailStates.value -= inquiryId
+    }
+    fun resetLoadState() {
+        _loadState.value = LoadUiState.Idle
     }
 }
 
