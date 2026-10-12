@@ -1,7 +1,6 @@
 package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -35,16 +35,49 @@ fun Account(
         factory = AccountVMFactory(RetrofitInstance.api, context)
     )
     val ui by vm.state.collectAsState()
+    LaunchedEffect(Unit) {
+        vm.loadUserInfo()
+    }
+    var navigated by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { vm.loadUserInfo() }
+    LaunchedEffect(ui.sessionExpired, ui.notFound) {
+        if (navigated) return@LaunchedEffect
+
+        when {
+            ui.sessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+
+            ui.notFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    launchSingleTop = true
+                }
+            }
+
+            else -> {
+                navigated = false
+            }
+        }
+    }
 
     val nicknameValid = isValidNickname(ui.nickname)
     var showSnackbar by remember { mutableStateOf(false) }
+    var snackBarText by remember { mutableStateOf("") }
 
     LaunchedEffect(ui.errorMsg) {
-        showSnackbar = ui.errorMsg != null
+        val error = ui.errorMsg ?: return@LaunchedEffect
 
-        if (ui.errorMsg != null) {
+        snackBarText = error
+        showSnackbar = true
+        vm.clearError()
+    }
+
+    LaunchedEffect(showSnackbar) {
+        if (showSnackbar) {
             delay(2000)
             showSnackbar = false
         }
@@ -127,17 +160,22 @@ fun Account(
                 }
             }
         }
-        if (showSnackbar) {
-            ui.errorMsg?.let { message ->
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CustomSnackBar(
-                        text = message,
-                        modifier = Modifier.padding(bottom = 10.dp)
-                    )
+        if (ui.loadFailed) {
+            LoadFailedDialog(
+                onRetryClick = {
+                    vm.loadUserInfo()
                 }
+            )
+        }
+        if (showSnackbar) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(
+                    text = snackBarText,
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
             }
         }
     }

@@ -60,40 +60,60 @@ fun ReportDialog(
     problemId: Long,
     onOverlayOpened: () -> Unit = {},
     onOverlayClosed: () -> Unit = {},
-){
+    onReportFailed: () -> Unit,
+) {
     val context = LocalContext.current
-    val vm: ReportVM = viewModel(
-        factory = ReportVMFactory(RetrofitInstance.api, context)
-    )
+    val vm: ReportVM = viewModel(factory = ReportVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
+
+    var showDialog by remember { mutableStateOf(false) }
+    var showConfirm by remember { mutableStateOf(false) }
+    var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(ui) {
         when (ui) {
+            ReportVM.UiState.Success -> {
+                showDialog = false
+                showConfirm = true
+            }
+
+            ReportVM.UiState.Failed -> {
+                showDialog = false
+                onOverlayClosed()
+                onReportFailed()
+            }
+
             ReportVM.UiState.SessionExpired -> {
-                navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
+                if (!navigated) {
+                    navigated = true
+
+                    showDialog = false
+                    onOverlayClosed()
+
+                    navController.navigate("error/401") {
+                        launchSingleTop = true
                     }
-                    launchSingleTop = true
                 }
             }
+
             ReportVM.UiState.NotFound -> {
-                navController.navigate("error/404") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
+                if (!navigated) {
+                    navigated = true
+
+                    showDialog = false
+                    onOverlayClosed()
+
+                    navController.navigate("error/404") {
+                        launchSingleTop = true
                     }
-                    launchSingleTop = true
                 }
             }
-            else -> Unit
+
+            else -> {
+                navigated = false
+            }
         }
     }
-    var showDialog by remember { mutableStateOf(false) }
-    var showConfirm by remember { mutableStateOf(false) }
 
     Icon(
         painter = painterResource(id = R.drawable.report_icon),
@@ -107,20 +127,26 @@ fun ReportDialog(
         tint = AppColor.icon_default
     )
 
-    if(showDialog){
+    if (showDialog) {
         var text by remember { mutableStateOf("") }
         var selectedIndex by remember { mutableStateOf<Int?>(null) }
+
         val options = listOf(
             "문제/선지에 오탈자가 있습니다." to "TYPO_ERROR",
             "문제 자체에 오류가 있습니다." to "CONTENT_ERROR",
             "답안에 오류가 있습니다." to "ANSWER_ERROR",
             "기타" to "OTHER_ERROR"
         )
-        val canSubmit = selectedIndex != null
+
+        val isLoading = ui == ReportVM.UiState.Loading
+        val canSubmit = selectedIndex != null && !isLoading
+
         Dialog(
             onDismissRequest = {
-                showDialog = false
-                onOverlayClosed()
+                if (!isLoading) {
+                    showDialog = false
+                    onOverlayClosed()
+                }
             },
             properties = DialogProperties(
                 dismissOnClickOutside = false,
@@ -135,12 +161,12 @@ fun ReportDialog(
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(16.dp),
                 color = AppColor.bg1
-            ){
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
-                ){
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -149,24 +175,24 @@ fun ReportDialog(
                                 vertical = 20.dp
                             )
                     ) {
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-
                             Text(
                                 text = "신고하기",
                                 style = AppTypography.Body2_Normal,
                                 color = PrimitiveColor.Gray500
                             )
+
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(22.dp)
                                     .clickable(
+                                        enabled = !isLoading,
                                         interactionSource = remember {
                                             MutableInteractionSource()
                                         },
@@ -179,6 +205,7 @@ fun ReportDialog(
                             )
                         }
                     }
+
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = 1.dp,
@@ -193,20 +220,18 @@ fun ReportDialog(
                                 vertical = 16.dp
                             )
                     ) {
-
                         options.forEachIndexed { idx, opt ->
-
                             Option(
                                 isChecked = selectedIndex == idx,
                                 text = opt.first,
                                 onClick = {
-                                    selectedIndex = idx
+                                    if (!isLoading) {
+                                        selectedIndex = idx
+                                    }
                                 }
                             )
 
-                            Spacer(
-                                modifier = Modifier.height(12.dp)
-                            )
+                            Spacer(Modifier.height(12.dp))
                         }
 
                         Box(
@@ -234,44 +259,49 @@ fun ReportDialog(
                                     color = Color(0xFFA1A1A1)
                                 )
 
-                                Spacer(
-                                    modifier = Modifier.height(4.dp)
-                                )
+                                Spacer(Modifier.height(4.dp))
 
                                 BasicTextField(
                                     value = text,
                                     onValueChange = {
-                                        text = it
+                                        if (!isLoading) {
+                                            text = it
+                                        }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f),
-
-                                    textStyle = AppTypography.Body2_Reading.copy(color = AppColor.text1)
+                                    textStyle = AppTypography.Body2_Reading.copy(color = AppColor.text1),
+                                    enabled = !isLoading
                                 )
                             }
                         }
                     }
+
                     ReportButton(
                         onClick1 = {
                             showDialog = false
                             onOverlayClosed()
                         },
                         text1 = "그만두기",
+                        enabled1 = !isLoading,
                         onClick2 = {
                             val selected =
                                 selectedIndex?.let { options[it] }
-                            val reportType = selected?.second ?: return@ReportButton
+
+                            val reportType =
+                                selected?.second ?: return@ReportButton
+
                             vm.submit(
                                 reportType,
                                 text,
                                 problemId
                             )
-                            showDialog = false
-                            showConfirm = true
                         },
+
                         text2 = "제출하기",
                         enabled2 = canSubmit,
+
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
                         modifier1 = Modifier
                             .height(48.dp)
@@ -279,14 +309,13 @@ fun ReportDialog(
                         modifier2 = Modifier
                             .height(48.dp)
                             .weight(1f)
-
                     )
                 }
             }
         }
     }
 
-    if(showConfirm && !showDialog){
+    if (showConfirm && !showDialog) {
         Dialog(
             onDismissRequest = {
                 showConfirm = false
@@ -300,7 +329,8 @@ fun ReportDialog(
         ) {
             ResultDialog(
                 onDismiss = {
-                    showDialog = false
+                    showConfirm = false
+                    onOverlayClosed()
                 },
                 titleText = "회원님의 신고가\n접수되었어요.",
                 descriptionText = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
@@ -313,7 +343,6 @@ fun ReportDialog(
         }
     }
 }
-
 @Composable
 fun ReportButton(
     modifier: Modifier,

@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -70,7 +71,6 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     navController: NavController,
-    onSessionExpired: () -> Unit
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel(factory = HomeVMFactory(RetrofitInstance.api, context))
@@ -89,44 +89,47 @@ fun HomeScreen(
             HomeViewModel.UiState.SessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
 
             HomeViewModel.UiState.NotFound -> {
                 navigated = true
-                navController.navigate("error/404"){
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
+                navController.navigate("error/404") {
                     launchSingleTop = true
                 }
             }
 
-            else -> Unit
+            else -> navigated = false
         }
     }
 
     when (ui) {
+        HomeViewModel.UiState.Idle,
         HomeViewModel.UiState.Loading -> {
             HomeSkeletonUI()
         }
 
         is HomeViewModel.UiState.Success -> {
             val state = ui as HomeViewModel.UiState.Success
-
             HomeUI(
                 home = state.data,
                 units = state.data.mainLearningResponse.units,
                 navController = navController
             )
+        }
+        HomeViewModel.UiState.Failed -> {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                HomeSkeletonUI()
+
+                LoadFailedDialog(
+                    onRetryClick = {
+                        vm.load()
+                    }
+                )
+            }
         }
 
         else -> Unit
@@ -143,7 +146,17 @@ fun HomeUI(
     val userLevelInfo = home.mainProfile.userLevelDetailResponse
     val userLeagueInfo = home.mainLeagueResponse
     val userLearningInfo = home.mainLearningResponse
-    val recommendedInfo = home.recommendedUnitResponses.firstOrNull()
+    val recommendedInfo = home.recommendedUnitResponses
+        .firstOrNull { recommended ->
+            resolvePlanetRes(recommended.chapterId) != null
+        }
+        ?: home.recommendedUnitResponses.firstOrNull()
+
+    val recommendedPlanetRes = recommendedInfo
+        ?.chapterId
+        ?.let { resolvePlanetRes(it) }
+        ?: R.drawable.empty_recommand_bg
+
     val weeklyInfo = home.weeklyRecordResponse
     val missionInfo = home.missionResponse
 
@@ -500,11 +513,7 @@ fun HomeUI(
                                         .clickable(onClick = { navController.navigate("unit/${recommendedInfo?.chapterId ?: 1}") })
                                 ) {
                                     Image(
-                                        painter = painterResource(
-                                            id = resolvePlanetRes(
-                                                recommendedInfo?.chapterId ?: 1
-                                            )
-                                        ),
+                                        painter = painterResource(id = recommendedPlanetRes),
                                         contentDescription = null,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.FillWidth

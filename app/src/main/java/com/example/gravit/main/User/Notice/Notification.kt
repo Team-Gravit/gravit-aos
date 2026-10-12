@@ -1,4 +1,4 @@
-package com.gravit.main.User.Notice
+package com.inuappcenter.gravit.main.User.Notice
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +58,8 @@ import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.foundation.lazy.items
+import com.example.gravit.share.LoadFailedDialog
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -93,22 +94,12 @@ fun Notification(
             isSessionExpired -> {
                 navigated = true
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
             notificationUi == NotificationVM.UiState.NotFound -> {
                 navigated = true
                 navController.navigate("error/404"){
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
@@ -131,12 +122,6 @@ fun Notification(
                     if (!navigated) {
                         navigated = true
                         navController.navigate("error/401") {
-                            popUpTo(
-                                navController.currentBackStackEntry?.destination?.id
-                                    ?: return@navigate
-                            ) {
-                                inclusive = true
-                            }
                             launchSingleTop = true
                         }
                     }
@@ -159,12 +144,6 @@ fun Notification(
                         navigated = true
 
                         navController.navigate("error/401") {
-                            popUpTo(
-                                navController.currentBackStackEntry?.destination?.id
-                                    ?: return@navigate
-                            ) {
-                                inclusive = true
-                            }
                             launchSingleTop = true
                         }
                     }
@@ -399,6 +378,13 @@ fun Notification(
             ) {
                 CircularProgressIndicator()
             }
+        }
+        if (notificationUi == NotificationVM.UiState.Failed) {
+            LoadFailedDialog(
+                onRetryClick = {
+                    notificationVM.load()
+                }
+            )
         }
         if (showSnackBar) {
             CustomSnackBar(

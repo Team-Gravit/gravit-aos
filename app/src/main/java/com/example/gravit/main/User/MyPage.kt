@@ -70,10 +70,13 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.compose.ui.window.Popup
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -157,24 +160,17 @@ fun MyPageUI(
                 MyPageTab.Social -> socialUi == UserScreenVM.SocialUiState.NotFound
 
             }
-    val isFailed = bannerUi == UserScreenVM.BannersUiState.Failed ||
-            when (selectedTab) {
-                MyPageTab.Summary -> summaryUi == UserScreenVM.SummaryUiState.Failed
-                MyPageTab.Learning -> learningUi == UserScreenVM.LearningUiState.Failed
-                MyPageTab.League -> leagueUi == UserScreenVM.LeagueUiState.Failed
-                MyPageTab.Social -> socialUi == UserScreenVM.SocialUiState.Failed
-
-            }
 
     LaunchedEffect(Unit) {
         vm.loadBanners()
-        vm.loadSummary()
-        vm.loadLearning()
-        vm.loadLeague()
     }
+
     LaunchedEffect(selectedTab) {
-        if (selectedTab == MyPageTab.Social) {
-            vm.loadSocial()
+        when (selectedTab) {
+            MyPageTab.Summary -> vm.loadSummary()
+            MyPageTab.Learning -> vm.loadLearning()
+            MyPageTab.League -> vm.loadLeague()
+            MyPageTab.Social -> vm.loadSocial()
         }
     }
 
@@ -182,11 +178,6 @@ fun MyPageUI(
         if (!isSessionExpired || navigated) return@LaunchedEffect
         navigated = true
         navController.navigate("error/401") {
-            popUpTo(
-                navController.currentBackStackEntry?.destination?.id ?: return@navigate
-            ) {
-                inclusive = true
-            }
             launchSingleTop = true
         }
     }
@@ -194,18 +185,8 @@ fun MyPageUI(
         if (!isNotFound || navigated) return@LaunchedEffect
         navigated = true
         navController.navigate("error/404") {
-            popUpTo(
-                navController.currentBackStackEntry?.destination?.id ?: return@navigate
-            ) {
-                inclusive = true
-            }
             launchSingleTop = true
         }
-    }
-    LaunchedEffect(isFailed) {
-        if (!isFailed) return@LaunchedEffect
-        snackBarText = "오류가 발생했습니다."
-        showSnackBar = true
     }
 
     LaunchedEffect(Unit) {
@@ -222,12 +203,6 @@ fun MyPageUI(
                     if (!navigated) {
                         navigated = true
                         navController.navigate("error/401") {
-                            popUpTo(
-                                navController.currentBackStackEntry?.destination?.id
-                                    ?: return@navigate
-                            ) {
-                                inclusive = true
-                            }
                             launchSingleTop = true
                         }
                     }
@@ -249,12 +224,6 @@ fun MyPageUI(
                     if (!navigated) {
                         navigated = true
                         navController.navigate("error/401") {
-                            popUpTo(
-                                navController.currentBackStackEntry?.destination?.id
-                                    ?: return@navigate
-                            ) {
-                                inclusive = true
-                            }
                             launchSingleTop = true
                         }
                     }
@@ -284,25 +253,31 @@ fun MyPageUI(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        if (initialSkeleton) {
-            MyPageSkeletonUI(navController = navController)
-        } else {
-            when (val state = bannerUi) {
-                is UserScreenVM.BannersUiState.Success -> {
-                    MyPageContent(
-                        banner = state.data,
-                        selectedTab = selectedTab,
-                        onTabSelected = {
-                            selectedTab = it
-                        },
-                        vm = vm,
-                        navController = navController,
-                        socialUi = socialUi
-                    )
-                }
-
-                else -> Unit
+        when (val state = bannerUi) {
+            UserScreenVM.BannersUiState.Loading -> {
+                MyPageSkeletonUI(navController = navController)
             }
+
+            is UserScreenVM.BannersUiState.Success -> {
+                MyPageContent(
+                    banner = state.data,
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    vm = vm,
+                    navController = navController,
+                    socialUi = socialUi
+                )
+            }
+
+            UserScreenVM.BannersUiState.Failed -> {
+                MyPageSkeletonUI(navController = navController)
+
+                LoadFailedDialog(onRetryClick = { vm.loadBanners() }
+                )
+            }
+
+            UserScreenVM.BannersUiState.SessionExpired,
+            UserScreenVM.BannersUiState.NotFound -> Unit
         }
 
         if (showSnackBar) {
@@ -490,31 +465,105 @@ private fun MyPageTabContent(
     nickname: String?,
     socialUi: UserScreenVM.SocialUiState
 ) {
+    val summaryUi by vm.stateSummary.collectAsState()
+    val learningUi by vm.stateLearning.collectAsState()
+    val leagueUi by vm.stateLeague.collectAsState()
+
     when (selectedTab) {
         MyPageTab.Summary -> {
-            SummaryUI(vm)
+            when (summaryUi) {
+                UserScreenVM.SummaryUiState.Loading -> {
+                    SummaryTabSkeletonUI()
+                }
+
+                is UserScreenVM.SummaryUiState.Success -> {
+                    SummaryUI(vm)
+                }
+
+                UserScreenVM.SummaryUiState.Failed -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        SummaryTabSkeletonUI()
+
+                        LoadFailedDialog(
+                            onRetryClick = {
+                                vm.loadSummary(force = true)
+                            }
+                        )
+                    }
+                }
+
+                UserScreenVM.SummaryUiState.SessionExpired,
+                UserScreenVM.SummaryUiState.NotFound -> Unit
+            }
         }
 
         MyPageTab.Learning -> {
-            LearningTabUI(
-                vm = vm,
-                navController = navController
-            )
+            when (learningUi) {
+                UserScreenVM.LearningUiState.Loading -> {
+                    LearningTabSkeletonUI()
+                }
+
+                is UserScreenVM.LearningUiState.Success -> {
+                    LearningTabUI(
+                        vm = vm,
+                        navController = navController
+                    )
+                }
+
+                UserScreenVM.LearningUiState.Failed -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        LearningTabSkeletonUI()
+
+                        LoadFailedDialog(
+                            onRetryClick = {
+                                vm.loadLearning(force = true)
+                            }
+                        )
+                    }
+                }
+
+                UserScreenVM.LearningUiState.SessionExpired,
+                UserScreenVM.LearningUiState.NotFound -> Unit
+            }
         }
 
         MyPageTab.League -> {
-            LeagueTabUI(vm)
+            when (leagueUi) {
+                UserScreenVM.LeagueUiState.Loading -> {
+                    LeagueTabSkeletonUI()
+                }
+
+                is UserScreenVM.LeagueUiState.Success -> {
+                    LeagueTabUI(vm)
+                }
+
+                UserScreenVM.LeagueUiState.Failed -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        LeagueTabSkeletonUI()
+
+                        LoadFailedDialog(
+                            onRetryClick = {
+                                vm.loadLeague(force = true)
+                            }
+                        )
+                    }
+                }
+
+                UserScreenVM.LeagueUiState.SessionExpired,
+                UserScreenVM.LeagueUiState.NotFound -> Unit
+            }
         }
 
         MyPageTab.Social -> {
             when (socialUi) {
                 UserScreenVM.SocialUiState.Loading -> {
-                   Box(
-                       modifier = Modifier.fillMaxSize(),
-                       contentAlignment = Alignment.Center
-                   ){
-                       CircularProgressIndicator()
-                   }
+                    SocialTabSkeletonUI()
                 }
 
                 is UserScreenVM.SocialUiState.Success -> {
@@ -524,9 +573,23 @@ private fun MyPageTabContent(
                         nickname = nickname
                     )
                 }
-                else -> {
-                    Log.d("SOCIAL", socialUi.toString())
+
+                UserScreenVM.SocialUiState.Failed -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        SocialTabSkeletonUI()
+
+                        LoadFailedDialog(
+                            onRetryClick = {
+                                vm.loadSocial(force = true)
+                            }
+                        )
+                    }
                 }
+
+                UserScreenVM.SocialUiState.SessionExpired,
+                UserScreenVM.SocialUiState.NotFound -> Unit
             }
         }
     }
@@ -824,7 +887,7 @@ fun SummaryUI(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LearningGrassGrid(
-    year: Int=2026,
+    year: Int = 2026,
     dailySolvedCounts: List<DailySolvedCounts>,
 ) {
     val startDate = LocalDate.of(year, 1, 1)
@@ -845,6 +908,10 @@ fun LearningGrassGrid(
 
     val columns = ceil(dates.size / rows.toFloat()).toInt()
     val totalWidth = columns * columnWidth
+
+    var selectedDate by remember {
+        mutableStateOf<LocalDate?>(null)
+    }
 
     Column(
         modifier = Modifier
@@ -886,12 +953,54 @@ fun LearningGrassGrid(
                         if (date != null) {
                             val solvedCount = solvedMap[date] ?: 0
 
-                            Box(
-                                modifier = Modifier
-                                    .size(cellSize)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(getGrassColor(solvedCount))
-                            )
+                            Box {
+                                Box(
+                                    modifier = Modifier
+                                        .size(cellSize)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(getGrassColor(solvedCount))
+                                        .clickable {
+                                            selectedDate =
+                                                if (selectedDate == date) {
+                                                    null
+                                                } else {
+                                                    date
+                                                }
+                                        }
+                                )
+
+                                if (selectedDate == date) {
+                                    Popup(
+                                        alignment = Alignment.BottomCenter,
+                                        offset = IntOffset(x = 0, y = -16),
+                                        onDismissRequest = {
+                                            selectedDate = null
+                                        }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .width(130.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(AppColor.text1)
+                                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                                        ) {
+                                            Text(
+                                                text = "${date.year}년 ${date.monthValue}월 ${date.dayOfMonth}일",
+                                                style = AppTypography.Caption1,
+                                                color = AppColor.text1w
+                                            )
+
+                                            Spacer(Modifier.height(4.dp))
+
+                                            Text(
+                                                text = "${solvedCount}회 학습",
+                                                style = AppTypography.Label2,
+                                                color = AppColor.text1w
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             Spacer(Modifier.size(cellSize))
                         }

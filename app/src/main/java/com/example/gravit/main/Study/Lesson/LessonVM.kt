@@ -1,7 +1,6 @@
 package com.inuappcenter.gravit.main.Study.Problem
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -142,6 +141,7 @@ class LessonViewModel(
         problemSubmissionRequests: ProblemSubmissionSaveRequests,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
+        _problemSubmit.value = ProblemSubmitState.Loading
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
@@ -202,9 +202,7 @@ class LessonViewModel(
             }
         }.onSuccess {
             onDone(true)
-        }.onFailure { e ->
-            Log.e("Bookmark", "toggleBookmark failed", e)
-
+        }.onFailure {
             _bookmark.value = _bookmark.value.toMutableMap().apply {
                 put(problemId, current)
             }
@@ -222,6 +220,8 @@ class LessonViewModel(
         problemId: Long,
         onDone: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
+        _problemSubmit.value = ProblemSubmitState.Loading
+
         val session = AuthPrefs.load(appContext)
         if (session == null) {
             AuthPrefs.clear(appContext)

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,10 +28,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +40,6 @@ import com.inuappcenter.gravit.R
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -54,8 +52,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -67,21 +67,17 @@ import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.share.TabBar
 import com.inuappcenter.gravit.ui.theme.mbc1961
 import com.inuappcenter.gravit.ui.theme.pretendard
-import kotlin.collections.map
-
 
 enum class LearningTab { Chapter, AI }
 
 @Composable
 fun Learning(
     navController: NavController,
-    onSessionExpired: () -> Unit
 ){
     val context = LocalContext.current
-    val vm: ChapterViewModel = viewModel(
-        factory = ChapterVMFactory(RetrofitInstance.api, context)
-    )
+    val vm: ChapterViewModel = viewModel(factory = ChapterVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
+
     var selectedTab by remember { mutableStateOf(LearningTab.Chapter) }
     var navigated by remember { mutableStateOf(false) }
 
@@ -94,41 +90,31 @@ fun Learning(
         when (ui) {
             ChapterViewModel.UiState.SessionExpired -> {
                 navigated = true
+
                 navController.navigate("error/401") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
+
             ChapterViewModel.UiState.NotFound -> {
                 navigated = true
+
                 navController.navigate("error/404") {
-                    popUpTo(
-                        navController.currentBackStackEntry?.destination?.id ?: return@navigate
-                    ) {
-                        inclusive = true
-                    }
                     launchSingleTop = true
                 }
             }
-            ChapterViewModel.UiState.Failed -> {
-                navigated = true
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                    launchSingleTop = true
-                }
+
+            else -> {
+                navigated = false
             }
-            else -> Unit
         }
     }
     LearningUI(
         navController = navController,
         uiState = ui,
         selectedTab = selectedTab,
-        onTabSelected = { selectedTab = it }
+        onTabSelected = { selectedTab = it },
+        onRetry = { vm.load() }
     )
 }
 
@@ -137,7 +123,8 @@ private fun LearningUI(
     navController: NavController,
     uiState: ChapterViewModel.UiState,
     selectedTab: LearningTab,
-    onTabSelected: (LearningTab) -> Unit
+    onTabSelected: (LearningTab) -> Unit,
+    onRetry: () -> Unit
 ){
     StatusBarStyle(darkIcons = true)
 
@@ -151,6 +138,7 @@ private fun LearningUI(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColor.bg1)
+                .navigationBarsPadding()
         ) {
             Spacer(Modifier.height(20.dp))
             TabBar(
@@ -183,7 +171,17 @@ private fun LearningUI(
                                 chapters = uiState.data
                             )
                         }
+                        ChapterViewModel.UiState.Failed -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                ChapterSkeletonUI()
 
+                                LoadFailedDialog(
+                                    onRetryClick = onRetry
+                                )
+                            }
+                        }
                         else -> Unit
                     }
                 }
@@ -213,44 +211,39 @@ private fun ChapterUI(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        buttons.chunked(2).forEach { pair ->
+        val screenWidth = LocalConfiguration.current.screenWidthDp
 
+        val columnCount = when {
+            screenWidth >= 840 -> 4
+            screenWidth >= 600 -> 3
+            else -> 2
+        }
+        buttons.chunked(columnCount).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                pair.forEachIndexed { index, data ->
-
+                rowItems.forEachIndexed { index, button ->
                     ChapterButton(
-                        description = data.description,
-                        text = data.title,
-                        planet = data.planetRes,
-                        rate = data.rate,
+                        description = button.description,
+                        text = button.title,
                         onClick = {
-                            navController.navigate(
-                                "unit/${data.chapterId}"
-                            )
+                            navController.navigate("unit/${button.chapterId}")
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .aspectRatio(160f / 166f)
-                            .shadow(
-                                4.dp,
-                                RoundedCornerShape(8.dp)
-                            ),
-                        isRight = index == 1
+                            .aspectRatio(160f / 166f),
+                        planet = button.planetRes,
+                        isRight = index == rowItems.lastIndex,
+                        rate = button.rate,
+                        enabled = true
                     )
 
-                    if (index == 0 && pair.size > 1) {
-                        Spacer(
-                            modifier = Modifier.width(12.dp)
-                        )
+                    if (index != rowItems.lastIndex) {
+                        Spacer(modifier = Modifier.width(12.dp))
                     }
                 }
-
-                if (pair.size == 1) {
-                    Spacer(
-                        modifier = Modifier.width(12.dp)
-                    )
+                repeat(columnCount - rowItems.size) {
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Spacer(
                         modifier = Modifier
@@ -259,6 +252,7 @@ private fun ChapterUI(
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
@@ -268,11 +262,11 @@ data class ChapterButtonData(
     val title: String,
     val description: String,
     val rate: Double,
-    val planetRes: Int,
+    val planetRes: Int?,
 )
 
-fun resolvePlanetRes(id: Long): Int {
-    return planetById[id] ?: R.drawable.algorithm_chapter
+fun resolvePlanetRes(id: Long): Int? {
+    return planetById[id]
 }
 
 val planetById = mapOf(
@@ -287,23 +281,27 @@ val planetById = mapOf(
 )
 
 fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonData> {
-    return chapters.map { c ->
+    return chapters.mapNotNull { c ->
+        val chapterId = c.chapterSummaryResponse.chapterId
+        val planetRes = resolvePlanetRes(chapterId) ?: return@mapNotNull null
+
         ChapterButtonData(
-            chapterId = c.chapterSummaryResponse.chapterId,
+            chapterId = chapterId,
             title = c.chapterSummaryResponse.title,
             description = c.chapterSummaryResponse.description,
             rate = c.chapterProgressRate,
-            planetRes = resolvePlanetRes(c.chapterSummaryResponse.chapterId),
+            planetRes = planetRes
         )
     }
 }
+
 @Composable
 fun ChapterButton(
     description: String,
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    planet: Int,
+    planet: Int?,
     isRight: Boolean,
     rate: Double,
     enabled: Boolean = true
@@ -328,12 +326,14 @@ fun ChapterButton(
         enabled = enabled
     ) {
         Box(Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(id = planet),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                colorFilter = if (enabled) null else grayFilter
-            )
+            if (planet != null) {
+                Image(
+                    painter = painterResource(id = planet),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    colorFilter = if (enabled) null else grayFilter
+                )
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -367,7 +367,6 @@ fun ChapterButton(
                             Popup(
                                 isShowing = showTooltip,
                                 text = description,
-                                isRight = isRight,
                                 onDismiss = { showTooltip = false },
                             )
                         }
@@ -396,89 +395,102 @@ fun ChapterButton(
 fun Popup(
     isShowing: Boolean,
     text: String,
-    isRight: Boolean,
     onDismiss: () -> Unit,
 ) {
-    if(isShowing) {
+    if (!isShowing) return
 
-        val density = LocalDensity.current
-        val sideMarginPx = with(density) { 8.dp.roundToPx() }
-        val bottomMarginPx = with(density) { 8.dp.roundToPx() }
-        val yGapPx = with(density) { 6.dp.roundToPx() }
+    val density = LocalDensity.current
+    val tipWidth = 42.dp
+    val tipHeight = 20.dp
+    val popupWidth = 257.dp
 
-        val tipStartDp = if (isRight) 205.dp else 125.dp
-        val tipWidthDp =42.dp
-        val tipHeight = 20.dp
+    val tipWidthPx = with(density) { tipWidth.roundToPx() }
+    val tipHeightPx = with(density) { tipHeight.roundToPx() }
+    val gapPx = with(density) { 6.dp.roundToPx() }
+    val marginPx = with(density) { 8.dp.roundToPx() }
 
-        val tipCenterOffsetPx = with(density) { (tipStartDp + tipWidthDp / 2).roundToPx() }
-
-        val provider = object : PopupPositionProvider {
+    // Both popups use the same anchor: the 24dp Box enclosing the info icon.
+    val triangleProvider = remember(tipWidthPx, gapPx) {
+        object : PopupPositionProvider {
             override fun calculatePosition(
                 anchorBounds: IntRect,
                 windowSize: IntSize,
                 layoutDirection: LayoutDirection,
                 popupContentSize: IntSize
             ): IntOffset {
-                val anchorCenterX = (anchorBounds.left + anchorBounds.right) / 2
-                val desiredLeft = anchorCenterX - tipCenterOffsetPx
-                val minX = sideMarginPx
-                val maxX = windowSize.width - popupContentSize.width - sideMarginPx
-                val x = desiredLeft.coerceIn(minX, maxX)
-
-                val desiredTop = anchorBounds.bottom + yGapPx
-                val maxY = windowSize.height - popupContentSize.height - bottomMarginPx
-                val y = desiredTop.coerceAtMost(maxY)
-
-                return IntOffset(x, y)
+                val centerX = (anchorBounds.left + anchorBounds.right) / 2
+                return IntOffset(
+                    x = centerX - popupContentSize.width / 2,
+                    y = anchorBounds.bottom + gapPx
+                )
             }
         }
-        Popup(
-            popupPositionProvider = provider,
-            onDismissRequest = onDismiss,
-            properties = PopupProperties(
-                focusable = true,
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true
-            )
-        ) {
-            Column {
-                TriangleUpTip(
-                    modifier = Modifier
-                        .padding(start = tipStartDp)
-                        .size(tipWidthDp, tipHeight),
-                    color = Color(0xFF222124)
+    }
+
+    val boxProvider = remember(tipHeightPx, gapPx, marginPx) {
+        object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize
+            ): IntOffset {
+                val centerX = (anchorBounds.left + anchorBounds.right) / 2
+                val desiredX = centerX - popupContentSize.width / 2
+                val maxX = (windowSize.width - popupContentSize.width - marginPx)
+                    .coerceAtLeast(marginPx)
+                return IntOffset(
+                    x = desiredX.coerceIn(marginPx, maxX),
+                    y = anchorBounds.bottom + gapPx + tipHeightPx
                 )
-                Surface(
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(257.dp)
-                            .wrapContentHeight()
-                            .background(Color(0xFF222124))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.info),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                text = text,
-                                style = TextStyle(
-                                    fontFamily = pretendard,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color.White,
-                                    lineHeight = 22.sp
-                                )
-                            )
-                        }
-                    }
-                }
+            }
+        }
+    }
+    Popup(
+        popupPositionProvider = triangleProvider,
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(
+            focusable = false,
+            clippingEnabled = false
+        )
+    ) {
+        TriangleUpTip(
+            modifier = Modifier.size(tipWidth, tipHeight),
+            color = Color(0xFF222124)
+        )
+    }
+    Popup(
+        popupPositionProvider = boxProvider,
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(
+            focusable = true,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            clippingEnabled = false
+        )
+    ) {
+        Surface(
+            modifier = Modifier.width(popupWidth),
+            shape = RoundedCornerShape(8.dp),
+            color = Color(0xFF222124)
+        ) {
+            Row(modifier = Modifier.padding(10.dp)) {
+                Icon(
+                    painter = painterResource(R.drawable.info),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = text,
+                    style = TextStyle(
+                        fontFamily = pretendard,
+                        fontWeight = FontWeight.Normal,
+                        color = Color.White,
+                        lineHeight = 22.sp
+                    )
+                )
             }
         }
     }
@@ -502,4 +514,3 @@ private fun TriangleUpTip(
         drawPath(path, color = color)
     }
 }
-

@@ -44,11 +44,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.gravit.main.User.Notice.Notification
 import com.inuappcenter.gravit.main.Study.Chapter.Learning
 import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
+import com.inuappcenter.gravit.main.User.Notice.Notification
 
 
 enum class FollowTab { Followers, Following }
@@ -103,12 +103,12 @@ fun MainScreen(rootNavController: NavController) {
             ) {
                 composable("home") {
                     BottomBarScreen {
-                        HomeScreen(innerNavController, goToLoginChoice)
+                        HomeScreen(innerNavController)
                     }
                 }
                 //chapter
                 composable("chapter") {
-                    BottomBarScreen { Learning(innerNavController, goToLoginChoice) } }
+                    BottomBarScreen { Learning(innerNavController) } }
 
                 composable(
                     route = "unit/{chapterId}",
@@ -154,7 +154,6 @@ fun MainScreen(rootNavController: NavController) {
 
                     NotePage(
                         navController = innerNavController,
-                        onSessionExpired = goToLoginChoice,
                         unitId = unitId,
                         title = title
                     )

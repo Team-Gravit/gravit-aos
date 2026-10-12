@@ -36,9 +36,11 @@ class HomeViewModel(
 
         val session = AuthPrefs.load(appContext)
         if (session == null) {
+            AuthPrefs.clear(appContext)
             _state.value = UiState.SessionExpired
             return@launch
         }
+
         val access = "Bearer ${session.accessToken}"
         runCatching {
             coroutineScope {

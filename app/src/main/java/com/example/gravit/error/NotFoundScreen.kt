@@ -1,55 +1,54 @@
 package com.inuappcenter.gravit.error
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.main.Study.Problem.ReportButton
-import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
 
 @Composable
 fun NotFoundScreen(
     navController: NavController,
+    onMain: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null
 ){
     ErrorScreen(
         img = R.drawable.img404,
         title = "페이지를 찾을 수 없어요.",
         content = "잘못된 주소이거나 삭제된 페이지입니다.\n주소를 확인하시거나 홈으로 이동해 주세요.",
-        onClick1 = { navController.popBackStack("home", inclusive = false) },
-        onClick2 = {navController.popBackStack()}
+        onClick1 = {
+            if (onMain != null) {
+                onMain()
+            } else {
+                navController.popBackStack("home", inclusive = false)
+            }
+        },
+        onClick2 = { navController.popBackStack() }
         )
 }
 
@@ -62,99 +61,63 @@ fun ErrorScreen(
     onClick1: () -> Unit,
     onClick2: () -> Unit,
 ){
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
             .padding(WindowInsets.statusBars.asPaddingValues())
-    ){
-        Column (
+            .navigationBarsPadding()
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White),
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Image(
                 painter = painterResource(id = img),
-                contentDescription = "404 img",
+                contentDescription = "404 img"
             )
+
             Spacer(Modifier.height(30.dp))
+
             Text(
                 text = title,
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    textAlign = TextAlign.Center,
-                    color = Color(0xFF383838),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp
-                )
+                style = AppTypography.Heading1,
+                color = AppColor.text1
             )
+
             Spacer(Modifier.height(16.dp))
+
             Text(
                 text = content,
-                style = TextStyle(
-                    fontFamily = pretendard,
-                    textAlign = TextAlign.Center,
-                    color = Color(0xFF6D6D6D),
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
+                style = AppTypography.Body2_Normal,
+                color = AppColor.text4,
+                textAlign = TextAlign.Center
             )
+            Spacer(Modifier.height(30.dp))
         }
-        Row (
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
-        ){
-            ReportButton(
-                text = "돌아가기",
-                bgC = Color.Transparent,
-                borderColor = AppColor.bg2,
-                borderWidth = 1.dp,
-                textColor = AppColor.Main1,
-                modifier = Modifier
-                    .height(50.dp)
-                    .weight(1f),
-                onClick = onClick2,
-            )
-            Spacer(Modifier.width(8.dp))
-            ReportButton(
-                text = "메인으로",
-                bgC = Color(0xFF8100B3),
-                modifier = Modifier
-                    .height(50.dp)
-                    .weight(1f),
-                onClick = onClick1,
-            )
-        }
-    }
-}
 
-@Composable
-fun ReportButton(
-    text: String,
-    bgC: Color,
-    modifier: Modifier = Modifier,
-    textColor: Color = Color.White,
-    borderColor: Color = Color.Transparent,
-    borderWidth: Dp = 0.dp,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        border = BorderStroke(borderWidth, borderColor),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = bgC
-        )
-    ) {
-        Text(
-            text = text,
-            color = textColor
+        ReportButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    bottom = 20.dp
+                ),
+            onClick1 = onClick2,
+            text1 = "돌아가기",
+            modifier1 = Modifier
+                .height(50.dp)
+                .weight(1f),
+            onClick2 = onClick1,
+            text2 = "메인으로",
+            modifier2 = Modifier
+                .height(50.dp)
+                .weight(1f),
         )
     }
 }

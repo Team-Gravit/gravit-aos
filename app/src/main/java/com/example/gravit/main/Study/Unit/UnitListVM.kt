@@ -1,7 +1,6 @@
 package com.inuappcenter.gravit.main.Study.Unit
 
 import android.content.Context
-import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -10,9 +9,8 @@ import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.UnitPageResponse
 import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 
 class UnitListVM(
     private val api: ApiService,
@@ -30,7 +28,7 @@ class UnitListVM(
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
-    val state: StateFlow<UiState> = _state
+    val state = _state.asStateFlow()
 
     fun load() {
         viewModelScope.launch {
@@ -73,6 +71,6 @@ class UnitListVMFactory(
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return UnitListVM(api, appContext, chapterId) as T
+        return UnitListVM(api, appContext.applicationContext, chapterId) as T
     }
 }

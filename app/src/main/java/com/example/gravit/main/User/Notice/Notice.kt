@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.ui.theme.pretendard
@@ -37,8 +39,8 @@ import kotlin.math.min
 
 @Composable
 fun Notice(navController: NavController) {
-    val ctx = LocalContext.current
-    val vm: NoticeListVM = viewModel(factory = NoticeListVMFactory(ctx))
+    val context = LocalContext.current
+    val vm: NoticeListVM = viewModel(factory = NoticeListVMFactory(context))
     val ui by vm.state.collectAsState()
 
     val pageSize = 4
@@ -47,8 +49,40 @@ fun Notice(navController: NavController) {
     LaunchedEffect(Unit) {
         vm.loadAll()
     }
+    var navigated by remember { mutableStateOf(false) }
 
-    val totalItems = ui.items.size
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            NoticeListVM.UiState.SessionExpired -> {
+                navigated = true
+                vm.resetErrorState()
+
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+
+            NoticeListVM.UiState.NotFound -> {
+                navigated = true
+                vm.resetErrorState()
+
+                navController.navigate("error/404") {
+                    launchSingleTop = true
+                }
+            }
+
+            else -> {
+                navigated = false
+            }
+        }
+    }
+    val noticeItems = when (val state = ui) {
+        is NoticeListVM.UiState.Success -> state.items
+        else -> emptyList()
+    }
+    val totalItems = noticeItems.size
     val totalPages = max(1, (totalItems + pageSize - 1) / pageSize)
 
     LaunchedEffect(totalPages) {
@@ -60,132 +94,145 @@ fun Notice(navController: NavController) {
     val startIndex = currentPage * pageSize
     val endIndex = min(startIndex + pageSize, totalItems)
     val pageItems = if (startIndex < endIndex) {
-        ui.items.subList(startIndex, endIndex)
+        noticeItems.subList(startIndex, endIndex)
     } else {
         emptyList()
     }
     StatusBarStyle(darkIcons = true)
-    Column(
+    Box (
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-    ) {
-        TopBar(navController, title = "공지사항")
-
-        LazyColumn(
+    ){
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
+                .background(Color.White)
         ) {
-            items(pageItems) { item ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            navController.navigate("user/notice/detail/${item.id}")
-                        }
-                        .padding(horizontal = 20.dp, vertical = 30.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = item.title,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium,
-                            fontFamily = pretendard,
-                            color = Color.Black
-                        )
-                        Icon(
-                            painter = painterResource(id = R.drawable.arrow_right),
-                            contentDescription = "다음 페이지",
-                            tint = Color(0xFF222222),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = formatIsoToYmd(item.publishedAt),
-                        fontSize = 15.sp,
-                        fontFamily = pretendard,
-                        color = Color(0xFF000000).copy(alpha = 0.6f)
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = item.summary,
-                        fontSize = 13.sp,
-                        fontFamily = pretendard,
-                        color = Color.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            TopBar(navController, title = "공지사항")
 
-                Divider(color = Color.Black.copy(alpha = 0.06f))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(15.dp))
-
-        if (totalPages > 1) {
-            val pageWindowSize = 5
-
-            val windowStart = (currentPage / pageWindowSize) * pageWindowSize
-            val windowEnd = min(windowStart + pageWindowSize, totalPages)
-
-            Row(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.arrow_left),
-                    contentDescription = "이전 페이지",
-                    tint = if (currentPage > 0) Color.Black else Color.LightGray,
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .size(20.dp)
-                        .clickable(enabled = currentPage > 0) {
-                            if (currentPage > 0) {
-                                currentPage -= 1
-                            }
-                        }
-                )
-                for (page in windowStart until windowEnd) {
-                    val isSelected = page == currentPage
-                    Text(
-                        text = (page + 1).toString(),
-                        fontSize = 20.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        fontFamily = pretendard,
-                        color = if (isSelected) Color(0xFFBA00FF)
-                        else Color(0xFF333333).copy(alpha = 0.7f),
-                        textDecoration = if (isSelected) TextDecoration.Underline
-                        else TextDecoration.None,
+                items(pageItems) { item ->
+                    Column(
                         modifier = Modifier
-                            .padding(horizontal = 6.dp)
+                            .fillMaxWidth()
                             .clickable {
-                                currentPage = page
+                                navController.navigate("user/notice/detail/${item.id}")
+                            }
+                            .padding(horizontal = 20.dp, vertical = 30.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = item.title,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = pretendard,
+                                color = Color.Black
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.arrow_right),
+                                contentDescription = "다음 페이지",
+                                tint = Color(0xFF222222),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = formatIsoToYmd(item.publishedAt),
+                            fontSize = 15.sp,
+                            fontFamily = pretendard,
+                            color = Color(0xFF000000).copy(alpha = 0.6f)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = item.summary,
+                            fontSize = 13.sp,
+                            fontFamily = pretendard,
+                            color = Color.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Divider(color = Color.Black.copy(alpha = 0.06f))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            if (totalPages > 1) {
+                val pageWindowSize = 5
+
+                val windowStart = (currentPage / pageWindowSize) * pageWindowSize
+                val windowEnd = min(windowStart + pageWindowSize, totalPages)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.arrow_left),
+                        contentDescription = "이전 페이지",
+                        tint = if (currentPage > 0) Color.Black else Color.LightGray,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(20.dp)
+                            .clickable(enabled = currentPage > 0) {
+                                if (currentPage > 0) {
+                                    currentPage -= 1
+                                }
+                            }
+                    )
+                    for (page in windowStart until windowEnd) {
+                        val isSelected = page == currentPage
+                        Text(
+                            text = (page + 1).toString(),
+                            fontSize = 20.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontFamily = pretendard,
+                            color = if (isSelected) Color(0xFFBA00FF)
+                            else Color(0xFF333333).copy(alpha = 0.7f),
+                            textDecoration = if (isSelected) TextDecoration.Underline
+                            else TextDecoration.None,
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp)
+                                .clickable {
+                                    currentPage = page
+                                }
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.arrow_right),
+                        contentDescription = "다음 페이지",
+                        tint = if (currentPage >= totalPages - 1) Color.LightGray else Color.Black,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(20.dp)
+                            .clickable(enabled = currentPage < totalPages - 1) {
+                                if (currentPage < totalPages - 1) {
+                                    currentPage += 1
+                                }
                             }
                     )
                 }
-                Icon(
-                    painter = painterResource(id = R.drawable.arrow_right),
-                    contentDescription = "다음 페이지",
-                    tint = if (currentPage >= totalPages - 1) Color.LightGray else Color.Black,
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .size(20.dp)
-                        .clickable(enabled = currentPage < totalPages - 1) {
-                            if (currentPage < totalPages - 1) {
-                                currentPage += 1
-                            }
-                        }
-                )
             }
+        }
+        if (ui == NoticeListVM.UiState.Failed) {
+            LoadFailedDialog(
+                onRetryClick = {
+                    vm.loadAll()
+                }
+            )
         }
     }
 }

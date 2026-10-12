@@ -11,7 +11,6 @@ import com.inuappcenter.gravit.api.FollowingSliceResponse
 import com.inuappcenter.gravit.api.FriendCountResponse
 import com.inuappcenter.gravit.api.FriendFollowerItem
 import com.inuappcenter.gravit.api.FriendUFollowingItem
-import com.inuappcenter.gravit.api.RetrofitInstance.api
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,10 +61,13 @@ class FriendListVM(
 
     private suspend fun getAuth(): String? {
         val token = AuthPrefs.load(appContext)?.accessToken
+
         if (token.isNullOrBlank()) {
+            AuthPrefs.clear(appContext)
             _state.update { it.copy(sessionExpired = true) }
             return null
         }
+
         return "Bearer $token"
     }
 
@@ -96,7 +98,14 @@ class FriendListVM(
 
         result.fold(
             onSuccess = { res ->
+                if (res.code() == 401) {
+                    AuthPrefs.clear(appContext)
+                    _state.update { it.copy(sessionExpired = true) }
+                    return@fold
+                }
+
                 if (!res.isSuccessful) return@fold
+
                 val body = res.body() ?: return@fold
 
                 _state.update {
@@ -151,6 +160,7 @@ class FriendListVM(
         page: Int
     ) {
         if (res.code() == 401) {
+            AuthPrefs.clear(appContext)
             _state.update {
                 it.copy(
                     loading = false,
@@ -164,7 +174,7 @@ class FriendListVM(
             _state.update {
                 it.copy(
                     loading = false,
-                    error = "팔로워 목록을 불러오지 못했어요. (${res.code()})"
+                    error = "팔로워 목록을 불러오지 못했어요."
                 )
             }
             return
@@ -220,6 +230,7 @@ class FriendListVM(
         page: Int
     ) {
         if (res.code() == 401) {
+            AuthPrefs.clear(appContext)
             _state.update {
                 it.copy(
                     loading = false,
@@ -233,7 +244,7 @@ class FriendListVM(
             _state.update {
                 it.copy(
                     loading = false,
-                    error = "팔로잉 목록을 불러오지 못했어요. (${res.code()})"
+                    error = "팔로잉 목록을 불러오지 못했어요."
                 )
             }
             return
@@ -265,13 +276,14 @@ class FriendListVM(
                 result.fold(
                     onSuccess = { res ->
                         if (res.code() == 401) {
+                            AuthPrefs.clear(appContext)
                             _state.update { it.copy(sessionExpired = true) }
                             return@fold
                         }
 
                         if (!res.isSuccessful) {
                             _state.update {
-                                it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
+                                it.copy(error = "팔로우를 취소하지 못했어요.")
                             }
                             return@fold
                         }
@@ -308,13 +320,14 @@ class FriendListVM(
                 result.fold(
                     onSuccess = { res ->
                         if (res.code() == 401) {
+                            AuthPrefs.clear(appContext)
                             _state.update { it.copy(sessionExpired = true) }
                             return@fold
                         }
 
                         if (!res.isSuccessful) {
                             _state.update {
-                                it.copy(error = "팔로우를 취소하지 못했어요. (${res.code()})")
+                                it.copy(error = "팔로우를 취소하지 못했어요.")
                             }
                             return@fold
                         }
@@ -356,13 +369,14 @@ class FriendListVM(
             result.fold(
                 onSuccess = { res ->
                     if (res.code() == 401) {
+                        AuthPrefs.clear(appContext)
                         _state.update { it.copy(sessionExpired = true) }
                         return@fold
                     }
 
                     if (!res.isSuccessful) {
                         _state.update {
-                            it.copy(error = "팔로우하지 못했어요. (${res.code()})")
+                            it.copy(error = "팔로우하지 못했어요.")
                         }
                         return@fold
                     }
@@ -388,6 +402,11 @@ class FriendListVM(
             )
         } finally {
             _followingRequestIds.update { it - userId }
+        }
+    }
+    fun clearError() {
+        _state.update {
+            it.copy(error = null)
         }
     }
 }
