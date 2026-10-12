@@ -510,106 +510,113 @@ fun SeasonStart(
             dismissOnBackPress = false
         )
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .width(328.dp)
-                .height(597.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = Color.White
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Surface(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(328.dp)
+                    .height(597.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White
             ) {
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = "${popupDetail.currentSeason.nowSeason} 시작!",
-                    style = AppTypography.Title3,
-                    color = AppColor.Main1
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "직전 티어 기준으로 시작 위치가 정해져요!",
-                    style = AppTypography.Label2,
-                    color = AppColor.text4
-                )
-                Spacer(Modifier.height(50.dp))
-                Box(
-                    modifier = Modifier,
-                    contentAlignment = Alignment.Center
-                ){
-                    Image(
-                        painter = painterResource(id = R.drawable.sparkle),
-                        contentDescription = null,
-                        modifier = Modifier
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "${popupDetail.currentSeason.nowSeason} 시작!",
+                        style = AppTypography.Title3,
+                        color = AppColor.Main1
                     )
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.nextLeagueName)),
-                            contentDescription = "tier",
-                            modifier = Modifier.size(140.dp, 182.dp)
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "시작 티어",
-                            style = AppTypography.Label2,
-                            color = AppColor.text4
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row {
-                            Text(
-                                text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
-                                style = AppTypography.Label1,
-                                color = AppColor.text4
-                            )
-                            Text(
-                                text = "->${popupDetail.lastSeasonPopupDto?.nextLeagueName}",
-                                style = AppTypography.Heading1,
-                                color = AppColor.text1
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                Row(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "직전 티어 기준으로 시작 위치가 정해져요!",
+                        style = AppTypography.Label2,
+                        color = AppColor.text4
+                    )
+                    Spacer(Modifier.height(50.dp))
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .height(71.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(PrimitiveColor.Gray200),
+                        modifier = Modifier,
                         contentAlignment = Alignment.Center
                     ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.sparkle),
+                            contentDescription = null,
+                            modifier = Modifier
+                        )
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = popupDetail.lastSeasonPopupDto?.nextStartLp
-                                    ?.toString()
-                                    ?: "-",
-                                style = AppTypography.Headline2,
-                                color = AppColor.text2
+                            Image(
+                                painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.nextLeagueName)),
+                                contentDescription = "tier",
+                                modifier = Modifier.size(140.dp, 182.dp)
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(16.dp))
                             Text(
-                                text = "시작 LP",
-                                style = AppTypography.Caption1,
-                                color = AppColor.text3w
+                                text = "시작 티어",
+                                style = AppTypography.Label2,
+                                color = AppColor.text4
                             )
+                            Spacer(Modifier.height(8.dp))
+                            Row {
+                                Text(
+                                    text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
+                                    style = AppTypography.Label1,
+                                    color = AppColor.text4
+                                )
+                                Text(
+                                    text = "->${popupDetail.lastSeasonPopupDto?.nextLeagueName}",
+                                    style = AppTypography.Heading1,
+                                    color = AppColor.text1
+                                )
+                            }
                         }
                     }
+                    Spacer(Modifier.weight(1f))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .height(71.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PrimitiveColor.Gray200),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = popupDetail.lastSeasonPopupDto?.nextStartLp
+                                        ?.toString()
+                                        ?: "-",
+                                    style = AppTypography.Headline2,
+                                    color = AppColor.text2
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "시작 LP",
+                                    style = AppTypography.Caption1,
+                                    color = AppColor.text3w
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    BlockButton(
+                        text = "다음으로",
+                        state = ButtonState.Default,
+                        onClick = onConfirm,
+                        modifier = Modifier.height(47.dp)
+                    )
                 }
-                Spacer(Modifier.height(20.dp))
-                BlockButton(
-                    text = "다음으로",
-                    state = ButtonState.Default,
-                    onClick = onConfirm,
-                    modifier = Modifier.height(47.dp)
-                )
             }
         }
     }
