@@ -244,7 +244,7 @@ class FriendListVM(
             _state.update {
                 it.copy(
                     loading = false,
-                    error = "팔로잉 목록을 불러오지 못했어요.)"
+                    error = "팔로잉 목록을 불러오지 못했어요."
                 )
             }
             return
@@ -376,7 +376,7 @@ class FriendListVM(
 
                     if (!res.isSuccessful) {
                         _state.update {
-                            it.copy(error = "팔로우하지 못했어요. (${res.code()})")
+                            it.copy(error = "팔로우하지 못했어요.")
                         }
                         return@fold
                     }
