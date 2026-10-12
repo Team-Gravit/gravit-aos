@@ -34,13 +34,21 @@ import com.inuappcenter.gravit.R
 @Composable
 fun NotFoundScreen(
     navController: NavController,
+    onMain: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null
 ){
     ErrorScreen(
         img = R.drawable.img404,
         title = "페이지를 찾을 수 없어요.",
         content = "잘못된 주소이거나 삭제된 페이지입니다.\n주소를 확인하시거나 홈으로 이동해 주세요.",
-        onClick1 = { navController.popBackStack("home", inclusive = false) },
-        onClick2 = {navController.popBackStack()}
+        onClick1 = {
+            if (onMain != null) {
+                onMain()
+            } else {
+                navController.popBackStack("home", inclusive = false)
+            }
+        },
+        onClick2 = { navController.popBackStack() }
         )
 }
 

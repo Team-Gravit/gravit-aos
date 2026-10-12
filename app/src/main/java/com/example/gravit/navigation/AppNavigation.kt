@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.inuappcenter.gravit.error.NotFoundScreen
 import com.inuappcenter.gravit.fcm.FcmManager
 import com.inuappcenter.gravit.login.LoginScreen
 import com.inuappcenter.gravit.login.LoginViewModel
@@ -40,6 +41,16 @@ fun AppNavigation(
                 fcmManager.checkAndRegister()
             }
             MainScreen(rootnavController)
+        }
+        composable("error/404") {
+            NotFoundScreen(
+                navController = rootnavController,
+                onMain = {
+                    rootnavController.navigate("login choice") {
+                        popUpTo(0)
+                    }
+                }
+            )
         }
     }
 }

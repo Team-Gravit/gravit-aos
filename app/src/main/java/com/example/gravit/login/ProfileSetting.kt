@@ -85,12 +85,16 @@ fun ProfileSetting(navController: NavController) {
             }
 
             OnboardingViewModel.UiState.SessionExpired -> {
+                vm.resetErrorState()
+
                 navController.navigate("error/401") {
                     launchSingleTop = true
                 }
             }
 
             OnboardingViewModel.UiState.NotFound -> {
+                vm.resetErrorState()
+
                 navController.navigate("error/404") {
                     launchSingleTop = true
                 }
@@ -137,6 +141,7 @@ fun ProfileSetting(navController: NavController) {
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.Center
             ) {
+                Spacer(Modifier.height(16.dp))
                 ProfileSwitcher(
                     selectedId = profileNo,
                     onProfileSelected = { newId -> profileNo = newId }
