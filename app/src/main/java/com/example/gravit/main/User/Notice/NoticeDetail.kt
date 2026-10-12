@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.share.StatusBarStyle
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.ui.theme.pretendard
@@ -28,60 +29,107 @@ fun NoticeDetail(
     val vm: NoticeDetailVM = viewModel(factory = NoticeDetailVMFactory(ctx))
     val ui by vm.state.collectAsState()
 
-    LaunchedEffect(noticeId) { vm.load(noticeId) }
+    var navigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(noticeId) {
+        vm.load(noticeId)
+    }
+
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            NoticeDetailVM.UiState.SessionExpired -> {
+                navigated = true
+                vm.resetErrorState()
+
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+
+            NoticeDetailVM.UiState.NotFound -> {
+                navigated = true
+                vm.resetErrorState()
+
+                navController.navigate("error/404") {
+                    launchSingleTop = true
+                }
+            }
+
+            else -> {
+                navigated = false
+            }
+        }
+    }
+
     StatusBarStyle(darkIcons = true)
-    Column(
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        TopBar(navController, title = "공지사항")
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            TopBar(navController, title = "공지사항")
 
-        when {
-            ui.loading -> {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-            ui.item != null -> {
-                val item = ui.item!!
-                val scroll = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scroll)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = item.title,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = pretendard,
-                        color = Color.Black
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = formatIsoToYmd(item.publishedAt),
-                        fontSize = 13.sp,
-                        fontFamily = pretendard,
-                        color = Color(0xFF666666)
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = item.content,
-                        fontSize = 15.sp,
-                        fontFamily = pretendard,
-                        color = Color(0xFF222222),
-                        lineHeight = 22.sp
-                    )
+            when (val state = ui) {
+                NoticeDetailVM.UiState.Idle,
+                NoticeDetailVM.UiState.Loading -> { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
+                is NoticeDetailVM.UiState.Success -> {
+                    val item = state.item
+                    val scroll = rememberScrollState()
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scroll)
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = item.title,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = pretendard,
+                            color = Color.Black
+                        )
+
+                        Spacer(Modifier.height(6.dp))
+
+                        Text(
+                            text = formatIsoToYmd(item.publishedAt),
+                            fontSize = 13.sp,
+                            fontFamily = pretendard,
+                            color = Color(0xFF666666)
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Text(
+                            text = item.content,
+                            fontSize = 15.sp,
+                            fontFamily = pretendard,
+                            color = Color(0xFF222222),
+                            lineHeight = 22.sp
+                        )
+                    }
                 }
+
+                NoticeDetailVM.UiState.Failed -> Unit
+
+                NoticeDetailVM.UiState.SessionExpired,
+                NoticeDetailVM.UiState.NotFound -> Unit
             }
-            else -> {
-                Text(
-                    text = ui.error ?: "내용을 불러오지 못했습니다.",
-                    modifier = Modifier.padding(16.dp),
-                    fontFamily = pretendard,
-                    color = Color.Red
-                )
-            }
+        }
+
+        if (ui == NoticeDetailVM.UiState.Failed) {
+            LoadFailedDialog(
+                onRetryClick = {
+                    vm.load(noticeId)
+                }
+            )
         }
     }
 }

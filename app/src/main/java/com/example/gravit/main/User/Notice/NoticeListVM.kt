@@ -80,6 +80,14 @@ class NoticeListVM(
                 }
         }
     }
+    fun resetErrorState() {
+        if (
+            _state.value == UiState.SessionExpired ||
+            _state.value == UiState.NotFound
+        ) {
+            _state.value = UiState.Idle
+        }
+    }
 }
 
 @Suppress("UNCHECKED_CAST")

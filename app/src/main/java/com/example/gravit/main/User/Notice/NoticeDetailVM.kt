@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.inuappcenter.gravit.api.AuthPrefs
 import com.inuappcenter.gravit.api.NoticeDetailResponse
 import com.inuappcenter.gravit.api.RetrofitInstance.api
+import com.inuappcenter.gravit.error.handleApiFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -15,40 +16,58 @@ class NoticeDetailVM(
     private val appContext: Context
 ) : ViewModel() {
 
-    data class UiState(
-        val loading: Boolean = false,
-        val item: NoticeDetailResponse? = null,
-        val error: String? = null
-    )
+    sealed interface UiState {
+        data object Idle : UiState
+        data object Loading : UiState
+        data class Success(val item: NoticeDetailResponse) : UiState
+        data object Failed : UiState
+        data object SessionExpired : UiState
+        data object NotFound : UiState
+    }
 
-    private val _state = MutableStateFlow(UiState())
+    private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state = _state.asStateFlow()
 
     fun load(id: Long) {
-        _state.value = UiState(loading = true)
+        if (_state.value == UiState.Loading) return
+
+        _state.value = UiState.Loading
 
         viewModelScope.launch {
             val session = AuthPrefs.load(appContext)
 
             if (session == null) {
                 AuthPrefs.clear(appContext)
-                _state.value = UiState(
-                    error = "오류가 발생했습니다."
-                )
+                _state.value = UiState.SessionExpired
                 return@launch
             }
 
             runCatching {
-                api.getNoticeDetail(auth = "Bearer ${session.accessToken}", noticeId = id)
-            }.onSuccess { detail ->
-                _state.value = UiState(
-                    item = detail
+                api.getNoticeDetail(
+                    auth = "Bearer ${session.accessToken}",
+                    noticeId = id
                 )
-            }.onFailure {
-                _state.value = UiState(
-                    error = "오류가 발생했습니다."
+            }.onSuccess { detail ->
+                _state.value = UiState.Success(detail)
+            }.onFailure { e ->
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { _state.value = it },
+                    unauthorizedState = UiState.SessionExpired,
+                    notFoundState = UiState.NotFound,
+                    failedState = UiState.Failed
                 )
             }
+        }
+    }
+
+    fun resetErrorState() {
+        if (
+            _state.value == UiState.SessionExpired ||
+            _state.value == UiState.NotFound
+        ) {
+            _state.value = UiState.Idle
         }
     }
 }
