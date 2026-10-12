@@ -110,7 +110,17 @@ fun LessonComplete(
         }
     }
 
-    LaunchedEffect(Unit) { submitLessonResult() }
+    LaunchedEffect(Unit) {
+        if (problemList == null) {
+            navController.popBackStack(
+                "home",
+                inclusive = false
+            )
+            return@LaunchedEffect
+        }
+
+        submitLessonResult()
+    }
 
     var navigated by remember { mutableStateOf(false) }
 
@@ -148,7 +158,7 @@ fun LessonComplete(
     val unitSummary = successState?.data?.unitSummaryResponse
     val isLeaguePromoted = successState?.isLeaguePromoted ?: false
 
-    var popupType by rememberSaveable { mutableStateOf<String?>("level") }
+    var popupType by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(submit) {
         val success =
