@@ -155,7 +155,7 @@ fun HomeUI(
     val recommendedPlanetRes = recommendedInfo
         ?.chapterId
         ?.let { resolvePlanetRes(it) }
-        ?: R.drawable.algorithm_chapter
+        ?: R.drawable.empty_recommand_bg
 
     val weeklyInfo = home.weeklyRecordResponse
     val missionInfo = home.missionResponse
