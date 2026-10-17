@@ -79,11 +79,12 @@ fun Learning(
     navController: NavController,
     initialTab: LearningTab = LearningTab.Chapter
 ){
+
     val context = LocalContext.current
     val vm: ChapterViewModel = viewModel(factory = ChapterVMFactory(RetrofitInstance.api, context))
     val ui by vm.state.collectAsState()
 
-    var selectedTab by remember { mutableStateOf(LearningTab.Chapter) }
+    var selectedTab by remember(initialTab) { mutableStateOf(initialTab) }
     var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
