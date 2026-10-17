@@ -1,5 +1,7 @@
 package com.inuappcenter.gravit.main.Study.Chapter
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
@@ -62,6 +64,7 @@ import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.ChapterPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Ai.Home.AiHomePage
 import com.inuappcenter.gravit.main.Home.RoundedGauge
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.share.TabBar
@@ -70,9 +73,11 @@ import com.inuappcenter.gravit.ui.theme.pretendard
 
 enum class LearningTab { Chapter, AI }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Learning(
     navController: NavController,
+    initialTab: LearningTab = LearningTab.Chapter
 ){
     val context = LocalContext.current
     val vm: ChapterViewModel = viewModel(factory = ChapterVMFactory(RetrofitInstance.api, context))
@@ -118,6 +123,7 @@ fun Learning(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun LearningUI(
     navController: NavController,
@@ -187,6 +193,7 @@ private fun LearningUI(
                 }
 
                 LearningTab.AI -> {
+                    AiHomePage(navController)
                 }
             }
         }
