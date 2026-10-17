@@ -567,7 +567,7 @@ data class InterviewStack(
 //AI 면접 문항별 상세 조회
 data class InterviewSessionAnswersResponse(
     val sessionId: Long,
-    val startedA: String,
+    val startedAt: String,
     val answers: List<InterviewSessionAnswer>
 )
 data class InterviewSessionAnswer(
