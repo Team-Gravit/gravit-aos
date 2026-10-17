@@ -40,11 +40,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.navigation
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Ai.Home.AiHomePage
+import com.inuappcenter.gravit.main.Ai.Home.FeedBackReport
+import com.inuappcenter.gravit.main.Ai.Home.RecentAllSessions
+import com.inuappcenter.gravit.main.Ai.Interview.AiAnswerCheckPage
+import com.inuappcenter.gravit.main.Ai.Interview.AiInterviewPage
+import com.inuappcenter.gravit.main.Ai.Interview.AiInterviewVM
+import com.inuappcenter.gravit.main.Ai.Interview.AiInterviewVMFactory
+import com.inuappcenter.gravit.main.Ai.Selected.AiSelectedPage
+import com.inuappcenter.gravit.main.Ai.Selected.AnswerMode
 import com.inuappcenter.gravit.main.Study.Chapter.Learning
+import com.inuappcenter.gravit.main.Study.Chapter.LearningTab
 import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
@@ -57,6 +72,7 @@ enum class FollowTab { Followers, Following }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(rootNavController: NavController) {
+    val context = LocalContext.current
     val innerNavController = rememberNavController()
     val backStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route.orEmpty()
@@ -71,7 +87,8 @@ fun MainScreen(rootNavController: NavController) {
                         currentRoute.startsWith("user/notification") ||
                         currentRoute.startsWith("user/setting") ||
                         currentRoute.startsWith("user/notice") ||
-                        currentRoute.startsWith("cs-note")
+                        currentRoute.startsWith("cs-note") ||
+                        currentRoute.startsWith("ai")
 
     val goToLoginChoice: () -> Unit = {
         rootNavController.navigate("login choice") {
@@ -107,8 +124,30 @@ fun MainScreen(rootNavController: NavController) {
                     }
                 }
                 //chapter
-                composable("chapter") {
-                    BottomBarScreen { Learning(innerNavController) } }
+                composable(
+                    route = "chapter?tab={tab}",
+                    arguments = listOf(
+                        navArgument("tab") {
+                            type = NavType.StringType
+                            defaultValue = "chapter"
+                        }
+                    )
+                ) { backStackEntry ->
+
+                    val initialTab = when (
+                        backStackEntry.arguments?.getString("tab")
+                    ) {
+                        "ai" -> LearningTab.AI
+                        else -> LearningTab.Chapter
+                    }
+
+                    BottomBarScreen {
+                        Learning(
+                            navController = innerNavController,
+                            initialTab = initialTab
+                        )
+                    }
+                }
 
                 composable(
                     route = "unit/{chapterId}",
@@ -288,10 +327,103 @@ fun MainScreen(rootNavController: NavController) {
                         )
                     }
                 }
-
-
                 composable("error/401") { UnauthorizedScreen(navController = innerNavController, onSessionExpired = goToLoginChoice) }
                 composable("error/404") { NotFoundScreen(navController = innerNavController) }
+
+                //ai
+                composable("ai/home") { AiHomePage(navController = innerNavController)}
+                composable("ai/home/recentAllSessions") { RecentAllSessions(navController = innerNavController) }
+                composable(
+                    route = "ai/feedback/{sessionId}",
+                    arguments = listOf(navArgument("sessionId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val sessionId = backStackEntry.arguments!!.getLong("sessionId")
+                    FeedBackReport(
+                        navController = innerNavController,
+                        sessionId = sessionId
+                    )
+                }
+                navigation(
+                    startDestination = "ai/selected",
+                    route = "ai/interview-flow"
+                ) {
+                    composable("ai/selected") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) {
+                            innerNavController.getBackStackEntry("ai/interview-flow")
+                        }
+
+                        val interviewVm: AiInterviewVM = viewModel(
+                            parentEntry,
+                            factory = AiInterviewVMFactory(
+                                api = RetrofitInstance.api,
+                                context = context
+                            )
+                        )
+
+                        AiSelectedPage(
+                            navController = innerNavController,
+                            interviewVm = interviewVm
+                        )
+                    }
+
+                    composable("ai/interview/{answerMode}") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) {
+                            innerNavController.getBackStackEntry("ai/interview-flow")
+                        }
+
+                        val interviewVm: AiInterviewVM = viewModel(
+                            parentEntry,
+                            factory = AiInterviewVMFactory(
+                                api = RetrofitInstance.api,
+                                context = context
+                            )
+                        )
+
+                        val answerMode = backStackEntry.arguments
+                            ?.getString("answerMode")
+                            ?.let {
+                                runCatching {
+                                    AnswerMode.valueOf(it)
+                                }.getOrNull()
+                            }
+                            ?: AnswerMode.Voice
+
+                        AiInterviewPage(
+                            navController = innerNavController,
+                            mode = answerMode,
+                            vm = interviewVm
+                        )
+                    }
+                    composable("ai/answer-check/{answerMode}") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) {
+                            innerNavController.getBackStackEntry("ai/interview-flow")
+                        }
+
+                        val interviewVm: AiInterviewVM = viewModel(
+                            parentEntry,
+                            factory = AiInterviewVMFactory(
+                                api = RetrofitInstance.api,
+                                context = context
+                            )
+                        )
+
+                        val answerMode = backStackEntry.arguments
+                            ?.getString("answerMode")
+                            ?.let {
+                                runCatching {
+                                    AnswerMode.valueOf(it)
+                                }.getOrNull()
+                            }
+                            ?: AnswerMode.Voice
+
+                        AiAnswerCheckPage(
+                            navController = innerNavController,
+                            mode = answerMode,
+                            vm = interviewVm
+                        )
+                    }
+                }
+
             }
         }
 

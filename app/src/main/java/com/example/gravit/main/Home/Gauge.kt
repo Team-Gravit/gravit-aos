@@ -3,15 +3,17 @@ package com.inuappcenter.gravit.main.Home
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -100,6 +102,12 @@ fun RoundedGauge(
     height: Dp,
     modifier: Modifier = Modifier,
     color: Color = Color.White,
+    gaugeBrush: Brush = Brush.horizontalGradient(
+        colorStops = arrayOf(
+            0f to Color(0xFF8100B3),
+            1f to Color(0xFFDD00FF)
+        )
+    )
 ) {
     val ratio = (rate.coerceIn(0.0, 100.0) / 100.0).toFloat()
 
@@ -108,22 +116,34 @@ fun RoundedGauge(
             .height(height)
             .clip(RoundedCornerShape(50))
             .background(color)
-    ) {
-        if (ratio > 0f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(ratio)
-                    .clip(RoundedCornerShape(50))
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF8100B3),
-                                Color(0xFFDD00FF)
+            .drawWithCache {
+                onDrawWithContent {
+                    drawContent()
+
+                    if (ratio > 0f) {
+                        val filledWidth = size.width * ratio
+
+                        clipPath(
+                            path = Path().apply {
+                                addRoundRect(
+                                    RoundRect(
+                                        left = 0f,
+                                        top = 0f,
+                                        right = filledWidth,
+                                        bottom = size.height,
+                                        radiusX = size.height / 2f,
+                                        radiusY = size.height / 2f
+                                    )
+                                )
+                            }
+                        ) {
+                            drawRect(
+                                brush = gaugeBrush,
+                                size = size
                             )
-                        )
-                    )
-            )
-        }
-    }
+                        }
+                    }
+                }
+            }
+    )
 }

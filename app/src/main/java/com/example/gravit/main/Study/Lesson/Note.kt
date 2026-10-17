@@ -88,45 +88,58 @@ fun parseMarkdownBlocks(markdown: String): List<MarkdownBlock> {
     return blocks
 }
 @Composable
-fun MarkdownText(content: String, modifier: Modifier = Modifier) {
+fun MarkdownText(
+    content: String,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
-    val httpLogger = okhttp3.logging.HttpLoggingInterceptor().apply {
-        level = okhttp3.logging.HttpLoggingInterceptor.Level.BODY
+
+    val markwon = remember(context) {
+        val httpLogger = okhttp3.logging.HttpLoggingInterceptor().apply {
+            level = okhttp3.logging.HttpLoggingInterceptor.Level.BODY
+        }
+
+        val ok = okhttp3.OkHttpClient.Builder()
+            .addInterceptor(httpLogger)
+            .addInterceptor { chain ->
+                val req = chain.request().newBuilder()
+                    .header("Accept", "image/png,image/jpeg,*/*")
+                    .build()
+                chain.proceed(req)
+            }
+            .build()
+
+        val imageLoader = ImageLoader.Builder(context)
+            .okHttpClient(ok)
+            .logger(coil.util.DebugLogger())
+            .allowHardware(false)
+            .components {
+                if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    add(coil.decode.ImageDecoderDecoder.Factory())
+                } else {
+                    add(coil.decode.GifDecoder.Factory())
+                }
+
+                add(coil.decode.SvgDecoder.Factory())
+            }
+            .build()
+
+        Markwon.builder(context)
+            .usePlugin(HtmlPlugin.create())
+            .usePlugin(
+                ImagesPlugin.create { p ->
+                    p.addSchemeHandler(NetworkSchemeHandler.create())
+                }
+            )
+            .usePlugin(
+                CoilImagesPlugin.create(
+                    context,
+                    imageLoader
+                )
+            )
+            .usePlugin(TablePlugin.create(context))
+            .build()
     }
-    val ok = okhttp3.OkHttpClient.Builder()
-        .addInterceptor(httpLogger)
-        .addInterceptor { chain ->
-            val req = chain.request().newBuilder()
-                .header("Accept", "image/png,image/jpeg,*/*")
-                .build()
-            chain.proceed(req)
-        }
-        .build()
-
-    val imageLoader = ImageLoader.Builder(context)
-        .okHttpClient(ok)
-        .logger(coil.util.DebugLogger())
-        .allowHardware(false)
-        .components {
-            if (android.os.Build.VERSION.SDK_INT >= 28) {
-                add(coil.decode.ImageDecoderDecoder.Factory())
-            } else {
-                add(coil.decode.GifDecoder.Factory())
-            }
-            add(coil.decode.SvgDecoder.Factory())
-        }
-        .build()
-
-    val markwon = Markwon.builder(context)
-        .usePlugin(HtmlPlugin.create())
-        .usePlugin(
-            ImagesPlugin.create { p ->
-                p.addSchemeHandler(NetworkSchemeHandler.create())
-            }
-        )
-        .usePlugin(CoilImagesPlugin.create(context, imageLoader))
-        .usePlugin(TablePlugin.create(context))
-        .build()
 
     AndroidView(
         modifier = modifier,
@@ -143,12 +156,14 @@ fun MarkdownText(content: String, modifier: Modifier = Modifier) {
         },
         update = { tv ->
             tv.setTextColor(android.graphics.Color.BLACK)
+
             tv.post {
                 markwon.setMarkdown(tv, content)
             }
         }
     )
-}@Composable
+}
+@Composable
 fun MarkdownContent(content: String) {
     val blocks = remember(content) {
         parseMarkdownBlocks(content)

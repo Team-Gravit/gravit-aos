@@ -3,6 +3,7 @@ package com.inuappcenter.gravit.api
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -12,8 +13,11 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.Response
+import retrofit2.Retrofit
 import retrofit2.http.DELETE
 import retrofit2.http.HTTP
+import retrofit2.http.PUT
+import retrofit2.http.Url
 
 //로그인
 data class IdTokenRequest(val idToken: String)
@@ -525,6 +529,193 @@ data class VersionCheck(
     val version: String
 )
 
+//AI home
+data class InterviewDashboardResponse(
+    val completedSessionCount: Long,
+    val recentAverageScore: Int,
+    val weakestTopics: List<WeakestTopic>,
+    val recentSessions: List<RecentSession>,
+    val scoreTrends: List<ScoreTrend>
+)
+data class WeakestTopic(
+    val topic: InterviewTopic,
+    val accuracyRate: Double
+)
+data class RecentSession(
+    val sessionId: Long,
+    val sequence: Long,
+    val mode: String,
+    val stack: InterviewStack?,
+    val topics: List<InterviewTopic>,
+    val startedAt: String,
+    val score: Int,
+    val maxScore: Int
+)
+data class ScoreTrend(
+    val sequence: Long,
+    val score: Int
+)
+data class InterviewTopic(
+    val topic: String,
+    val displayName: String
+)
+data class InterviewStack(
+    val stack: String,
+    val displayName: String
+)
+
+//AI 면접 문항별 상세 조회
+data class InterviewSessionAnswersResponse(
+    val sessionId: Long,
+    val startedAt: String,
+    val answers: List<InterviewSessionAnswer>
+)
+data class InterviewSessionAnswer(
+    val displayOrder: Int,
+    val topic: InterviewTopic,
+    val questionContent: String,
+    val answerContent: String?,
+    val audioKey: String?,
+    val modelAnswer: String,
+    val concepts: List<AnswerConcept>,
+    val improvementSuggestion: String?,
+    val accuracyScore: Int,
+    val accuracyMaxScore: Int,
+    val structureScore: Int,
+    val structureMaxScore: Int,
+    val clarityScore: Int,
+    val clarityMaxScore: Int
+)
+data class AnswerConcept(
+    val name: String,
+    val type: String
+)
+
+//AI 면접 세션 종합 조회
+data class InterviewSessionSummaryResponse(
+    val sessionId: Long,
+    val sequence: Long,
+    val startedAt: String,
+    val score: Int,
+    val maxScore: Int,
+    val accuracyScore: Int,
+    val accuracyMaxScore: Int,
+    val deliveryScore: Int,
+    val deliveryMaxScore: Int,
+    val averageAccuracyScore: Int,
+    val averageDeliveryScore: Int,
+    val recentSessions: List<InterviewSummaryRecentSession>,
+    val answers: List<InterviewSummaryAnswer>,
+    val weakTopics: List<InterviewWeakTopic>
+)
+data class InterviewSummaryRecentSession(
+    val sessionId: Long,
+    val sequence: Long,
+    val accuracyScore: Int,
+    val deliveryScore: Int
+)
+data class InterviewSummaryAnswer(
+    val displayOrder: Int,
+    val topic: InterviewTopic,
+    val accuracyScore: Int,
+    val deliveryScore: Int
+)
+
+//AI 면접 응시 이력 조회
+data class InterviewSessionHistorySliceResponse(
+    val hasNextPage: Boolean,
+    val totalPages: Int,
+    val contents: List<InterviewSessionHistory>
+)
+data class InterviewSessionHistory(
+    val sessionId: Long,
+    val sequence: Long,
+    val mode: String,
+    val stack: InterviewStack?,
+    val topics: List<InterviewTopic>,
+    val startedAt: String,
+    val score: Int,
+    val maxScore: Int
+)
+
+//AI 면접 세션 생성
+data class InterviewSessionCreateRequest(
+    val inputType: String,
+    val mode: String,
+    val difficulty: String,
+    val stack: String?,
+    val topics: List<String>
+)
+data class InterviewWeakTopic(
+    val unitId: Long,
+    val topic: InterviewTopic
+)
+data class InterviewSessionCreateResponse(
+    val sessionId: Long
+)
+
+//AI 면접 음성 업로드 URL 발급
+data class InterviewAudioUploadRequest(
+    val displayOrder: Int,
+    val contentType: String
+)
+data class InterviewAudioUploadResponse(
+    val audioKey: String,
+    val uploadUrl: String,
+    val expiresAt: String
+)
+
+//AI 면접 답안 일괄 제출
+data class InterviewSubmitRequest(
+    val answers: List<InterviewAnswerRequest>
+)
+data class InterviewAnswerRequest(
+    val displayOrder: Int,
+    val content: String?,
+    val audioKey: String?
+)
+
+//AI 면접 세선 중단 & 면접 세선 상태 조회
+data class InterviewSessionStatusResponse(
+    val sessionId: Long,
+    val status: String
+)
+
+//AI 면접 세션 문제 목록 조회
+data class InterviewSessionQuestionsResponse(
+    val sessionId: Long,
+    val questions: List<InterviewQuestion>
+)
+data class InterviewQuestion(
+    val displayOrder: Int,
+    val content: String,
+    val audioUrl: String?
+)
+
+//AI 직군 그룹 목록 조회
+data class InterviewStackGroupResponse(
+    val stackGroup: String,
+    val displayName: String
+)
+
+//AI 면접 음성 변환 조회
+data class InterviewTranscriptionsResponse(
+    val sessionId: Long,
+    val transcriptions: List<InterviewTranscription>
+)
+data class InterviewTranscription(
+    val displayOrder: Int,
+    val status: String?,
+    val transcript: String?,
+    val audioUrl: String?
+)
+
+//AI 면접 음성 변환 요청
+data class InterviewTranscriptionRequest(
+    val displayOrder: Int,
+    val audioKey: String
+)
+
 interface ApiService {
     //OAuth2.0 Android API
     @POST("api/v1/oauth/android") //OAuth 회원가입/로그인 처리
@@ -844,5 +1035,133 @@ interface ApiService {
     @GET("api/v1/version")
     suspend fun getVersion(
     ) : VersionCheck
+
+    // AI 면접 응시 이력 조회
+    @GET("api/v1/interview-sessions")
+    suspend fun getInterviewSessions(
+        @Header("Authorization") auth: String,
+        @Query("page") page: Int = 0,
+        @Query("sort") sort: String = "LATEST"
+    ): InterviewSessionHistorySliceResponse
+
+    // AI 면접 세션 종합 조회
+    @GET("api/v1/interview-sessions/{sessionId}/summary")
+    suspend fun getInterviewSessionSummary(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long
+    ): InterviewSessionSummaryResponse
+
+    // AI 면접 문항별 상세 조회
+    @GET("api/v1/interview-sessions/{sessionId}/answers")
+    suspend fun getInterviewSessionAnswers(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long
+    ): InterviewSessionAnswersResponse
+
+    // AI 면접 약점 주제 전체 조회
+    @GET("api/v1/interview-sessions/weak-topics")
+    suspend fun getInterviewWeakTopics(
+        @Header("Authorization") auth: String
+    ): List<WeakestTopic>
+
+    // AI 면접 메인 화면 조회
+    @GET("api/v1/interview-sessions/dashboard")
+    suspend fun getInterviewDashboard(
+        @Header("Authorization") auth: String
+    ): InterviewDashboardResponse
+
+    // AI 면접 세션 생성
+    @POST("api/v1/interview-sessions")
+    suspend fun createInterviewSession(
+        @Header("Authorization") auth: String,
+        @Body request: InterviewSessionCreateRequest
+    ): InterviewSessionCreateResponse
+
+    // AI 면접 음성 업로드 URL 발급
+    @POST("api/v1/interview-sessions/{sessionId}/audio-uploads")
+    suspend fun createInterviewAudioUpload(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long,
+        @Body request: InterviewAudioUploadRequest
+    ): InterviewAudioUploadResponse
+
+    // AI 면접 답안 일괄 제출
+    @PATCH("api/v1/interview-sessions/{sessionId}/submit")
+    suspend fun submitInterviewAnswers(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long,
+        @Body request: InterviewSubmitRequest
+    ): InterviewSessionStatusResponse
+
+    // AI 면접 세션 중단
+    @PATCH("api/v1/interview-sessions/{sessionId}/abandon")
+    suspend fun abandonInterviewSession(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long
+    ): InterviewSessionStatusResponse
+
+    // AI 면접 세션 상태 조회
+    @GET("api/v1/interview-sessions/{sessionId}/status")
+    suspend fun getInterviewSessionStatus(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long
+    ): InterviewSessionStatusResponse
+
+    // AI 면접 세션 문제 목록 조회
+    @GET("api/v1/interview-sessions/{sessionId}/questions")
+    suspend fun getInterviewSessionQuestions(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long
+    ): InterviewSessionQuestionsResponse
+
+    // AI 직군 그룹 목록 조회
+    @GET("api/v1/interview-stack-groups")
+    suspend fun getInterviewStackGroups(
+        @Header("Authorization") auth: String
+    ): List<InterviewStackGroupResponse>
+
+    // AI 직군 그룹별 스택 목록 조회
+    @GET("api/v1/interview-stack-groups/{stackGroup}/stacks")
+    suspend fun getInterviewStacks(
+        @Header("Authorization") auth: String,
+        @Path("stackGroup") stackGroup: String
+    ): List<InterviewStack>
+
+    // AI 공통 CS 주제 목록 조회
+    @GET("api/v1/interview-topics")
+    suspend fun getInterviewTopics(
+        @Header("Authorization") auth: String
+    ): List<InterviewTopic>
+
+    //AI 면접 음성 변환 요청
+    @POST("api/v1/interview-sessions/{sessionId}/transcriptions")
+    suspend fun requestTranscription(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long,
+        @Body request: InterviewTranscriptionRequest
+    ): Response<Unit>
+
+    //AI 면접 음성 변환 조회
+    @GET("api/v1/interview-sessions/{sessionId}/transcriptions")
+    suspend fun getTranscriptions(
+        @Header("Authorization") auth: String,
+        @Path("sessionId") sessionId: Long
+    ): InterviewTranscriptionsResponse
 }
 
+interface InterviewAudioUploadApi {
+    @PUT
+    suspend fun uploadAudio(
+        @Url uploadUrl: String,
+        @Header("Content-Type") contentType: String,
+        @Body body: RequestBody
+    ): Response<Unit>
+}
+object InterviewAudioUploader {
+    private val retrofit = Retrofit.Builder()
+        .baseUrl("https://example.com/")
+        .build()
+
+    val api: InterviewAudioUploadApi =
+        retrofit.create(InterviewAudioUploadApi::class.java)
+}
