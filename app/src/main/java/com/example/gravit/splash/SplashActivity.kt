@@ -107,36 +107,32 @@ fun SplashScreen(
                 return
             }
 
-            val session = AuthPrefs.load(context)
+            if (
+                BuildConfig.QA_ACCESS_TOKEN.isNotBlank() &&
+                BuildConfig.QA_REFRESH_TOKEN.isNotBlank()
+            ) {
+                AuthPrefs.save(
+                    context = context,
+                    accessToken = BuildConfig.QA_ACCESS_TOKEN,
+                    refreshToken = BuildConfig.QA_REFRESH_TOKEN,
+                    isOnboarded = true
+                )
 
-            when {
-                session == null -> {
-                    AuthPrefs.clear(context)
-
-                    navController.navigate("login choice") {
-                        popUpTo(0)
-                        launchSingleTop = true
-                        restoreState = false
-                    }
+                navController.navigate("main") {
+                    popUpTo(0)
+                    launchSingleTop = true
+                    restoreState = false
                 }
 
-                session.isOnboarded -> {
-                    navController.navigate("main") {
-                        popUpTo(0)
-                        launchSingleTop = true
-                        restoreState = false
-                    }
-                }
+                return
+            }
 
-                else -> {
-                    AuthPrefs.clear(context)
+            AuthPrefs.clear(context)
 
-                    navController.navigate("login choice") {
-                        popUpTo(0)
-                        launchSingleTop = true
-                        restoreState = false
-                    }
-                }
+            navController.navigate("login choice") {
+                popUpTo(0)
+                launchSingleTop = true
+                restoreState = false
             }
         } catch (e: Exception) {
             Log.e(

@@ -15,6 +15,14 @@ val prodApiBaseUrl = properties.getProperty("PROD_API_BASE_URL")
     ?.trim('"')
     ?: ""
 
+val qaAccessToken = properties.getProperty("QA_ACCESS_TOKEN")
+    ?.trim('"')
+    ?: ""
+
+val qaRefreshToken = properties.getProperty("QA_REFRESH_TOKEN")
+    ?.trim('"')
+    ?: ""
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -35,7 +43,8 @@ android {
         versionName = "1.0.0"
 
         val kakaoKey = properties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
-        manifestPlaceholders["auth0Domain"] = "dev-fl5wpn5srn5xay26.us.auth0.com"
+        val auth0Domain = properties.getProperty("AUTH0_DOMAIN") ?: ""
+        manifestPlaceholders["auth0Domain"] = auth0Domain
         manifestPlaceholders["auth0Scheme"] = "gravit"
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
 
@@ -53,6 +62,18 @@ android {
 
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${properties.getProperty("GOOGLE_CLIENT_ID") ?: ""}\"")
         buildConfigField("String", "GOOGLE_CLIENT_SECRET", "\"${properties.getProperty("GOOGLE_CLIENT_SECRET") ?: ""}\"")
+
+        buildConfigField(
+            "String",
+            "QA_ACCESS_TOKEN",
+            "\"$qaAccessToken\""
+        )
+
+        buildConfigField(
+            "String",
+            "QA_REFRESH_TOKEN",
+            "\"$qaRefreshToken\""
+        )
     }
 
     buildTypes {
@@ -71,7 +92,11 @@ android {
                 "\"$prodApiBaseUrl\""
             )
 
+            buildConfigField("String", "QA_ACCESS_TOKEN", "\"\"")
+            buildConfigField("String", "QA_REFRESH_TOKEN", "\"\"")
+
             isMinifyEnabled = false
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
