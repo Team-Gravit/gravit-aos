@@ -210,15 +210,22 @@ fun AiInterviewPage(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     fun startRecording() {
         val outputFile = File(
             context.cacheDir,
             "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
         )
 
-        val recorder =
-            MediaRecorder(context).apply {
+        try {
+            val recorder =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    MediaRecorder(context)
+                } else {
+                    @Suppress("DEPRECATION")
+                    MediaRecorder()
+                }
+
+            recorder.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -227,11 +234,20 @@ fun AiInterviewPage(
                 start()
             }
 
-        recordingPaused = false
-        mediaRecorder = recorder
-        recordingSeconds = 0
+            mediaRecorder = recorder
+            voiceState = VoiceInterviewState.Recording
+            recordingPaused = false
+            recordingSeconds = 0
+        } catch (e: Exception) {
+            mediaRecorder?.release()
+            mediaRecorder = null
 
-        voiceState = VoiceInterviewState.Recording
+            if (outputFile.exists()) {
+                outputFile.delete()
+            }
+
+            voiceState = VoiceInterviewState.Ready
+        }
     }
 
     fun pauseInterview() {
@@ -275,12 +291,12 @@ fun AiInterviewPage(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
 
-            if (granted && pendingRecordStart
-            ) {
+            if (granted && pendingRecordStart) {
                 pendingRecordStart = false
                 startRecording()
             } else {
                 pendingRecordStart = false
+                vm.abandonInterview()
             }
         }
 
@@ -288,17 +304,16 @@ fun AiInterviewPage(
         if (
             questionPlaybackEnded &&
             autoAnswer &&
-            voiceState ==
-            VoiceInterviewState.PlayingQuestion
+            voiceState == VoiceInterviewState.PlayingQuestion
         ) {
             delay(3000)
 
             if (
                 autoAnswer &&
-                voiceState ==
-                VoiceInterviewState.PlayingQuestion
+                voiceState == VoiceInterviewState.PlayingQuestion
             ) {
-                if (ContextCompat.checkSelfPermission(
+                if (
+                    ContextCompat.checkSelfPermission(
                         context,
                         Manifest.permission.RECORD_AUDIO
                     ) == PackageManager.PERMISSION_GRANTED
@@ -306,9 +321,17 @@ fun AiInterviewPage(
                     startRecording()
                 } else {
                     pendingRecordStart = true
-                    microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    microphonePermissionLauncher.launch(
+                        Manifest.permission.RECORD_AUDIO
+                    )
                 }
             }
+        } else if (
+            questionPlaybackEnded &&
+            !autoAnswer &&
+            voiceState == VoiceInterviewState.PlayingQuestion
+        ) {
+            voiceState = VoiceInterviewState.Ready
         }
     }
 
@@ -515,25 +538,43 @@ fun AiInterviewPage(
                             }
                         },
                         onCompleteAnswer = {
-                            mediaRecorder?.apply {
-                                stop()
-                                release()
-                            }
-                            mediaRecorder = null
-                            recordingPaused = false
+                            try {
+                                mediaRecorder?.stop()
+                                mediaRecorder?.release()
+                                mediaRecorder = null
+                                recordingPaused = false
 
-                            val recordedFile = File(
-                                context.cacheDir,
-                                "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
-                            )
-                            vm.saveVoiceAnswer(
-                                displayOrder = currentQuestion.displayOrder,
-                                file = recordedFile
-                            )
-                            vm.processVoiceAnswer(
-                                sessionId = sessionId,
-                                displayOrder = currentQuestion.displayOrder
-                            )
+                                val recordedFile = File(
+                                    context.cacheDir,
+                                    "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
+                                )
+
+                                vm.saveVoiceAnswer(
+                                    displayOrder = currentQuestion.displayOrder,
+                                    file = recordedFile
+                                )
+
+                                vm.processVoiceAnswer(
+                                    sessionId = sessionId,
+                                    displayOrder = currentQuestion.displayOrder
+                                )
+                            } catch (e: RuntimeException) {
+                                mediaRecorder?.release()
+                                mediaRecorder = null
+                                recordingPaused = false
+
+                                val recordedFile = File(
+                                    context.cacheDir,
+                                    "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
+                                )
+
+                                if (recordedFile.exists()) {
+                                    recordedFile.delete()
+                                }
+
+                                voiceState = VoiceInterviewState.Ready
+                                snackBarText = "오류가 발생했습니다."
+                            }
                         },
                         onRetry = {
                             vm.processVoiceAnswer(
