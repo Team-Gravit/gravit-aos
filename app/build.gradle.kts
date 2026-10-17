@@ -180,4 +180,6 @@ dependencies {
     implementation(libs.firebase.messaging)
 
     implementation("dev.chrisbanes.haze:haze:1.6.10")
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
+
 }
