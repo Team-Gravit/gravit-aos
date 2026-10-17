@@ -11,9 +11,11 @@ import com.inuappcenter.gravit.api.InterviewStack
 import com.inuappcenter.gravit.api.InterviewStackGroupResponse
 import com.inuappcenter.gravit.api.InterviewTopic
 import com.inuappcenter.gravit.error.handleApiFailure
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 class AiSelectedVM(
     private val api: ApiService,
@@ -55,6 +57,8 @@ class AiSelectedVM(
 
     private val _stacksState = MutableStateFlow<StacksUiState>(StacksUiState.Idle)
     val stacksState = _stacksState.asStateFlow()
+
+    private var loadStacksJob: Job? = null
 
     fun loadTopics() = viewModelScope.launch {
         _topicsState.value = TopicsUiState.Loading
@@ -112,32 +116,40 @@ class AiSelectedVM(
         }
     }
 
-    fun loadStacks(stackGroup: String) = viewModelScope.launch {
-        _stacksState.value = StacksUiState.Loading
+    fun loadStacks(stackGroup: String) {
+        loadStacksJob?.cancel()
 
-        val session = AuthPrefs.load(appContext)
-        if (session == null) {
-            AuthPrefs.clear(appContext)
-            _stacksState.value = StacksUiState.SessionExpired
-            return@launch
-        }
+        loadStacksJob = viewModelScope.launch {
+            _stacksState.value = StacksUiState.Loading
 
-        runCatching {
-            api.getInterviewStacks(
-                auth = "Bearer ${session.accessToken}",
-                stackGroup = stackGroup
-            )
-        }.onSuccess { res ->
-            _stacksState.value = StacksUiState.Success(res)
-        }.onFailure { e ->
-            handleApiFailure(
-                e = e,
-                appContext = appContext,
-                onStateChange = { _stacksState.value = it },
-                unauthorizedState = StacksUiState.SessionExpired,
-                notFoundState = StacksUiState.NotFound,
-                failedState = StacksUiState.Failed
-            )
+            val session = AuthPrefs.load(appContext)
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _stacksState.value = StacksUiState.SessionExpired
+                return@launch
+            }
+
+            runCatching {
+                api.getInterviewStacks(
+                    auth = "Bearer ${session.accessToken}",
+                    stackGroup = stackGroup
+                )
+            }.onSuccess { res ->
+                _stacksState.value = StacksUiState.Success(res)
+            }.onFailure { e ->
+                if (e is CancellationException) {
+                    throw e
+                }
+
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { _stacksState.value = it },
+                    unauthorizedState = StacksUiState.SessionExpired,
+                    notFoundState = StacksUiState.NotFound,
+                    failedState = StacksUiState.Failed
+                )
+            }
         }
     }
     fun resetStates() {

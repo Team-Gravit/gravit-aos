@@ -156,8 +156,6 @@ fun AiSelectedPage(
 
     LaunchedEffect(selectedJob) {
         selectedJob?.let {
-            selectedStack = null
-            selectedStackName = null
             vm.loadStacks(it)
         }
     }
@@ -309,9 +307,13 @@ fun AiSelectedPage(
                         selectedCsTopics = values
                         selectedCsTopicNames = names
                     },
-                    onJobSelected = { value, name ->
-                        selectedJob = value
-                        selectedJobName = name
+                    onJobSelected = { job, jobName ->
+                        if (selectedJob != job) {
+                            selectedJob = job
+                            selectedJobName = jobName
+                            selectedStack = null
+                            selectedStackName = null
+                        }
                     },
                     onStackSelected = { value, name ->
                         selectedStack = value
@@ -1016,7 +1018,7 @@ private fun Step5Content(
     val levels = listOf(
         "상" to "심화 개념까지 깊이 있게 물어봐요",
         "중" to "기본과 심화 개념을 골고루 물어봐요",
-        "하" to "기본 기념 위주로 편하게 연습해요"
+        "하" to "기본 개념 위주로 편하게 연습해요"
     )
 
     Column(
