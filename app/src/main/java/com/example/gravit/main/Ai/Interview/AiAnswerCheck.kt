@@ -272,6 +272,7 @@ fun AiAnswerCheckPage(
                 progressStep = step
                 delay(500)
             }
+            vm.clearVoiceAnswers()
 
             navController.navigate("chapter?tab=ai") {
                 popUpTo("ai/interview-flow") {
@@ -388,6 +389,16 @@ fun AiAnswerCheckPage(
                 LoadFailedDialog(
                     onRetryClick = {
                         vm.abandonInterview()
+                    }
+                )
+            }
+            if (submitState == AiInterviewVM.SubmitUiState.Failed) {
+                LoadFailedDialog(
+                    onRetryClick = {
+                        vm.submitAnswers(
+                            sessionId = interview.sessionId,
+                            mode = mode
+                        )
                     }
                 )
             }
