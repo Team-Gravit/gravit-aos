@@ -132,7 +132,6 @@ class AiHomeVM(
             _weakTopicsState.value = WeakTopicsUiState.SessionExpired
             return@launch
         }
-        delay(5000)
         runCatching {
             api.getInterviewWeakTopics("Bearer ${session.accessToken}")
         }.onSuccess { res ->
