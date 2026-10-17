@@ -2063,7 +2063,7 @@ fun DetailUi(
 
         ) {
             Text(
-                text = "시간",
+                text = sessionAnswers.startedAt.substringBefore("T"),
                 color = AppColor.text3w,
                 style = AppTypography.Caption2
             )
@@ -2304,7 +2304,7 @@ fun DetailItem(
                         contentAlignment = Alignment.Center
                     ) {
                         MarkdownContent(
-                            content = detail.improvementSuggestion.toString()
+                            content = detail.improvementSuggestion.orEmpty()
                         )
                     }
                 }
