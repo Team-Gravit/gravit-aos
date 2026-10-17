@@ -117,16 +117,18 @@ fun MarkdownText(content: String, modifier: Modifier = Modifier) {
         }
         .build()
 
-    val markwon = Markwon.builder(context)
-        .usePlugin(HtmlPlugin.create())
-        .usePlugin(
-            ImagesPlugin.create { p ->
-                p.addSchemeHandler(NetworkSchemeHandler.create())
-            }
-        )
-        .usePlugin(CoilImagesPlugin.create(context, imageLoader))
-        .usePlugin(TablePlugin.create(context))
-        .build()
+    val markwon = remember(context) {
+        Markwon.builder(context)
+            .usePlugin(HtmlPlugin.create())
+            .usePlugin(
+                ImagesPlugin.create { p ->
+                    p.addSchemeHandler(NetworkSchemeHandler.create())
+                }
+            )
+            .usePlugin(CoilImagesPlugin.create(context, imageLoader))
+            .usePlugin(TablePlugin.create(context))
+            .build()
+    }
 
     AndroidView(
         modifier = modifier,
