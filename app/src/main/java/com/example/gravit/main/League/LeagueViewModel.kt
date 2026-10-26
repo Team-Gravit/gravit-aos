@@ -133,7 +133,16 @@ class LeagueViewModel(
 
     fun loadNextL() {
         val ui = _ui.value
-        if (!ui.initialized || ui.isLoadingPrevious || ui.isLoadingNext || ui.endReachedNext) return
+
+        if (ui.isLoadingPrevious || ui.isLoadingNext) return
+
+        if (!ui.initialized) {
+            loadPage(ui.minPage, Direction.INITIAL)
+            return
+        }
+
+        if (ui.endReachedNext) return
+
         loadPage(ui.maxPage + 1, Direction.NEXT)
     }
 
@@ -188,20 +197,23 @@ class LeagueViewModel(
         _ui.update { current ->
             when (direction) {
                 Direction.INITIAL -> current.copy(
-                    items = response.contents,
+                    items = response.contents.distinctBy { it.userId ?: Any() },
                     initialized = true,
                     isLoadingNext = false,
                     endReachedNext = !response.hasNextPage,
                     endReachedPrevious = page == 0
                 )
                 Direction.PREVIOUS -> current.copy(
-                    items = response.contents + current.items,
+                    items = (response.contents + current.items)
+                        .distinctBy { it.userId ?: Any() },
                     minPage = page,
                     isLoadingPrevious = false,
                     endReachedPrevious = page == 0
                 )
+
                 Direction.NEXT -> current.copy(
-                    items = current.items + response.contents,
+                    items = (current.items + response.contents)
+                        .distinctBy { it.userId ?: Any() },
                     maxPage = page,
                     isLoadingNext = false,
                     endReachedNext = !response.hasNextPage

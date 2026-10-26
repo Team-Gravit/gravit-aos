@@ -182,29 +182,24 @@ fun LeagueScreen(
             val source by vm.source.collectAsState()
             val latestUi by androidx.compose.runtime.rememberUpdatedState(ui)
 
-            // 내 순위의 페이지부터 시작. 화면 재구성으로 중복 요청하지 않는다.
             LaunchedEffect(my.userId) {
                 vm.selectUserLeague(my)
             }
 
-            // 티어를 바꾸면 이전 티어의 스크롤 위치를 사용하지 않는다.
             LaunchedEffect(ui.generation) {
                 listState.scrollToItem(0)
             }
 
-            // 최초 한 번만 내 userId 위치로 이동한다.
             LaunchedEffect(ui.generation, ui.initialized, ui.scrollToMe, ui.items) {
                 if (!ui.initialized || !ui.scrollToMe ||
                     source != LeagueViewModel.Source.UserLeague) return@LaunchedEffect
                 val index = ui.items.indexOfFirst { it.userId == my.userId }
                 if (index >= 0) {
-                    listState.scrollToItem(index + 1) // 맨 위 상태 아이템 1개
+                    listState.scrollToItem(index + 1)
                 }
-                // 해당 페이지에 userId가 없더라도 연속 요청하지 않는다.
                 vm.markInitialScrollCompleted()
             }
 
-            // 사용자가 직접 스크롤할 때만 양방향 페이지 로딩.
             LaunchedEffect(listState) {
                 snapshotFlow {
                     val layout = listState.layoutInfo
