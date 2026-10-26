@@ -57,6 +57,11 @@ fun NoticeDetail(
     val ui by vm.state.collectAsState()
     val listUi by noticeListVm.state.collectAsState()
 
+    LaunchedEffect(listUi) {
+        if (listUi is NoticeListVM.UiState.Idle) {
+            noticeListVm.loadAll()
+        }
+    }
     var navigated by remember { mutableStateOf(false) }
 
     val noticeItems = when (val state = listUi) {
@@ -185,133 +190,92 @@ fun NoticeDetail(
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (previousNotice != null) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
-                                            navController.navigate("user/notice/detail/${previousNotice.id}") {
-                                                popUpTo("user/notice/detail/{noticeId}") {
-                                                    inclusive = true
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (previousNotice != null) {
+                                    Row(
+                                        modifier = Modifier
+                                            .clickable {
+                                                navController.navigate(
+                                                    "user/notice/detail/${previousNotice.id}"
+                                                ) {
+                                                    popUpTo("user/notice/detail/{noticeId}") {
+                                                        inclusive = true
+                                                    }
                                                 }
                                             }
-                                        }
-                                        .padding(vertical = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.chevron_left),
-                                        contentDescription = "이전 공지",
-                                        tint = AppColor.icon_default
-                                    )
+                                            .padding(vertical = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(
+                                                id = R.drawable.chevron_left
+                                            ),
+                                            contentDescription = "이전 공지",
+                                            tint = AppColor.icon_default,
+                                            modifier = Modifier.size(24.dp)
+                                        )
 
-                                    Text(
-                                        text = previousNotice.title,
-                                        style = AppTypography.Body2_Reading,
-                                        color = AppColor.text1,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier
-                                            .padding(start = 8.dp)
-                                            .weight(1f)
-                                    )
-                                }
-                            } else {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
+                                        Spacer(modifier = Modifier.width(8.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    if (previousNotice != null) {
-                                        Row(
-                                            modifier = Modifier
-                                                .clickable {
-                                                    navController.navigate(
-                                                        "user/notice/detail/${previousNotice.id}"
-                                                    ) {
-                                                        popUpTo("user/notice/detail/{noticeId}") {
-                                                            inclusive = true
-                                                        }
-                                                    }
-                                                }
-                                                .padding(vertical = 16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(
-                                                    id = R.drawable.chevron_left
-                                                ),
-                                                contentDescription = "이전 공지",
-                                                tint = AppColor.icon_default,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-
-                                            Spacer(modifier = Modifier.width(8.dp))
-
-                                            Text(
-                                                text = previousNotice.title,
-                                                style = AppTypography.Body2_Reading,
-                                                color = AppColor.text1,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.weight(1f, fill = false)
-                                            )
-                                        }
+                                        Text(
+                                            text = previousNotice.title,
+                                            style = AppTypography.Body2_Reading,
+                                            color = AppColor.text1,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
                                     }
                                 }
+                            }
 
-                                Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
 
-                                Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    if (nextNotice != null) {
-                                        Row(
-                                            modifier = Modifier
-                                                .clickable {
-                                                    navController.navigate(
-                                                        "user/notice/detail/${nextNotice.id}"
-                                                    ) {
-                                                        popUpTo("user/notice/detail/{noticeId}") {
-                                                            inclusive = true
-                                                        }
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                if (nextNotice != null) {
+                                    Row(
+                                        modifier = Modifier
+                                            .clickable {
+                                                navController.navigate(
+                                                    "user/notice/detail/${nextNotice.id}"
+                                                ) {
+                                                    popUpTo("user/notice/detail/{noticeId}") {
+                                                        inclusive = true
                                                     }
                                                 }
-                                                .padding(vertical = 16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = nextNotice.title,
-                                                style = AppTypography.Body2_Reading,
-                                                color = AppColor.text1,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.weight(1f, fill = false)
-                                            )
+                                            }
+                                            .padding(vertical = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = nextNotice.title,
+                                            style = AppTypography.Body2_Reading,
+                                            color = AppColor.text1,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
 
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
 
-                                            Icon(
-                                                painter = painterResource(
-                                                    id = R.drawable.chevron_right
-                                                ),
-                                                contentDescription = "다음 공지",
-                                                tint = AppColor.icon_default,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            painter = painterResource(
+                                                id = R.drawable.chevron_right
+                                            ),
+                                            contentDescription = "다음 공지",
+                                            tint = AppColor.icon_default,
+                                            modifier = Modifier.size(24.dp)
+                                        )
                                     }
                                 }
                             }
