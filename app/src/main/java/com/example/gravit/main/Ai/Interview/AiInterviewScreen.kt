@@ -1,3 +1,4 @@
+
 package com.inuappcenter.gravit.main.Ai.Interview
 
 import android.Manifest
@@ -7,7 +8,6 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,11 +29,16 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.viewinterop.AndroidView
+import android.view.TextureView
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +52,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavController
@@ -66,6 +72,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
+import kotlin.random.Random
+import android.graphics.Matrix
+import androidx.compose.material3.HorizontalDivider
 
 enum class InterviewMode {
     Voice,
@@ -79,7 +88,10 @@ private enum class VoiceInterviewState {
     Processing
 }
 
+private enum class InterviewVideoState { Question, Answer, Idle }
+
 private enum class TextInterviewState {
+    PlayingQuestion,
     Ready,
     Writing
 }
@@ -101,6 +113,7 @@ fun AiInterviewPage(
     var textState by rememberSaveable { mutableStateOf(TextInterviewState.Ready) }
     var autoAnswer by rememberSaveable { mutableStateOf(false) }
     var questionPlaybackEnded by remember { mutableStateOf(false) }
+    var questionAudioPlaying by remember { mutableStateOf(false) }
     var answerText by rememberSaveable { mutableStateOf("") }
     var recordingSeconds by rememberSaveable { mutableIntStateOf(0) }
     var showExitDialog by rememberSaveable { mutableStateOf(false) }
@@ -125,11 +138,16 @@ fun AiInterviewPage(
     DisposableEffect(player) {
         val listener =
             object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    questionAudioPlaying = isPlaying
+                }
+
                 override fun onPlaybackStateChanged(
                     playbackState: Int
                 ) {
                     if (playbackState == Player.STATE_ENDED) {
-                        if (autoAnswer) {
+                        questionAudioPlaying = false
+                        if (mode == AnswerMode.Voice && autoAnswer) {
                             questionPlaybackEnded = true
                         } else {
                             voiceState = VoiceInterviewState.Ready
@@ -209,7 +227,49 @@ fun AiInterviewPage(
             else -> Unit
         }
     }
+    fun completeAnswer() {
+        if (voiceState != VoiceInterviewState.Recording) return
 
+        voiceState = VoiceInterviewState.Processing
+
+        try {
+            mediaRecorder?.stop()
+            mediaRecorder?.release()
+            mediaRecorder = null
+            recordingPaused = false
+
+            val recordedFile = File(
+                context.cacheDir,
+                "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
+            )
+
+            vm.saveVoiceAnswer(
+                displayOrder = currentQuestion.displayOrder,
+                file = recordedFile
+            )
+
+            vm.processVoiceAnswer(
+                sessionId = sessionId,
+                displayOrder = currentQuestion.displayOrder
+            )
+        } catch (e: RuntimeException) {
+            mediaRecorder?.release()
+            mediaRecorder = null
+            recordingPaused = false
+
+            val recordedFile = File(
+                context.cacheDir,
+                "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
+            )
+
+            if (recordedFile.exists()) {
+                recordedFile.delete()
+            }
+
+            voiceState = VoiceInterviewState.Ready
+            snackBarText = "오류가 발생했습니다."
+        }
+    }
     fun startRecording() {
         val outputFile = File(
             context.cacheDir,
@@ -336,10 +396,6 @@ fun AiInterviewPage(
     }
 
     LaunchedEffect(currentQuestion.displayOrder, mode) {
-        if (mode != AnswerMode.Voice) {
-            return@LaunchedEffect
-        }
-
         val audioUrl = currentQuestion.audioUrl
 
         if (audioUrl.isNullOrBlank()) {
@@ -370,13 +426,19 @@ fun AiInterviewPage(
 
     LaunchedEffect(voiceState, recordingPaused) {
         if (
-            voiceState ==
-            VoiceInterviewState.Recording &&
+            voiceState == VoiceInterviewState.Recording &&
             !recordingPaused
         ) {
-            while (true) {
+            while (recordingSeconds < 120) {
                 delay(1000)
-                recordingSeconds++
+
+                if (recordingSeconds < 120) {
+                    recordingSeconds++
+                }
+            }
+
+            if (recordingSeconds >= 120) {
+                completeAnswer()
             }
         }
     }
@@ -476,6 +538,19 @@ fun AiInterviewPage(
         }
     }
 
+    val videoState = when (mode) {
+        AnswerMode.Voice -> when {
+            questionAudioPlaying && voiceState == VoiceInterviewState.PlayingQuestion -> InterviewVideoState.Question
+            voiceState == VoiceInterviewState.Recording && !recordingPaused -> InterviewVideoState.Answer
+            else -> InterviewVideoState.Idle
+        }
+        AnswerMode.Text -> when {
+            questionAudioPlaying -> InterviewVideoState.Question
+            textState == TextInterviewState.Writing -> InterviewVideoState.Answer
+            else -> InterviewVideoState.Idle
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -513,7 +588,9 @@ fun AiInterviewPage(
                 InterviewQuestionContent(
                     questionNumber = currentQuestion.displayOrder,
                     totalQuestionCount = questions.size,
-                    question = currentQuestion.content
+                    question = currentQuestion.content,
+                    videoState = videoState,
+                    paused = showExitDialog || pausedByBackground
                 )
             }
 
@@ -538,43 +615,7 @@ fun AiInterviewPage(
                             }
                         },
                         onCompleteAnswer = {
-                            try {
-                                mediaRecorder?.stop()
-                                mediaRecorder?.release()
-                                mediaRecorder = null
-                                recordingPaused = false
-
-                                val recordedFile = File(
-                                    context.cacheDir,
-                                    "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
-                                )
-
-                                vm.saveVoiceAnswer(
-                                    displayOrder = currentQuestion.displayOrder,
-                                    file = recordedFile
-                                )
-
-                                vm.processVoiceAnswer(
-                                    sessionId = sessionId,
-                                    displayOrder = currentQuestion.displayOrder
-                                )
-                            } catch (e: RuntimeException) {
-                                mediaRecorder?.release()
-                                mediaRecorder = null
-                                recordingPaused = false
-
-                                val recordedFile = File(
-                                    context.cacheDir,
-                                    "interview_${sessionId}_${currentQuestion.displayOrder}.m4a"
-                                )
-
-                                if (recordedFile.exists()) {
-                                    recordedFile.delete()
-                                }
-
-                                voiceState = VoiceInterviewState.Ready
-                                snackBarText = "오류가 발생했습니다."
-                            }
+                            completeAnswer()
                         },
                         onRetry = {
                             vm.processVoiceAnswer(
@@ -587,11 +628,17 @@ fun AiInterviewPage(
 
                 AnswerMode.Text -> {
                     TextInterviewBottomBar(
-                        state = textState,
+                        state = if (
+                            voiceState == VoiceInterviewState.PlayingQuestion
+                        ) {
+                            TextInterviewState.PlayingQuestion
+                        } else {
+                            textState
+                        },
                         answerText = answerText,
                         onStartWriting = { textState = TextInterviewState.Writing },
                         onAnswerTextChange = {
-                            if (it.length <= 1000) {
+                            if (it.length <= 2000) {
                                 answerText = it
                             }
                         },
@@ -717,8 +764,7 @@ fun TwoButtonDialog(
                 modifier = Modifier
                     .width(328.dp)
                     .padding(16.dp),
-                horizontalAlignment =
-                    Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -767,10 +813,275 @@ fun TwoButtonDialog(
 }
 
 @Composable
+private fun InterviewVideoPlayer(
+    state: InterviewVideoState,
+    paused: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val isTablet = LocalConfiguration.current.screenWidthDp >= 600
+
+    val questionRes = if (isTablet) {
+        R.raw.interview_question_web
+    } else {
+        R.raw.interview_question
+    }
+
+    val answers = remember(isTablet) {
+        if (isTablet) {
+            intArrayOf(
+                R.raw.interview_answer_1_web,
+                R.raw.interview_answer_2_web,
+                R.raw.interview_answer_3_web
+            )
+        } else {
+            intArrayOf(
+                R.raw.interview_answer_1,
+                R.raw.interview_answer_2,
+                R.raw.interview_answer_3
+            )
+        }
+    }
+
+    val players = remember(context) {
+        List(2) {
+            ExoPlayer.Builder(context).build().apply {
+                volume = 0f
+                playWhenReady = false
+            }
+        }
+    }
+
+    var visibleIndex by remember {mutableIntStateOf(-1) }
+    var loadedResource by remember { mutableIntStateOf(-1) }
+    var pendingIndex by remember { mutableIntStateOf(-1) }
+    var pendingResource by remember { mutableIntStateOf(-1) }
+    var answerResource by remember(isTablet) { mutableIntStateOf(answers[0]) }
+    var lastAnswer by remember { mutableIntStateOf(-1) }
+    var attachedViews by remember { mutableIntStateOf(0) }
+
+    val currentState by rememberUpdatedState(state)
+    val currentPaused by rememberUpdatedState(paused)
+    val currentAnswers by rememberUpdatedState(answers)
+
+    fun selectAnswer(): Int {
+        val choices = if (lastAnswer == 2) {
+            intArrayOf(0, 0, 0, 0, 0, 0, 1, 1, 1)
+        } else {
+            intArrayOf(0, 0, 0, 0, 0, 0, 1, 1, 1, 2)
+        }
+
+        val selected = choices[Random.nextInt(choices.size)]
+        lastAnswer = selected
+
+        return currentAnswers[selected]
+    }
+    LaunchedEffect(state) {
+        if (state == InterviewVideoState.Answer) {
+            answerResource = selectAnswer()
+        }
+    }
+    fun shouldPlay(): Boolean {
+        return currentState != InterviewVideoState.Idle &&
+                !currentPaused
+    }
+
+    fun prepareVideo(index: Int, resId: Int) {
+        val target = players[index]
+
+        pendingIndex = index
+        pendingResource = resId
+
+        target.pause()
+
+        target.repeatMode = Player.REPEAT_MODE_ONE
+
+        target.setMediaItem(
+            MediaItem.fromUri(
+                "android.resource://${context.packageName}/$resId"
+            )
+        )
+        target.prepare()
+        target.play()
+    }
+
+    DisposableEffect(players) {
+        val listeners = players.mapIndexed { index, videoPlayer ->
+
+            object : Player.Listener {
+
+                override fun onRenderedFirstFrame() {
+                    if (pendingIndex != index) return
+
+                    loadedResource = pendingResource
+
+                    pendingIndex = -1
+                    pendingResource = -1
+
+                    visibleIndex = index
+
+                    if (shouldPlay()) {
+                        videoPlayer.play()
+                    } else {
+                        videoPlayer.pause()
+                    }
+                }
+
+                override fun onPlayerError(
+                    error: PlaybackException
+                ) {
+                    android.util.Log.e(
+                        "InterviewVideo",
+                        "Video playback failed",
+                        error
+                    )
+                }
+
+            }.also {
+                videoPlayer.addListener(it)
+            }
+        }
+
+        onDispose {
+            players.forEachIndexed { index, videoPlayer ->
+                videoPlayer.removeListener(listeners[index])
+                videoPlayer.release()
+            }
+        }
+    }
+
+    val targetResource = when (state) {
+        InterviewVideoState.Question -> questionRes
+
+        InterviewVideoState.Answer,
+        InterviewVideoState.Idle -> answerResource
+    }
+
+    LaunchedEffect(
+        targetResource,
+        state,
+        paused,
+        attachedViews
+    ) {
+        if (attachedViews < 2) return@LaunchedEffect
+
+        when {
+            targetResource == loadedResource -> {
+                if (shouldPlay()) {
+                    players[visibleIndex].play()
+                } else {
+                    players[visibleIndex].pause()
+                }
+            }
+            targetResource == pendingResource -> Unit
+            else -> {
+                val nextIndex = if (visibleIndex == -1) {
+                    0
+                } else {
+                    1 - visibleIndex
+                }
+
+                prepareVideo(
+                    index = nextIndex,
+                    resId = targetResource
+                )
+            }
+        }
+    }
+
+    val alpha0 by animateFloatAsState(
+        targetValue = if (visibleIndex == 0) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 500,
+            easing = FastOutSlowInEasing
+        ),
+        label = "videoAlpha0"
+    )
+
+    val alpha1 by animateFloatAsState(
+        targetValue = if (visibleIndex == 1) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 500,
+            easing = FastOutSlowInEasing
+        ),
+        label = "videoAlpha1"
+    )
+
+    LaunchedEffect(visibleIndex) {
+        if (visibleIndex == -1) return@LaunchedEffect
+
+        delay(520)
+
+        val previousIndex = 1 - visibleIndex
+
+        if (pendingIndex != previousIndex) {
+            players[previousIndex].pause()
+        }
+    }
+    fun applyCrop(view: TextureView, videoWidth: Int, videoHeight: Int) {
+        if (view.width == 0 || view.height == 0 ||
+            videoWidth == 0 || videoHeight == 0) return
+
+        val viewW = view.width.toFloat()
+        val viewH = view.height.toFloat()
+
+        val scale = maxOf(
+            viewW / videoWidth,
+            viewH / videoHeight
+        )
+
+        val matrix = Matrix().apply {
+            setScale(
+                videoWidth * scale / viewW,
+                videoHeight * scale / viewH,
+                viewW / 2f,
+                viewH / 2f
+            )
+        }
+
+        view.setTransform(matrix)
+    }
+    Box(modifier = modifier) {
+
+        players.forEachIndexed { index, videoPlayer ->
+
+            AndroidView(
+                factory = { ctx ->
+                    TextureView(ctx).also { textureView ->
+                        videoPlayer.setVideoTextureView(textureView)
+                        attachedViews++
+
+                        textureView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                            val size = videoPlayer.videoSize
+                            applyCrop(textureView, size.width, size.height)
+                        }
+                    }
+                },
+                update = { textureView ->
+                    val size = videoPlayer.videoSize
+                    applyCrop(textureView, size.width, size.height)
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = if (index == 0) alpha0 else alpha1
+                    },
+                onRelease = { textureView ->
+                    videoPlayer.clearVideoTextureView(textureView)
+                    attachedViews--
+                }
+            )
+        }
+    }
+}
+
+@Composable
 private fun InterviewQuestionContent(
     questionNumber: Int,
     totalQuestionCount: Int,
-    question: String
+    question: String,
+    videoState: InterviewVideoState,
+    paused: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -779,16 +1090,18 @@ private fun InterviewQuestionContent(
             .clip(RoundedCornerShape(AppRadius.lg))
             .background(AppColor.bg0)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.interview_bg),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            alignment = BiasAlignment(horizontalBias = -0.2f, verticalBias = 0f),
+        val isTablet = LocalConfiguration.current.screenWidthDp >= 600
+
+        InterviewVideoPlayer(
+            state = videoState,
+            paused = paused,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(400.dp)
+                .aspectRatio(
+                    if (isTablet) 21f / 9f
+                    else 3f / 4f
+                )
         )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -835,13 +1148,13 @@ private fun VoiceInterviewBottomBar(
                 checked = autoAnswer,
                 onCheckedChange = onAutoAnswerChange,
                 colors = SwitchDefaults.colors(
-                        checkedThumbColor = AppColor.bg0,
-                        uncheckedThumbColor = AppColor.bg0,
-                        checkedTrackColor = AppColor.Main1,
-                        uncheckedTrackColor = AppColor.divider1,
-                        uncheckedBorderColor = Color.Transparent,
-                        checkedBorderColor = Color.Transparent
-                    )
+                    checkedThumbColor = AppColor.bg0,
+                    uncheckedThumbColor = AppColor.bg0,
+                    checkedTrackColor = AppColor.Main1,
+                    uncheckedTrackColor = AppColor.divider1,
+                    uncheckedBorderColor = Color.Transparent,
+                    checkedBorderColor = Color.Transparent
+                )
             )
 
             Text(
@@ -881,16 +1194,50 @@ private fun VoiceInterviewBottomBar(
             }
 
             VoiceInterviewState.Recording -> {
-                InterviewButton(
-                    text = "답변 완료하기   —   ${formatInterviewTime(recordingSeconds)}",
-                    onClick = onCompleteAnswer,
+                val remainingSeconds = (120 - recordingSeconds).coerceAtLeast(0)
+                val progress = (recordingSeconds / 120f).coerceIn(0f, 1f)
+
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
-                    containerColor = AppColor.Main1,
-                    textColor = AppColor.CTA_text,
-                    borderColor = AppColor.Main1
-                )
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(AppColor.Main1)
+                        .clickable(onClick = onCompleteAnswer)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(progress)
+                            .background(Color(0xFFE8C5FF))
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "답변 완료하기",
+                            color = AppColor.CTA_text,
+                            style = AppTypography.Headline2
+                        )
+
+                        Spacer(Modifier.width(12.dp))
+
+                        HorizontalDivider(modifier = Modifier.width(23.dp), 2.dp, AppColor.bg0)
+
+                        Spacer(Modifier.width(12.dp))
+
+                        Text(
+                            text = formatInterviewTime(remainingSeconds),
+                            color = AppColor.CTA_text,
+                            style = AppTypography.Headline2
+                        )
+                    }
+                }
             }
 
             VoiceInterviewState.Processing -> {
@@ -958,20 +1305,21 @@ private fun TextInterviewBottomBar(
             .padding(16.dp)
     ) {
         when (state) {
-            TextInterviewState.Ready -> {
+            TextInterviewState.PlayingQuestion -> {
                 InterviewButton(
-                    text = "답변 작성하기",
-                    onClick = onStartWriting,
+                    text = "질문 재생 중",
+                    onClick = {},
+                    enabled = false,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    containerColor = AppColor.Main1,
-                    textColor = AppColor.CTA_text,
-                    borderColor = AppColor.Main1
+                    containerColor = AppColor.bg0,
+                    textColor = AppColor.text4,
+                    borderColor = AppColor.divider1
                 )
             }
 
-            TextInterviewState.Writing -> {
+            TextInterviewState.Ready -> {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.Bottom
@@ -992,14 +1340,14 @@ private fun TextInterviewBottomBar(
                             )
                         },
                         colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = AppColor.bg1,
-                                    unfocusedContainerColor = AppColor.bg1,
-                                    disabledContainerColor = AppColor.bg1,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    focusedTextColor = AppColor.text1,
-                                    unfocusedTextColor = AppColor.text1
-                                )
+                            focusedContainerColor = AppColor.bg1,
+                            unfocusedContainerColor = AppColor.bg1,
+                            disabledContainerColor = AppColor.bg1,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = AppColor.text1,
+                            unfocusedTextColor = AppColor.text1
+                        )
                     )
 
                     Spacer(Modifier.width(16.dp))
@@ -1016,6 +1364,8 @@ private fun TextInterviewBottomBar(
                     )
                 }
             }
+
+            else -> {}
         }
     }
 }
