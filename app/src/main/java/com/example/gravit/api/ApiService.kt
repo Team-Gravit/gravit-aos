@@ -375,11 +375,12 @@ data class NoticeDetailResponse(
     val id: Long,
     val title: String,
     val content: String,
-    val pinned: Boolean,
-    val status: String,
-    val publishedAt: String,
+    val authorName: String,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val status: String,
+    val pinned: Boolean,
+    val publishedAt: String,
 )
 
 data class NoticeSummaryItem(
@@ -394,6 +395,7 @@ data class NoticeSummaryPageResponse(
     val page: Int,
     val totalPages: Int,
     val hasNext: Boolean,
+    val totalElements: Int,
     @SerializedName("contents") val content: List<NoticeSummaryItem>
 )
 
