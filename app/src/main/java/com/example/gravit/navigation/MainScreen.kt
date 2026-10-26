@@ -64,6 +64,7 @@ import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
 import com.inuappcenter.gravit.main.User.Notice.Notification
+import com.inuappcenter.gravit.main.User.Setting.TermsOfService
 
 
 enum class FollowTab { Followers, Following }
@@ -275,6 +276,7 @@ fun MainScreen(rootNavController: NavController) {
                 }
 
                 composable("user/privacypolicy") { PrivacyPolicy(innerNavController) }
+                composable("user/termsOfService") { TermsOfService(innerNavController) }
 
                 // account
                 composable("user/account") { Account(innerNavController) }
