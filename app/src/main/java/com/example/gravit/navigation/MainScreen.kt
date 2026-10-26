@@ -63,6 +63,8 @@ import com.inuappcenter.gravit.main.Study.Chapter.LearningTab
 import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
+import com.inuappcenter.gravit.main.User.Notice.NoticeListVM
+import com.inuappcenter.gravit.main.User.Notice.NoticeListVMFactory
 import com.inuappcenter.gravit.main.User.Notice.Notification
 
 
@@ -282,16 +284,38 @@ fun MainScreen(rootNavController: NavController) {
                 composable("inquiry") { Inquiry(innerNavController, goToLoginChoice) }
 
                 // notice
-                composable("user/notice") { Notice(innerNavController) }
                 composable("user/notification") { Notification(innerNavController) }
-                composable(
-                    route = "user/notice/detail/{noticeId}",
-                    arguments = listOf(
-                        navArgument("noticeId") { type = NavType.LongType }
-                    )
-                ) { backStackEntry ->
-                    val id = backStackEntry.arguments!!.getLong("noticeId")
-                    NoticeDetail(navController = innerNavController, noticeId = id)
+                navigation(
+                    startDestination = "user/notice",
+                    route = "user/notice-flow"
+                ) {
+                    composable("user/notice") { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { innerNavController.getBackStackEntry("user/notice-flow") }
+                        val noticeVm: NoticeListVM = viewModel(parentEntry, factory = NoticeListVMFactory(context))
+                        Notice(
+                            navController = innerNavController,
+                            vm = noticeVm
+                        )
+                    }
+
+                    composable(
+                        route = "user/notice/detail/{noticeId}",
+                        arguments = listOf(
+                            navArgument("noticeId") {
+                                type = NavType.LongType
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val parentEntry = remember(backStackEntry) { innerNavController.getBackStackEntry("user/notice-flow") }
+                        val noticeVm: NoticeListVM = viewModel(parentEntry, factory = NoticeListVMFactory(context))
+                        val noticeId = backStackEntry.arguments!!.getLong("noticeId")
+
+                        NoticeDetail(
+                            navController = innerNavController,
+                            noticeId = noticeId,
+                            noticeListVm = noticeVm
+                        )
+                    }
                 }
 
                 // 탈퇴 완료 화면
