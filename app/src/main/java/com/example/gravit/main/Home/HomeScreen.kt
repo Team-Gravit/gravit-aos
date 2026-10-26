@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -61,7 +62,6 @@ import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.api.MainPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.Units
-import com.inuappcenter.gravit.main.Study.Chapter.resolvePlanetRes
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import com.inuappcenter.gravit.ui.theme.TierPalette
 import com.inuappcenter.gravit.ui.theme.pretendard
@@ -155,7 +155,6 @@ fun HomeUI(
     val recommendedPlanetRes = recommendedInfo
         ?.chapterId
         ?.let { resolvePlanetRes(it) }
-        ?: R.drawable.empty_recommand_bg
 
     val weeklyInfo = home.weeklyRecordResponse
     val missionInfo = home.missionResponse
@@ -513,11 +512,26 @@ fun HomeUI(
                                         .clickable(onClick = { navController.navigate("unit/${recommendedInfo?.chapterId ?: 1}") })
                                 ) {
                                     Image(
-                                        painter = painterResource(id = recommendedPlanetRes),
+                                        painter = painterResource(id = R.drawable.planet_bg),
                                         contentDescription = null,
                                         modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.FillWidth
+                                        contentScale = ContentScale.Crop
                                     )
+
+                                    recommendedPlanetRes?.let { planetRes ->
+                                        Image(
+                                            painter = painterResource(id = planetRes),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .size(130.dp)
+                                                .offset(
+                                                    x = 30.dp,
+                                                    y = 35.dp
+                                                ),
+                                            contentScale = ContentScale.Fit
+                                        )
+                                    }
                                     Column(
                                         modifier = Modifier.padding(16.dp)
                                     ) {
@@ -600,3 +614,33 @@ fun HomeUI(
         }
     }
 }
+fun resolvePlanetRes(chapterId: Long): Int? {
+    return planetById[chapterId]
+}
+val planetById = mapOf(
+    1L to R.drawable.planet_01_mercury,
+    2L to R.drawable.planet_02_venus,
+    3L to R.drawable.planet_03_earth,
+    4L to R.drawable.planet_04_mars,
+    5L to R.drawable.planet_05_jupiter,
+    6L to R.drawable.planet_06_saturn,
+    7L to R.drawable.planet_07_uranus,
+    8L to R.drawable.planet_08_neptune,
+    9L to R.drawable.planet_09_sun,
+    10L to R.drawable.planet_10_pluto,
+    11L to R.drawable.planet_11_ceres,
+    12L to R.drawable.planet_12_eris,
+    13L to R.drawable.planet_13_vesta,
+    14L to R.drawable.planet_14_io,
+    15L to R.drawable.planet_15_europa,
+    16L to R.drawable.planet_16_titan,
+    17L to R.drawable.planet_17_triton,
+    18L to R.drawable.planet_18_charon,
+    19L to R.drawable.planet_19_phobos,
+    20L to R.drawable.planet_20_deimos,
+    21L to R.drawable.planet_21_mimas,
+    22L to R.drawable.planet_22_rhea,
+    23L to R.drawable.planet_23_tethys,
+    24L to R.drawable.planet_24_dione,
+    25L to R.drawable.planet_25_oberon,
+)
