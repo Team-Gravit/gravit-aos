@@ -157,22 +157,18 @@ fun Setting(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "계정정보",
+                                    text = "고객지원",
                                     style = AppTypography.Label2,
                                     color = AppColor.text3
                                 )
-
-                                RowNavigableItem(
-                                    "내 정보",
-                                    { navController.navigate("user/account") }
-                                )
+                                Spacer(Modifier.height(12.dp))
                                 RowNavigableItem(
                                     "공지사항",
                                     { navController.navigate("user/notice") }
                                 )
                                 RowNavigableItem(
-                                    "개인정보 처리 방침",
-                                    { navController.navigate("user/privacypolicy") }
+                                    "문의하기",
+                                    { navController.navigate("inquiry") }
                                 )
                             }
                         }
@@ -191,15 +187,40 @@ fun Setting(
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = "기타",
+                                    text = "약관 및 정책",
                                     style = AppTypography.Label2,
                                     color = AppColor.text3
                                 )
-
+                                Spacer(Modifier.height(12.dp))
                                 RowNavigableItem(
-                                    "문의하기",
-                                    { navController.navigate("inquiry") }
+                                    "이용약관",
+                                    { navController.navigate("user/termsOfService") }
                                 )
+                                RowNavigableItem(
+                                    "개인정보 처리 방침",
+                                    { navController.navigate("user/privacypolicy") }
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(AppColor.bg0)
+                                .padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 16.dp,
+                                    bottom = 8.dp
+                                )
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "계정",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3
+                                )
+                                Spacer(Modifier.height(12.dp))
                                 RowNavigableItem(
                                     "로그아웃",
                                     { logoutVM.logout { onLogout() } }
