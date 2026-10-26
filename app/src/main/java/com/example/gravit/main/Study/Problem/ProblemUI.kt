@@ -147,6 +147,30 @@ fun ProblemUI(
     val isSubjective = current.problemType == "SUBJECTIVE"
     val canSubmit = if (isSubjective) currentAnswer.shortText.isNotBlank() else currentAnswer.selectedIndex != null
     val nextButtonEnabled = currentAnswer.submitted || canSubmit
+    val submitMultipleChoice: (Int) -> Unit = { selectedIdx ->
+        val selectedOption = current.options.getOrNull(selectedIdx)
+        if (selectedOption != null && !currentAnswer.submitted) {
+            val correct = selectedOption.isAnswer
+            if (type == "normal") {
+                problemVm.submit(
+                    problemId = current.problemId,
+                    isCorrect = correct
+                )
+                onRecordResult(current.problemId, correct, selectedOption.optionId, null) { }
+            } else {
+                onRecordResult(current.problemId, correct, selectedOption.optionId, null) { success ->
+                    if (success) {
+                        problemVm.submit(
+                            problemId = current.problemId,
+                            isCorrect = correct
+                        )
+                    } else {
+                        snackBarText = "오류가 발생했습니다."
+                    }
+                }
+            }
+        }
+    }
     val submitCurrentProblem: () -> Unit = {
         if (isSubjective) {
             val correct = isAnswerCorrect(currentAnswer.shortText, current.answerResponse)
@@ -165,44 +189,8 @@ fun ProblemUI(
                 }
             }
         } else {
-            val selectedIdx = currentAnswer.selectedIndex
-
-            if (selectedIdx != null) {
-                val selectedOption = current.options.getOrNull(selectedIdx)
-
-                if (selectedOption != null) {
-                    val correct = selectedOption.isAnswer
-
-                    if (type == "normal") {
-                        problemVm.submit(
-                            problemId = current.problemId,
-                            isCorrect = correct
-                        )
-
-                        onRecordResult(
-                            current.problemId,
-                            correct,
-                            selectedOption.optionId,
-                            null
-                        ) { }
-                    } else {
-                        onRecordResult(
-                            current.problemId,
-                            correct,
-                            selectedOption.optionId,
-                            null
-                        ) { success ->
-                            if (success) {
-                                problemVm.submit(
-                                    problemId = current.problemId,
-                                    isCorrect = correct
-                                )
-                            } else {
-                                snackBarText = "오류가 발생했습니다."
-                            }
-                        }
-                    }
-                }
+            currentAnswer.selectedIndex?.let { selectedIdx ->
+                submitMultipleChoice(selectedIdx)
             }
         }
     }
@@ -449,7 +437,12 @@ fun ProblemUI(
                             selectedIndex = currentAnswer.selectedIndex,
                             submitted = currentAnswer.submitted,
                             isCorrect = currentAnswer.isCorrect,
-                            onSelect = { problemVm.select(current.problemId, it) },
+                            onSelect = { selectedIdx ->
+                                if (selectedIdx != null && !currentAnswer.submitted) {
+                                    problemVm.select(current.problemId, selectedIdx)
+                                    submitMultipleChoice(selectedIdx)
+                                }
+                            },
                             showRemoveFromWrongNote = (type == "wrong-answered-notes"),
                             onRemoveFromWrongNote = {
                                 onRemoveWrongNote(current.problemId) { success ->
