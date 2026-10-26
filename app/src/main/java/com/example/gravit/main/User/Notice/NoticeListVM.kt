@@ -66,7 +66,9 @@ class NoticeListVM(
 
             result
                 .onSuccess { items ->
-                    _state.value = UiState.Success(items)
+                    _state.value = UiState.Success(
+                        items.sortedByDescending { it.pinned }
+                    )
                 }
                 .onFailure { e ->
                     handleApiFailure(
