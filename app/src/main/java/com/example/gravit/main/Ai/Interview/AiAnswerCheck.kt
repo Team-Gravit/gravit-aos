@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -778,7 +779,7 @@ fun AiAnswerAudioPlayer(
 
     var resumeAfterBackground by remember { mutableStateOf(false) }
     var resumeAfterExitDialog by remember { mutableStateOf(false) }
-
+    val currentOnStop by rememberUpdatedState(onStop)
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
@@ -794,7 +795,7 @@ fun AiAnswerAudioPlayer(
                     player.pause()
                     player.seekTo(0L)
                     currentPosition = 0L
-                    onStop()
+                    currentOnStop()
                 }
             }
         }
@@ -835,7 +836,6 @@ fun AiAnswerAudioPlayer(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-
     DisposableEffect(lifecycleOwner, player) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -910,6 +910,9 @@ fun AiAnswerAudioPlayer(
                         player.pause()
                     } else {
                         onPlay()
+                        if (player.playbackState == Player.STATE_IDLE) {
+                            player.prepare()
+                        }
                         player.play()
                     }
                 }
