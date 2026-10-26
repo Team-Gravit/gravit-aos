@@ -35,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -65,7 +64,6 @@ import com.inuappcenter.gravit.R
 import com.inuappcenter.gravit.main.Ai.Selected.AnswerMode
 import com.inuappcenter.gravit.main.User.TopBar
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -761,7 +759,8 @@ fun AiAnswerEditField(
 
 @Composable
 fun AiAnswerAudioPlayer(
-    audioFile: File?,
+    audioFile: File? = null,
+    audioUrl: String? = null,
     isSelected: Boolean,
     pauseForExitDialog: Boolean,
     onPlay: () -> Unit,
@@ -769,7 +768,7 @@ fun AiAnswerAudioPlayer(
 ) {
     val context = LocalContext.current
 
-    val player = remember {
+    val player = remember(audioFile, audioUrl) {
         ExoPlayer.Builder(context).build()
     }
 
@@ -780,7 +779,7 @@ fun AiAnswerAudioPlayer(
     var resumeAfterBackground by remember { mutableStateOf(false) }
     var resumeAfterExitDialog by remember { mutableStateOf(false) }
 
-    DisposableEffect(player, audioFile) {
+    DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
@@ -802,10 +801,14 @@ fun AiAnswerAudioPlayer(
 
         player.addListener(listener)
 
-        if (audioFile != null && audioFile.exists()) {
-            player.setMediaItem(
-                MediaItem.fromUri(audioFile.toUri())
-            )
+        val audioUri = when {
+            audioFile?.exists() == true -> audioFile.toUri()
+            !audioUrl.isNullOrBlank() -> audioUrl.toUri()
+            else -> null
+        }
+
+        audioUri?.let {
+            player.setMediaItem(MediaItem.fromUri(it))
             player.prepare()
         }
 
@@ -901,7 +904,7 @@ fun AiAnswerAudioPlayer(
             modifier = Modifier
                 .size(24.dp)
                 .clickable(
-                    enabled = audioFile != null && audioFile.exists()
+                    enabled = (audioFile?.exists() == true) || !audioUrl.isNullOrBlank()
                 ) {
                     if (isPlaying) {
                         player.pause()
