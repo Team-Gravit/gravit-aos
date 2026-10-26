@@ -468,7 +468,7 @@ fun AiAnswerCheckPage(
                                 }
                         },
                         onAnswerChange = { changedAnswer ->
-                            if (changedAnswer.length <= 1000) {
+                            if (changedAnswer.length <= 2000) {
                                 answers = answers.toMutableList().also {
                                     it[index] = changedAnswer
                                 }
@@ -745,7 +745,7 @@ fun AiAnswerEditField(
         BasicTextField(
             value = answer,
             onValueChange = {
-                if (it.length <= 1000) {
+                if (it.length <= 2000) {
                     onAnswerChange(it)
                 }
             },
