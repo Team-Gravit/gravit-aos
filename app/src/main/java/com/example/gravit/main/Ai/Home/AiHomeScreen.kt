@@ -84,14 +84,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gravit.share.LoadFailedDialog
 import com.example.gravit.ui.theme.AppRadius
-import com.inuappcenter.gravit.api.AnswerConcept
 import com.inuappcenter.gravit.api.InterviewDashboardResponse
 import com.inuappcenter.gravit.api.InterviewSessionAnswer
 import com.inuappcenter.gravit.api.InterviewSessionAnswersResponse
 import com.inuappcenter.gravit.api.InterviewSessionSummaryResponse
 import com.inuappcenter.gravit.api.InterviewSummaryRecentSession
-import com.inuappcenter.gravit.api.InterviewTopic
-import com.inuappcenter.gravit.api.RecentSession
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.ScoreTrend
 import com.inuappcenter.gravit.main.Ai.Interview.AiAnswerAudioPlayer
@@ -1303,6 +1300,7 @@ fun FeedBackReport(
 
     val summaryState by vm.summaryState.collectAsState()
     val answersState by vm.answersState.collectAsState()
+    var playingAnswerNumber by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(sessionId) {
         vm.loadSummary(sessionId)
     }
@@ -1379,6 +1377,7 @@ fun FeedBackReport(
                                 selected = selectedTab == FeedBackTab.Synthesis,
                                 onClick = {
                                     selectedTab = FeedBackTab.Synthesis
+                                    playingAnswerNumber = null
                                 },
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
@@ -1422,7 +1421,8 @@ fun FeedBackReport(
                                 is AiFeedbackVM.SummaryUiState.Success -> {
                                     item {
                                         SynthesisUi(
-                                            synthesis = state.data
+                                            synthesis = state.data,
+                                            navController = navController
                                         )
                                     }
                                 }
@@ -1465,6 +1465,10 @@ fun FeedBackReport(
                                             expandedInquiryIds = expandedInquiryIds,
                                             onInquiryClick = { displayOrder ->
                                                 if (displayOrder in expandedInquiryIds) {
+                                                    if (playingAnswerNumber == displayOrder) {
+                                                        playingAnswerNumber = null
+                                                    }
+
                                                     expandedInquiryIds =
                                                         expandedInquiryIds - displayOrder
                                                 } else {
@@ -1474,6 +1478,10 @@ fun FeedBackReport(
                                             },
                                             onPageClick = {
                                                 expandedInquiryIds = emptySet()
+                                            },
+                                            playingAnswerNumber = playingAnswerNumber,
+                                            onPlayingAnswerChange = {
+                                                playingAnswerNumber = it
                                             }
                                         )
                                     }
@@ -1504,6 +1512,7 @@ fun FeedBackReport(
 
 @Composable
 fun SynthesisUi(
+    navController: NavController,
     synthesis: InterviewSessionSummaryResponse
 ) {
     Box (
@@ -1751,7 +1760,11 @@ fun SynthesisUi(
                                     text = "학습 콘텐츠 바로가기",
                                     style = AppTypography.Label2,
                                     color = AppColor.CTA_text,
-                                    onClick = {},
+                                    onClick = {
+                                        navController.navigate("lessonList/${it.unitId}") {
+                                            launchSingleTop = true
+                                        }
+                                    },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(32.dp)
@@ -2053,6 +2066,8 @@ fun DetailUi(
     expandedInquiryIds: Set<Int>,
     onInquiryClick: (Int) -> Unit,
     onPageClick: (Int) -> Unit,
+    playingAnswerNumber: Int?,
+    onPlayingAnswerChange: (Int?) -> Unit
 ) {
     val expandedAnswerOrders = remember { mutableStateOf(setOf<Int>()) }
 
@@ -2076,7 +2091,9 @@ fun DetailUi(
                     DetailItem(
                         detail = item,
                         onClick = onInquiryClick,
-                        expanded = item.displayOrder in expandedInquiryIds
+                        expanded = item.displayOrder in expandedInquiryIds,
+                        playingAnswerNumber = playingAnswerNumber,
+                        onPlayingAnswerChange = onPlayingAnswerChange
                     )
                 }
             }
@@ -2087,8 +2104,11 @@ fun DetailUi(
 fun DetailItem(
     detail: InterviewSessionAnswer,
     onClick: (Int) -> Unit,
-    expanded: Boolean
+    expanded: Boolean,
+    playingAnswerNumber: Int?,
+    onPlayingAnswerChange: (Int?) -> Unit
 ) {
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -2172,8 +2192,21 @@ fun DetailItem(
                                 color = AppColor.text1
                             )
                         }
+                        Spacer(Modifier.height(6.dp))
                         Spacer(Modifier.weight(1f))
-                       // AiAnswerAudioPlayer()
+                        AiAnswerAudioPlayer(
+                            audioUrl = detail.audioUrl,
+                            isSelected = playingAnswerNumber == detail.displayOrder,
+                            pauseForExitDialog = false,
+                            onPlay = {
+                                onPlayingAnswerChange(detail.displayOrder)
+                            },
+                            onStop = {
+                                if (playingAnswerNumber == detail.displayOrder) {
+                                    onPlayingAnswerChange(null)
+                                }
+                            }
+                        )
                     }
                     Spacer(Modifier.height(16.dp))
                     Box(
@@ -2267,24 +2300,25 @@ fun DetailItem(
                                         .clip(RoundedCornerShape(6.dp))
                                         .background(AppColor.bg1)
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    contentAlignment = Alignment.Center
+                                    contentAlignment = Alignment.CenterStart
                                 ) {
-                                Row(
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.circle_check),
-                                        contentDescription = "",
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = concept.name,
-                                        style = AppTypography.Body2_Reading,
-                                        color = AppColor.text2
-                                    )
-                                }
+                                    Row(
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.circle_check),
+                                            contentDescription = "",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            text = concept.name,
+                                            style = AppTypography.Body2_Reading,
+                                            color = AppColor.text2,
+                                            modifier = Modifier.padding(top = 2.dp)
+                                        )
                                     }
+                                }
                             }
                         }
                     }
