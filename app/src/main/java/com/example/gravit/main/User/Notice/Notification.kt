@@ -242,7 +242,7 @@ fun Notification(
                                                                     style = AppTypography.Label1,
                                                                     color = AppColor.text1
                                                                 )
-                                                                Spacer(Modifier.width(4.dp))
+                                                                Spacer(Modifier.width(8.dp))
                                                                 Text(
                                                                     text = notification.timeAgo,
                                                                     style = AppTypography.Caption1,
@@ -263,20 +263,24 @@ fun Notification(
                                                         modifier = Modifier.fillMaxWidth()
                                                     ) {
                                                         Row(
-                                                            verticalAlignment = Alignment.CenterVertically
+                                                            verticalAlignment = Alignment.Top
                                                         ) {
                                                             Text(
                                                                 text = notification.message,
                                                                 style = AppTypography.Label1,
                                                                 color = AppColor.text1,
-                                                                maxLines = 2,
-                                                                overflow = TextOverflow.Ellipsis,
+                                                                modifier = Modifier.weight(1f, fill = false),
+                                                                softWrap = true
                                                             )
-                                                            Spacer(Modifier.width(4.dp))
+
+                                                            Spacer(Modifier.width(8.dp))
+
                                                             Text(
                                                                 text = notification.timeAgo,
                                                                 style = AppTypography.Caption1,
-                                                                color = AppColor.text4
+                                                                color = AppColor.text4,
+                                                                maxLines = 1,
+                                                                softWrap = false
                                                             )
                                                         }
 

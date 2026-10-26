@@ -71,6 +71,7 @@ import com.inuappcenter.gravit.api.ProblemSubmissionSaveRequests
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Home.RoundedGauge
 import com.inuappcenter.gravit.main.Home.calculateXpProgress
+import com.inuappcenter.gravit.main.Home.planetById
 import com.inuappcenter.gravit.main.Study.Problem.FormatSeconds
 import com.inuappcenter.gravit.main.Study.Problem.LessonVMFactory
 import com.inuappcenter.gravit.main.Study.Problem.LessonViewModel
@@ -785,19 +786,25 @@ val planetName = mapOf(
     5L to "목성",
     6L to "토성",
     7L to "천왕성",
-    8L to "해왕성"
+    8L to "해왕성",
+    9L to "태양",
+    10L to "명왕성",
+    11L to "세레스",
+    12L to "에리스",
+    13L to "베스타",
+    14L to "이오",
+    15L to "유로파",
+    16L to "타이탄",
+    17L to "트리톤",
+    18L to "카론",
+    19L to "포보스",
+    20L to "데이모스",
+    21L to "미마스",
+    22L to "레아",
+    23L to "테티스",
+    24L to "디오네",
+    25L to "오베론"
 )
 fun converterInt(id: Long): Int {
-    return planetImg[id] ?: R.drawable.algorithm_chapter
+    return planetById[id] ?: R.drawable.planet_01_mercury
 }
-
-val planetImg = mapOf(
-    1L to R.drawable.data_structure_planet,
-    2L to R.drawable.algorithm_planet,
-    3L to R.drawable.computer_network_planet,
-    4L to R.drawable.database_planet,
-    5L to R.drawable.computer_security_planet,
-    6L to R.drawable.software_engineering_planet,
-    7L to R.drawable.opreating_system_planet,
-    8L to R.drawable.programming_language_planet,
-)

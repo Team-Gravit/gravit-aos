@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,8 +53,7 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.*
@@ -66,6 +66,7 @@ import com.inuappcenter.gravit.api.ChapterPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.main.Ai.Home.AiHomePage
 import com.inuappcenter.gravit.main.Home.RoundedGauge
+import com.inuappcenter.gravit.main.Home.resolvePlanetRes
 import com.inuappcenter.gravit.main.User.TopBar
 import com.inuappcenter.gravit.share.TabBar
 import com.inuappcenter.gravit.ui.theme.mbc1961
@@ -273,20 +274,6 @@ data class ChapterButtonData(
     val planetRes: Int?,
 )
 
-fun resolvePlanetRes(id: Long): Int? {
-    return planetById[id]
-}
-
-val planetById = mapOf(
-    1L to R.drawable.data_structure_chapter,
-    2L to R.drawable.algorithm_chapter,
-    3L to R.drawable.computer_network_chapter,
-    4L to R.drawable.database_chapter,
-    5L to R.drawable.computer_security_chapter,
-    6L to R.drawable.software_engineering_chapter,
-    7L to R.drawable.opreating_system_chapter,
-    8L to R.drawable.programming_language_chapter,
-)
 
 fun mapToButtons(chapters: List<ChapterPageResponse>): List<ChapterButtonData> {
     return chapters.mapNotNull { c ->
@@ -315,17 +302,6 @@ fun ChapterButton(
     enabled: Boolean = true
 ) {
     var showTooltip by remember { mutableStateOf(false) }
-    val grayFilter = ColorFilter.colorMatrix(
-        ColorMatrix(
-            floatArrayOf(
-                0.3f, 0.3f, 0.3f, 0f, 0f,
-                0.3f, 0.3f, 0.3f, 0f, 0f,
-                0.3f, 0.3f, 0.3f, 0f, 0f,
-                0f, 0f, 0f, 1f, 0f
-            )
-        )
-    )
-
     Button(
         modifier = modifier,
         onClick = onClick,
@@ -336,10 +312,22 @@ fun ChapterButton(
         Box(Modifier.fillMaxSize()) {
             if (planet != null) {
                 Image(
-                    painter = painterResource(id = planet),
+                    painter = painterResource(id = R.drawable.planet_bg),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
-                    colorFilter = if (enabled) null else grayFilter
+                    contentScale = ContentScale.Crop
+                )
+                Image(
+                    painter = painterResource(id = planet),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(130.dp)
+                        .offset(
+                            x = 20.dp,
+                            y = 25.dp
+                        ),
+                    contentScale = ContentScale.Fit
                 )
             }
             Box(

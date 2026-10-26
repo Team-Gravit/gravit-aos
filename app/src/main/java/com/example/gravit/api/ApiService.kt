@@ -575,7 +575,7 @@ data class InterviewSessionAnswer(
     val topic: InterviewTopic,
     val questionContent: String,
     val answerContent: String?,
-    val audioKey: String?,
+    val audioUrl: String?,
     val modelAnswer: String,
     val concepts: List<AnswerConcept>,
     val improvementSuggestion: String?,

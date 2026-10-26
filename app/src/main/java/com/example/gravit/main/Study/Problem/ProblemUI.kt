@@ -138,6 +138,8 @@ fun ProblemUI(
     }
 
     val currentAnswer = state.answers[current.problemId]?: ProblemViewModel.AnswerState()
+    var submittingProblemId by remember { mutableStateOf<Long?>(null) }
+    val isSubmitting = submittingProblemId == current.problemId
 
     val isBookmark = bookmarkMap[current.problemId] ?: false
 
@@ -146,62 +148,74 @@ fun ProblemUI(
 
     val isSubjective = current.problemType == "SUBJECTIVE"
     val canSubmit = if (isSubjective) currentAnswer.shortText.isNotBlank() else currentAnswer.selectedIndex != null
-    val nextButtonEnabled = currentAnswer.submitted || canSubmit
-    val submitCurrentProblem: () -> Unit = {
-        if (isSubjective) {
-            val correct = isAnswerCorrect(currentAnswer.shortText, current.answerResponse)
+    val nextButtonEnabled = !isSubmitting && (currentAnswer.submitted || canSubmit)
+    val submitMultipleChoice: (Int) -> Unit = { selectedIdx ->
+        val selectedOption = current.options.getOrNull(selectedIdx)
+
+        if (selectedOption != null && !currentAnswer.submitted && submittingProblemId == null) {
+            val problemId = current.problemId
+            val correct = selectedOption.isAnswer
+
+            submittingProblemId = problemId
 
             if (type == "normal") {
-                problemVm.submit(problemId = current.problemId, isCorrect = correct)
-                onRecordResult(current.problemId, correct, null, currentAnswer.shortText) { }
-            } else {
-                onRecordResult(current.problemId, correct, null, currentAnswer.shortText)
-                { success ->
+                problemVm.submit(
+                    problemId = problemId,
+                    isCorrect = correct
+                )
+
+                onRecordResult(problemId, correct, selectedOption.optionId, null) {
+                    submittingProblemId = null
+                }
+            }else {
+                onRecordResult(problemId, correct, selectedOption.optionId, null) { success ->
                     if (success) {
-                        problemVm.submit(problemId = current.problemId, isCorrect = correct)
+                        problemVm.submit(
+                            problemId = problemId,
+                            isCorrect = correct
+                        )
                     } else {
                         snackBarText = "오류가 발생했습니다."
                     }
+                    submittingProblemId = null
                 }
             }
-        } else {
-            val selectedIdx = currentAnswer.selectedIndex
+        }
+    }
+    val submitCurrentProblem: () -> Unit = {
+        if (submittingProblemId == null && !currentAnswer.submitted) {
+            if (isSubjective) {
+                val problemId = current.problemId
+                val answerText = currentAnswer.shortText
+                val correct = isAnswerCorrect(answerText, current.answerResponse)
 
-            if (selectedIdx != null) {
-                val selectedOption = current.options.getOrNull(selectedIdx)
+                submittingProblemId = problemId
 
-                if (selectedOption != null) {
-                    val correct = selectedOption.isAnswer
+                if (type == "normal") {
+                    problemVm.submit(
+                        problemId = problemId,
+                        isCorrect = correct
+                    )
 
-                    if (type == "normal") {
-                        problemVm.submit(
-                            problemId = current.problemId,
-                            isCorrect = correct
-                        )
-
-                        onRecordResult(
-                            current.problemId,
-                            correct,
-                            selectedOption.optionId,
-                            null
-                        ) { }
-                    } else {
-                        onRecordResult(
-                            current.problemId,
-                            correct,
-                            selectedOption.optionId,
-                            null
-                        ) { success ->
-                            if (success) {
-                                problemVm.submit(
-                                    problemId = current.problemId,
-                                    isCorrect = correct
-                                )
-                            } else {
-                                snackBarText = "오류가 발생했습니다."
-                            }
-                        }
+                    onRecordResult(problemId, correct, null, answerText) {
+                        submittingProblemId = null
                     }
+                } else {
+                    onRecordResult(problemId, correct, null, answerText) { success ->
+                        if (success) {
+                            problemVm.submit(
+                                problemId = problemId,
+                                isCorrect = correct
+                            )
+                        } else {
+                            snackBarText = "오류가 발생했습니다."
+                        }
+                        submittingProblemId = null
+                    }
+                }
+            } else {
+                currentAnswer.selectedIndex?.let { selectedIdx ->
+                    submitMultipleChoice(selectedIdx)
                 }
             }
         }
@@ -218,6 +232,10 @@ fun ProblemUI(
 
     Log.d("can",canSubmit.toString())
     BackHandler(enabled = true) {
+        if (submittingProblemId != null) {
+            return@BackHandler
+        }
+
         if (showSheet) {
             showSheet = false
             swVm.start()
@@ -263,13 +281,16 @@ fun ProblemUI(
                             .align(Alignment.CenterStart)
                             .padding(start = 12.dp)
                             .size(24.dp)
-                            .clickable {
+                            .clickable(enabled = submittingProblemId == null) {
                                 swVm.pause()
+
                                 if (type == "normal") {
                                     showSheet = true
                                 } else {
                                     navController.navigate("lessonList/$unitId") {
-                                        popUpTo("lessonList/$unitId") { inclusive = true }
+                                        popUpTo("lessonList/$unitId") {
+                                            inclusive = true
+                                        }
                                         launchSingleTop = true
                                     }
                                 }
@@ -424,7 +445,7 @@ fun ProblemUI(
                 ) {
                     if(current.problemType == "SUBJECTIVE") {
                         ShortAnswer(
-                            submitted = currentAnswer.submitted,
+                            submitted = currentAnswer.submitted || isSubmitting,
                             isCorrect = currentAnswer.isCorrect,
                             problemId = current.problemId,
                             text = currentAnswer.shortText,
@@ -449,7 +470,16 @@ fun ProblemUI(
                             selectedIndex = currentAnswer.selectedIndex,
                             submitted = currentAnswer.submitted,
                             isCorrect = currentAnswer.isCorrect,
-                            onSelect = { problemVm.select(current.problemId, it) },
+                            onSelect = { selectedIdx ->
+                                if (
+                                    selectedIdx != null &&
+                                    !currentAnswer.submitted &&
+                                    submittingProblemId == null
+                                ) {
+                                    problemVm.select(current.problemId, selectedIdx)
+                                    submitMultipleChoice(selectedIdx)
+                                }
+                            },
                             showRemoveFromWrongNote = (type == "wrong-answered-notes"),
                             onRemoveFromWrongNote = {
                                 onRemoveWrongNote(current.problemId) { success ->
@@ -468,16 +498,22 @@ fun ProblemUI(
             //버튼
             ReportButton(
                 text1 = "이전",
-                onClick1 = { if (index > 0) index-- },
-                text2 = "다음",
-                onClick2 = {
-                    if (currentAnswer.submitted) {
-                        moveToNextProblem()
-                    } else {
-                        submitCurrentProblem()
+                onClick1 = {
+                    if (submittingProblemId == null && index > 0) {
+                        index--
                     }
                 },
-                enabled1 = index != 0,
+                text2 = "다음",
+                onClick2 = {
+                    if (submittingProblemId == null) {
+                        if (currentAnswer.submitted) {
+                            moveToNextProblem()
+                        } else {
+                            submitCurrentProblem()
+                        }
+                    }
+                },
+                enabled1 = index != 0 && submittingProblemId == null,
                 enabled2 = nextButtonEnabled,
                 modifier1 = Modifier
                     .height(48.dp)
