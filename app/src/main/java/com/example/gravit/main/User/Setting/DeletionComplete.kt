@@ -1,21 +1,17 @@
 package com.inuappcenter.gravit.main.User.Setting
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.inuappcenter.gravit.ui.theme.pretendard
+import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 import com.inuappcenter.gravit.R
 
 @Composable
@@ -34,34 +30,31 @@ fun DeletionComplete(
             .padding(horizontal = 32.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Image(
-                painter = painterResource(id = R.drawable.check),
+                painter = painterResource(id = R.drawable.deleted_rabbit),
                 contentDescription = null,
-                modifier = Modifier.size(96.dp)
+                modifier = Modifier.size(250.dp)
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(40.dp))
 
             Text(
-                text = "탈퇴가 완료되었어요.",
-                fontFamily = pretendard,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black,
+                text = "메일을 보냈어요.",
+                style = AppTypography.Heading1,
+                color = AppColor.text1,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
 
             Text(
-                text = "가입하신 이메일로 메일을 통해\n탈퇴처리를 완료했어요.",
-                fontFamily = pretendard,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF868686),
+                text = "가입하신 이메일로 메일을 전송해드렸으니\n다시 메일을 확인해주시고\n절차를 따라주세요.",
+                style = AppTypography.Body2_Reading,
+                color = AppColor.text4,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(24.dp))
-
+/*
             Text(
                 text = "메인으로",
                 fontFamily = pretendard,
@@ -71,6 +64,8 @@ fun DeletionComplete(
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable { onGoMain() }
             )
+
+ */
         }
     }
 }
