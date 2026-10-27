@@ -468,7 +468,8 @@ private fun AiSelectedContent(
                 AiStep.STEP_5 -> {
                     Step5Content(
                         selectedLevel = selectedLevel,
-                        onLevelSelected = onLevelSelected
+                        onLevelSelected = onLevelSelected,
+                        isCsMode = selectedTopic == "CS"
                     )
                 }
 
@@ -848,7 +849,13 @@ private fun Step3Content(
                 state.data.forEach { job ->
                     AnswerModeItem(
                         title = job.displayName,
-                        description = "",
+                        description = when (job.stackGroup) {
+                            "SERVER" -> "Spring / Java 등"
+                            "WEB" -> "React / TypeScript 등"
+                            "AOS" -> "Jetpack / Kotlin"
+                            "IOS" -> "SwiftUI / Swift"
+                            else -> ""
+                        },
                         icon = stackGroupIcon(job.stackGroup),
                         selected = selectedJob == job.stackGroup,
                         onClick = {
@@ -943,7 +950,7 @@ private fun stackIcons(stack: String): Pair<Int, Int> {
             R.drawable.kotlin_icon to R.drawable.spring_icon
 
         "NODE_NEST" ->
-            R.drawable.kotlin_icon to R.drawable.spring_icon
+            R.drawable.nodeis_icon to R.drawable.spring_icon
 
         "PYTHON_DJANGO" ->
             R.drawable.python_icon to R.drawable.django_icon
@@ -1013,7 +1020,8 @@ private fun StackItem(
 @Composable
 private fun Step5Content(
     selectedLevel: String?,
-    onLevelSelected: (String) -> Unit
+    onLevelSelected: (String) -> Unit,
+    isCsMode: Boolean
 ) {
     val levels = listOf(
         "상" to "심화 개념까지 깊이 있게 물어봐요",
@@ -1025,18 +1033,19 @@ private fun Step5Content(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start
     ) {
         Spacer(Modifier.height(20.dp))
 
         AiStepIndicator(
-            currentStep = 3
+            currentStep = if (isCsMode) 2 else 3,
+            isCsMode = isCsMode
         )
 
         Spacer(Modifier.height(32.dp))
 
         Text(
-            text = "주로 다루는 스택을 골라주세요.",
+            text = "연습할 난이도를 골라주세요.",
             color = AppColor.text1,
             style = AppTypography.Heading2
         )
@@ -1367,13 +1376,14 @@ private fun SummaryRow(
 }
 @Composable
 private fun AiStepIndicator(
-    currentStep: Int
+    currentStep: Int,
+    isCsMode: Boolean = false
 ) {
-    val steps = listOf(
-        "직군 선택",
-        "스택 선택",
-        "난이도 선택"
-    )
+    val steps = if (isCsMode) {
+        listOf("분야 선택", "난이도 선택")
+    } else {
+        listOf("직군 선택", "스택 선택", "난이도 선택")
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
