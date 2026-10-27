@@ -45,7 +45,7 @@ fun DeletionGuard(
     LaunchedEffect(state) {
         when (state) {
             DeleteAccountVM.DeletionState.Confirmed -> {
-                navController.navigate("user/deletion-complete") {
+                navController.navigate("user/deletion-success") {
                     popUpTo(0) { inclusive = true }
                     launchSingleTop = true
                 }

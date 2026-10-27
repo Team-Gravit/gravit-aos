@@ -41,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -95,7 +94,6 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlin.math.abs
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -114,7 +112,6 @@ fun LeagueScreen(
 
     LaunchedEffect(Unit) {
         vm.loadMyLeague()
-        vm.selectUserLeague()
         vm.loadSeasonPopup()
     }
 
@@ -181,20 +178,45 @@ fun LeagueScreen(
         myLeagueState is LeagueViewModel.MyLeagueState.Success &&
                 seasonState   is LeagueViewModel.SeasonPopupState.Ready -> {
             val listState = rememberLazyListState()
-
-            LaunchedEffect(listState, ui.items.size) {
-                snapshotFlow {
-                    val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                    val total = listState.layoutInfo.totalItemsCount
-                    if (last != null) last to total else null
-                }
-                    .filterNotNull()
-                    .distinctUntilChanged()
-                    .collect { (lastVisible, total) ->
-                        if (lastVisible >= total - 3) vm.loadNextL()
-                    }
-            }
             val my = (myLeagueState as LeagueViewModel.MyLeagueState.Success).data
+            val source by vm.source.collectAsState()
+            val latestUi by androidx.compose.runtime.rememberUpdatedState(ui)
+
+            LaunchedEffect(my.userId) {
+                vm.selectUserLeague(my)
+            }
+
+            LaunchedEffect(ui.generation) {
+                listState.scrollToItem(0)
+            }
+
+            LaunchedEffect(ui.generation, ui.initialized, ui.scrollToMe, ui.items) {
+                if (!ui.initialized || !ui.scrollToMe ||
+                    source != LeagueViewModel.Source.UserLeague) return@LaunchedEffect
+                val index = ui.items.indexOfFirst { it.userId == my.userId }
+                if (index >= 0) {
+                    listState.scrollToItem(index + 1)
+                }
+                vm.markInitialScrollCompleted()
+            }
+
+            LaunchedEffect(listState) {
+                snapshotFlow {
+                    val layout = listState.layoutInfo
+                    val first = layout.visibleItemsInfo.firstOrNull()?.index ?: -1
+                    val last = layout.visibleItemsInfo.lastOrNull()?.index ?: -1
+                    Triple(listState.isScrollInProgress, first, last)
+                }.distinctUntilChanged().collect { (moving, first, last) ->
+                    val current = latestUi
+                    if (!moving || !current.initialized || current.scrollToMe ||
+                        current.isLoadingPrevious || current.isLoadingNext) return@collect
+                    if (first in 0..2 && !current.endReachedPrevious) {
+                        vm.loadPreviousL()
+                    } else if (last >= current.items.size - 2 && !current.endReachedNext) {
+                        vm.loadNextL()
+                    }
+                }
+            }
             val season = (seasonState as LeagueViewModel.SeasonPopupState.Ready).data
 
             LeagueUI(my, vm, checkLeague, season, listState, ui, seasonState)
@@ -240,112 +262,105 @@ fun LeagueUI(
                     val seasonName = season.currentSeason.nowSeason
                     if(checkLeague){
                         SeasonFinish()
-                    }else{
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(bottom = 80.dp)
+                    }else {
+                        Column(
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            item {
-                                Column {
-                                    Spacer(Modifier.height(40.dp))
+                            Spacer(Modifier.height(40.dp))
 
-                                    Text(
-                                        text = seasonName,
-                                        color = AppColor.text1w,
-                                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                                        style = TextStyle(
-                                            fontWeight = FontWeight.Medium,
-                                            fontFamily = mbc1961,
-                                            fontSize = 22.sp
-                                        )
-                                    )
+                            Text(
+                                text = seasonName,
+                                color = AppColor.text1w,
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                style = TextStyle(
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = mbc1961,
+                                    fontSize = 22.sp
+                                )
+                            )
 
-                                    Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(8.dp))
 
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .size(150.dp, 33.dp)
-                                            .clip(RoundedCornerShape(50))
-                                            .background(AppColor.bg0),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        WeeklyCountdown()
-                                    }
-
-                                    Spacer(Modifier.height(24.dp))
-
-                                    TierSelector(
-                                        vm = vm,
-                                        initialLeagueId = my.leagueId
-                                    )
-
-                                    Spacer(Modifier.height(24.dp))
-
-                                    HorizontalDivider(
-                                        color = AppColor.divider2,
-                                        thickness = 1.dp,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-
-                                    Spacer(Modifier.height(16.dp))
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .size(150.dp, 33.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(AppColor.bg0),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                WeeklyCountdown()
                             }
 
-                            itemsIndexed(
-                                items = ui.items,
-                                key = { index, item ->
-                                    "${item.userId ?: "unknown"}$index"
+                            Spacer(Modifier.height(24.dp))
+
+                            TierSelector(
+                                vm = vm,
+                                initialLeagueId = my.leagueId
+                            )
+
+                            Spacer(Modifier.height(24.dp))
+
+                            HorizontalDivider(
+                                color = AppColor.divider2,
+                                thickness = 1.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(Modifier.height(16.dp))
+
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(bottom = 80.dp)
+                            ) {
+                                // 항상 존재하는 고정 key: 앞쪽 로딩 상태가 바뀌어도 index 유지
+                                item(key = "ranking-header") {
+                                    when {
+                                        ui.isLoadingPrevious -> Box(
+                                            Modifier.fillMaxWidth().padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) { CircularProgressIndicator() }
+                                        ui.errorPrevious != null -> OutlinedButton(
+                                            onClick = { vm.loadPreviousL() },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("이전 순위 다시 시도") }
+                                        else -> Spacer(Modifier.height(0.dp))
+                                    }
                                 }
-                            ) { _, item ->
-                                RankCell(item = item, hazeState)
-                            }
 
-                            item {
-                                when {
-                                    ui.isLoading -> {
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
+                                itemsIndexed(
+                                    items = ui.items,
+                                    key = { index, item ->
+                                        "rank-${item.userId ?: "unknown-$index"}"
+                                    }
+                                ) { _, item ->
+                                    RankCell(
+                                        item = item,
+                                        hazeState = hazeState,
+                                        isMe = item.userId == my.userId
+                                    )
+                                }
+
+                                item(key = "ranking-footer") {
+                                    when {
+                                        ui.isLoadingNext -> Box(
+                                            Modifier.fillMaxWidth().padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) { CircularProgressIndicator() }
+                                        ui.errorNext != null -> OutlinedButton(
+                                            onClick = { vm.loadNextL() },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("다음 순위 다시 시도") }
+                                        ui.initialized && ui.endReachedNext -> Box(
+                                            Modifier.fillMaxWidth().padding(16.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            CircularProgressIndicator()
+                                            Text("더이상 유저가 없습니다.",
+                                                fontFamily = pretendard, color = AppColor.text2w)
                                         }
-                                    }
-
-                                    ui.endReached -> {
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "더이상 유저가 없습니다.",
-                                                fontFamily = pretendard,
-                                                color = AppColor.text2w
-                                            )
-                                        }
-                                    }
-
-                                    ui.error != null -> {
-                                        Column(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(ui.error)
-                                            Spacer(Modifier.height(8.dp))
-                                            OutlinedButton(
-                                                onClick = { vm.loadNextL() }
-                                            ) {
-                                                Text("다시 시도")
-                                            }
-                                        }
+                                        else -> Spacer(Modifier.height(0.dp))
                                     }
                                 }
                             }
@@ -642,28 +657,28 @@ fun SeasonStart(
 @Composable
 private fun RankCell(
     item: LeagueItem,
-    hazeState: HazeState
+    hazeState: HazeState,
+    isMe: Boolean
 ) {
-    Row(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .height(62.dp)
-            .clip(RoundedCornerShape(8.dp))
+    val shape = RoundedCornerShape(8.dp)
+
+    val baseModifier = Modifier
+        .padding(horizontal = 16.dp)
+        .fillMaxWidth()
+        .height(62.dp)
+        .clip(shape)
+
+    val cellModifier = if (isMe) {
+        baseModifier.background(Color.White)
+    } else {
+        baseModifier
             .hazeEffect(state = hazeState) {
-                backgroundColor =
-                    Color(0xFF32147D).copy(alpha = 0.12f)
+                backgroundColor = Color(0xFF32147D).copy(alpha = 0.12f)
 
                 tints = listOf(
-                    HazeTint(
-                        Color(0xFF7040D8).copy(alpha = 0.18f)
-                    ),
-                    HazeTint(
-                        Color(0xFFB58AFF).copy(alpha = 0.05f)
-                    ),
-                    HazeTint(
-                        Color.White.copy(alpha = 0.03f)
-                    )
+                    HazeTint(Color(0xFF7040D8).copy(alpha = 0.18f)),
+                    HazeTint(Color(0xFFB58AFF).copy(alpha = 0.05f)),
+                    HazeTint(Color.White.copy(alpha = 0.03f))
                 )
 
                 blurRadius = 5.dp
@@ -678,8 +693,12 @@ private fun RankCell(
                         Color(0xFFB695FF).copy(alpha = 0.7f)
                     )
                 ),
-                shape = RoundedCornerShape(8.dp)
-            ),
+                shape = shape
+            )
+    }
+
+    Row(
+        modifier = cellModifier,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -687,8 +706,11 @@ private fun RankCell(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(64.dp)
-                .background(Color(0XFFF4E3FF).copy(alpha = 0.5f)),
-           contentAlignment = Alignment.Center
+                .background(
+                    if (isMe) AppColor.Main1
+                    else Color(0xFFF4E3FF).copy(alpha = 0.5f)
+                ),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = item.rank
@@ -720,14 +742,14 @@ private fun RankCell(
                 Image(
                     painter = painterResource(id = R.drawable.profile_logo),
                     contentDescription = "profile logo",
-                    modifier = Modifier.size(19.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
             Spacer(Modifier.width(12.dp))
             Text(
                 text = item.nickname,
                 style = AppTypography.Label1,
-                color = AppColor.CTA_text
+                color = if (isMe) Color.Black else AppColor.CTA_text
             )
             Spacer(Modifier.weight(1f))
             VerticalDivider(
@@ -743,14 +765,20 @@ private fun RankCell(
                 buildAnnotatedString {
                     withStyle(
                         AppTypography.Caption1.toSpanStyle()
-                            .copy(color = AppColor.text2w)
+                            .copy(
+                                color = if (isMe) AppColor.text4
+                                else AppColor.text2w
+                            )
                     ) {
                         append("LV")
                     }
                     append(" ")
                     withStyle(
                         AppTypography.Label1.toSpanStyle()
-                            .copy(color = PrimitiveColor.Purple300)
+                            .copy(
+                                color = if (isMe) AppColor.Main1
+                                else PrimitiveColor.Purple300
+                            )
                     ) {
                         append(item.level?.toString() ?: "-")
                     }
@@ -767,14 +795,20 @@ private fun RankCell(
                 buildAnnotatedString {
                     withStyle(
                         AppTypography.Caption1.toSpanStyle()
-                            .copy(color = AppColor.text2w)
+                            .copy(
+                                color = if (isMe) AppColor.text4
+                                else AppColor.text2w
+                            )
                     ) {
                         append("LP")
                     }
                     append(" ")
                     withStyle(
                         AppTypography.Label1.toSpanStyle()
-                            .copy(color = PrimitiveColor.Purple300)
+                            .copy(
+                                color = if (isMe) AppColor.Main1
+                                else PrimitiveColor.Purple300
+                            )
                     ) {
                         append(item.lp?.toString() ?: "-")
                     }
@@ -823,7 +857,6 @@ fun TierSelector(
         if (idx >= 0) {
             listState.scrollToItem(idx)
             lastAppliedIndex = idx
-            vm.selectTier(tiers[idx])
         }
     }
 

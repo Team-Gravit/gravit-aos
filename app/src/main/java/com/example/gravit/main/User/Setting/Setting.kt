@@ -34,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gravit.main.ResultDialog
 import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppColor
 import com.example.gravit.ui.theme.AppTypography
@@ -47,6 +46,9 @@ import com.inuappcenter.gravit.main.User.Setting.LogoutVMFactory
 import com.inuappcenter.gravit.main.User.Setting.LogoutViewModel
 import com.inuappcenter.gravit.ui.theme.pretendard
 import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.AuthPrefs
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +67,9 @@ fun Setting(
     val deleteState by deleteVM.state.collectAsState()
 
     var showDeleteSheet by remember { mutableStateOf(false) }
-    var showSentDialog by remember { mutableStateOf(false) }
+    //var showSentDialog by remember { mutableStateOf(false) }
+    var showSnackbar by remember { mutableStateOf(false) }
+    var snackBarText by remember { mutableStateOf("") }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     var notificationsEnabled by remember { mutableStateOf(areNotificationsEnabled(context)) }
@@ -110,9 +114,20 @@ fun Setting(
                     launchSingleTop = true
                 }
             }
+            DeleteAccountVM.DeletionState.Failed -> {
+                showDeleteSheet = false
+                //showSentDialog = false
+
+                snackBarText = "탈퇴 요청에 실패했어요. 다시 시도해주세요."
+                showSnackbar = true
+
+                delay(3000)
+                showSnackbar = false
+            }
             else -> Unit
         }
     }
+
     StatusBarStyle(darkIcons = true)
     Box(
         modifier = Modifier
@@ -157,22 +172,18 @@ fun Setting(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "계정정보",
+                                    text = "고객지원",
                                     style = AppTypography.Label2,
                                     color = AppColor.text3
                                 )
-
-                                RowNavigableItem(
-                                    "내 정보",
-                                    { navController.navigate("user/account") }
-                                )
+                                Spacer(Modifier.height(12.dp))
                                 RowNavigableItem(
                                     "공지사항",
                                     { navController.navigate("user/notice") }
                                 )
                                 RowNavigableItem(
-                                    "개인정보 처리 방침",
-                                    { navController.navigate("user/privacypolicy") }
+                                    "문의하기",
+                                    { navController.navigate("inquiry") }
                                 )
                             }
                         }
@@ -191,15 +202,40 @@ fun Setting(
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = "기타",
+                                    text = "약관 및 정책",
                                     style = AppTypography.Label2,
                                     color = AppColor.text3
                                 )
-
+                                Spacer(Modifier.height(12.dp))
                                 RowNavigableItem(
-                                    "문의하기",
-                                    { navController.navigate("inquiry") }
+                                    "이용약관",
+                                    { navController.navigate("user/termsOfService") }
                                 )
+                                RowNavigableItem(
+                                    "개인정보 처리 방침",
+                                    { navController.navigate("user/privacypolicy") }
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(AppColor.bg0)
+                                .padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 16.dp,
+                                    bottom = 8.dp
+                                )
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "계정",
+                                    style = AppTypography.Label2,
+                                    color = AppColor.text3
+                                )
+                                Spacer(Modifier.height(12.dp))
                                 RowNavigableItem(
                                     "로그아웃",
                                     { logoutVM.logout { onLogout() } }
@@ -237,13 +273,21 @@ fun Setting(
                     showDeleteSheet = false
                 },
                 onCancel = {
-                    deleteVM.requestDeletionMail(dest = "prod") {
+                    deleteVM.requestDeletionMail(dest = "dev") {
                         showDeleteSheet = false
-                        showSentDialog = true
+                        //showSentDialog = true
+                        AuthPrefs.clear(context)
+                        navController.navigate("user/deletion-complete") {
+                            popUpTo(navController.graph.id) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
                     }
                 }
             )
         }
+        /*
         if (showSentDialog) {
             ResultDialog(
                 onDismiss = {
@@ -257,6 +301,7 @@ fun Setting(
                 }
             )
         }
+         */
 
         if (deleteState is DeleteAccountVM.DeletionState.Loading) {
             Box(
@@ -266,6 +311,17 @@ fun Setting(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
+            }
+        }
+        if (showSnackbar) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackBar(
+                    text = snackBarText,
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
             }
         }
     }

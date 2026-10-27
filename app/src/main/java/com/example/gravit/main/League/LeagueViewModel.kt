@@ -2,6 +2,7 @@ package com.inuappcenter.gravit.main.League
 
 import android.content.Context
 import android.os.Build
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,34 +12,27 @@ import com.inuappcenter.gravit.api.LeagueItem
 import com.inuappcenter.gravit.api.MyLeague
 import com.inuappcenter.gravit.api.SeasonPopupResponse
 import com.inuappcenter.gravit.error.handleApiFailure
+import com.inuappcenter.gravit.error.mapServerError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
-import androidx.core.content.edit
-import com.inuappcenter.gravit.error.mapServerError
 
 class LeagueViewModel(
     private val api: ApiService,
     private val appContext: Context
 ) : ViewModel() {
-
     private val _checkLeague = MutableStateFlow(false)
     val checkLeague = _checkLeague.asStateFlow()
 
     private fun isCheckLeague(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
-
         val now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul"))
-        val day = now.dayOfWeek
-        if (day != java.time.DayOfWeek.MONDAY) return false
-
+        if (now.dayOfWeek != java.time.DayOfWeek.MONDAY) return false
         val time = now.toLocalTime()
-        val start = java.time.LocalTime.of(0, 0)
-        val end   = java.time.LocalTime.of(0, 5)
-
-        return !time.isBefore(start) && time.isBefore(end)
+        return !time.isBefore(java.time.LocalTime.of(0, 0)) &&
+                time.isBefore(java.time.LocalTime.of(0, 5))
     }
 
     sealed class Source {
@@ -51,18 +45,25 @@ class LeagueViewModel(
 
     data class PagingUi(
         val items: List<LeagueItem> = emptyList(),
-        val page: Int = 0,
-        val isLoading: Boolean = false,
-        val endReached: Boolean = false,
-        val error: String? = null
+        val minPage: Int = 0,
+        val maxPage: Int = 0,
+        val initialized: Boolean = false,
+        val isLoadingPrevious: Boolean = false,
+        val isLoadingNext: Boolean = false,
+        val endReachedPrevious: Boolean = true,
+        val endReachedNext: Boolean = false,
+        val errorPrevious: String? = null,
+        val errorNext: String? = null,
+        val scrollToMe: Boolean = false,
+        val generation: Int = 0
     )
 
     private val _ui = MutableStateFlow(PagingUi())
     val state = _ui.asStateFlow()
+    private var pagingGeneration = 0
 
     private val _sessionExpired = MutableStateFlow(false)
     val sessionExpired = _sessionExpired.asStateFlow()
-
     private val _notFound = MutableStateFlow(false)
     val notFound = _notFound.asStateFlow()
 
@@ -80,173 +81,198 @@ class LeagueViewModel(
 
     fun loadMyLeague() = viewModelScope.launch {
         _myLeague.value = MyLeagueState.Loading
-
         val session = AuthPrefs.load(appContext)
         if (session == null) {
             AuthPrefs.clear(appContext)
             _myLeague.value = MyLeagueState.SessionExpired
             return@launch
         }
-
-        runCatching {
-            api.getMyLeague("Bearer ${session.accessToken}")
-        }.onSuccess { res ->
-            _myLeague.value = MyLeagueState.Success(res)
-        }.onFailure { e ->
-            handleApiFailure(
-                e = e,
-                appContext = appContext,
-                onStateChange = { _myLeague.value = it },
-                unauthorizedState = MyLeagueState.SessionExpired,
-                notFoundState = MyLeagueState.NotFound,
-                failedState = MyLeagueState.Failed
-            )
-        }
+        runCatching { api.getMyLeague("Bearer ${session.accessToken}") }
+            .onSuccess { _myLeague.value = MyLeagueState.Success(it) }
+            .onFailure { e ->
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { _myLeague.value = it },
+                    unauthorizedState = MyLeagueState.SessionExpired,
+                    notFoundState = MyLeagueState.NotFound,
+                    failedState = MyLeagueState.Failed
+                )
+            }
     }
 
-    fun refreshL() {
-        _ui.value = PagingUi()
-        loadNextL()
-    }
+    private enum class Direction { INITIAL, PREVIOUS, NEXT }
 
-    fun selectUserLeague() {
+    fun selectUserLeague(my: MyLeague) {
+        val page = ((my.rank - 1).coerceAtLeast(0)) / 10
+        pagingGeneration++
         _source.value = Source.UserLeague
-        refreshL()
+        _ui.value = PagingUi(
+            minPage = page,
+            maxPage = page,
+            endReachedPrevious = page == 0,
+            scrollToMe = true,
+            generation = pagingGeneration
+        )
+        loadPage(page, Direction.INITIAL)
     }
 
     fun selectTier(leagueId: Long) {
+        if (_source.value == Source.Tier(leagueId)) return
+        pagingGeneration++
         _source.value = Source.Tier(leagueId)
-        refreshL()
+        _ui.value = PagingUi(generation = pagingGeneration)
+        loadPage(0, Direction.INITIAL)
     }
-    fun loadNextL() = viewModelScope.launch {
+
+    fun loadPreviousL() {
+        val ui = _ui.value
+        if (!ui.initialized || ui.isLoadingPrevious || ui.isLoadingNext || ui.endReachedPrevious) return
+        loadPage(ui.minPage - 1, Direction.PREVIOUS)
+    }
+
+    fun loadNextL() {
+        val ui = _ui.value
+
+        if (ui.isLoadingPrevious || ui.isLoadingNext) return
+
+        if (!ui.initialized) {
+            loadPage(ui.minPage, Direction.INITIAL)
+            return
+        }
+
+        if (ui.endReachedNext) return
+
+        loadPage(ui.maxPage + 1, Direction.NEXT)
+    }
+
+    fun markInitialScrollCompleted() {
+        _ui.update { it.copy(scrollToMe = false) }
+    }
+
+    private fun loadPage(page: Int, direction: Direction) = viewModelScope.launch {
+        val generation = pagingGeneration
+        val requestedSource = _source.value
         if (isCheckLeague()) {
             _checkLeague.value = true
             return@launch
         }
-
-        val curr = _ui.value
-        if (curr.isLoading || curr.endReached) return@launch
-
         val session = AuthPrefs.load(appContext)
         if (session == null) {
             AuthPrefs.clear(appContext)
             _myLeague.value = MyLeagueState.SessionExpired
             return@launch
         }
-
-        _ui.update { it.copy(isLoading = true, error = null) }
-
-        val nextPage = curr.page
-
-        val pageResp = runCatching {
-            when (val s = _source.value) {
-                Source.UserLeague -> api.getLeagues_league("Bearer ${session.accessToken}", nextPage)
-                is Source.Tier    -> api.getLeagues_tier("Bearer ${session.accessToken}", s.leagueId, nextPage)
+        _ui.update {
+            when (direction) {
+                Direction.PREVIOUS -> it.copy(isLoadingPrevious = true, errorPrevious = null)
+                else -> it.copy(isLoadingNext = true, errorNext = null)
             }
-        }.getOrElse { e ->
-            _ui.update { it.copy(isLoading = false) }
-
-            when {
-                e is HttpException && e.code() == 401 -> {
-                    AuthPrefs.clear(appContext)
-                    _sessionExpired.value = true
-                }
-
-                e is HttpException && e.code() == 404 -> {
-                    _notFound.value = true
-                }
-
-                e is HttpException -> {
-                    _ui.update {
-                        it.copy(
-                            error = mapServerError(
-                                e.response()?.errorBody()?.string()
-                            )
-                        )
-                    }
-                }
-
-                else -> {
-                    _ui.update {
-                        it.copy(error = "오류가 발생했습니다.")
-                    }
+        }
+        val result = runCatching {
+            when (requestedSource) {
+                Source.UserLeague -> api.getLeagues_league("Bearer ${session.accessToken}", page)
+                is Source.Tier -> api.getLeagues_tier("Bearer ${session.accessToken}", requestedSource.leagueId, page)
+            }
+        }
+        if (generation != pagingGeneration || requestedSource != _source.value) return@launch
+        val response = result.getOrElse { e ->
+            if (e is HttpException && e.code() == 401) {
+                AuthPrefs.clear(appContext)
+                _sessionExpired.value = true
+            } else if (e is HttpException && e.code() == 404) {
+                _notFound.value = true
+            }
+            val message = if (e is HttpException) {
+                mapServerError(e.response()?.errorBody()?.string())
+            } else "오류가 발생했습니다."
+            _ui.update {
+                when (direction) {
+                    Direction.PREVIOUS -> it.copy(isLoadingPrevious = false, errorPrevious = message)
+                    else -> it.copy(isLoadingNext = false, errorNext = message)
                 }
             }
-
             return@launch
         }
+        _ui.update { current ->
+            when (direction) {
+                Direction.INITIAL -> current.copy(
+                    items = response.contents.distinctBy { it.userId ?: Any() },
+                    initialized = true,
+                    isLoadingNext = false,
+                    endReachedNext = !response.hasNextPage,
+                    endReachedPrevious = page == 0
+                )
+                Direction.PREVIOUS -> current.copy(
+                    items = (response.contents + current.items)
+                        .distinctBy { it.userId ?: Any() },
+                    minPage = page,
+                    isLoadingPrevious = false,
+                    endReachedPrevious = page == 0
+                )
 
-        val newItems = pageResp.contents
-        val hasNext  = pageResp.hasNextPage
-
-        _ui.update {
-            it.copy(
-                items = it.items + newItems,
-                page = if (hasNext) nextPage + 1 else nextPage,
-                isLoading = false,
-                endReached = !hasNext
-            )
+                Direction.NEXT -> current.copy(
+                    items = (current.items + response.contents)
+                        .distinctBy { it.userId ?: Any() },
+                    maxPage = page,
+                    isLoadingNext = false,
+                    endReachedNext = !response.hasNextPage
+                )
+            }
         }
+        if (
+            direction == Direction.INITIAL &&
+            response.hasNextPage &&
+            response.contents.isNotEmpty()
+        ) {
+            loadNextL()
+        }
+
     }
 
     sealed class SeasonPopupState {
         data object Loading : SeasonPopupState()
         data object SessionExpired : SeasonPopupState()
-        data class Ready(
-            val data: SeasonPopupResponse,
-            val show: Boolean
-        ) : SeasonPopupState()
+        data class Ready(val data: SeasonPopupResponse, val show: Boolean) : SeasonPopupState()
         data object Failed : SeasonPopupState()
         data object NotFound : SeasonPopupState()
     }
 
     private val _seasonPopup = MutableStateFlow<SeasonPopupState>(SeasonPopupState.Loading)
     val seasonPopup = _seasonPopup.asStateFlow()
-
-    // 시즌 팝업
     private val seasonPrefs by lazy {
         appContext.getSharedPreferences("season_popup", Context.MODE_PRIVATE)
     }
-
-    private fun lastShownSeason(): String? =
-        seasonPrefs.getString("last_shown_season", null)
-
+    private fun lastShownSeason(): String? = seasonPrefs.getString("last_shown_season", null)
     private fun markShownSeason(seasonId: String) {
         seasonPrefs.edit { putString("last_shown_season", seasonId) }
     }
-
     fun confirmSeasonPopup(seasonId: String) {
         markShownSeason(seasonId)
         val cur = _seasonPopup.value
-        if (cur is SeasonPopupState.Ready) {
-            _seasonPopup.value = cur.copy(show = false)
-        }
+        if (cur is SeasonPopupState.Ready) _seasonPopup.value = cur.copy(show = false)
     }
-
     fun loadSeasonPopup() = viewModelScope.launch {
         _seasonPopup.value = SeasonPopupState.Loading
-
         val session = AuthPrefs.load(appContext)
         if (session == null) {
             AuthPrefs.clear(appContext)
             _seasonPopup.value = SeasonPopupState.SessionExpired
             return@launch
         }
-
         runCatching { api.getLeagueHome("Bearer ${session.accessToken}") }
             .onSuccess { res ->
                 val seasonId = res.currentSeason.nowSeason
-                val shouldShow = res.containsPopup && lastShownSeason() != seasonId
                 _seasonPopup.value = SeasonPopupState.Ready(
                     data = res,
-                    show = shouldShow
+                    show = res.containsPopup && lastShownSeason() != seasonId
                 )
             }
             .onFailure { e ->
                 handleApiFailure(
                     e = e,
                     appContext = appContext,
-                    onStateChange = { st -> _seasonPopup.value = st },
+                    onStateChange = { _seasonPopup.value = it },
                     unauthorizedState = SeasonPopupState.SessionExpired,
                     notFoundState = SeasonPopupState.NotFound,
                     failedState = SeasonPopupState.Failed
@@ -260,7 +286,6 @@ class LeagueVMFactory(
     private val api: ApiService,
     private val context: Context
 ) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return LeagueViewModel(api, context.applicationContext) as T
-    }
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        LeagueViewModel(api, context.applicationContext) as T
 }

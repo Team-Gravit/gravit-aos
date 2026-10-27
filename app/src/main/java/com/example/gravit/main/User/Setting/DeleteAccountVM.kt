@@ -27,6 +27,7 @@ class DeleteAccountVM(
         data object Confirmed : DeletionState()
         data object SessionExpired : DeletionState()
         data object NotFound :  DeletionState()
+        data object Failed : DeletionState()
     }
 
     private val _state = MutableStateFlow<DeletionState>(
@@ -52,7 +53,7 @@ class DeleteAccountVM(
                     AuthPrefs.clear(appContext)
                     _state.value = DeletionState.SessionExpired
                 } else {
-                    _state.value = DeletionState.Idle
+                    _state.value = DeletionState.Failed
                 }
                 return@launch
             }
@@ -66,7 +67,7 @@ class DeleteAccountVM(
                 AuthPrefs.clear(appContext)
                 _state.value = DeletionState.SessionExpired
             } else {
-                _state.value = DeletionState.Idle
+                _state.value = DeletionState.Failed
             }
         }
     }
