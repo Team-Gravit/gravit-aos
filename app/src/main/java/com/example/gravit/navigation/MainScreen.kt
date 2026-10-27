@@ -64,6 +64,7 @@ import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
 import com.inuappcenter.gravit.main.User.Notice.Notification
+import com.inuappcenter.gravit.main.User.Setting.DeletionSuccess
 import com.inuappcenter.gravit.main.User.Setting.TermsOfService
 
 
@@ -89,7 +90,8 @@ fun MainScreen(rootNavController: NavController) {
                         currentRoute.startsWith("user/setting") ||
                         currentRoute.startsWith("user/notice") ||
                         currentRoute.startsWith("cs-note") ||
-                        currentRoute.startsWith("ai")
+                        currentRoute.startsWith("ai") ||
+                        currentRoute.startsWith("user/termsOfService")
 
     val goToLoginChoice: () -> Unit = {
         rootNavController.navigate("login choice") {
@@ -299,6 +301,9 @@ fun MainScreen(rootNavController: NavController) {
                 // 탈퇴 완료 화면
                 composable("user/deletion-complete") {
                     DeletionComplete(innerNavController)
+                }
+                composable("user/deletion-success") {
+                    DeletionSuccess(innerNavController)
                 }
 
                 composable("user/addfriend") {
