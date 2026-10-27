@@ -131,7 +131,7 @@ fun Notice(
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.Top
                                 ) {
                                     if (item.pinned) {
                                         Image(
