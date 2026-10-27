@@ -435,7 +435,7 @@ fun SeasonCompleted(
                             Image(
                                 painter = painterResource(id = R.drawable.sparkle),
                                 contentDescription = null,
-                                modifier = Modifier
+                                modifier = Modifier.size(220.dp)
                             )
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -573,30 +573,33 @@ fun SeasonStart(
                         )
                         Spacer(Modifier.height(50.dp))
                         Box(
-                            modifier = Modifier,
-                            contentAlignment = Alignment.Center
+                            modifier = Modifier.height(246.dp),
+                            contentAlignment = Alignment.TopCenter
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.sparkle),
+                                painter = painterResource(id = R.drawable.sparkle2),
                                 contentDescription = null,
-                                modifier = Modifier
+                                modifier = Modifier.size(220.dp)
                             )
                             Column(
+                                verticalArrangement = Arrangement.Top,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Image(
                                     painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.nextLeagueName)),
                                     contentDescription = "tier",
-                                    modifier = Modifier.size(140.dp, 182.dp)
+                                    modifier = Modifier.width(170.dp)
                                 )
-                                Spacer(Modifier.height(16.dp))
+                                Spacer(Modifier.height(25.dp))
                                 Text(
                                     text = "시작 티어",
                                     style = AppTypography.Label2,
                                     color = AppColor.text4
                                 )
                                 Spacer(Modifier.height(8.dp))
-                                Row {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
                                         text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
                                         style = AppTypography.Label1,

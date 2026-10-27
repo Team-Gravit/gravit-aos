@@ -1,6 +1,8 @@
 
 package com.inuappcenter.gravit.main.Ai.Interview
 
+import android.content.Intent
+import android.provider.Settings
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
@@ -74,6 +76,7 @@ import java.io.File
 import java.util.Locale
 import kotlin.random.Random
 import android.graphics.Matrix
+import android.net.Uri
 import androidx.compose.material3.HorizontalDivider
 
 enum class InterviewMode {
@@ -104,6 +107,7 @@ fun AiInterviewPage(
 ) {
     StatusBarStyle(darkIcons = true)
 
+    val context = LocalContext.current
     var snackBarText by remember { mutableStateOf<String?>(null) }
 
     val voiceProcessState by vm.voiceProcessState.collectAsState()
@@ -133,7 +137,6 @@ fun AiInterviewPage(
     var currentQuestionIndex by rememberSaveable { mutableIntStateOf(0) }
     val currentQuestion = questions[currentQuestionIndex]
 
-    val context = LocalContext.current
     val player = remember { ExoPlayer.Builder(context).build() }
     DisposableEffect(player) {
         val listener =
@@ -167,6 +170,28 @@ fun AiInterviewPage(
     var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
 
     var pendingRecordStart by remember { mutableStateOf(false) }
+    var microphonePermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    var showMicrophonePermissionDialog by remember { mutableStateOf(false) }
+    val permissionPrefs = remember(context) {
+        context.getSharedPreferences(
+            "interview_permission",
+            android.content.Context.MODE_PRIVATE
+        )
+    }
+
+    var hasRequestedMicrophonePermission by remember {
+        mutableStateOf(
+            permissionPrefs.getBoolean("microphone_requested", false)
+        )
+    }
     var pausedByBackground by remember { mutableStateOf(false) }
     var pausedByExitDialog by remember { mutableStateOf(false) }
     var recordingPaused by remember { mutableStateOf(false) }
@@ -351,14 +376,43 @@ fun AiInterviewPage(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
 
-            if (granted && pendingRecordStart) {
-                pendingRecordStart = false
-                startRecording()
+            microphonePermissionGranted = granted
+
+            if (granted) {
+                showMicrophonePermissionDialog = false
+
+                if (pendingRecordStart) {
+                    pendingRecordStart = false
+                    startRecording()
+                }
             } else {
                 pendingRecordStart = false
-                vm.abandonInterview()
+                showMicrophonePermissionDialog = true
             }
         }
+    fun requestMicrophonePermission() {
+        hasRequestedMicrophonePermission = true
+
+        permissionPrefs.edit()
+            .putBoolean("microphone_requested", true)
+            .apply()
+
+        microphonePermissionLauncher.launch(
+            Manifest.permission.RECORD_AUDIO
+        )
+    }
+    LaunchedEffect(mode) {
+        if (mode == AnswerMode.Voice) {
+            microphonePermissionGranted =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECORD_AUDIO
+                ) == PackageManager.PERMISSION_GRANTED
+
+            showMicrophonePermissionDialog = !microphonePermissionGranted
+        }
+    }
+
 
     LaunchedEffect(questionPlaybackEnded, autoAnswer) {
         if (
@@ -366,7 +420,7 @@ fun AiInterviewPage(
             autoAnswer &&
             voiceState == VoiceInterviewState.PlayingQuestion
         ) {
-            delay(3000)
+            delay(1000)
 
             if (
                 autoAnswer &&
@@ -395,23 +449,26 @@ fun AiInterviewPage(
         }
     }
 
-    LaunchedEffect(currentQuestion.displayOrder, mode) {
+    LaunchedEffect(currentQuestion.displayOrder, mode, microphonePermissionGranted) {
+        if (
+            mode == AnswerMode.Voice &&
+            !microphonePermissionGranted
+        ) {
+            return@LaunchedEffect
+        }
+
         val audioUrl = currentQuestion.audioUrl
 
         if (audioUrl.isNullOrBlank()) {
             voiceState = VoiceInterviewState.Ready
-
             return@LaunchedEffect
         }
 
         questionPlaybackEnded = false
-
         voiceState = VoiceInterviewState.PlayingQuestion
 
         player.setMediaItem(
-            MediaItem.fromUri(
-                audioUrl.toUri()
-            )
+            MediaItem.fromUri(audioUrl.toUri())
         )
 
         player.prepare()
@@ -458,6 +515,16 @@ fun AiInterviewPage(
                     }
 
                     Lifecycle.Event.ON_START -> {
+                        if (mode == AnswerMode.Voice) {
+                            val granted = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+
+                            microphonePermissionGranted = granted
+                            showMicrophonePermissionDialog = !granted
+                        }
+
                         if (
                             pausedByBackground &&
                             !showExitDialog
@@ -731,6 +798,30 @@ fun AiInterviewPage(
             ) {
                 CustomSnackBar(text = snackBarText!!)
             }
+        }
+        if (showMicrophonePermissionDialog && mode == AnswerMode.Voice) {
+            TwoButtonDialog(
+                title = "마이크 권한이 필요해요",
+                description = "음성 면접을 진행하려면 마이크 권한을 허용해주세요.",
+                leftButtonText = "홈으로 가기",
+                rightButtonText = "확인하기",
+                onDismiss = {
+                    showMicrophonePermissionDialog = false
+                    vm.abandonInterview()
+                },
+                onRightClick = {
+                    if (hasRequestedMicrophonePermission) {
+                        val intent = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${context.packageName}")
+                        )
+
+                        context.startActivity(intent)
+                    } else {
+                        requestMicrophonePermission()
+                    }
+                }
+            )
         }
     }
 }

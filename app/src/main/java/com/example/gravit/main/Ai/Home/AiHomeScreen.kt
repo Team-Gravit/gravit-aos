@@ -1645,7 +1645,7 @@ fun SynthesisUi(
                                         Image(
                                             painter = painterResource(R.drawable.graph),
                                             contentDescription = null,
-                                            modifier = Modifier.size(120.dp, 15.dp),
+                                            modifier = Modifier.size(150.dp, 20.dp),
                                             contentScale = ContentScale.Fit,
                                             alignment = Alignment.CenterEnd
 
