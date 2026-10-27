@@ -246,7 +246,7 @@ private fun LessonCompleteSuccessUI(
             .navigationBarsPadding()
     ) {
         val designWidth = 420.dp
-        val designHeight = 740.dp
+        val designHeight = 700.dp
 
         val screenWidth = maxWidth
         val screenHeight = maxHeight
