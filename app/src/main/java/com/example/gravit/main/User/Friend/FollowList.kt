@@ -405,7 +405,7 @@ private fun FollowerRow(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.profile_logo),
+                painter = painterResource(id = R.drawable.gravit_logo),
                 contentDescription = "profile",
                 tint = Color.White,
                 modifier = Modifier.size(20.dp, 25.dp)
@@ -476,7 +476,7 @@ private fun FollowingRow(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.profile_logo),
+                painter = painterResource(id = R.drawable.gravit_logo),
                 contentDescription = "profile",
                 tint = Color.White,
                 modifier = Modifier.size(20.dp, 25.dp)
