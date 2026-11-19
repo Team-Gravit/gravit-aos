@@ -2,11 +2,8 @@ package com.inuappcenter.gravit.main.Ai.Interview
 
 import android.content.res.Configuration
 import android.os.Build
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -19,18 +16,18 @@ import com.example.gravit.ui.theme.AppTypography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import coil.ImageLoader
@@ -39,6 +36,7 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.inuappcenter.gravit.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun AiLoading1(){
@@ -100,17 +98,8 @@ fun AiLoading1(){
 }
 
 @Composable
-fun AiLoading2(
-    progress: Float,
-    step: Int
-) {
+fun AiLoading2() {
     val configuration = LocalConfiguration.current
-
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = 800),
-        label = "loadingProgress"
-    )
 
     StatusBarStyle(darkIcons = true)
 
@@ -138,42 +127,53 @@ fun AiLoading2(
 
             Spacer(Modifier.height(20.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(195.dp)
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(AppColor.bg2)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(animatedProgress)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(50))
-                            .background(AppColor.Main1)
-                    )
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Text(
-                    text = "$step/5",
-                    style = AppTypography.Headline2,
-                    color = AppColor.text1
-                )
-            }
-
-            Spacer(Modifier.height(48.dp))
-
-            Text(
-                text = "면접관이 알 수 없는 표정을\n짓고 있습니다",
-                style = AppTypography.Heading1,
-                color = AppColor.text1,
-                textAlign = TextAlign.Center
-            )
+            InterviewLoadingMessage()
         }
     }
+}
+@Composable
+fun InterviewLoadingMessage() {
+    val messages = remember {
+        listOf(
+            "면접관이 알 수 없는 표정을 짓고 있습니다",
+            "면접관이 답변을 두 번 다시 읽고 있습니다",
+            "면접관이 메모지에 뭔가 적고 있습니다",
+            "면접관이 고개를 갸웃거리고 있습니다",
+            "면접관이 팔짱을 끼고 생각 중입니다"
+        )
+    }
+
+    var messageIndex by remember { mutableIntStateOf(messages.indices.random()) }
+    var dotCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+
+            if (dotCount < 3) {
+                dotCount++
+            } else {
+                var nextIndex: Int
+
+                do {
+                    nextIndex = messages.indices.random()
+                } while (nextIndex == messageIndex)
+
+                messageIndex = nextIndex
+                dotCount = 0
+            }
+        }
+    }
+
+    Text(
+        text = messages[messageIndex] + ".".repeat(dotCount),
+        style = AppTypography.Heading1,
+        color = AppColor.text1,
+        textAlign = TextAlign.Center,
+        softWrap = true,
+        maxLines = Int.MAX_VALUE,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 30.dp)
+    )
 }
