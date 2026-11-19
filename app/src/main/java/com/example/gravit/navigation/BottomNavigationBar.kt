@@ -18,17 +18,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.gravit.ui.theme.AppColor
+import com.example.gravit.ui.theme.AppTypography
 
 
 data class BottomNavItem(
@@ -42,6 +42,7 @@ fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem("home", R.drawable.unselected_home_button, R.drawable.selected_home_button, "홈"),
         BottomNavItem("chapter", R.drawable.unselected_study_button, R.drawable.selected_study_button, "학습"),
+        //BottomNavItem("ai", R.drawable.unselected_ai_button, R.drawable.selected_ai_button, "AI 면접"),
         BottomNavItem("league", R.drawable.unselected_league_button, R.drawable.selected_league_button, "리그"),
         BottomNavItem("user", R.drawable.unselected_user_button, R.drawable.selected_user_button, "마이그래빗")
     )
@@ -53,6 +54,7 @@ fun BottomNavigationBar(navController: NavHostController) {
             || currentRoute.startsWith("unit")
             || currentRoute.startsWith("lessonList")
     val inUserStack = currentRoute.startsWith("user")
+    //val inAiStack = currentRoute.startsWith("ai")
 
     Surface(
         shadowElevation = 26.dp,
@@ -64,11 +66,15 @@ fun BottomNavigationBar(navController: NavHostController) {
                 .background(Color.White)
                 .padding(vertical = 8.dp)
                 .navigationBarsPadding()
-                .height(60.dp)
+                .height(60.dp),
+            contentAlignment = Alignment.Center
 
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .widthIn(max = 360.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -76,12 +82,13 @@ fun BottomNavigationBar(navController: NavHostController) {
                     val selected = when (item.route) {
                         "chapter" -> inLearnStack
                         "user" -> inUserStack
+                       // "ai" -> inAiStack
                         else -> currentRoute == item.route ||
                                 currentRoute.startsWith("${item.route}/")
                     }
                     Column(
                         modifier = Modifier
-                            .width(90.dp)
+                            .weight(1f)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -108,6 +115,12 @@ fun BottomNavigationBar(navController: NavHostController) {
                                             restoreState = false
                                         }
                                     }
+                                    /* "ai" if inAiStack -> {
+                                        navController.navigate("ai") {
+                                            launchSingleTop = true
+                                            restoreState = false
+                                        }
+                                    } */
                                     else -> {
                                         navController.navigate(target) {
                                             popUpTo(navController.graph.findStartDestination().id) {
@@ -134,7 +147,7 @@ fun BottomNavigationBar(navController: NavHostController) {
 
                         Text(
                             text = item.label ?: "",
-                            fontSize = 12.sp,
+                            style = AppTypography.Caption1,
                             color = if (selected) AppColor.Main2 else Color(0xFF625B71),
                         )
                     }
