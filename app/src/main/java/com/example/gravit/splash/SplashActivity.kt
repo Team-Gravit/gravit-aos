@@ -12,10 +12,13 @@ import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -222,60 +225,71 @@ fun ForceUpdateDialog(
         onDismissRequest = {},
         properties = DialogProperties(
             dismissOnBackPress = true,
-            dismissOnClickOutside = false,
+            dismissOnClickOutside = true,
             usePlatformDefaultWidth = false
         )
     ) {
         BackHandler {
             onCloseClick()
         }
-        Surface(
-            modifier = Modifier
-                .width(328.dp)
-                .padding(bottom = 16.dp)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(10.dp),
-            color = Color.White
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            val dialogWidth = when {
+                maxWidth < 360.dp -> maxWidth - 32.dp
+                maxWidth < 600.dp -> 360.dp.coerceAtMost(maxWidth - 32.dp)
+                maxWidth < 840.dp -> 480.dp
+                else -> 560.dp
+            }
+
+            Surface(
                 modifier = Modifier
-                    .width(328.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(dialogWidth)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(10.dp),
+                color = Color.White
             ) {
-                Spacer(Modifier.height(16.dp))
+                Column(
+                    modifier = Modifier
+                        .width(328.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(Modifier.height(16.dp))
 
-                Text(
-                    text = "업데이트가 필요합니다",
-                    style = AppTypography.Heading1,
-                    textAlign = TextAlign.Center,
-                    color = AppColor.text1
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = "안정적인 서비스 이용을 위해\n최신 버전으로 업데이트해 주세요.",
-                    style = AppTypography.Label1,
-                    color = AppColor.text4,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(20.dp))
-                ReportButton(
-                    onClick1 = onCloseClick,
-                    text1 = "닫기",
-                    onClick2 = onUpdateClick,
-                    text2 = "업데이트",
-                    modifier = Modifier,
-                    modifier1 = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-                    modifier2 = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-
+                    Text(
+                        text = "업데이트가 필요합니다",
+                        style = AppTypography.Heading1,
+                        textAlign = TextAlign.Center,
+                        color = AppColor.text1
                     )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "안정적인 서비스 이용을 위해\n최신 버전으로 업데이트해 주세요.",
+                        style = AppTypography.Label1,
+                        color = AppColor.text4,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    ReportButton(
+                        onClick1 = onCloseClick,
+                        text1 = "닫기",
+                        onClick2 = onUpdateClick,
+                        text2 = "업데이트",
+                        modifier = Modifier,
+                        modifier1 = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+                        modifier2 = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+
+                        )
+                }
             }
         }
     }
@@ -311,7 +325,7 @@ fun NetworkErrorDialog(
     onCloseClick: () -> Unit
 ) {
     Dialog(
-        onDismissRequest = {},
+        onDismissRequest = onCloseClick,
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = false,
@@ -321,52 +335,67 @@ fun NetworkErrorDialog(
         BackHandler {
             onCloseClick()
         }
-        Surface(
-            modifier = Modifier
-                .width(328.dp)
-                .padding(bottom = 16.dp)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(10.dp),
-            color = Color.White
+
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            val dialogWidth = when {
+                maxWidth < 360.dp -> maxWidth - 32.dp
+                maxWidth < 600.dp -> (maxWidth - 32.dp).coerceAtMost(360.dp)
+                maxWidth < 840.dp -> 480.dp
+                else -> 560.dp
+            }
+
+            Surface(
                 modifier = Modifier
-                    .width(328.dp)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(dialogWidth)
+                    .wrapContentHeight()
+                    .heightIn(max = maxHeight - 32.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = Color.White
             ) {
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = "네트워크 문제",
-                    style = AppTypography.Heading1,
-                    textAlign = TextAlign.Center,
-                    color = AppColor.text1
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(Modifier.height(16.dp))
 
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = "연결이 원활하지 않습니다.",
-                    style = AppTypography.Label1,
-                    color = AppColor.text4,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(Modifier.height(20.dp))
-                ReportButton(
-                    onClick1 = onCloseClick,
-                    text1 = "닫기",
-                    onClick2 = onRetryClick,
-                    text2 = "다시 시도",
-                    modifier = Modifier,
-                    modifier1 = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-                    modifier2 = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-
+                    Text(
+                        text = "네트워크 문제",
+                        style = AppTypography.Heading1,
+                        textAlign = TextAlign.Center,
+                        color = AppColor.text1
                     )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "연결이 원활하지 않습니다.",
+                        style = AppTypography.Label1,
+                        color = AppColor.text4,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(Modifier.height(20.dp))
+
+                    ReportButton(
+                        onClick1 = onCloseClick,
+                        text1 = "닫기",
+                        onClick2 = onRetryClick,
+                        text2 = "다시 시도",
+                        modifier = Modifier,
+                        modifier1 = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+                        modifier2 = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                    )
+                }
             }
         }
     }

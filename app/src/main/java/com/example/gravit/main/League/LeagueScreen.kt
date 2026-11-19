@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -52,10 +53,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -195,7 +198,9 @@ fun LeagueScreen(
                     source != LeagueViewModel.Source.UserLeague) return@LaunchedEffect
                 val index = ui.items.indexOfFirst { it.userId == my.userId }
                 if (index >= 0) {
-                    listState.scrollToItem(index + 1)
+                    listState.scrollToItem(
+                        index = (index - 4).coerceAtLeast(0) + 1
+                    )
                 }
                 vm.markInitialScrollCompleted()
             }
@@ -270,7 +275,7 @@ fun LeagueUI(
 
                             Text(
                                 text = seasonName,
-                                color = AppColor.text1w,
+                                color = AppColor.text_on_color_1,
                                 modifier = Modifier.align(Alignment.CenterHorizontally),
                                 style = TextStyle(
                                     fontWeight = FontWeight.Medium,
@@ -312,7 +317,7 @@ fun LeagueUI(
                             LazyColumn(
                                 state = listState,
                                 modifier = Modifier.fillMaxWidth().weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
                                 contentPadding = PaddingValues(bottom = 80.dp)
                             ) {
                                 // 항상 존재하는 고정 key: 앞쪽 로딩 상태가 바뀌어도 index 유지
@@ -358,7 +363,7 @@ fun LeagueUI(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text("더이상 유저가 없습니다.",
-                                                fontFamily = pretendard, color = AppColor.text2w)
+                                                fontFamily = pretendard, color = AppColor.text_on_color_2)
                                         }
                                         else -> Spacer(Modifier.height(0.dp))
                                     }
@@ -393,134 +398,142 @@ fun SeasonCompleted(
         onDismissRequest = {},
         properties = DialogProperties(
             dismissOnClickOutside = false,
-            dismissOnBackPress = false
+            dismissOnBackPress = false,
+            usePlatformDefaultWidth = false
         )
     ) {
-        Box (
+        BoxWithConstraints(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
-        ){
-            Box(
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ){
-                Surface(
+        ) {
+            val dialogWidth = when {
+                maxWidth < 360.dp -> maxWidth - 32.dp
+                maxWidth < 600.dp -> (maxWidth - 32.dp).coerceAtMost(360.dp)
+                maxWidth < 840.dp -> 480.dp
+                else -> 560.dp
+            }
+
+            val dialogHeight = (maxHeight - 32.dp).coerceAtMost(597.dp)
+
+            Surface(
+                modifier = Modifier
+                    .width(dialogWidth)
+                    .height(dialogHeight),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White
+            ) {
+                Column(
                     modifier = Modifier
-                        .width(328.dp)
-                        .height(597.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "${popupDetail.currentSeason.nowSeason} 종료!",
+                        style = AppTypography.Title3,
+                        color = AppColor.Main1
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "이번 시즌도 수고했어요.",
+                        style = AppTypography.Label2,
+                        color = AppColor.text4
+                    )
+                    Spacer(Modifier.height(50.dp))
+                    Box(
+                        modifier = Modifier,
+                        contentAlignment = Alignment.Center
                     ) {
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "${popupDetail.currentSeason.nowSeason} 종료!",
-                            style = AppTypography.Title3,
-                            color = AppColor.Main1
+                        Image(
+                            painter = painterResource(id = R.drawable.sparkle),
+                            contentDescription = null,
+                            modifier = Modifier.size(220.dp)
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "이번 시즌도 수고했어요.",
-                            style = AppTypography.Label2,
-                            color = AppColor.text4
-                        )
-                        Spacer(Modifier.height(50.dp))
-                        Box(
-                            modifier = Modifier,
-                            contentAlignment = Alignment.Center
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.sparkle),
-                                contentDescription = null,
-                                modifier = Modifier.size(220.dp)
+                                painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.leagueName)),
+                                contentDescription = "tier",
+                                modifier = Modifier.size(140.dp, 182.dp)
                             )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = "최종 티어",
+                                style = AppTypography.Label2,
+                                color = AppColor.text4
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
+                                style = AppTypography.Heading1,
+                                color = AppColor.text1
+                            )
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(142.dp, 71.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PrimitiveColor.Gray200),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Image(
-                                    painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.leagueName)),
-                                    contentDescription = "tier",
-                                    modifier = Modifier.size(140.dp, 182.dp)
-                                )
-                                Spacer(Modifier.height(16.dp))
                                 Text(
-                                    text = "최종 티어",
-                                    style = AppTypography.Label2,
-                                    color = AppColor.text4
+                                    text = lp.toString(),
+                                    style = AppTypography.Headline2,
+                                    color = AppColor.text2
                                 )
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
-                                    style = AppTypography.Heading1,
-                                    color = AppColor.text1
+                                    text = "최종 LP",
+                                    style = AppTypography.Caption1,
+                                    color = AppColor.text_on_color_3
                                 )
                             }
                         }
-                        Spacer(Modifier.weight(1f))
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .size(142.dp, 71.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(PrimitiveColor.Gray200),
-                                contentAlignment = Alignment.Center
+                        Spacer(Modifier.width(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(142.dp, 71.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PrimitiveColor.Gray200),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = lp.toString(),
-                                        style = AppTypography.Headline2,
-                                        color = AppColor.text2
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = "최종 LP",
-                                        style = AppTypography.Caption1,
-                                        color = AppColor.text3w
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .size(142.dp, 71.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(PrimitiveColor.Gray200),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = popupDetail.lastSeasonPopupDto?.rank
-                                            ?.let { "${it}위" }
-                                            ?: "-",
-                                        style = AppTypography.Headline2,
-                                        color = AppColor.text2
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = "최종 순위",
-                                        style = AppTypography.Caption1,
-                                        color = AppColor.text3w
-                                    )
-                                }
+                                Text(
+                                    text = popupDetail.lastSeasonPopupDto?.rank
+                                        ?.let { "${it}위" }
+                                        ?: "-",
+                                    style = AppTypography.Headline2,
+                                    color = AppColor.text2
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "최종 순위",
+                                    style = AppTypography.Caption1,
+                                    color = AppColor.text_on_color_3
+                                )
                             }
                         }
-                        Spacer(Modifier.height(20.dp))
-                        BlockButton(
-                            text = "다음으로",
-                            state = ButtonState.Default,
-                            onClick = { show = true },
-                            modifier = Modifier.height(47.dp)
-                        )
                     }
+                    Spacer(Modifier.height(20.dp))
+                    BlockButton(
+                        text = "다음으로",
+                        state = ButtonState.Default,
+                        onClick = { show = true },
+                        modifier = Modifier.height(47.dp)
+                    )
                 }
             }
         }
@@ -537,120 +550,128 @@ fun SeasonStart(
         onDismissRequest = {},
         properties = DialogProperties(
             dismissOnClickOutside = false,
-            dismissOnBackPress = false
+            dismissOnBackPress = false,
+            usePlatformDefaultWidth = false
         )
     ) {
-        Box (
+        BoxWithConstraints(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
-        ){
-            Box(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+        ) {
+            val dialogWidth = when {
+                maxWidth < 360.dp -> maxWidth - 32.dp
+                maxWidth < 600.dp -> (maxWidth - 32.dp).coerceAtMost(360.dp)
+                maxWidth < 840.dp -> 480.dp
+                else -> 560.dp
+            }
+
+            val dialogHeight = (maxHeight - 32.dp).coerceAtMost(597.dp)
+
+            Surface(
+                modifier = Modifier
+                    .width(dialogWidth)
+                    .height(dialogHeight),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White
             ) {
-                Surface(
+                Column(
                     modifier = Modifier
-                        .width(328.dp)
-                        .height(597.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "${popupDetail.currentSeason.nowSeason} 시작!",
+                        style = AppTypography.Title3,
+                        color = AppColor.Main1
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "직전 티어 기준으로 시작 위치가 정해져요!",
+                        style = AppTypography.Label2,
+                        color = AppColor.text4
+                    )
+                    Spacer(Modifier.height(50.dp))
+                    Box(
+                        modifier = Modifier.height(246.dp),
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "${popupDetail.currentSeason.nowSeason} 시작!",
-                            style = AppTypography.Title3,
-                            color = AppColor.Main1
+                        Image(
+                            painter = painterResource(id = R.drawable.sparkle2),
+                            contentDescription = null,
+                            modifier = Modifier.size(220.dp)
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "직전 티어 기준으로 시작 위치가 정해져요!",
-                            style = AppTypography.Label2,
-                            color = AppColor.text4
-                        )
-                        Spacer(Modifier.height(50.dp))
-                        Box(
-                            modifier = Modifier.height(246.dp),
-                            contentAlignment = Alignment.TopCenter
+                        Column(
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.sparkle2),
-                                contentDescription = null,
-                                modifier = Modifier.size(220.dp)
+                                painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.nextLeagueName)),
+                                contentDescription = "tier",
+                                modifier = Modifier.width(170.dp)
                             )
-                            Column(
-                                verticalArrangement = Arrangement.Top,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            Spacer(Modifier.height(25.dp))
+                            Text(
+                                text = "시작 티어",
+                                style = AppTypography.Label2,
+                                color = AppColor.text4
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Image(
-                                    painter = TierPalette.painterFor(tierIdFromName(popupDetail.lastSeasonPopupDto?.nextLeagueName)),
-                                    contentDescription = "tier",
-                                    modifier = Modifier.width(170.dp)
-                                )
-                                Spacer(Modifier.height(25.dp))
                                 Text(
-                                    text = "시작 티어",
-                                    style = AppTypography.Label2,
+                                    text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
+                                    style = AppTypography.Label1,
                                     color = AppColor.text4
                                 )
-                                Spacer(Modifier.height(8.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = popupDetail.lastSeasonPopupDto?.leagueName ?: "",
-                                        style = AppTypography.Label1,
-                                        color = AppColor.text4
-                                    )
-                                    Text(
-                                        text = "->${popupDetail.lastSeasonPopupDto?.nextLeagueName}",
-                                        style = AppTypography.Heading1,
-                                        color = AppColor.text1
-                                    )
-                                }
+                                Text(
+                                    text = "->${popupDetail.lastSeasonPopupDto?.nextLeagueName}",
+                                    style = AppTypography.Heading1,
+                                    color = AppColor.text1
+                                )
                             }
                         }
-                        Spacer(Modifier.weight(1f))
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .height(71.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(PrimitiveColor.Gray200),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = popupDetail.lastSeasonPopupDto?.nextStartLp
-                                            ?.toString()
-                                            ?: "-",
-                                        style = AppTypography.Headline2,
-                                        color = AppColor.text2
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = "시작 LP",
-                                        style = AppTypography.Caption1,
-                                        color = AppColor.text3w
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(20.dp))
-                        BlockButton(
-                            text = "다음으로",
-                            state = ButtonState.Default,
-                            onClick = onConfirm,
-                            modifier = Modifier.height(47.dp)
-                        )
                     }
+                    Spacer(Modifier.weight(1f))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .height(71.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PrimitiveColor.Gray200),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = popupDetail.lastSeasonPopupDto?.nextStartLp
+                                        ?.toString()
+                                        ?: "-",
+                                    style = AppTypography.Headline2,
+                                    color = AppColor.text2
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "시작 LP",
+                                    style = AppTypography.Caption1,
+                                    color = AppColor.text_on_color_3
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    BlockButton(
+                        text = "다음으로",
+                        state = ButtonState.Default,
+                        onClick = onConfirm,
+                        modifier = Modifier.height(47.dp)
+                    )
                 }
             }
         }
@@ -666,24 +687,32 @@ private fun RankCell(
     val shape = RoundedCornerShape(8.dp)
 
     val baseModifier = Modifier
-        .padding(horizontal = 16.dp)
         .fillMaxWidth()
+        .padding(horizontal = 16.dp)
         .height(62.dp)
-        .clip(shape)
 
     val cellModifier = if (isMe) {
-        baseModifier.background(Color.White)
+        baseModifier
+            .dropShadow(
+                shape = shape,
+                shadow = Shadow(
+                    radius = 8.dp,
+                    spread = 3.dp,
+                    color = AppColor.Main1.copy(alpha = 0.95f)
+                )
+            )
+            .clip(shape)
+            .background(Color(0xFFFAF3FE))
     } else {
         baseModifier
+            .clip(shape)
             .hazeEffect(state = hazeState) {
                 backgroundColor = Color(0xFF32147D).copy(alpha = 0.12f)
-
                 tints = listOf(
                     HazeTint(Color(0xFF7040D8).copy(alpha = 0.18f)),
                     HazeTint(Color(0xFFB58AFF).copy(alpha = 0.05f)),
                     HazeTint(Color.White.copy(alpha = 0.03f))
                 )
-
                 blurRadius = 5.dp
                 noiseFactor = 0.04f
             }
@@ -700,131 +729,130 @@ private fun RankCell(
             )
     }
 
-    Row(
-        modifier = cellModifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(64.dp)
-                .background(
-                    if (isMe) AppColor.Main1
-                    else Color(0xFFF4E3FF).copy(alpha = 0.5f)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = item.rank
-                    ?.toString()
-                    ?.padStart(3, '0')
-                    ?: "---",
-                style = TextStyle(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = mbc1961,
-                    color = AppColor.CTA_text,
-                    fontFeatureSettings = "enum"
-                )
-            )
-        }
         Row(
-            modifier = Modifier
-                .weight(3.5f)
-                .padding(12.dp),
+            modifier = cellModifier,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(ProfilePalette.idToColor(item.profileImgNumber ?: 0)),
+                    .fillMaxHeight()
+                    .width(64.dp)
+                    .background(
+                        if (isMe) Color(0xFFF5EBFE)
+                        else Color(0xFFF4E3FF).copy(alpha = 0.5f)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.profile_logo),
-                    contentDescription = "profile logo",
-                    modifier = Modifier.size(22.dp)
+                Text(
+                    text = item.rank
+                        ?.toString()
+                        ?.padStart(3, '0')
+                        ?: "---",
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = mbc1961,
+                        color = if (isMe) AppColor.status_warning else AppColor.CTA_text,
+                        fontFeatureSettings = "enum"
+                    )
                 )
             }
-            Spacer(Modifier.width(12.dp))
-            Text(
-                text = item.nickname,
-                style = AppTypography.Label1,
-                color = if (isMe) Color.Black else AppColor.CTA_text
-            )
-            Spacer(Modifier.weight(1f))
-            VerticalDivider(
-                modifier = Modifier.fillMaxHeight(),
-                1.dp, AppColor.text2w
-            )
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                buildAnnotatedString {
-                    withStyle(
-                        AppTypography.Caption1.toSpanStyle()
-                            .copy(
-                                color = if (isMe) AppColor.text4
-                                else AppColor.text2w
-                            )
-                    ) {
-                        append("LV")
-                    }
-                    append(" ")
-                    withStyle(
-                        AppTypography.Label1.toSpanStyle()
-                            .copy(
-                                color = if (isMe) AppColor.Main1
-                                else PrimitiveColor.Purple300
-                            )
-                    ) {
-                        append(item.level?.toString() ?: "-")
-                    }
-                },
-                style = TextStyle(
-                    platformStyle = PlatformTextStyle(
-                        includeFontPadding = false
+            Row(
+                modifier = Modifier
+                    .weight(3.5f)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(ProfilePalette.idToColor(item.profileImgNumber ?: 0)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.gravit_logo),
+                        contentDescription = "profile logo",
+                        modifier = Modifier.size(22.dp)
                     )
-                ),
-                modifier = Modifier.align(Alignment.Start)
-            )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = item.nickname,
+                    style = AppTypography.Label1,
+                    color = if (isMe) AppColor.text1 else AppColor.CTA_text
+                )
+                Spacer(Modifier.weight(1f))
+                VerticalDivider(
+                    modifier = Modifier.fillMaxHeight(),
+                    1.dp, AppColor.text_on_color_2
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    buildAnnotatedString {
+                        withStyle(
+                            AppTypography.Caption1.toSpanStyle().copy(
+                                color = if (isMe) AppColor.text_on_color_3
+                                else AppColor.text_on_color_2
+                            )
+                        ) {
+                            append("LP")
+                        }
+                        append(" ")
+                        withStyle(
+                            AppTypography.Label1.toSpanStyle()
+                                .copy(
+                                    color = if (isMe) PrimitiveColor.Purple400
+                                    else PrimitiveColor.Purple300
+                                )
+                        ) {
+                            append(item.lp?.toString() ?: "-")
+                        }
+                    },
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(
+                            includeFontPadding = false
+                        )
+                    ),
+                    modifier = Modifier.align(Alignment.Start)
+                )
 
-            Text(
-                buildAnnotatedString {
-                    withStyle(
-                        AppTypography.Caption1.toSpanStyle()
-                            .copy(
-                                color = if (isMe) AppColor.text4
-                                else AppColor.text2w
+                Text(
+                    buildAnnotatedString {
+                        withStyle(
+                            AppTypography.Caption1.toSpanStyle().copy(
+                                color = if (isMe) AppColor.text_on_color_3
+                                else AppColor.text_on_color_2
                             )
-                    ) {
-                        append("LP")
-                    }
-                    append(" ")
-                    withStyle(
-                        AppTypography.Label1.toSpanStyle()
-                            .copy(
-                                color = if (isMe) AppColor.Main1
-                                else PrimitiveColor.Purple300
-                            )
-                    ) {
-                        append(item.lp?.toString() ?: "-")
-                    }
-                },
-                style = TextStyle(
-                    platformStyle = PlatformTextStyle(
-                        includeFontPadding = false
-                    )
-                ),
-                modifier = Modifier.align(Alignment.Start)
-            )
+                        ) {
+                            append("LV")
+                        }
+                        append(" ")
+                        withStyle(
+                            AppTypography.Label1.toSpanStyle()
+                                .copy(
+                                    color = if (isMe) PrimitiveColor.Purple400
+                                    else PrimitiveColor.Purple300
+                                )
+                        ) {
+                            append(item.level?.toString() ?: "-")
+                        }
+                    },
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(
+                            includeFontPadding = false
+                        )
+                    ),
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+            }
         }
-    }
 }
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
@@ -978,7 +1006,7 @@ private fun TierDot(
             Text(
                 text = label,
                 style = AppTypography.Heading2,
-                color = AppColor.text1w,
+                color = AppColor.text_on_color_1,
                 maxLines = 1
             )
         }
