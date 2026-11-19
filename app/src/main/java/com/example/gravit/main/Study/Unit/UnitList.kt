@@ -246,13 +246,19 @@ private fun UnitItemBox(
         Column(
             modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp)
         ) {
-            Row {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = "${unit.orderText} - ${unit.title}",
                     style = AppTypography.Headline2,
-                    color = AppColor.text2
+                    color = AppColor.text2,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(Modifier.weight(1f))
+
+                Spacer(Modifier.width(8.dp))
+
                 Image(
                     painter = painterResource(R.drawable.chevron_right),
                     contentDescription = null,

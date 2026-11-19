@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -45,9 +46,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -246,7 +247,7 @@ private fun LessonCompleteSuccessUI(
             .navigationBarsPadding()
     ) {
         val designWidth = 420.dp
-        val designHeight = 700.dp
+        val designHeight = 740.dp
 
         val screenWidth = maxWidth
         val screenHeight = maxHeight
@@ -268,133 +269,103 @@ private fun LessonCompleteSuccessUI(
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop
         )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(
-                modifier = Modifier.height(
-                    (screenHeight - scaledHeight).coerceAtLeast(0.dp)
-                )
-            )
-
             Box(
                 modifier = Modifier
                     .width(scaledWidth)
-                    .height(scaledHeight),
-                contentAlignment = Alignment.TopCenter
+                    .height(maxOf(screenHeight, 740.dp * contentScale))
             ) {
-                Box(
+                Image(
+                    painter = painterResource(R.drawable.lesson_result_rabbit),
+                    contentDescription = null,
                     modifier = Modifier
-                        .width(designWidth)
-                        .height(designHeight)
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
                         .graphicsLayer {
-                            scaleX = contentScale
-                            scaleY = contentScale
-                            transformOrigin = TransformOrigin(
-                                pivotFractionX = 0.5f,
-                                pivotFractionY = 0f
-                            )
-                        }
+                            scaleX = 1.5f
+                            scaleY = 1.5f
+                            translationY = 24.dp.toPx()
+                        },
+                    contentScale = ContentScale.FillWidth
+                )
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .padding(
+                            top = WindowInsets.statusBars
+                                .asPaddingValues()
+                                .calculateTopPadding() + 75.dp
+                        )
+                        .padding(horizontal = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Image(
-                        painter = painterResource(
-                            R.drawable.lesson_result_rabbit
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .graphicsLayer {
-                                scaleX = 1.5f
-                                scaleY = 1.5f
-                                translationY = 24.dp.toPx()
-                            },
-                        contentScale = ContentScale.FillWidth
+                    Text(
+                        text = "${planetName[chapterId].orEmpty()} 정복에 더 가까워졌어요!",
+                        style = AppTypography.Heading1,
+                        color = AppColor.text_on_color_1,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
 
-                    Column(
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "$unitTitle 학습 완료",
+                        style = AppTypography.Label2,
+                        color = AppColor.text_on_color_2
+                    )
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    val planetPainter = painterResource(converterInt(chapterId))
+
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .fillMaxWidth()
-                            .padding(
-                                top = WindowInsets.statusBars
-                                    .asPaddingValues()
-                                    .calculateTopPadding() + 75.dp
-                            )
-                            .padding(horizontal = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .align(Alignment.End)
+                            .padding(end = 22.dp)
+                            .size(113.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "${planetName[chapterId].orEmpty()} 정복에 더 가까워졌어요!",
-                            style = AppTypography.Heading1,
-                            color = AppColor.text1w,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-
-                        Spacer(
-                            modifier = Modifier.height(4.dp)
-                        )
-
-                        Text(
-                            text = "$unitTitle 학습 완료",
-                            style = AppTypography.Label2,
-                            color = AppColor.text2w
-                        )
-
-                        Spacer(
-                            modifier = Modifier.height(40.dp)
-                        )
-
-                        val planetPainter = painterResource(
-                            converterInt(chapterId)
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.End)
-                                .padding(end = 22.dp)
-                                .size(113.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = planetPainter,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                colorFilter = ColorFilter.tint(
-                                    color = AppColor.bg0.copy(alpha = 0.2f),
-                                    blendMode = BlendMode.SrcIn
-                                )
+                        Image(
+                            painter = planetPainter,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            colorFilter = ColorFilter.tint(
+                                color = AppColor.bg0.copy(alpha = 0.2f),
+                                blendMode = BlendMode.SrcIn
                             )
+                        )
 
-                            Image(
-                                painter = planetPainter,
-                                contentDescription = null,
-                                modifier = Modifier.size(107.dp),
-                                contentScale = ContentScale.Fit
-                            )
-                        }
+                        Image(
+                            painter = planetPainter,
+                            contentDescription = null,
+                            modifier = Modifier.size(107.dp),
+                            contentScale = ContentScale.Fit
+                        )
                     }
-
-                    LessonCompleteBottomContent(
-                        navController = navController,
-                        accuracy = accuracy,
-                        learningTime = learningTime,
-                        xp = xp,
-                        nextLevel = nextLevel,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 24.dp
-                            )
-                    )
                 }
+
+                LessonCompleteBottomContent(
+                    navController = navController,
+                    accuracy = accuracy,
+                    learningTime = learningTime,
+                    xp = xp,
+                    nextLevel = nextLevel,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = 24.dp
+                        )
+                )
             }
         }
     }
@@ -506,6 +477,8 @@ private fun LessonCompleteBottomContent(
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
+            val isSmallScreen = LocalConfiguration.current.screenWidthDp < 360
+
             BlockButton(
                 state = ButtonState.Stroke,
                 onClick = {
@@ -532,7 +505,10 @@ private fun LessonCompleteBottomContent(
                 text = "이어서 학습하기",
                 modifier = Modifier
                     .weight(1f)
-                    .height(45.dp)
+                    .height(45.dp),
+                contentPadding = PaddingValues(
+                    horizontal = if (isSmallScreen) 4.dp else 16.dp
+                ),
             )
         }
     }
