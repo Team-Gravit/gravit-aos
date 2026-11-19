@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,21 +76,24 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gravit.share.LoadFailedDialog
+import com.example.gravit.share.StatusBarStyle
 import com.example.gravit.ui.theme.AppRadius
 import com.inuappcenter.gravit.api.InterviewDashboardResponse
 import com.inuappcenter.gravit.api.InterviewSessionAnswer
 import com.inuappcenter.gravit.api.InterviewSessionAnswersResponse
 import com.inuappcenter.gravit.api.InterviewSessionSummaryResponse
-import com.inuappcenter.gravit.api.InterviewSummaryRecentSession
+import com.inuappcenter.gravit.api.InterviewSummaryAnswer
 import com.inuappcenter.gravit.api.RetrofitInstance
 import com.inuappcenter.gravit.api.ScoreTrend
 import com.inuappcenter.gravit.main.Ai.Interview.AiAnswerAudioPlayer
@@ -184,10 +189,13 @@ private fun AiHomeUI(
     onLoadWeakTopics: () -> Unit,
     navController: NavController
 ) {
+    StatusBarStyle(darkIcons = true)
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppColor.bg2),
+            .background(AppColor.bg2)
+            .statusBarsPadding(),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         item {
@@ -321,28 +329,38 @@ private fun AiHomeContent(
                                         Text(
                                             text = "${it.sequence}",
                                             style = AppTypography.Body1_Normal,
-                                            color = AppColor.text1w
+                                            color = AppColor.text_on_color_1
                                         )
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Row(
+                                        modifier = Modifier.weight(1f),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column {
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
                                             Text(
                                                 text = it.mode,
                                                 style = AppTypography.Label1,
-                                                color = AppColor.text2
+                                                color = AppColor.text2,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+
                                             Spacer(Modifier.height(2.dp))
+
                                             Text(
                                                 text = "${it.topics.firstOrNull()?.displayName ?: ""} • ${it.startedAt.substringBefore("T")}",
                                                 style = AppTypography.Label2,
-                                                color = AppColor.text4
+                                                color = AppColor.text4,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
-
                                         }
-                                        Spacer(Modifier.weight(1f))
+
+                                        Spacer(Modifier.width(8.dp))
+
                                         Box(
                                             modifier = Modifier
                                                 .size(42.dp, 22.dp)
@@ -431,7 +449,11 @@ private fun AiHomeContent(
                                             Text(
                                                 text = "정확도 ${it.accuracyRate}%",
                                                 style = AppTypography.Body1_Normal,
-                                                color = AppColor.text2
+                                                color = when {
+                                                    it.accuracyRate < 30 -> Color(0xFFEB3D32)
+                                                    it.accuracyRate < 70 -> Color(0xFFF9A825)
+                                                    else -> Color(0xFF00C30D)
+                                                }
                                             )
                                         }
                                         Spacer(Modifier.height(8.dp))
@@ -439,7 +461,14 @@ private fun AiHomeContent(
                                             rate = it.accuracyRate,
                                             modifier = Modifier.fillMaxWidth(),
                                             height = 8.dp,
-                                            width = 0.dp
+                                            width = 0.dp,
+                                            gaugeBrush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    Color(0xFFEB3D32),
+                                                    Color(0xFFF9A825),
+                                                    Color(0xFF00C30D)
+                                                )
+                                            )
                                         )
                                     }
                                 }
@@ -489,165 +518,190 @@ private fun AiHomeContent(
         }
         if(showWeakestAll) {
             Dialog(
-                onDismissRequest = {
-                    showWeakestAll = false
-                },
+                onDismissRequest = { showWeakestAll = false },
                 properties = DialogProperties(
                     dismissOnClickOutside = false,
                     dismissOnBackPress = false,
                     usePlatformDefaultWidth = false
                 )
             ) {
-                Surface(
-                    modifier = Modifier
-                        .width(328.dp)
-                        .padding(horizontal = 16.dp)
-                        .height(445.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = AppColor.bg1
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(modifier = Modifier) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    horizontal = 16.dp,
-                                    vertical = 20.dp
-                                )
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                    val dialogWidth = when {
+                        maxWidth < 360.dp -> maxWidth - 32.dp
+                        maxWidth < 600.dp -> (maxWidth - 32.dp).coerceAtMost(360.dp)
+                        maxWidth < 840.dp -> 480.dp
+                        else -> 560.dp
+                    }
 
-                                Text(
-                                    text = "가장 약한 분야",
-                                    style = AppTypography.Body2_Normal,
-                                    color = PrimitiveColor.Gray500
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .clickable(
-                                            interactionSource = remember {
-                                                MutableInteractionSource()
-                                            },
-                                            indication = null
-                                        ) {
-                                            showWeakestAll = false
-                                        },
-                                    tint = AppColor.text1
-                                )
-                            }
+                    val dialogHeight = (maxHeight - 32.dp).coerceAtMost(
+                        when {
+                            maxWidth < 600.dp -> 480.dp
+                            maxWidth < 840.dp -> 560.dp
+                            else -> 640.dp
                         }
-                        HorizontalDivider(
-                            modifier = Modifier.fillMaxWidth(),
-                            thickness = 1.dp,
-                            color = AppColor.divider1
-                        )
+                    )
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            when (weakTopicsUi) {
-                                AiHomeVM.WeakTopicsUiState.Loading,
-                                AiHomeVM.WeakTopicsUiState.Failed -> {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
+                    Surface(
+                        modifier = Modifier
+                            .width(dialogWidth)
+                            .height(dialogHeight),
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.White
+                    ) {
+                        Column {
+                            Column(modifier = Modifier) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            horizontal = 16.dp,
+                                            vertical = 20.dp
+                                        )
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        CircularProgressIndicator(
-                                            color = AppColor.Main1
+
+                                        Text(
+                                            text = "가장 약한 분야",
+                                            style = AppTypography.Body2_Normal,
+                                            color = PrimitiveColor.Gray500
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(22.dp)
+                                                .clickable(
+                                                    interactionSource = remember {
+                                                        MutableInteractionSource()
+                                                    },
+                                                    indication = null
+                                                ) {
+                                                    showWeakestAll = false
+                                                },
+                                            tint = AppColor.text1
                                         )
                                     }
                                 }
+                                HorizontalDivider(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    thickness = 1.dp,
+                                    color = AppColor.divider1
+                                )
 
-                                is AiHomeVM.WeakTopicsUiState.Success -> {
-                                    if (weakTopicsUi.data.isEmpty()) {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            EmptyContent(
-                                                text = "세션이 쌓이면\n약점 분야를 알려드려요.",
-                                                isButton = false,
-                                                height = 275.dp
-                                            )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f)
+                                ) {
+                                    when (weakTopicsUi) {
+                                        AiHomeVM.WeakTopicsUiState.Loading,
+                                        AiHomeVM.WeakTopicsUiState.Failed -> {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    color = AppColor.Main1
+                                                )
+                                            }
                                         }
-                                    } else {
-                                        LazyColumn(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            items(weakTopicsUi.data) { item ->
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .clip(RoundedCornerShape(8.dp))
-                                                        .background(PrimitiveColor.Gray200)
-                                                        .padding(16.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
+
+                                        is AiHomeVM.WeakTopicsUiState.Success -> {
+                                            if (weakTopicsUi.data.isEmpty()) {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
                                                 ) {
-                                                    Column {
+                                                    EmptyContent(
+                                                        text = "세션이 쌓이면\n약점 분야를 알려드려요.",
+                                                        isButton = false,
+                                                        height = 275.dp
+                                                    )
+                                                }
+                                            } else {
+                                                LazyColumn(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(16.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    items(weakTopicsUi.data) { item ->
                                                         Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .clip(RoundedCornerShape(8.dp))
+                                                                .background(PrimitiveColor.Gray200)
+                                                                .padding(16.dp),
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
-                                                            Text(
-                                                                text = item.topic.displayName,
-                                                                style = AppTypography.Headline2,
-                                                                color = AppColor.text2
-                                                            )
+                                                            Column {
+                                                                Row(
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    Text(
+                                                                        text = item.topic.displayName,
+                                                                        style = AppTypography.Headline2,
+                                                                        color = AppColor.text2
+                                                                    )
 
-                                                            Spacer(Modifier.weight(1f))
+                                                                    Spacer(Modifier.weight(1f))
 
-                                                            fun accuracyColor(rate: Double): Color {
-                                                                return when {
-                                                                    rate < 30 -> Color(0xFFEB3D32)
-                                                                    rate < 70 -> Color(0xFFF9A825)
-                                                                    else -> Color(0xFF00C30D)
+                                                                    fun accuracyColor(rate: Double): Color {
+                                                                        return when {
+                                                                            rate < 30 -> Color(
+                                                                                0xFFEB3D32
+                                                                            )
+
+                                                                            rate < 70 -> Color(
+                                                                                0xFFF9A825
+                                                                            )
+
+                                                                            else -> Color(0xFF00C30D)
+                                                                        }
+                                                                    }
+
+                                                                    Text(
+                                                                        text = "정확도 ${item.accuracyRate}%",
+                                                                        style = AppTypography.Body1_Normal,
+                                                                        color = accuracyColor(item.accuracyRate)
+                                                                    )
                                                                 }
-                                                            }
 
-                                                            Text(
-                                                                text = "정확도 ${item.accuracyRate}%",
-                                                                style = AppTypography.Body1_Normal,
-                                                                color = accuracyColor(item.accuracyRate)
-                                                            )
-                                                        }
+                                                                Spacer(Modifier.height(8.dp))
 
-                                                        Spacer(Modifier.height(8.dp))
+                                                                val weakestGaugeBrush =
+                                                                    Brush.horizontalGradient(
+                                                                        colorStops = arrayOf(
+                                                                            0f to Color(0xFFEB3D32),
+                                                                            0.5f to Color(0xFFF9A825),
+                                                                            1f to Color(0xFF00C30D)
+                                                                        )
+                                                                    )
 
-                                                        val weakestGaugeBrush =
-                                                            Brush.horizontalGradient(
-                                                                colorStops = arrayOf(
-                                                                    0f to Color(0xFFEB3D32),
-                                                                    0.5f to Color(0xFFF9A825),
-                                                                    1f to Color(0xFF00C30D)
+                                                                RoundedGauge(
+                                                                    rate = item.accuracyRate,
+                                                                    modifier = Modifier.fillMaxWidth(),
+                                                                    height = 8.dp,
+                                                                    width = 0.dp,
+                                                                    gaugeBrush = weakestGaugeBrush
                                                                 )
-                                                            )
-
-                                                        RoundedGauge(
-                                                            rate = item.accuracyRate,
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            height = 8.dp,
-                                                            width = 0.dp,
-                                                            gaugeBrush = weakestGaugeBrush
-                                                        )
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
+
+                                        else -> Unit
                                     }
                                 }
-
-                                else -> Unit
                             }
                         }
                     }
@@ -661,9 +715,7 @@ fun AiHomeHeader(
     navController: NavController
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(208.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Image(
             painter = painterResource(id = R.drawable.ai_home_bg),
@@ -671,9 +723,10 @@ fun AiHomeHeader(
             modifier = Modifier.fillMaxWidth(),
             contentScale = ContentScale.FillWidth
         )
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .padding(vertical = 24.dp, horizontal = 16.dp),
             verticalArrangement = Arrangement.Center
         ) {
@@ -723,7 +776,7 @@ fun EmptyContent(
             Text(
                 text = text,
                 style = AppTypography.Label1,
-                color = AppColor.text3w,
+                color = AppColor.text_on_color_3,
                 textAlign = TextAlign.Center
             )
         }
@@ -1199,7 +1252,7 @@ fun RecentAllSessions(
                                                 Text(
                                                     text = "${item.sequence}",
                                                     style = AppTypography.Body1_Normal,
-                                                    color = AppColor.text1w
+                                                    color = AppColor.text_on_color_1
                                                 )
                                             }
 
@@ -1209,31 +1262,33 @@ fun RecentAllSessions(
                                                 modifier = Modifier.weight(1f),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Column {
+                                                Column(
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
                                                     Text(
                                                         text = item.mode,
                                                         style = AppTypography.Label1,
-                                                        color = AppColor.text2
+                                                        color = AppColor.text2,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
                                                     )
 
                                                     Spacer(Modifier.height(2.dp))
 
                                                     Text(
                                                         text = "${
-                                                            item.topics
-                                                                .firstOrNull()
-                                                                ?.displayName
+                                                            item.topics.firstOrNull()?.displayName
                                                                 ?: item.stack?.displayName
                                                                 ?: ""
-                                                        } • ${
-                                                            item.startedAt.substringBefore("T")
-                                                        }",
+                                                        } • ${item.startedAt.substringBefore("T")}",
                                                         style = AppTypography.Label2,
-                                                        color = AppColor.text4
+                                                        color = AppColor.text4,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
                                                     )
                                                 }
 
-                                                Spacer(Modifier.weight(1f))
+                                                Spacer(Modifier.width(8.dp))
 
                                                 Box(
                                                     modifier = Modifier
@@ -1515,6 +1570,8 @@ fun SynthesisUi(
     navController: NavController,
     synthesis: InterviewSessionSummaryResponse
 ) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val isTablet = screenWidth >= 600
     Box (
         modifier = Modifier.fillMaxSize()
     ){
@@ -1523,54 +1580,55 @@ fun SynthesisUi(
         ) {
             Text(
                 text = synthesis.startedAt.substringBefore("T"),
-                color = AppColor.text3w,
+                color = AppColor.text_on_color_3,
                 style = AppTypography.Caption2
             )
             Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(190.dp)
+                    .height(if (isTablet) 300.dp else 190.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(AppColor.bg0)
-                    .padding(16.dp),
+                    .padding(if (isTablet) 24.dp else 16.dp),
             ) {
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "전체 점수",
-                            color = AppColor.text4,
-                            style = AppTypography.Label2
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            text = "전체 보기",
-                            color = AppColor.text4,
-                            style = AppTypography.Label2,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "전체 점수",
+                        color = AppColor.text4,
+                        style = AppTypography.Label2
+                    )
+                    Spacer(Modifier.height(if (isTablet) 16.dp else 16.dp))
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(126.dp),
+                            .weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ScoreGauge(
-                            score = synthesis.score,
-                            maxScore = synthesis.maxScore,
-                            modifier = Modifier.size(120.dp)
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)){
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ScoreGauge(
+                                score = synthesis.score,
+                                maxScore = synthesis.maxScore,
+                                modifier = Modifier.size(
+                                    if (isTablet) 220.dp else 120.dp
+                                )
+                            )
+                        }
+
+                        Spacer(Modifier.width(if (isTablet) 32.dp else 16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(55.dp)
+                                    .height(if (isTablet) 85.dp else 55.dp)
                             ){
                                 Column ( modifier = Modifier.fillMaxWidth()) {
                                     val calculatorAccuracyScore = synthesis.accuracyScore - synthesis.averageAccuracyScore
@@ -1578,7 +1636,7 @@ fun SynthesisUi(
                                     Text(
                                         text = "정확도",
                                         style = AppTypography.Caption2,
-                                        color = AppColor.text3w
+                                        color = AppColor.text_on_color_3
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Row(
@@ -1591,19 +1649,20 @@ fun SynthesisUi(
                                             color = AppColor.text1
                                         )
                                         Spacer(Modifier.weight(1f))
-                                        Image(
-                                            painter = painterResource(R.drawable.graph),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(150.dp, 20.dp),
-                                            contentScale = ContentScale.Fit,
-                                            alignment = Alignment.CenterEnd
-
+                                        ScoreMiniGraph(
+                                            scores = synthesis.recentSessions
+                                                .sortedBy { it.sequence }
+                                                .map { it.accuracyScore },
+                                            modifier = Modifier.size(
+                                                width = if (isTablet) 160.dp else 100.dp,
+                                                height = if (isTablet) 32.dp else 20.dp
+                                            )
                                         )
                                     }
                                     Spacer(Modifier.height(4.dp))
                                     Text(
                                         buildAnnotatedString {
-                                            withStyle(SpanStyle(color = if(isUp) AppColor.errorColor else AppColor.accentColor)){
+                                            withStyle(SpanStyle(color = if(isUp) AppColor.status_error else AppColor.status_accent)){
                                                 append(if(isUp) "▲" else "▼")
                                             }
                                             append(" ")
@@ -1615,13 +1674,19 @@ fun SynthesisUi(
                                     )
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
-                            HorizontalDivider(Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(if (isTablet) 20.dp else 8.dp))
+
+                            HorizontalDivider(
+                                modifier = Modifier.fillMaxWidth(),
+                                thickness = 1.dp,
+                                color = AppColor.divider1
+                            )
+
+                            Spacer(Modifier.height(if (isTablet) 20.dp else 8.dp))
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(55.dp)
+                                    .height(if (isTablet) 85.dp else 55.dp)
                             ){
                                 Column {
                                     val calculatorDeliveryScore = synthesis.deliveryScore - synthesis.averageDeliveryScore
@@ -1629,7 +1694,7 @@ fun SynthesisUi(
                                     Text(
                                         text = "전달력",
                                         style = AppTypography.Caption2,
-                                        color = AppColor.text3w
+                                        color = AppColor.text_on_color_3
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Row(
@@ -1642,19 +1707,20 @@ fun SynthesisUi(
                                             color = AppColor.text1
                                         )
                                         Spacer(Modifier.weight(1f))
-                                        Image(
-                                            painter = painterResource(R.drawable.graph),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(150.dp, 20.dp),
-                                            contentScale = ContentScale.Fit,
-                                            alignment = Alignment.CenterEnd
-
+                                        ScoreMiniGraph(
+                                            scores = synthesis.recentSessions
+                                                .sortedBy { it.sequence }
+                                                .map { it.deliveryScore },
+                                            modifier = Modifier.size(
+                                                width = if (isTablet) 160.dp else 100.dp,
+                                                height = if (isTablet) 32.dp else 20.dp
+                                            )
                                         )
                                     }
                                     Spacer(Modifier.height(4.dp))
                                     Text(
                                         buildAnnotatedString {
-                                            withStyle(SpanStyle(color = if(isUp) AppColor.errorColor else AppColor.accentColor)){
+                                            withStyle(SpanStyle(color = if(isUp) AppColor.status_error else AppColor.status_accent)){
                                                 append(if(isUp) "▲" else "▼")
                                             }
                                             append(" ")
@@ -1674,7 +1740,7 @@ fun SynthesisUi(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(242.dp)
+                    .height(if (isTablet) 360.dp else 242.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(AppColor.bg0)
                     .padding(16.dp),
@@ -1687,8 +1753,9 @@ fun SynthesisUi(
                     )
                     Spacer(Modifier.height(16.dp))
                     ScoreStackedBarChart(
-                        sessions = synthesis.recentSessions,
-                        modifier = Modifier.fillMaxWidth()
+                        answers = synthesis.answers,
+                        modifier = Modifier.fillMaxWidth(),
+                        isTablet = isTablet
                     )
                     Spacer(Modifier.height(16.dp))
                     Row(
@@ -1739,37 +1806,66 @@ fun SynthesisUi(
                         style = AppTypography.Label2
                     )
                     Spacer(Modifier.height(16.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        synthesis.weakTopics.forEach {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(101.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(AppColor.bg1)
-                                    .padding(16.dp)
-                            ) {
-                                Text(
-                                    text = it.topic.displayName,
-                                    color = AppColor.text1,
-                                    style = AppTypography.Headline2
-                                )
-                                Spacer(Modifier.height(16.dp))
-                                InlineButton(
-                                    state = InlineButtonState.Default,
-                                    text = "학습 콘텐츠 바로가기",
-                                    style = AppTypography.Label2,
-                                    color = AppColor.CTA_text,
-                                    onClick = {
-                                        navController.navigate("lessonList/${it.unitId}") {
-                                            launchSingleTop = true
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val isWide = maxWidth >= 600.dp
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            synthesis.weakTopics
+                                .chunked(if (isWide) 3 else 1)
+                                .forEach { rowTopics ->
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        rowTopics.forEach {
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(101.dp)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(AppColor.bg1)
+                                                    .padding(16.dp)
+                                            ) {
+                                                Text(
+                                                    text = it.unitTitle,
+                                                    color = AppColor.text1,
+                                                    style = AppTypography.Headline2
+                                                )
+
+                                                Spacer(Modifier.height(16.dp))
+
+                                                InlineButton(
+                                                    state = InlineButtonState.Default,
+                                                    text = "학습 콘텐츠 바로가기",
+                                                    style = AppTypography.Label2,
+                                                    color = AppColor.CTA_text,
+                                                    onClick = {
+                                                        navController.navigate("lessonList/${it.unitId}") {
+                                                            launchSingleTop = true
+                                                        }
+                                                    },
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(32.dp),
+                                                    shape = RoundedCornerShape(4.dp)
+
+                                                )
+                                            }
                                         }
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(32.dp)
-                                )
-                            }
+
+                                        if (isWide) {
+                                            repeat(3 - rowTopics.size) {
+                                                Spacer(Modifier.weight(1f))
+                                            }
+                                        }
+                                    }
+                                }
                         }
                     }
                 }
@@ -1780,8 +1876,9 @@ fun SynthesisUi(
 }
 @Composable
 fun ScoreStackedBarChart(
-    sessions: List<InterviewSummaryRecentSession>,
-    modifier: Modifier = Modifier
+    answers: List<InterviewSummaryAnswer>,
+    modifier: Modifier = Modifier,
+    isTablet: Boolean = false
 ) {
     val textMeasurer = rememberTextMeasurer()
 
@@ -1793,7 +1890,7 @@ fun ScoreStackedBarChart(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(148.dp)
+            .height(if (isTablet) 286.dp else 168.dp)
     ) {
         // 그래프 영역
         val leftPadding = 52.dp.toPx()
@@ -1840,17 +1937,52 @@ fun ScoreStackedBarChart(
             )
         }
 
-        val slotWidth = chartWidth / 6
+        val slotWidth = chartWidth / 5
         val barWidth = minOf(
-            40.dp.toPx(),
+            (if (isTablet) 72.dp else 40.dp).toPx(),
             slotWidth * 0.55f
         )
 
-        sessions.forEachIndexed { index, session ->
+        answers.forEachIndexed { index, answer ->
             val centerX = chartLeft + slotWidth * index + slotWidth / 2f
             val barLeft = centerX - barWidth / 2f
-            val accuracyHeight = chartHeight * (session.accuracyScore / 100f)
-            val deliveryHeight = chartHeight * (session.deliveryScore / 100f)
+            val minBarHeight = (if (isTablet) 20.dp else 14.dp).toPx()
+
+            val accuracyScore = answer.accuracyScore.coerceAtLeast(0)
+            val deliveryScore = answer.deliveryScore.coerceAtLeast(0)
+
+            val totalScore = accuracyScore + deliveryScore
+
+            val totalHeight = (
+                    chartHeight * (totalScore / 100f)
+                    ).coerceIn(0f, chartHeight)
+
+            val accuracyHeight: Float
+            val deliveryHeight: Float
+
+            if (totalScore == 0) {
+                accuracyHeight = 0f
+                deliveryHeight = 0f
+            } else if (accuracyScore == 0) {
+                accuracyHeight = 0f
+                deliveryHeight = totalHeight.coerceAtLeast(minBarHeight)
+                    .coerceAtMost(chartHeight)
+            } else if (deliveryScore == 0) {
+                accuracyHeight = totalHeight.coerceAtLeast(minBarHeight)
+                    .coerceAtMost(chartHeight)
+                deliveryHeight = 0f
+            } else {
+                val availableHeight = totalHeight
+                    .coerceAtLeast(minBarHeight * 2f)
+                    .coerceAtMost(chartHeight)
+
+                accuracyHeight = (
+                        availableHeight * accuracyScore / totalScore
+                        ).coerceIn(minBarHeight, availableHeight - minBarHeight)
+
+                deliveryHeight = availableHeight - accuracyHeight
+            }
+
             val accuracyTop = chartBottom - accuracyHeight
             val deliveryTop = accuracyTop - deliveryHeight
 
@@ -1866,7 +1998,11 @@ fun ScoreStackedBarChart(
                 )
             )
 
-            val radius = 8.dp.toPx()
+            val radius = minOf(
+                8.dp.toPx(),
+                deliveryHeight / 2f,
+                barWidth / 2f
+            )
             val deliveryPath = Path().apply {
                 moveTo(barLeft, accuracyTop)
                 lineTo(barLeft, deliveryTop + radius)
@@ -1891,9 +2027,9 @@ fun ScoreStackedBarChart(
                 color = deliveryColor
             )
 
-            if (session.accuracyScore > 0) {
+            if (answer.accuracyScore > 0) {
                 val accuracyText = textMeasurer.measure(
-                    text = session.accuracyScore.toString(),
+                    text = answer.accuracyScore.toString(),
                     style = AppTypography.Caption2.copy(
                         color = AppColor.bg0
                     )
@@ -1910,9 +2046,9 @@ fun ScoreStackedBarChart(
                 )
             }
 
-            if (session.deliveryScore > 0) {
+            if (answer.deliveryScore > 0) {
                 val deliveryText = textMeasurer.measure(
-                    text = session.deliveryScore.toString(),
+                    text = answer.deliveryScore.toString(),
                     style = AppTypography.Caption2.copy(
                         color = AppColor.text3
                     )
@@ -1930,7 +2066,7 @@ fun ScoreStackedBarChart(
             }
 
             val sequenceText = textMeasurer.measure(
-                text = "Q${session.sequence}",
+                text = "Q${answer.displayOrder}",
                 style = AppTypography.Caption2.copy(
                     color = AppColor.text2
                 )
@@ -1963,7 +2099,11 @@ fun ScoreGauge(
         }
 
         Canvas(modifier = modifier) {
-            val strokeWidth = 9.dp.toPx() //두께(중심선을 기준으로 양옆으로 두께가 늘어남)
+            val strokeWidth = if (size.width >= 160.dp.toPx()) {
+                16.dp.toPx()
+            } else {
+                9.dp.toPx()
+            } //두께(중심선을 기준으로 양옆으로 두께가 늘어남)
             val inset = strokeWidth / 2f //늘어난만큼 안으로 들어오게
 
             val startAngle = 126f
@@ -2016,19 +2156,26 @@ fun ScoreGauge(
                 x = center.x + radius * cos(endAngle).toFloat(),
                 y = center.y + radius * sin(endAngle).toFloat()
             )
-            drawCircle( //그림자
+            val isTabletGauge = size.width >= 160.dp.toPx()
+
+            val outerRadius = if (isTabletGauge) 15.dp.toPx() else 7.dp.toPx()
+            val innerRadius = if (isTabletGauge) 9.dp.toPx() else 4.dp.toPx()
+
+            drawCircle(
                 color = AppColor.text1.copy(alpha = 0.1f),
-                radius = 7.dp.toPx(),
+                radius = outerRadius,
                 center = endPoint + Offset(-0.5f, 0f)
             )
+
             drawCircle(
                 color = AppColor.bg0,
-                radius = 7.dp.toPx(),
+                radius = outerRadius,
                 center = endPoint
             )
+
             drawCircle(
                 color = PrimitiveColor.Purple400,
-                radius = 4.dp.toPx(),
+                radius = innerRadius,
                 center = endPoint
             )
         }
@@ -2079,7 +2226,7 @@ fun DetailUi(
         ) {
             Text(
                 text = sessionAnswers.startedAt.substringBefore("T"),
-                color = AppColor.text3w,
+                color = AppColor.text_on_color_3,
                 style = AppTypography.Caption2
             )
             Spacer(Modifier.height(8.dp))
@@ -2252,27 +2399,63 @@ fun DetailItem(
 
                     Spacer(Modifier.height(16.dp))
 
-                    ScoreItem(
-                        title = "정확도",
-                        score = detail.accuracyScore,
-                        maxScore = detail.accuracyMaxScore
-                    )
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (maxWidth >= 600.dp) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    ScoreItem(
+                                        title = "정확도",
+                                        score = detail.accuracyScore,
+                                        maxScore = detail.accuracyMaxScore
+                                    )
+                                }
 
-                    Spacer(Modifier.height(8.dp))
+                                Box(modifier = Modifier.weight(1f)) {
+                                    ScoreItem(
+                                        title = "구조성",
+                                        score = detail.structureScore,
+                                        maxScore = detail.structureMaxScore
+                                    )
+                                }
 
-                    ScoreItem(
-                        title = "구조성",
-                        score = detail.structureScore,
-                        maxScore = detail.structureMaxScore
-                    )
+                                Box(modifier = Modifier.weight(1f)) {
+                                    ScoreItem(
+                                        title = "명료성",
+                                        score = detail.clarityScore,
+                                        maxScore = detail.clarityMaxScore
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                ScoreItem(
+                                    title = "정확도",
+                                    score = detail.accuracyScore,
+                                    maxScore = detail.accuracyMaxScore
+                                )
 
-                    Spacer(Modifier.height(8.dp))
+                                ScoreItem(
+                                    title = "구조성",
+                                    score = detail.structureScore,
+                                    maxScore = detail.structureMaxScore
+                                )
 
-                    ScoreItem(
-                        title = "명료성",
-                        score = detail.clarityScore,
-                        maxScore = detail.clarityMaxScore
-                    )
+                                ScoreItem(
+                                    title = "명료성",
+                                    score = detail.clarityScore,
+                                    maxScore = detail.clarityMaxScore
+                                )
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(Modifier.fillMaxWidth(), 1.dp, AppColor.divider1)
@@ -2472,5 +2655,100 @@ private fun ScoreBar(
                 )
             }
         }
+    }
+}
+@Composable
+fun ScoreMiniGraph(
+    scores: List<Int>,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        if (scores.isEmpty()) return@Canvas
+
+        val lineColor = Color(0xFFD9D9D9)
+        val pointColor = Color(0xFFBF00FF)
+
+        val horizontalPadding = 6.dp.toPx()
+        val verticalPadding = 3.dp.toPx()
+
+        val graphWidth = size.width - horizontalPadding * 2
+        val graphHeight = size.height - verticalPadding * 2
+
+        val minScore = scores.minOrNull() ?: 0
+        val maxScore = scores.maxOrNull() ?: 0
+        val averageScore = scores.average().toFloat()
+
+        // 점수 차이가 작아도 그래프의 변화가 보이도록 범위 설정
+        val padding = ((maxScore - minScore) * 0.3f).coerceAtLeast(3f)
+
+        val graphMin = minScore - padding
+        val graphMax = maxScore + padding
+        val scoreRange = (graphMax - graphMin).coerceAtLeast(1f)
+
+        fun scoreToY(score: Float): Float {
+            val ratio = (score - graphMin) / scoreRange
+            return verticalPadding + graphHeight * (1f - ratio)
+        }
+
+        val averageY = scoreToY(averageScore)
+
+        // 평균 점선
+        drawLine(
+            color = lineColor,
+            start = Offset(0f, averageY),
+            end = Offset(size.width, averageY),
+            strokeWidth = 1.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(
+                floatArrayOf(4.dp.toPx(), 4.dp.toPx())
+            )
+        )
+
+        val points = scores.mapIndexed { index, score ->
+            val x = if (scores.size == 1) {
+                size.width / 2f
+            } else {
+                horizontalPadding +
+                        graphWidth * index / (scores.size - 1)
+            }
+
+            Offset(x, scoreToY(score.toFloat()))
+        }
+
+        // 점수 변화 곡선
+        val path = Path().apply {
+            moveTo(points.first().x, points.first().y)
+
+            for (i in 1 until points.size) {
+                val previous = points[i - 1]
+                val current = points[i]
+
+                val midX = (previous.x + current.x) / 2f
+
+                cubicTo(
+                    midX,
+                    previous.y,
+                    midX,
+                    current.y,
+                    current.x,
+                    current.y
+                )
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = lineColor,
+            style = Stroke(
+                width = 2.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+        )
+
+        // 가장 최근 점수
+        drawCircle(
+            color = pointColor,
+            radius = 4.dp.toPx(),
+            center = points.last()
+        )
     }
 }
