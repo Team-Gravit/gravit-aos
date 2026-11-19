@@ -34,16 +34,16 @@ class OnboardingViewModel(
     val state = _state.asStateFlow()
 
     fun submit(nickname: String, profileNumber: Int) {
-        viewModelScope.launch {
-            _state.value = UiState.Loading
+        if (_state.value == UiState.Loading) return
+        _state.value = UiState.Loading
 
+        viewModelScope.launch {
             val session = AuthPrefs.load(appContext)
             if (session == null) {
                 AuthPrefs.clear(appContext)
                 _state.value = UiState.SessionExpired
                 return@launch
             }
-
             runCatching {
                 api.completeOnboarding(
                     OnboardingRequest(nickname, profileNumber),
