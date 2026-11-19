@@ -1,13 +1,13 @@
 package com.inuappcenter.gravit.main.Ai.Interview
 
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,7 +32,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -83,17 +82,10 @@ fun AiAnswerCheckPage(
 
     val startState by vm.startState.collectAsState()
     val submitState by vm.submitState.collectAsState()
+    val gradingState by vm.gradingState.collectAsState()
+    var loading2StartTime by remember { mutableStateOf<Long?>(null) }
     val abandonState by vm.abandonState.collectAsState()
     val transcriptionState by vm.transcriptionState.collectAsState()
-
-    var progressStep by rememberSaveable { mutableIntStateOf(0) }
-    val progress = remember(progressStep) { Animatable(progressStep / 5f) }
-    var minLoadingPassed by remember { mutableStateOf(false) }
-    /*
-    var transcriptionDisplayedStep by remember { mutableIntStateOf(1) }
-    var transcriptionFirstStepPassed by remember { mutableStateOf(false) }
-    var transcriptionLoadingFinished by remember { mutableStateOf(false) }
-    */
 
     val interview = startState as? AiInterviewVM.StartUiState.Success ?: return
     val questions = interview.questions
@@ -122,51 +114,7 @@ fun AiAnswerCheckPage(
             }
         }
     }
-    /*
-    val transcriptionCompletedCount =
-        when (val state = transcriptionState) {
-            is AiInterviewVM.TranscriptionUiState.Loading -> state.completedCount
-            is AiInterviewVM.TranscriptionUiState.Failed -> state.completedCount
-            is AiInterviewVM.TranscriptionUiState.Success -> 5
-            else -> 0
-        }
-    LaunchedEffect(mode) {
-        if (mode == AnswerMode.Voice) {
-            transcriptionDisplayedStep = 1
-            transcriptionFirstStepPassed = false
-            transcriptionLoadingFinished = false
 
-            delay(2000)
-
-            transcriptionFirstStepPassed = true
-        }
-    }
-    LaunchedEffect(
-        transcriptionCompletedCount,
-        transcriptionFirstStepPassed
-    ) {
-        if (
-            mode == AnswerMode.Voice &&
-            transcriptionFirstStepPassed &&
-            transcriptionCompletedCount > transcriptionDisplayedStep
-        ) {
-            transcriptionDisplayedStep = transcriptionCompletedCount
-        }
-    }
-    LaunchedEffect(
-        transcriptionDisplayedStep,
-        transcriptionState
-    ) {
-        if (
-            mode == AnswerMode.Voice &&
-            transcriptionDisplayedStep == 5 &&
-            transcriptionState is AiInterviewVM.TranscriptionUiState.Success
-        ) {
-            delay(2000)
-            transcriptionLoadingFinished = true
-        }
-    }
-    */
     var errorNavigated by remember { mutableStateOf(false) }
     LaunchedEffect(submitState) {
         when (submitState) {
@@ -222,7 +170,7 @@ fun AiAnswerCheckPage(
                 showExitDialog = false
                 vm.clearVoiceAnswers()
 
-                navController.navigate("chapter?tab=ai") {
+                navController.navigate("ai") {
                     popUpTo("ai/interview-flow") {
                         inclusive = true
                     }
@@ -256,53 +204,54 @@ fun AiAnswerCheckPage(
         }
     }
     LaunchedEffect(submitState) {
-        if (submitState == AiInterviewVM.SubmitUiState.Loading) {
-            progress.snapTo(0f)
-            progressStep = 0
-            minLoadingPassed = false
-        }
-
-        if (submitState == AiInterviewVM.SubmitUiState.Success) {
-            for (step in (progressStep + 1)..5) {
-                progress.animateTo(
-                    targetValue = step / 5f,
-                    animationSpec = tween(500)
-                )
-                progressStep = step
-                delay(500)
-            }
-            vm.clearVoiceAnswers()
-
-            navController.navigate("chapter?tab=ai") {
-                popUpTo("ai/interview-flow") {
-                    inclusive = true
+        when (submitState) {
+            AiInterviewVM.SubmitUiState.Loading -> {
+                if (loading2StartTime == null) {
+                    loading2StartTime = SystemClock.elapsedRealtime()
                 }
-                launchSingleTop = true
             }
+
+            AiInterviewVM.SubmitUiState.Success -> {
+                vm.startGradingPolling(interview.sessionId)
+            }
+
+            else -> Unit
         }
     }
-    /*
-    if (
-        mode == AnswerMode.Voice &&
-        !transcriptionLoadingFinished
-    ) {
-        AiLoading2(
-            progress = transcriptionDisplayedStep / 5f,
-            step = transcriptionDisplayedStep
-        )
+    LaunchedEffect(gradingState) {
+        when (gradingState) {
+            AiInterviewVM.GradingUiState.Completed -> {
+                val startTime = loading2StartTime ?: SystemClock.elapsedRealtime()
+                val elapsedTime = SystemClock.elapsedRealtime() - startTime
+                val remainingTime = (5000L - elapsedTime).coerceAtLeast(0L)
 
-        if (
-            transcriptionState is AiInterviewVM.TranscriptionUiState.Failed
-        ) {
-            LoadFailedDialog(
-                onRetryClick = { vm.retryTranscriptions(interview.sessionId) }
-            )
+                delay(remainingTime)
+
+                vm.clearVoiceAnswers()
+
+                navController.navigate("ai/feedback/${interview.sessionId}") {
+                    popUpTo("ai/interview-flow") {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+
+            AiInterviewVM.GradingUiState.SessionExpired -> {
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+
+            AiInterviewVM.GradingUiState.NotFound -> {
+                navController.navigate("error/404") {
+                    launchSingleTop = true
+                }
+            }
+
+            else -> Unit
         }
-
-        return
     }
-
-     */
     if (
         mode == AnswerMode.Voice &&
         (transcriptionState is AiInterviewVM.TranscriptionUiState.Idle ||
@@ -359,45 +308,12 @@ fun AiAnswerCheckPage(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            AiLoading2(
-                progress = progress.value,
-                step = progressStep
-            )
+            AiLoading2()
 
-            if (showExitDialog) {
-                TwoButtonDialog(
-                    title = "정말 나가시겠어요?",
-                    description = "지금 나가면 채점 결과가 저장되지 않아요.\n5문항 답변이 모두 사라져요.",
-                    leftButtonText = "취소",
-                    rightButtonText = "나가기",
-                    onDismiss = {
-                        if (abandonState != AiInterviewVM.AbandonUiState.Loading) {
-                            showExitDialog = false
-                            pausedByExitDialog = false
-                        }
-                    },
-                    onRightClick = {
-                        if (abandonState != AiInterviewVM.AbandonUiState.Loading) {
-                            vm.abandonInterview()
-                        }
-                    }
-                )
-            }
-
-            if (abandonState == AiInterviewVM.AbandonUiState.Failed) {
+            if (gradingState == AiInterviewVM.GradingUiState.Failed) {
                 LoadFailedDialog(
                     onRetryClick = {
-                        vm.abandonInterview()
-                    }
-                )
-            }
-            if (submitState == AiInterviewVM.SubmitUiState.Failed) {
-                LoadFailedDialog(
-                    onRetryClick = {
-                        vm.submitAnswers(
-                            sessionId = interview.sessionId,
-                            mode = mode
-                        )
+                        vm.retryGradingPolling(interview.sessionId)
                     }
                 )
             }
@@ -899,11 +815,15 @@ fun AiAnswerAudioPlayer(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = R.drawable.play),
+            painter = painterResource(
+                id = if (isPlaying) R.drawable.audio_playing else R.drawable.audio_stop
+            ),
             contentDescription = null,
             modifier = Modifier
                 .size(24.dp)
                 .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
                     enabled = (audioFile?.exists() == true) || !audioUrl.isNullOrBlank()
                 ) {
                     if (isPlaying) {
