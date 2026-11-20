@@ -248,7 +248,16 @@ fun AiAnswerCheckPage(
                     launchSingleTop = true
                 }
             }
+            AiInterviewVM.GradingUiState.Abandoned -> {
+                vm.clearVoiceAnswers()
 
+                navController.navigate("ai") {
+                    popUpTo("ai/interview-flow") {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
             else -> Unit
         }
     }
