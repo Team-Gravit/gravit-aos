@@ -255,17 +255,6 @@ fun LoginScreen (
 
                     Spacer(Modifier.height(40.dp))
                 }
-
-                if (snackBarText != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 60.dp),
-                        contentAlignment = Alignment.BottomCenter
-                    ) {
-                        CustomSnackBar(text = snackBarText!!)
-                    }
-                }
             }
             if (snackBarText != null) {
                 Box(
