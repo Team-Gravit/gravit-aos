@@ -40,7 +40,7 @@ fun Cip(
 
     val contentColor = when {
         state == CipState.Disabled -> AppColor.text4
-        state == CipState.Active -> AppColor.text1w
+        state == CipState.Active -> AppColor.text_on_color_1
         else -> AppColor.CTA
     }
 

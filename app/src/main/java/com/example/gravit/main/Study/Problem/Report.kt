@@ -7,7 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -149,167 +152,183 @@ fun ReportDialog(
                 }
             },
             properties = DialogProperties(
-                dismissOnClickOutside = false,
-                dismissOnBackPress = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
                 usePlatformDefaultWidth = false
             )
         ) {
-            Surface(
-                modifier = Modifier
-                    .width(328.dp)
-                    .padding(bottom = 16.dp)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(16.dp),
-                color = AppColor.bg1
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
+                val dialogWidth = when {
+                    maxWidth < 360.dp -> maxWidth - 32.dp
+                    maxWidth < 600.dp -> 360.dp.coerceAtMost(maxWidth - 32.dp)
+                    maxWidth < 840.dp -> 480.dp
+                    else -> 560.dp
+                }
+
+                Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
+                        .width(dialogWidth)
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(
-                                horizontal = 16.dp,
-                                vertical = 20.dp
-                            )
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "신고하기",
-                                style = AppTypography.Body2_Normal,
-                                color = PrimitiveColor.Gray500
-                            )
-
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .clickable(
-                                        enabled = !isLoading,
-                                        interactionSource = remember {
-                                            MutableInteractionSource()
-                                        },
-                                        indication = null
-                                    ) {
-                                        showDialog = false
-                                        onOverlayClosed()
-                                    },
-                                tint = AppColor.text1
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = 1.dp,
-                        color = AppColor.divider1
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = 16.dp,
-                                vertical = 16.dp
-                            )
-                    ) {
-                        options.forEachIndexed { idx, opt ->
-                            Option(
-                                isChecked = selectedIndex == idx,
-                                text = opt.first,
-                                onClick = {
-                                    if (!isLoading) {
-                                        selectedIndex = idx
-                                    }
-                                }
-                            )
-
-                            Spacer(Modifier.height(12.dp))
-                        }
-
-                        Box(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White)
-                                .border(
-                                    width = 1.dp,
-                                    color = AppColor.divider1,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
                                 .padding(
-                                    horizontal = 12.dp,
-                                    vertical = 10.dp
+                                    horizontal = 16.dp,
+                                    vertical = 20.dp
                                 )
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "신고내용",
-                                    style = AppTypography.Caption1,
-                                    color = Color(0xFFA1A1A1)
+                                    text = "신고하기",
+                                    style = AppTypography.Body2_Normal,
+                                    color = PrimitiveColor.Gray500
                                 )
 
-                                Spacer(Modifier.height(4.dp))
-
-                                BasicTextField(
-                                    value = text,
-                                    onValueChange = {
-                                        if (!isLoading) {
-                                            text = it
-                                        }
-                                    },
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = null,
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(1f),
-                                    textStyle = AppTypography.Body2_Reading.copy(color = AppColor.text1),
-                                    enabled = !isLoading
+                                        .size(22.dp)
+                                        .clickable(
+                                            enabled = !isLoading,
+                                            interactionSource = remember {
+                                                MutableInteractionSource()
+                                            },
+                                            indication = null
+                                        ) {
+                                            showDialog = false
+                                            onOverlayClosed()
+                                        },
+                                    tint = AppColor.text1
                                 )
                             }
                         }
+
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            thickness = 1.dp,
+                            color = AppColor.divider1
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 16.dp
+                                )
+                        ) {
+                            options.forEachIndexed { idx, opt ->
+                                Option(
+                                    isChecked = selectedIndex == idx,
+                                    text = opt.first,
+                                    onClick = {
+                                        if (!isLoading) {
+                                            selectedIndex = idx
+                                        }
+                                    }
+                                )
+
+                                Spacer(Modifier.height(12.dp))
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White)
+                                    .border(
+                                        width = 1.dp,
+                                        color = AppColor.divider1,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 10.dp
+                                    )
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "신고내용",
+                                        style = AppTypography.Caption1,
+                                        color = Color(0xFFA1A1A1)
+                                    )
+
+                                    Spacer(Modifier.height(4.dp))
+
+                                    BasicTextField(
+                                        value = text,
+                                        onValueChange = {
+                                            if (!isLoading) {
+                                                text = it
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f),
+                                        textStyle = AppTypography.Body2_Reading.copy(color = AppColor.text1),
+                                        enabled = !isLoading
+                                    )
+                                }
+                            }
+                        }
+
+                        ReportButton(
+                            onClick1 = {
+                                showDialog = false
+                                onOverlayClosed()
+                            },
+                            text1 = "그만두기",
+                            enabled1 = !isLoading,
+                            onClick2 = {
+                                val selected =
+                                    selectedIndex?.let { options[it] }
+
+                                val reportType =
+                                    selected?.second ?: return@ReportButton
+
+                                vm.submit(
+                                    reportType,
+                                    text,
+                                    problemId
+                                )
+                            },
+
+                            text2 = "제출하기",
+                            enabled2 = canSubmit,
+
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 12.dp,
+                                bottom = 16.dp
+                            ),
+                            modifier1 = Modifier
+                                .height(48.dp)
+                                .weight(1f),
+                            modifier2 = Modifier
+                                .height(48.dp)
+                                .weight(1f)
+                        )
                     }
-
-                    ReportButton(
-                        onClick1 = {
-                            showDialog = false
-                            onOverlayClosed()
-                        },
-                        text1 = "그만두기",
-                        enabled1 = !isLoading,
-                        onClick2 = {
-                            val selected =
-                                selectedIndex?.let { options[it] }
-
-                            val reportType =
-                                selected?.second ?: return@ReportButton
-
-                            vm.submit(
-                                reportType,
-                                text,
-                                problemId
-                            )
-                        },
-
-                        text2 = "제출하기",
-                        enabled2 = canSubmit,
-
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
-                        modifier1 = Modifier
-                            .height(48.dp)
-                            .weight(1f),
-                        modifier2 = Modifier
-                            .height(48.dp)
-                            .weight(1f)
-                    )
                 }
             }
         }
@@ -355,13 +374,18 @@ fun ReportButton(
     modifier1: Modifier,
     modifier2: Modifier
 ) {
+    val isSmallScreen = LocalConfiguration.current.screenWidthDp < 360
+
     Row(modifier = modifier.fillMaxWidth()) {
         BlockButton(
             state = ButtonState.Stroke,
             onClick = onClick1,
             text = text1,
             enabled = enabled1,
-            modifier = modifier1
+            modifier = modifier1,
+            contentPadding = PaddingValues(
+                horizontal = if (isSmallScreen) 4.dp else 16.dp
+            ),
         )
         Spacer(Modifier.width(12.dp))
         BlockButton(

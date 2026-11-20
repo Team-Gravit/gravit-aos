@@ -2,7 +2,6 @@ package com.inuappcenter.gravit.main.User
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -13,9 +12,11 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -37,7 +39,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -70,10 +71,8 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.compose.ui.window.Popup
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gravit.share.LoadFailedDialog
@@ -125,6 +124,7 @@ fun MyPage(
         onSessionExpired = onSessionExpired
     )
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyPageUI(
@@ -249,7 +249,8 @@ fun MyPageUI(
         }
     }
 
-    val initialSkeleton = selectedTab == MyPageTab.Summary && (bannerUi == UserScreenVM.BannersUiState.Loading || summaryUi == UserScreenVM.SummaryUiState.Loading)
+    val initialSkeleton =
+        selectedTab == MyPageTab.Summary && (bannerUi == UserScreenVM.BannersUiState.Loading || summaryUi == UserScreenVM.SummaryUiState.Loading)
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -295,6 +296,7 @@ fun MyPageUI(
         }
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MyPageContent(
@@ -345,17 +347,18 @@ private fun MyPageContent(
         }
     }
 }
+
 @Composable
 fun MyPageProfileHeader(
     banner: MyPageBanner?,
     navController: NavController,
 ) {
-    Box (
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(195.dp)
             .background(Color(0xFF1D0C58))
-    ){
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -371,7 +374,7 @@ fun MyPageProfileHeader(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.profile_logo),
+                        painter = painterResource(id = R.drawable.gravit_logo),
                         contentDescription = "profile logo",
                         modifier = Modifier.size(37.dp, 47.dp)
                     )
@@ -381,28 +384,29 @@ fun MyPageProfileHeader(
 
                 Column(modifier = Modifier.padding(vertical = 7.5.dp)) {
                     Text(
-                        text = banner?.nickname?: "",
+                        text = banner?.nickname ?: "",
                         style = AppTypography.Heading2,
-                        color = AppColor.text1w
+                        color = AppColor.text_on_color_1
                     )
 
                     Spacer(Modifier.height(8.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ProfileBox("LV ${banner?.level?: 1}", 42.dp)
-                        ProfileBox(banner?.currentLeague?: "브론즈 3", 58.dp)
+                        ProfileBox("LV ${banner?.level ?: 1}", 42.dp)
+                        ProfileBox(banner?.currentLeague ?: "브론즈 3", 58.dp)
                     }
                 }
 
                 Spacer(Modifier.weight(1f))
-                Icon(painter = painterResource(id = R.drawable.bell),
+                Icon(
+                    painter = painterResource(id = R.drawable.bell),
                     contentDescription = "bell",
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
                             navController.navigate("user/notification")
                         },
-                    tint = AppColor.icon_w
+                    tint = AppColor.icon_on_color
                 )
                 Spacer(Modifier.width(16.dp))
                 Icon(
@@ -413,7 +417,7 @@ fun MyPageProfileHeader(
                         .clickable {
                             navController.navigate("user/setting")
                         },
-                    tint = AppColor.icon_w
+                    tint = AppColor.icon_on_color
 
                 )
             }
@@ -437,11 +441,12 @@ fun MyPageProfileHeader(
         }
     }
 }
+
 @Composable
 fun ProfileBox(
     text: String,
     width: Dp
-){
+) {
     Box(
         modifier = Modifier
             .size(width, 22.dp)
@@ -456,6 +461,7 @@ fun ProfileBox(
         )
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MyPageTabContent(
@@ -594,6 +600,7 @@ private fun MyPageTabContent(
         }
     }
 }
+
 @Composable
 fun MyPageTabRow(
     selectedTab: MyPageTab,
@@ -645,29 +652,33 @@ fun MyPageTabRow(
         )
     }
 }
+
 @Composable
 fun TapButton(
     text: String,
     onClick: () -> Unit,
     selected: Boolean = true,
     modifier: Modifier = Modifier
-){
+) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .height(38.dp),
+        modifier = modifier.height(38.dp),
         shape = RoundedCornerShape(4.dp),
+        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if(selected) AppColor.Main2 else AppColor.bg1,
-            contentColor = if(selected) AppColor.text1w else AppColor.text3
+            containerColor = if (selected) AppColor.Main2 else AppColor.bg1,
+            contentColor = if (selected) AppColor.text_on_color_1 else AppColor.text3
         )
     ) {
         Text(
             text = text,
-            style = AppTypography.Label1
+            style = AppTypography.Label1,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }
+
 @SuppressLint("DefaultLocale")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -677,7 +688,13 @@ fun SummaryUI(
     val ui by vm.stateSummary.collectAsState()
     val summaries = (ui as? UserScreenVM.SummaryUiState.Success)?.data
     var expanded by remember { mutableStateOf(false) }
-    val colorCube = listOf(AppColor.bg1, PrimitiveColor.Purple200, PrimitiveColor.Purple300,PrimitiveColor.Purple500,PrimitiveColor.Purple700)
+    val colorCube = listOf(
+        AppColor.bg1,
+        PrimitiveColor.Purple200,
+        PrimitiveColor.Purple300,
+        PrimitiveColor.Purple500,
+        PrimitiveColor.Purple700
+    )
     val selectedYear by vm.selectedYear.collectAsState()
 
     Column(
@@ -714,7 +731,7 @@ fun SummaryUI(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "상위 ${summaries?.summaries?.topPercent?: 0}%",
+                            text = "상위 ${summaries?.summaries?.topPercent ?: 0}%",
                             style = AppTypography.Title3,
                             color = AppColor.Main1
                         )
@@ -734,7 +751,13 @@ fun SummaryUI(
                     summaries?.summaries?.completedLessonCount?.let { "${it}개" } ?: "-",
                     "완료 레슨",
 
-                    summaries?.summaries?.totalLearningHours?.let { String.format(Locale.US, "%.1fh", it) } ?: "-",
+                    summaries?.summaries?.totalLearningHours?.let {
+                        String.format(
+                            Locale.US,
+                            "%.1fh",
+                            it
+                        )
+                    } ?: "-",
                     "총 학습시간"
                 ).chunked(2)
                 RankRow(rankInfo)
@@ -801,7 +824,7 @@ fun SummaryUI(
                             shape = RoundedCornerShape(12.dp),
                             containerColor = AppColor.bg0,
 
-                        ) {
+                            ) {
                             years.forEachIndexed { index, year ->
                                 Box(
                                     modifier = Modifier
@@ -884,6 +907,7 @@ fun SummaryUI(
         }
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LearningGrassGrid(
@@ -901,109 +925,174 @@ fun LearningGrassGrid(
         .takeWhile { !it.isAfter(endDate) }
         .toList()
 
-    val rows = 10
-    val cellSize = 12.dp
+    val rows = 7
     val cellGap = 4.dp
-    val columnWidth = cellSize + cellGap
+    val startOffset = startDate.dayOfWeek.value - 1
+    val columns = ceil((dates.size + startOffset) / rows.toFloat()).toInt()
 
-    val columns = ceil(dates.size / rows.toFloat()).toInt()
-    val totalWidth = columns * columnWidth
-
-    var selectedDate by remember {
+    var selectedDate by remember(year) {
         mutableStateOf<LocalDate?>(null)
     }
 
-    Column(
-        modifier = Modifier
-            .horizontalScroll(rememberScrollState())
-            .width(totalWidth)
-    ) {
-        Box(
-            modifier = Modifier
-                .width(totalWidth)
-                .height(18.dp)
-        ) {
-            (1..12).forEach { month ->
-                val monthStart = LocalDate.of(year, month, 1)
-                val dayIndex = ChronoUnit.DAYS.between(startDate, monthStart).toInt()
-                val columnIndex = dayIndex / rows
+    val scrollState = rememberScrollState()
 
-                Text(
-                    text = "${month}월",
-                    style = AppTypography.Caption1,
-                    color = AppColor.text4,
-                    modifier = Modifier.offset(
-                        x = columnIndex * columnWidth
-                    )
-                )
-            }
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val availableWidth = maxWidth
+
+        val minCellSize = 12.dp
+        val calculatedCellSize =
+            (availableWidth - cellGap * (columns - 1)) / columns
+
+        val cellSize = calculatedCellSize.coerceAtLeast(minCellSize)
+        val columnWidth = cellSize + cellGap
+        val totalWidth = columns * cellSize + (columns - 1) * cellGap
+
+        val isScrollable = totalWidth > availableWidth
+
+        val tooltipWidth = 130.dp
+        val tooltipHeight = 58.dp
+
+        val scrollOffset = with(density) {
+            scrollState.value.toDp()
         }
 
-        Spacer(Modifier.height(8.dp))
+        val selectedIndex = selectedDate?.let {
+            ChronoUnit.DAYS.between(startDate, it).toInt() + startOffset
+        }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(cellGap)
+        val selectedColumn = selectedIndex?.div(rows)
+        val selectedRow = selectedIndex?.rem(rows)
+
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            repeat(columns) { column ->
-                Column(verticalArrangement = Arrangement.spacedBy(cellGap)) {
-                    repeat(rows) { row ->
-                        val index = column * rows + row
-                        val date = dates.getOrNull(index)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(
+                        state = scrollState,
+                        enabled = isScrollable
+                    )
+            ) {
+                Column(
+                    modifier = Modifier.width(totalWidth)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(totalWidth)
+                            .height(18.dp)
+                    ) {
+                        (1..12).forEach { month ->
+                            val monthStart = LocalDate.of(year, month, 1)
 
-                        if (date != null) {
-                            val solvedCount = solvedMap[date] ?: 0
+                            val dayIndex = ChronoUnit.DAYS
+                                .between(startDate, monthStart)
+                                .toInt()
 
-                            Box {
-                                Box(
-                                    modifier = Modifier
-                                        .size(cellSize)
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(getGrassColor(solvedCount))
-                                        .clickable {
-                                            selectedDate =
-                                                if (selectedDate == date) {
-                                                    null
-                                                } else {
-                                                    date
-                                                }
-                                        }
+                            val columnIndex = (dayIndex + startOffset) / rows
+
+                            Text(
+                                text = "${month}월",
+                                style = AppTypography.Caption1,
+                                color = AppColor.text4,
+                                modifier = Modifier.offset(
+                                    x = columnIndex * columnWidth
                                 )
+                            )
+                        }
+                    }
 
-                                if (selectedDate == date) {
-                                    Popup(
-                                        alignment = Alignment.BottomCenter,
-                                        offset = IntOffset(x = 0, y = -16),
-                                        onDismissRequest = {
-                                            selectedDate = null
-                                        }
-                                    ) {
-                                        Column(
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(cellGap)
+                    ) {
+                        repeat(columns) { column ->
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(cellGap)
+                            ) {
+                                repeat(rows) { row ->
+                                    val index = column * rows + row - startOffset
+                                    val date = dates.getOrNull(index)
+
+                                    if (date != null) {
+                                        val solvedCount = solvedMap[date] ?: 0
+
+                                        Box(
                                             modifier = Modifier
-                                                .width(130.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(AppColor.text1)
-                                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                                        ) {
-                                            Text(
-                                                text = "${date.year}년 ${date.monthValue}월 ${date.dayOfMonth}일",
-                                                style = AppTypography.Caption1,
-                                                color = AppColor.text1w
-                                            )
-
-                                            Spacer(Modifier.height(4.dp))
-
-                                            Text(
-                                                text = "${solvedCount}회 학습",
-                                                style = AppTypography.Label2,
-                                                color = AppColor.text1w
-                                            )
-                                        }
+                                                .size(cellSize)
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(getGrassColor(solvedCount))
+                                                .clickable {
+                                                    selectedDate =
+                                                        if (selectedDate == date) {
+                                                            null
+                                                        } else {
+                                                            date
+                                                        }
+                                                }
+                                        )
+                                    } else {
+                                        Spacer(Modifier.size(cellSize))
                                     }
                                 }
                             }
-                        } else {
-                            Spacer(Modifier.size(cellSize))
                         }
+                    }
+                }
+            }
+
+            if (
+                selectedDate != null &&
+                selectedColumn != null &&
+                selectedRow != null
+            ) {
+                val date = selectedDate!!
+                val solvedCount = solvedMap[date] ?: 0
+
+                val selectedCellX =
+                    selectedColumn * columnWidth - scrollOffset
+
+                val selectedCellY =
+                    26.dp + selectedRow * columnWidth
+
+                val tooltipX = (
+                        selectedCellX + cellSize / 2 - tooltipWidth / 2
+                        ).coerceIn(
+                        0.dp,
+                        (availableWidth - tooltipWidth).coerceAtLeast(0.dp)
+                    )
+
+                val tooltipY = (
+                        selectedCellY - tooltipHeight - 8.dp
+                        ).coerceAtLeast(0.dp)
+
+                Box(
+                    modifier = Modifier
+                        .offset(x = tooltipX, y = tooltipY)
+                        .width(tooltipWidth)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColor.text1)
+                        .clickable { selectedDate = null }
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "${date.year}년 ${date.monthValue}월 ${date.dayOfMonth}일",
+                            style = AppTypography.Caption1,
+                            color = AppColor.text_on_color_1
+                        )
+
+                        Spacer(Modifier.height(4.dp))
+
+                        Text(
+                            text = "${solvedCount}회 학습",
+                            style = AppTypography.Label2,
+                            color = AppColor.text_on_color_1
+                        )
                     }
                 }
             }
@@ -1020,10 +1109,12 @@ fun getGrassColor(count: Int): Color {
         else -> PrimitiveColor.Purple700
     }
 }
+
 data class DailyStudy(
     val day: String,
     val count: Int
 )
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LearningTabUI(
@@ -1042,7 +1133,7 @@ fun LearningTabUI(
                 .clip(RoundedCornerShape(8.dp))
                 .background(AppColor.bg0)
                 .padding(16.dp),
-        ){
+        ) {
             Column {
                 Text(
                     text = "일별 완료한 레슨 수",
@@ -1051,39 +1142,45 @@ fun LearningTabUI(
                     color = AppColor.text4
                 )
                 Spacer(Modifier.height(20.dp))
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        space = 8.dp,
-                        alignment = Alignment.CenterHorizontally
-                    ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    val daily = listOf(
-                        DailyStudy("월", learning?.weeklyReport?.MONDAY ?: 0),
-                        DailyStudy("화", learning?.weeklyReport?.TUESDAY ?: 0),
-                        DailyStudy("수", learning?.weeklyReport?.WEDNESDAY ?: 0),
-                        DailyStudy("목", learning?.weeklyReport?.THURSDAY ?: 0),
-                        DailyStudy("금", learning?.weeklyReport?.FRIDAY ?: 0),
-                        DailyStudy("토", learning?.weeklyReport?.SATURDAY ?: 0),
-                        DailyStudy("일", learning?.weeklyReport?.SUNDAY ?: 0)
-                    )
-                    DailyGraph(daily)
+                    Row(
+                        modifier = Modifier
+                            .widthIn(max = 360.dp)
+                            .fillMaxWidth()
+                            .height(160.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val daily = listOf(
+                            DailyStudy("월", learning?.weeklyReport?.MONDAY ?: 0),
+                            DailyStudy("화", learning?.weeklyReport?.TUESDAY ?: 0),
+                            DailyStudy("수", learning?.weeklyReport?.WEDNESDAY ?: 0),
+                            DailyStudy("목", learning?.weeklyReport?.THURSDAY ?: 0),
+                            DailyStudy("금", learning?.weeklyReport?.FRIDAY ?: 0),
+                            DailyStudy("토", learning?.weeklyReport?.SATURDAY ?: 0),
+                            DailyStudy("일", learning?.weeklyReport?.SUNDAY ?: 0)
+                        )
+
+                        DailyGraph(daily)
+                    }
                 }
                 Spacer(Modifier.height(32.dp))
-                Column (
+                Column(
                     modifier = Modifier.padding(vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.Start
-                ){
+                ) {
                     Text(
                         text = "이번 주 완료 레슨",
                         style = AppTypography.Label1,
                         color = AppColor.text1
                     )
                     Text(
-                        text = "${learning?.weeklyReport?.thisWeekCompletedLessonCount?: 0}개",
+                        text = "${learning?.weeklyReport?.thisWeekCompletedLessonCount ?: 0}개",
                         style = AppTypography.Heading1,
                         color = AppColor.text1
                     )
@@ -1134,7 +1231,7 @@ fun LearningTabUI(
                 .clip(RoundedCornerShape(8.dp))
                 .background(AppColor.bg0)
                 .padding(16.dp),
-        ){
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -1143,7 +1240,7 @@ fun LearningTabUI(
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                if(learning?.topChapters?.isEmpty() == true){
+                if (learning?.topChapters?.isEmpty() == true) {
                     Spacer(Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
@@ -1157,20 +1254,20 @@ fun LearningTabUI(
                             Text(
                                 text = "이번주 학습한 내용이 없어요.\n어서 학습을 진행해 주세요.",
                                 style = AppTypography.Label1,
-                                color = AppColor.text3w,
+                                color = AppColor.text_on_color_3,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(Modifier.height(16.dp))
                             BlockButton(
-                                modifier = Modifier
-                                    .size(136.dp, 47.dp),
+                                modifier = Modifier.height(47.dp),
                                 text = "학습하러 가기",
-                                onClick = {navController.navigate("chapter")},
-                                style = AppTypography.Headline2
-                                )
+                                onClick = { navController.navigate("chapter") },
+                                style = AppTypography.Headline2,
+                                fillMaxWidth = false
+                            )
                         }
                     }
-                } else{
+                } else {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = "어떤 주제에 집중했나요?",
@@ -1197,11 +1294,11 @@ fun LearningTabUI(
                                         .clip(RoundedCornerShape(50f))
                                         .background(PrimitiveColor.Gray800),
                                     contentAlignment = Alignment.Center
-                                ){
+                                ) {
                                     Text(
                                         text = "${it.rank}",
                                         style = AppTypography.Body1_Normal,
-                                        color = AppColor.text1w
+                                        color = AppColor.text_on_color_1
                                     )
                                 }
                                 Spacer(Modifier.width(12.dp))
@@ -1239,7 +1336,7 @@ fun LearningTabUI(
                 .clip(RoundedCornerShape(8.dp))
                 .background(AppColor.bg0)
                 .padding(16.dp),
-        ){
+        ) {
             Column {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -1248,7 +1345,7 @@ fun LearningTabUI(
                     style = AppTypography.Label2,
                     color = AppColor.text4
                 )
-                if(learning?.weakConcepts?.isEmpty() == true){
+                if (learning?.weakConcepts?.isEmpty() == true) {
                     Spacer(Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
@@ -1262,20 +1359,20 @@ fun LearningTabUI(
                             Text(
                                 text = "이번주 학습한 내용이 없어요.\n어서 학습을 진행해 주세요.",
                                 style = AppTypography.Label1,
-                                color = AppColor.text3w,
+                                color = AppColor.text_on_color_3,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(Modifier.height(16.dp))
                             BlockButton(
-                                modifier = Modifier
-                                    .size(136.dp, 47.dp),
+                                modifier = Modifier.height(47.dp),
                                 text = "학습하러 가기",
-                                onClick = {navController.navigate("chapter")},
-                                style = AppTypography.Headline2
+                                onClick = { navController.navigate("chapter") },
+                                style = AppTypography.Headline2,
+                                fillMaxWidth = false
                             )
                         }
                     }
-                }else {
+                } else {
                     Spacer(Modifier.height(16.dp))
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1299,33 +1396,41 @@ fun LearningTabUI(
                                     Text(
                                         text = "${it.rank}",
                                         style = AppTypography.Body1_Normal,
-                                        color = AppColor.text1w
+                                        color = AppColor.text_on_color_1
                                     )
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
                                         Text(
                                             text = it.unitTitle,
                                             style = AppTypography.Label1,
                                             color = AppColor.text2
                                         )
+
                                         Spacer(Modifier.height(2.dp))
+
                                         Text(
                                             text = "${it.chapterTitle} • ${it.wrongAnswerCount}문제 오답",
                                             style = AppTypography.Label2,
                                             color = AppColor.text4
                                         )
                                     }
-                                    Spacer(Modifier.weight(1f))
+                                    Spacer(Modifier.width(8.dp))
                                     Box(
                                         modifier = Modifier
                                             .size(41.dp, 22.dp)
                                             .clip(RoundedCornerShape(60.dp))
                                             .background(AppColor.bg1)
-                                            .border(1.dp, AppColor.Main2, RoundedCornerShape(60.dp)),
+                                            .border(
+                                                1.dp,
+                                                AppColor.Main2,
+                                                RoundedCornerShape(60.dp)
+                                            ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -1345,9 +1450,9 @@ fun LearningTabUI(
 }
 
 @Composable
-fun DailyGraph(
+fun RowScope.DailyGraph(
     daily: List<DailyStudy>
-){
+) {
     val maxValue = daily.maxOfOrNull { it.count }?.coerceAtLeast(1) ?: 1
 
     daily.forEach { item ->
@@ -1363,7 +1468,7 @@ fun DailyGraph(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(34.dp),
+                .weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -1372,7 +1477,9 @@ fun DailyGraph(
             Text(
                 text = "${num}개",
                 style = AppTypography.Caption1,
-                color = if (num == 0) AppColor.text4 else AppColor.Main1
+                color = if (num == 0) AppColor.text4 else AppColor.Main1,
+                maxLines = 1,
+                softWrap = false
             )
 
             Box(
@@ -1391,25 +1498,26 @@ fun DailyGraph(
         }
     }
 }
+
 @Composable
 fun RankRow(
     rankInfo: List<List<String>>,
     isLeague: Boolean = false
-){
-    Row (
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         rankInfo.forEachIndexed { index, item ->
 
             RankInfo(
                 value = item[0],
                 label = item[1],
                 modifier = Modifier.weight(1f),
-                color = if(index==0 && isLeague) AppColor.Main1 else AppColor.text1,
+                color = if (index == 0 && isLeague) AppColor.Main1 else AppColor.text1,
                 onClick = {}
             )
 
@@ -1424,6 +1532,7 @@ fun RankRow(
         }
     }
 }
+
 @Composable
 fun RankInfo(
     value: String,
@@ -1456,6 +1565,7 @@ fun RankInfo(
         )
     }
 }
+
 @Composable
 fun LeagueTabUI(
     vm: UserScreenVM
@@ -1497,12 +1607,12 @@ fun LeagueTabUI(
                     league?.top3SeasonCount?.let { "${it}회" } ?: "-",
                     "3위권 진입",
 
-                    league?.bestLeagueName ?: "-",
+                    formatLeagueName(league?.bestLeagueName ?: "-"),
                     "최고티어"
                 ).chunked(2)
                 RankRow(ranking, true)
                 TierChart(
-                    histories = league?.seasonHistory.orEmpty(),
+                    histories = league?.seasonHistory.orEmpty().takeLast(5),
                     modifier = Modifier
                         .padding(top = 30.dp, bottom = 8.dp)
                         .fillMaxWidth()
@@ -1515,6 +1625,37 @@ fun LeagueTabUI(
         }
     }
 }
+
+fun formatTierAxisLabel(name: String): String {
+    val parts = name.trim().split(Regex("\\s+"))
+    if (parts.size != 2) return name
+
+    val initial = when (parts[0]) {
+        "브론즈" -> "B"
+        "실버" -> "S"
+        "골드" -> "G"
+        "플래티넘" -> "P"
+        "다이아몬드" -> "D"
+        else -> return name
+    }
+
+    return "$initial${parts[1]}"
+}
+
+fun formatLeagueName(name: String): String {
+    val parts = name.trim().split(Regex("\\s+"))
+    if (parts.size != 2) return name
+
+    val roman = when (parts[1]) {
+        "1" -> "I"
+        "2" -> "II"
+        "3" -> "III"
+        else -> return name
+    }
+
+    return "${parts[0]} $roman"
+}
+
 @Composable
 fun TierChart(
     histories: List<SeasonHistory>,
@@ -1540,7 +1681,7 @@ fun TierChart(
 
         val labelLayouts = uniqueLeagues.associateWith { league ->
             textMeasurer.measure(
-                text = league.leagueName,
+                text = formatTierAxisLabel(league.leagueName),
                 style = orderTextStyle
             )
         }
@@ -1589,7 +1730,7 @@ fun TierChart(
 
             drawText(
                 textMeasurer = textMeasurer,
-                text = league.leagueName,
+                text = formatTierAxisLabel(league.leagueName),
                 style = orderTextStyle.copy(color = AppColor.text3),
                 topLeft = Offset(
                     x = labelStartX,
@@ -1655,7 +1796,7 @@ fun TierChart(
                 y = y
             )
             if (history.isCurrent) {
-                val tierText = history.leagueName
+                val tierText = formatLeagueName(history.leagueName)
 
                 val tierTextStyle = AppTypography.Label1
                 val tierTextLayout = textMeasurer.measure(
@@ -1743,7 +1884,11 @@ fun TierChart(
             drawText(
                 textMeasurer = textMeasurer,
                 text = text,
-                style = orderTextStyle.copy(color = if(history.isCurrent) AppColor.Main2 else Color(0xFF646464)),
+                style = orderTextStyle.copy(
+                    color = if (history.isCurrent) AppColor.Main2 else Color(
+                        0xFF646464
+                    )
+                ),
                 topLeft = Offset(
                     x = point.x - textLayout.size.width / 2f,
                     y = bottomY + 30f
@@ -1752,6 +1897,7 @@ fun TierChart(
         }
     }
 }
+
 @Composable
 fun SocialTabUI(
     navController: NavController,
@@ -1794,9 +1940,9 @@ fun SocialTabUI(
             ) {
                 Column {
                     val socialInfo = listOf(
-                        "${social?.count?.followerCount?: "-"}",
+                        "${social?.count?.followerCount ?: "-"}",
                         "팔로우",
-                        "${social?.count?.followingCount?: "-"}",
+                        "${social?.count?.followingCount ?: "-"}",
                         "팔로잉"
                     ).chunked(2)
                     val isLeague = false
@@ -1859,7 +2005,7 @@ fun SocialTabUI(
                         style = AppTypography.Headline2,
                         color = PrimitiveColor.Gray900
                     )
-                    if(social?.feed?.contents?.isEmpty() == true){
+                    if (social?.feed?.contents?.isEmpty() == true) {
                         Spacer(Modifier.height(16.dp))
                         Box(
                             modifier = Modifier
@@ -1873,7 +2019,7 @@ fun SocialTabUI(
                                 Text(
                                     text = "아직 활동한 친구가 없어요.\n더 많은 사용자들과 친구가 되어 보세요!",
                                     style = AppTypography.Label1,
-                                    color = AppColor.text3w,
+                                    color = AppColor.text_on_color_3,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -1886,7 +2032,7 @@ fun SocialTabUI(
                                 .fillMaxWidth()
                                 .heightIn(max = 327.dp)
                         ) {
-                            itemsIndexed(social?.feed?.contents ?: emptyList()) {index, feed ->
+                            itemsIndexed(social?.feed?.contents ?: emptyList()) { index, feed ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1902,7 +2048,7 @@ fun SocialTabUI(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Image(
-                                            painter = painterResource(id = R.drawable.profile_logo),
+                                            painter = painterResource(id = R.drawable.gravit_logo),
                                             contentDescription = "profile logo",
                                             modifier = Modifier.size(20.dp, 22.dp)
                                         )
@@ -1983,11 +2129,11 @@ fun SocialTabUI(
                             color = PrimitiveColor.Gray900
                         )
                     }
-                    if(social?.recommend?.isEmpty() == true){
+                    if (social?.recommend?.isEmpty() == true) {
                         Text(
                             text = "비슷한 레벨의 학습자들을\n찾지 못했어요.",
                             style = AppTypography.Label1,
-                            color = AppColor.text3w,
+                            color = AppColor.text_on_color_3,
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
                     } else {
@@ -2021,7 +2167,7 @@ fun SocialTabUI(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Image(
-                                                painter = painterResource(id = R.drawable.profile_logo),
+                                                painter = painterResource(id = R.drawable.gravit_logo),
                                                 contentDescription = "profile logo",
                                                 modifier = Modifier.size(30.dp, 35.dp)
                                             )
@@ -2033,11 +2179,13 @@ fun SocialTabUI(
                                             color = AppColor.text1
                                         )
                                         Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            text = "${nickname}님 외 ${recommend.mutualFollowCount}명",
-                                            style = AppTypography.Caption1,
-                                            color = AppColor.text4
-                                        )
+                                        if (recommend.mutualFollowCount > 0) {
+                                            Text(
+                                                text = "${nickname}님 외 ${recommend.mutualFollowCount}명",
+                                                style = AppTypography.Caption1,
+                                                color = AppColor.text4
+                                            )
+                                        }
                                         Spacer(Modifier.weight(1f))
                                         val isFollowing = followingStates[recommend.userId] ?: false
                                         val isRequesting = recommend.userId in followingRequestIds
@@ -2057,8 +2205,8 @@ fun SocialTabUI(
                                                 .width(104.dp),
                                             style = AppTypography.Label2,
                                             shape = RoundedCornerShape(4.dp),
-                                            color = if(isFollowing) AppColor.text3 else AppColor.CTA_text,
-                                            state = if(isFollowing) InlineButtonState.Stroke else InlineButtonState.Default
+                                            color = if (isFollowing) AppColor.text3 else AppColor.CTA_text,
+                                            state = if (isFollowing) InlineButtonState.Stroke else InlineButtonState.Default
                                         )
                                     }
                                 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -185,7 +183,7 @@ fun ProfileSetting(navController: NavController) {
                         onClick = {
                             vm.submit(nickname, profileNo)
                         },
-                        enabled = ui !is OnboardingViewModel.UiState.Loading,
+                        enabled = isValidNickname(nickname) && ui !is OnboardingViewModel.UiState.Loading,
                         style = AppTypography.Headline2,
                         modifier = Modifier.weight(3f)
                     )
@@ -269,7 +267,7 @@ fun ProfileSwitcher(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.profile_logo),
+                painter = painterResource(id = R.drawable.gravit_logo),
                 contentDescription = "profile logo",
                 modifier = Modifier.size(195.dp, 97.dp)
             )
@@ -332,10 +330,10 @@ fun NameInputFiled(
                 focusedContainerColor = AppColor.bg0,
                 unfocusedContainerColor = AppColor.bg0,
                 errorContainerColor = AppColor.bg0,
-                focusedIndicatorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.errorColor else AppColor.successColor,
-                unfocusedIndicatorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.errorColor else AppColor.successColor,
-                errorIndicatorColor = AppColor.errorColor,
-                cursorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.errorColor else AppColor.successColor
+                focusedIndicatorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.status_error else AppColor.status_success,
+                unfocusedIndicatorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.status_error else AppColor.status_success,
+                errorIndicatorColor = AppColor.status_error,
+                cursorColor = if (isEmpty) AppColor.divider1 else if (isError) AppColor.status_error else AppColor.status_success
             )
         )
         Spacer(Modifier.height(12.dp))
@@ -349,7 +347,7 @@ fun NameInputFiled(
         } else {
             Text(
                 text = if (isError) "사용할 수 없는 닉네임이에요." else "사용 가능한 닉네임이에요.",
-                color = if(isError) AppColor.errorColor else AppColor.successColor,
+                color = if(isError) AppColor.status_error else AppColor.status_success,
                 style = AppTypography.Caption1
             )
         }

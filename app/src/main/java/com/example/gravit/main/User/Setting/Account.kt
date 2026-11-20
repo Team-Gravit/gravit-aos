@@ -155,7 +155,8 @@ fun Account(
                         style = AppTypography.Headline2,
                         modifier = Modifier
                             .height(45.dp)
-                            .weight(1f)
+                            .weight(1f),
+                        enabled = nicknameValid && !ui.isLoading
                     )
                 }
             }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -950,7 +952,7 @@ private fun stackIcons(stack: String): Pair<Int, Int> {
             R.drawable.kotlin_icon to R.drawable.spring_icon
 
         "NODE_NEST" ->
-            R.drawable.nodeis_icon to R.drawable.spring_icon
+            R.drawable.nodeis_icon to R.drawable.nodeis_icon
 
         "PYTHON_DJANGO" ->
             R.drawable.python_icon to R.drawable.django_icon
@@ -965,7 +967,7 @@ private fun stackIcons(stack: String): Pair<Int, Int> {
             R.drawable.typescript_icon to R.drawable.nextjs_icon
 
         "KOTLIN_COMPOSE" ->
-            R.drawable.kotlin_icon to  R.drawable.kotlin_icon
+            R.drawable.kotlin_icon to  R.drawable.aos_icon
 
         "SWIFT_SWIFTUI" ->
             R.drawable.swift_icon to R.drawable.swiftui_icon
@@ -1084,7 +1086,7 @@ private fun Step5Content(
 
                     Text(
                         text = description,
-                        color = AppColor.text3w,
+                        color = AppColor.text_on_color_3,
                         style = AppTypography.Label1
                     )
                 }
@@ -1480,6 +1482,8 @@ private fun AiPreviousNextButtons(
     onNext: () -> Unit,
     nextText: String = "다음"
 ) {
+    val isSmallScreen = LocalConfiguration.current.screenWidthDp < 360
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1496,6 +1500,9 @@ private fun AiPreviousNextButtons(
                 onClick = onPrevious,
                 state = ButtonState.Stroke,
                 style = AppTypography.Headline2,
+                contentPadding = PaddingValues(
+                    horizontal = if (isSmallScreen) 4.dp else 16.dp
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)

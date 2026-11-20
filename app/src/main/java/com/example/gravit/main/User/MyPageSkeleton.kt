@@ -81,7 +81,7 @@ fun MyPageSkeletonUI(
                                 .clickable {
                                     navController.navigate("user/notification")
                                 },
-                            tint = AppColor.icon_w
+                            tint = AppColor.icon_on_color
                         )
                         Spacer(Modifier.width(16.dp))
                         Icon(
@@ -92,7 +92,7 @@ fun MyPageSkeletonUI(
                                 .clickable {
                                     navController.navigate("user/setting")
                                 },
-                            tint = AppColor.icon_w
+                            tint = AppColor.icon_on_color
 
                         )
                     }

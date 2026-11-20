@@ -299,7 +299,7 @@ fun FriendRow(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.profile_logo),
+                painter = painterResource(id = R.drawable.gravit_logo),
                 contentDescription = "profile logo",
                 modifier = Modifier.size(20.dp, 25.dp)
             )

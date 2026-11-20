@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,9 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -64,40 +64,42 @@ import com.example.gravit.ui.theme.AppTypography
 import com.example.gravit.ui.theme.PrimitiveColor
 import com.inuappcenter.gravit.api.ChapterPageResponse
 import com.inuappcenter.gravit.api.RetrofitInstance
-import com.inuappcenter.gravit.main.Ai.Home.AiHomePage
 import com.inuappcenter.gravit.main.Home.RoundedGauge
 import com.inuappcenter.gravit.main.Home.resolvePlanetRes
 import com.inuappcenter.gravit.main.User.TopBar
-import com.inuappcenter.gravit.share.TabBar
 import com.inuappcenter.gravit.ui.theme.mbc1961
 import com.inuappcenter.gravit.ui.theme.pretendard
-
-enum class LearningTab { Chapter, AI }
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import coil.compose.AsyncImage
+import coil.imageLoader
+import coil.request.ImageRequest
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Learning(
-    navController: NavController,
-    initialTab: LearningTab = LearningTab.Chapter
-){
-
+    navController: NavController
+) {
     val context = LocalContext.current
-    val vm: ChapterViewModel = viewModel(factory = ChapterVMFactory(RetrofitInstance.api, context))
+    val vm: ChapterViewModel = viewModel(
+        factory = ChapterVMFactory(RetrofitInstance.api, context)
+    )
     val ui by vm.state.collectAsState()
 
-    var selectedTab by remember(initialTab) { mutableStateOf(initialTab) }
     var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         vm.load()
     }
+
     LaunchedEffect(ui) {
         if (navigated) return@LaunchedEffect
 
         when (ui) {
             ChapterViewModel.UiState.SessionExpired -> {
                 navigated = true
-
                 navController.navigate("error/401") {
                     launchSingleTop = true
                 }
@@ -105,7 +107,6 @@ fun Learning(
 
             ChapterViewModel.UiState.NotFound -> {
                 navigated = true
-
                 navController.navigate("error/404") {
                     launchSingleTop = true
                 }
@@ -116,11 +117,10 @@ fun Learning(
             }
         }
     }
+
     LearningUI(
         navController = navController,
         uiState = ui,
-        selectedTab = selectedTab,
-        onTabSelected = { selectedTab = it },
         onRetry = { vm.load() }
     )
 }
@@ -130,10 +130,8 @@ fun Learning(
 private fun LearningUI(
     navController: NavController,
     uiState: ChapterViewModel.UiState,
-    selectedTab: LearningTab,
-    onTabSelected: (LearningTab) -> Unit,
     onRetry: () -> Unit
-){
+) {
     StatusBarStyle(darkIcons = true)
 
     Column(
@@ -142,92 +140,138 @@ private fun LearningUI(
             .background(AppColor.bg0)
     ) {
         TopBar(navController, "학습", useIcon = false)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColor.bg1)
                 .navigationBarsPadding()
         ) {
-            Spacer(Modifier.height(20.dp))
-            TabBar(
-                selectedIndex = when (selectedTab) {
-                    LearningTab.Chapter -> 0
-                    LearningTab.AI -> 1
-                },
-                onTabSelected = { index ->
-                    onTabSelected(
-                        if (index == 0) {
-                            LearningTab.Chapter
-                        } else {
-                            LearningTab.AI
-                        }
+            when (uiState) {
+                ChapterViewModel.UiState.Loading -> {
+                    ChapterSkeletonUI()
+                }
+
+                is ChapterViewModel.UiState.Success -> {
+                    PreloadedChapterUI(
+                        navController = navController,
+                        chapters = uiState.data
                     )
-                },
-                tab1 = "개념학습",
-                tab2 = "면접대비"
-            )
-            when (selectedTab) {
-                LearningTab.Chapter -> {
-                    when (uiState) {
-                        ChapterViewModel.UiState.Loading -> {
-                            ChapterSkeletonUI()
-                        }
+                }
 
-                        is ChapterViewModel.UiState.Success -> {
-                            ChapterUI(
-                                navController = navController,
-                                chapters = uiState.data
-                            )
-                        }
-                        ChapterViewModel.UiState.Failed -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                ChapterSkeletonUI()
+                ChapterViewModel.UiState.Failed -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        ChapterSkeletonUI()
 
-                                LoadFailedDialog(
-                                    onRetryClick = onRetry
-                                )
-                            }
-                        }
-                        else -> Unit
+                        LoadFailedDialog(
+                            onRetryClick = onRetry
+                        )
                     }
                 }
 
-                LearningTab.AI -> {
-                    AiHomePage(navController)
-                }
+                else -> Unit
             }
         }
     }
 }
 
 @Composable
+private fun PreloadedChapterUI(
+    navController: NavController,
+    chapters: List<ChapterPageResponse>
+) {
+    val context = LocalContext.current
+    val imageLoader = context.imageLoader
+    val density = LocalDensity.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
+    val columnCount = when {
+        screenWidth >= 840.dp -> 4
+        screenWidth >= 600.dp -> 3
+        else -> 2
+    }
+
+    val cardWidth = (
+            screenWidth - 32.dp - 12.dp * (columnCount - 1)
+            ) / columnCount
+
+    val planetSize = cardWidth * 0.7f
+
+    val imageSizePx = with(density) {
+        planetSize.roundToPx()
+    }
+
+    val planetIds = remember(chapters) {
+        chapters.mapNotNull {
+            resolvePlanetRes(it.chapterSummaryResponse.chapterId)
+        }.distinct()
+    }
+
+    val preloaded by produceState(
+        initialValue = false,
+        key1 = planetIds,
+        key2 = imageSizePx,
+        key3 = imageLoader
+    ) {
+        value = false
+
+        withContext(Dispatchers.IO) {
+            planetIds.forEach { resId ->
+                val request = ImageRequest.Builder(context)
+                    .data(resId)
+                    .size(imageSizePx, imageSizePx)
+                    .memoryCacheKey("planet_$resId")
+                    .build()
+
+                imageLoader.execute(request)
+            }
+        }
+
+        value = true
+    }
+
+    if (preloaded) {
+        ChapterUI(
+            navController = navController,
+            chapters = chapters
+        )
+    } else {
+        ChapterSkeletonUI()
+    }
+}
+@Composable
 private fun ChapterUI(
     navController: NavController,
     chapters: List<ChapterPageResponse>
 ) {
     val buttons = remember(chapters) { mapToButtons(chapters) }
+    val screenWidth = LocalConfiguration.current.screenWidthDp
 
-    Column(
+    val columnCount = when {
+        screenWidth >= 840 -> 4
+        screenWidth >= 600 -> 3
+        else -> 2
+    }
+
+    val rows = remember(buttons, columnCount) {
+        buttons.chunked(columnCount)
+    }
+
+    LazyColumn(
         modifier = Modifier
-            .background(Color(0xFFF2F2F2))
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 16.dp
-            )
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .background(Color(0xFFF2F2F2)),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 16.dp,
+            bottom = 12.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        val screenWidth = LocalConfiguration.current.screenWidthDp
+        items(rows.size) { rowIndex ->
+            val rowItems = rows[rowIndex]
 
-        val columnCount = when {
-            screenWidth >= 840 -> 4
-            screenWidth >= 600 -> 3
-            else -> 2
-        }
-        buttons.chunked(columnCount).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -248,12 +292,12 @@ private fun ChapterUI(
                     )
 
                     if (index != rowItems.lastIndex) {
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(Modifier.width(12.dp))
                     }
                 }
-                repeat(columnCount - rowItems.size) {
-                    Spacer(modifier = Modifier.width(12.dp))
 
+                repeat(columnCount - rowItems.size) {
+                    Spacer(Modifier.width(12.dp))
                     Spacer(
                         modifier = Modifier
                             .weight(1f)
@@ -261,11 +305,10 @@ private fun ChapterUI(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
+
 data class ChapterButtonData(
     val chapterId: Long,
     val title: String,
@@ -317,18 +360,38 @@ fun ChapterButton(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                Image(
-                    painter = painterResource(id = planet),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(130.dp)
-                        .offset(
-                            x = 20.dp,
-                            y = 25.dp
-                        ),
-                    contentScale = ContentScale.Fit
-                )
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val planetSize = maxWidth * 0.7f
+                    val context = LocalContext.current
+                    val density = LocalDensity.current
+
+                    val imageSizePx = with(density) {
+                        planetSize.roundToPx()
+                    }
+
+                    val imageRequest = remember(planet, imageSizePx) {
+                        ImageRequest.Builder(context)
+                            .data(planet)
+                            .size(imageSizePx, imageSizePx)
+                            .memoryCacheKey("planet_$planet")
+                            .build()
+                    }
+
+                    AsyncImage(
+                        model = imageRequest,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(planetSize)
+                            .offset(
+                                x = planetSize * (20f / 130f),
+                                y = planetSize * (25f / 130f)
+                            ),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
             Box(
                 modifier = Modifier

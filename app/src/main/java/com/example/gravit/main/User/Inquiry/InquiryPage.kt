@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -380,7 +381,8 @@ fun CheckUI(
                         .fillMaxWidth()
                         .height(300.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(AppColor.bg0),
+                        .background(AppColor.bg0)
+                        .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -396,7 +398,7 @@ fun CheckUI(
                         Text(
                             text = "궁금한 점이 있다면 문의하기를 통해 남겨주세요.",
                             style = AppTypography.Label1,
-                            color = AppColor.text3w,
+                            color = AppColor.text_on_color_3,
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(32.dp))
@@ -504,7 +506,7 @@ fun InquiryItem(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(130.dp)
+                                    .heightIn(min = 130.dp)
                                     .background(AppColor.bg0)
                                     .border(1.dp, AppColor.divider1, RoundedCornerShape(12.dp))
                                     .padding(16.dp)
@@ -524,13 +526,14 @@ fun InquiryItem(
                                 }
                             }
                             Spacer(Modifier.height(12.dp))
-                            if (detail.status == "ANSWERED") {
+                            if (detail.status == "RESOLVED") {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(130.dp)
+                                        .heightIn(min = 130.dp)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(PrimitiveColor.Purple200)
+                                        .background(PrimitiveColor.Purple50)
+                                        .border(1.dp, PrimitiveColor.Purple200, RoundedCornerShape(12.dp))
                                         .padding(16.dp)
                                 ) {
                                     detail.answer.let { answer ->
@@ -541,6 +544,7 @@ fun InquiryItem(
                                                     style = AppTypography.Caption1,
                                                     color = AppColor.Main1
                                                 )
+                                                Spacer(Modifier.weight(1f))
                                                 answer?.answeredAt?.substringBefore("T")?.let {
                                                     Text(
                                                         text = it,

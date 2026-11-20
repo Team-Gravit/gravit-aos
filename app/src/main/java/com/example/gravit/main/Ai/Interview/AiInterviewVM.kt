@@ -16,6 +16,7 @@ import com.inuappcenter.gravit.api.InterviewTranscriptionRequest
 import com.inuappcenter.gravit.api.InterviewTranscriptionsResponse
 import com.inuappcenter.gravit.error.handleApiFailure
 import com.inuappcenter.gravit.main.Ai.Selected.AnswerMode
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
 import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
 
 class AiInterviewVM(
     private val api: ApiService,
@@ -67,7 +69,15 @@ class AiInterviewVM(
         data object SessionExpired : TranscriptionUiState
         data object NotFound : TranscriptionUiState
     }
-
+    sealed interface GradingUiState {
+        data object Idle : GradingUiState
+        data object Loading : GradingUiState
+        data object Completed : GradingUiState
+        data object Failed : GradingUiState
+        data object Abandoned : GradingUiState
+        data object SessionExpired : GradingUiState
+        data object NotFound : GradingUiState
+    }
 
     private val _startState = MutableStateFlow<StartUiState>(StartUiState.Idle)
     val startState = _startState.asStateFlow()
@@ -263,6 +273,9 @@ class AiInterviewVM(
         textAnswers.clear()
         transcriptionRetryOrders = emptyList()
         transcriptionRetryGetOnly = false
+        gradingJob?.cancel()
+        gradingJob = null
+        _gradingState.value = GradingUiState.Idle
     }
 
     sealed interface AbandonUiState {
@@ -554,6 +567,77 @@ class AiInterviewVM(
 
     fun resetTranscriptionState() {
         _transcriptionState.value = TranscriptionUiState.Idle
+    }
+
+    private val _gradingState = MutableStateFlow<GradingUiState>(GradingUiState.Idle)
+    val gradingState = _gradingState.asStateFlow()
+
+    private var gradingJob: Job? = null
+
+    fun startGradingPolling(sessionId: Long) {
+        if (gradingJob?.isActive == true) return
+
+        gradingJob = viewModelScope.launch {
+            _gradingState.value = GradingUiState.Loading
+
+            val session = AuthPrefs.load(appContext)
+
+            if (session == null) {
+                AuthPrefs.clear(appContext)
+                _gradingState.value = GradingUiState.SessionExpired
+                return@launch
+            }
+
+            try {
+                while (true) {
+                    val response = api.getInterviewSessionStatus(
+                        auth = "Bearer ${session.accessToken}",
+                        sessionId = sessionId
+                    )
+
+                    when (response.status) {
+                        "COMPLETED" -> {
+                            _gradingState.value = GradingUiState.Completed
+                            return@launch
+                        }
+
+                        "GRADING_FAILED" -> {
+                            _gradingState.value = GradingUiState.Failed
+                            return@launch
+                        }
+
+                        "ABANDONED" -> {
+                            _gradingState.value = GradingUiState.Abandoned
+                            return@launch
+                        }
+
+                        "IN_PROGRESS", "GRADING" -> {
+                            delay(3000)
+                        }
+
+                        else -> {
+                            _gradingState.value = GradingUiState.Failed
+                            return@launch
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                handleApiFailure(
+                    e = e,
+                    appContext = appContext,
+                    onStateChange = { _gradingState.value = it },
+                    unauthorizedState = GradingUiState.SessionExpired,
+                    notFoundState = GradingUiState.NotFound,
+                    failedState = GradingUiState.Failed
+                )
+            }
+        }
+    }
+
+    fun retryGradingPolling(sessionId: Long) {
+        startGradingPolling(sessionId)
     }
 }
 

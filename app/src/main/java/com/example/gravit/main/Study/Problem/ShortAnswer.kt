@@ -77,7 +77,7 @@ fun ShortAnswer(
             if (submitted && isCorrect != null) {
                 Text(
                     text = if (isCorrect) "👏🏻 정답입니다!" else "❌ 정답: ${answer.contents.joinToString(", ")}",
-                    color = if (isCorrect) AppColor.successColor else AppColor.errorColor,
+                    color = if (isCorrect) AppColor.status_success else AppColor.status_error,
                     style = AppTypography.Body1_Normal
                 )
                 Spacer(Modifier.height(8.dp))
@@ -102,7 +102,7 @@ fun ShortAnswer(
                         modifier = Modifier
                             .size(147.dp, 39.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, AppColor.errorColor, RoundedCornerShape(8.dp))
+                            .border(1.dp, AppColor.status_error, RoundedCornerShape(8.dp))
                             .background(AppColor.bg0)
                             .align(Alignment.End)
                             .clickable{
@@ -116,13 +116,13 @@ fun ShortAnswer(
                             painter = painterResource(id = R.drawable.book),
                             contentDescription = "개념노트",
                             modifier = Modifier.size(16.dp),
-                            tint = AppColor.errorColor
+                            tint = AppColor.status_error
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = "오답노트 삭제",
                             style = AppTypography.Headline2,
-                            color = AppColor.errorColor
+                            color = AppColor.status_error
                         )
                     }
                 }
@@ -150,15 +150,15 @@ fun AnswerInputField(
 
         //라인색
         val indicator = when {
-            submitted && isCorrect == true -> AppColor.successColor
-            submitted && isCorrect == false -> AppColor.errorColor
+            submitted && isCorrect == true -> AppColor.status_success
+            submitted && isCorrect == false -> AppColor.status_error
             hasInput || focused -> AppColor.Main1
             else -> AppColor.divider1
         }
 
         val color = when {
-            submitted && isCorrect == true -> AppColor.successColor
-            submitted && isCorrect == false -> AppColor.errorColor
+            submitted && isCorrect == true -> AppColor.status_success
+            submitted && isCorrect == false -> AppColor.status_error
             hasInput || focused -> AppColor.text1
             else -> AppColor.text4
         }

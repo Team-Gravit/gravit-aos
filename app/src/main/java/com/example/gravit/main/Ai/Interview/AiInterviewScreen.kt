@@ -843,60 +843,73 @@ fun TwoButtonDialog(
             usePlatformDefaultWidth = false
         )
     ) {
-        Surface(
-            modifier = Modifier
-                .width(328.dp)
-                .padding(bottom = 16.dp)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(10.dp),
-            color = Color.White
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            val dialogWidth = when {
+                maxWidth < 360.dp -> maxWidth - 32.dp
+                maxWidth < 600.dp -> (maxWidth - 32.dp).coerceAtMost(360.dp)
+                maxWidth < 840.dp -> 480.dp
+                else -> 560.dp
+            }
+
+            Surface(
                 modifier = Modifier
-                    .width(328.dp)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(dialogWidth)
+                    .wrapContentHeight()
+                    .heightIn(max = maxHeight - 32.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = Color.White
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = title,
-                    style = AppTypography.Headline1,
-                    textAlign = TextAlign.Center,
-                    color = AppColor.text1
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = description,
-                    style = AppTypography.Label1,
-                    color = AppColor.text4,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    BlockButton(
-                        state = ButtonState.Stroke,
-                        onClick = { onDismiss() },
-                        text = leftButtonText,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
+                    Text(
+                        text = title,
+                        style = AppTypography.Headline1,
+                        textAlign = TextAlign.Center,
+                        color = AppColor.text1
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    BlockButton(
-                        state = ButtonState.Default,
-                        onClick = { onRightClick() },
-                        text = rightButtonText,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
+                    Text(
+                        text = description,
+                        style = AppTypography.Label1,
+                        color = AppColor.text4,
+                        textAlign = TextAlign.Center
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        BlockButton(
+                            state = ButtonState.Stroke,
+                            onClick = { onDismiss() },
+                            text = leftButtonText,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        BlockButton(
+                            state = ButtonState.Default,
+                            onClick = { onRightClick() },
+                            text = rightButtonText,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        )
+                    }
                 }
             }
         }

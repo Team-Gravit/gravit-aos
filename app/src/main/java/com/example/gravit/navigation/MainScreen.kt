@@ -59,7 +59,6 @@ import com.inuappcenter.gravit.main.Ai.Interview.AiInterviewVMFactory
 import com.inuappcenter.gravit.main.Ai.Selected.AiSelectedPage
 import com.inuappcenter.gravit.main.Ai.Selected.AnswerMode
 import com.inuappcenter.gravit.main.Study.Chapter.Learning
-import com.inuappcenter.gravit.main.Study.Chapter.LearningTab
 import com.inuappcenter.gravit.main.Study.Lesson.NotePage
 import com.inuappcenter.gravit.main.User.Inquiry.Inquiry
 import com.inuappcenter.gravit.main.User.MyPage
@@ -92,7 +91,7 @@ fun MainScreen(rootNavController: NavController) {
                         currentRoute.startsWith("user/setting") ||
                         currentRoute.startsWith("user/notice") ||
                         currentRoute.startsWith("cs-note") ||
-                        currentRoute.startsWith("ai") ||
+                     //   currentRoute.startsWith("ai/") ||
                         currentRoute.startsWith("user/termsOfService")
 
     val goToLoginChoice: () -> Unit = {
@@ -129,28 +128,9 @@ fun MainScreen(rootNavController: NavController) {
                     }
                 }
                 //chapter
-                composable(
-                    route = "chapter?tab={tab}",
-                    arguments = listOf(
-                        navArgument("tab") {
-                            type = NavType.StringType
-                            defaultValue = "chapter"
-                        }
-                    )
-                ) { backStackEntry ->
-
-                    val initialTab = when (
-                        backStackEntry.arguments?.getString("tab")
-                    ) {
-                        "ai" -> LearningTab.AI
-                        else -> LearningTab.Chapter
-                    }
-
+                composable(route = "chapter") {
                     BottomBarScreen {
-                        Learning(
-                            navController = innerNavController,
-                            initialTab = initialTab
-                        )
+                        Learning(navController = innerNavController)
                     }
                 }
 
@@ -362,7 +342,11 @@ fun MainScreen(rootNavController: NavController) {
                 composable("error/404") { NotFoundScreen(navController = innerNavController) }
 
                 //ai
-                composable("ai/home") { AiHomePage(navController = innerNavController)}
+                composable(route = "ai") {
+                    BottomBarScreen {
+                        AiHomePage(navController = innerNavController)
+                    }
+                }
                 composable("ai/home/recentAllSessions") { RecentAllSessions(navController = innerNavController) }
                 composable(
                     route = "ai/feedback/{sessionId}",

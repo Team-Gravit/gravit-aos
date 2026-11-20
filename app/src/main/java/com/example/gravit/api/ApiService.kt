@@ -622,6 +622,11 @@ data class InterviewSummaryAnswer(
     val accuracyScore: Int,
     val deliveryScore: Int
 )
+data class InterviewWeakTopic(
+    val unitId: Long,
+    val unitTitle: String,
+    val topic: InterviewTopic
+)
 
 //AI 면접 응시 이력 조회
 data class InterviewSessionHistorySliceResponse(
@@ -647,10 +652,6 @@ data class InterviewSessionCreateRequest(
     val difficulty: String,
     val stack: String?,
     val topics: List<String>
-)
-data class InterviewWeakTopic(
-    val unitId: Long,
-    val topic: InterviewTopic
 )
 data class InterviewSessionCreateResponse(
     val sessionId: Long

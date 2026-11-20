@@ -1,6 +1,7 @@
 package com.inuappcenter.gravit.share.skeleton
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -20,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -113,6 +115,36 @@ fun Modifier.shimmer(): Modifier {
         ),
         start = Offset(translateAnim.value, 0f),
         end = Offset(translateAnim.value + 300f, 300f)
+    )
+
+    return this.background(brush)
+}
+
+@Composable
+fun Modifier.leagueShimmer(): Modifier {
+    val transition = rememberInfiniteTransition(label = "leagueShimmer")
+
+    val translate by transition.animateFloat(
+        initialValue = -300f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1200,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "leagueShimmerOffset"
+    )
+
+    val brush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF7040D8).copy(alpha = 0.12f),
+            Color(0xFFB58AFF).copy(alpha = 0.30f),
+            Color(0xFF7040D8).copy(alpha = 0.12f)
+        ),
+        start = Offset(translate, 0f),
+        end = Offset(translate + 300f, 300f)
     )
 
     return this.background(brush)

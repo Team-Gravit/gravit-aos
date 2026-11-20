@@ -26,7 +26,7 @@ fun SeasonFinish(){
     ) {
         Text(
             text = "시즌 정보를 집계중이에요!",
-            color = AppColor.text1w,
+            color = AppColor.text_on_color_1,
             style = AppTypography.Title3
         )
         Spacer(Modifier.height(8.dp))

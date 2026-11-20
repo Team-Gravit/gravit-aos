@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -97,134 +100,171 @@ fun LoginScreen (
             .fillMaxSize()
             .background(Color.White)
     ) {
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .background(Color.White)
         ) {
-            TopBar(navController, "로그인", 48.dp, useIcon = false)
+            val screenHeight = maxHeight
+            val contentHeight = (screenHeight - 48.dp).coerceAtLeast(0.dp)
+            val referenceHeight = 740.dp - 48.dp
+            val heightRatio = contentHeight / referenceHeight
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(392.dp)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.gravit_login_logo),
-                    contentDescription = "login_logo",
-                    modifier = Modifier.size(72.dp)
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = "교육행성에 어서 오세요.\nGravit!",
-                    style = AppTypography.Heading1,
-                    color = AppColor.text1,
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "회원 서비스 이용을 위해 로그인 해주세요.",
-                    style = AppTypography.Body1_Normal,
-                    color = AppColor.text3,
-                )
-
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                SocialLoginButton(
-                    text = "Google로 시작하기",
-                    backgroundColor = AppColor.bg1,
-                    contentColor = AppColor.CTA_secondary_text,
-                    logoResId = R.drawable.google_logo,
-                    onClick = {
-                        scope.launch {
-                            try {
-                                val idToken = loginWithGoogle(context)
-                                viewModel.sendIdTokenToServer("google", idToken)
-                            } catch (e: NoCredentialException) {
-                                snackBarText = "사용 가능한 Google 계정이 없습니다."
-                            } catch (e: Exception) {
-                                snackBarText = "로그인에 실패했습니다."
-                            }
-                        }
-                    },
-                    modifier = Modifier.border(
-                        width = 1.dp,
-                        color = AppColor.divider2,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                )
-                SocialLoginButton(
-                    text = "카카오로 시작하기",
-                    backgroundColor = Color(0xFFFFE240),
-                    contentColor = AppColor.CTA_secondary_text,
-                    logoResId = R.drawable.kakao_logo,
-                    onClick = {
-                        loginWithKakao(
-                            context = context,
-                            connection = "kakao",
-                            onSuccess = { idToken ->
-                                viewModel.sendIdTokenToServer("kakao",idToken)
-                            },
-                            onError = {
-                                snackBarText = "로그인에 실패했습니다."
-                            }
-                        )
-
-                    }
-                )
-                SocialLoginButton(
-                    text = "네이버로 시작하기",
-                    backgroundColor = Color(0xFF00B116),
-                    contentColor = AppColor.CTA_text,
-                    logoResId = R.drawable.naver_logo,
-                    onClick = {
-                        loginWithNaver(
-                            context = context,
-                            viewModel = viewModel,
-                            onError = { _, _ ->
-                                snackBarText = "로그인에 실패했습니다."
-                            }
-                        )
-                    }
-                )
-                Row (
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ){
-                    Text(
-                        text = "개인 정보 처리 방침",
-                        style = AppTypography.Label1,
-                        color = AppColor.text4,
-                        modifier = Modifier.clickable( onClick = { navController.navigate("user/privacypolicy") } )
-                    )
-                    Spacer(Modifier.width(16.dp))
-                    VerticalDivider(modifier = Modifier.height(16.dp), 1.dp, AppColor.divider1)
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                        text = "이용약관",
-                        style = AppTypography.Label1,
-                        color = AppColor.text4,
-                        modifier = Modifier.clickable( onClick = { navController.navigate("user/termsOfService") } )
-                    )
-                }
-            }
-            Spacer(Modifier.height(40.dp))
-        }
-        if (snackBarText != null) {
-            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 60.dp),
-                contentAlignment = Alignment.BottomCenter
+                    .navigationBarsPadding()
             ) {
-                CustomSnackBar(text = snackBarText!!)
+                TopBar(navController, "로그인", 48.dp, useIcon = false)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 392.dp * heightRatio)
+                            .padding(
+                                horizontal = 16.dp,
+                                vertical = if (heightRatio < 0.7f) 20.dp else 0.dp
+                            ),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.gravit_login_logo),
+                            contentDescription = "login_logo",
+                            modifier = Modifier.size(72.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Text(
+                            text = "교육행성에 어서 오세요.\nGravit!",
+                            style = AppTypography.Heading1,
+                            color = AppColor.text1
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "회원 서비스 이용을 위해 로그인 해주세요.",
+                            style = AppTypography.Body1_Normal,
+                            color = AppColor.text3
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        SocialLoginButton(
+                            text = "Google로 시작하기",
+                            backgroundColor = AppColor.bg1,
+                            contentColor = AppColor.CTA_secondary_text,
+                            logoResId = R.drawable.google_logo,
+                            onClick = {
+                                scope.launch {
+                                    try {
+                                        val idToken = loginWithGoogle(context)
+                                        viewModel.sendIdTokenToServer("google", idToken)
+                                    } catch (e: NoCredentialException) {
+                                        snackBarText = "사용 가능한 Google 계정이 없습니다."
+                                    } catch (e: Exception) {
+                                        snackBarText = "로그인에 실패했습니다."
+                                    }
+                                }
+                            },
+                            modifier = Modifier.border(
+                                width = 1.dp,
+                                color = AppColor.divider2,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        )
+
+                        SocialLoginButton(
+                            text = "카카오로 시작하기",
+                            backgroundColor = Color(0xFFFFE240),
+                            contentColor = AppColor.CTA_secondary_text,
+                            logoResId = R.drawable.kakao_logo,
+                            onClick = {
+                                loginWithKakao(
+                                    context = context,
+                                    connection = "kakao",
+                                    onSuccess = { idToken ->
+                                        viewModel.sendIdTokenToServer("kakao", idToken)
+                                    },
+                                    onError = {
+                                        snackBarText = "로그인에 실패했습니다."
+                                    }
+                                )
+                            }
+                        )
+
+                        SocialLoginButton(
+                            text = "네이버로 시작하기",
+                            backgroundColor = Color(0xFF00B116),
+                            contentColor = AppColor.CTA_text,
+                            logoResId = R.drawable.naver_logo,
+                            onClick = {
+                                loginWithNaver(
+                                    context = context,
+                                    viewModel = viewModel,
+                                    onError = { _, _ ->
+                                        snackBarText = "로그인에 실패했습니다."
+                                    }
+                                )
+                            }
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "개인 정보 처리 방침",
+                                style = AppTypography.Label1,
+                                color = AppColor.text4,
+                                modifier = Modifier.clickable {
+                                    navController.navigate("user/privacypolicy")
+                                }
+                            )
+
+                            Spacer(Modifier.width(16.dp))
+
+                            VerticalDivider(
+                                modifier = Modifier.height(16.dp),
+                                thickness = 1.dp,
+                                color = AppColor.divider1
+                            )
+
+                            Spacer(Modifier.width(16.dp))
+
+                            Text(
+                                text = "이용약관",
+                                style = AppTypography.Label1,
+                                color = AppColor.text4,
+                                modifier = Modifier.clickable {
+                                    navController.navigate("user/termsOfService")
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(40.dp))
+                }
+            }
+            if (snackBarText != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 60.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    CustomSnackBar(text = snackBarText!!)
+                }
             }
         }
     }

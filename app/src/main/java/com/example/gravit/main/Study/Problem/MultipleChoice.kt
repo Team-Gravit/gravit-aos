@@ -167,20 +167,20 @@ private fun OptionCell(
 
     val showResultStyle = isSubmitted && (isRight || (isSelected && isWrong) || isExpanded)
     val borderColor1 = when {
-        showResultStyle && isRight -> AppColor.successColor
-        showResultStyle && isWrong -> AppColor.errorColor
+        showResultStyle && isRight -> AppColor.status_success
+        showResultStyle && isWrong -> AppColor.status_error
         !isSubmitted && isSelected -> AppColor.Main1
         else -> Color.Transparent
     }
     val borderColor2 = when {
-        showResultStyle && isRight -> AppColor.successColor
-        showResultStyle && isWrong -> AppColor.errorColor
+        showResultStyle && isRight -> AppColor.status_success
+        showResultStyle && isWrong -> AppColor.status_error
         !isSubmitted && isSelected -> AppColor.Main1
         else -> AppColor.text3
     }
     val textColor = when {
-        showResultStyle && isRight -> AppColor.successColor
-        showResultStyle && isWrong -> AppColor.errorColor
+        showResultStyle && isRight -> AppColor.status_success
+        showResultStyle && isWrong -> AppColor.status_error
         !isSubmitted && isSelected -> AppColor.bg0
         else -> AppColor.text3
     }
@@ -232,8 +232,8 @@ private fun OptionCell(
                 text = answer,
                 style = AppTypography.Label2,
                 color = when {
-                    showResultStyle && isRight -> AppColor.successColor
-                    showResultStyle && isWrong -> AppColor.errorColor
+                    showResultStyle && isRight -> AppColor.status_success
+                    showResultStyle && isWrong -> AppColor.status_error
                     else -> AppColor.text3
                 },
                 modifier = Modifier
@@ -264,21 +264,18 @@ private fun OptionCell(
         if (showExpandedResult) {
             Spacer(Modifier.height(8.dp))
             if (isRight) {
-                Row {
-                    Text(
-                        text = "👏🏻 정답입니다!",
-                        color = AppColor.successColor,
-                        style = AppTypography.Body1_Normal
-                    )
-                    Spacer(Modifier.weight(1f))
-                    if (showRemoveButton) {
+                if (showRemoveButton) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 16.dp)
+                    ) {
+                        Spacer(Modifier.weight(1f))
                         Text(
                             text = "오답노트에서 제외하기",
                             style = AppTypography.Body1_Normal,
                             color = AppColor.text3,
-                            modifier = Modifier.clickable {
-                                onRemoveFromWrongNote()
-                            },
+                            modifier = Modifier.clickable { onRemoveFromWrongNote() },
                             textDecoration = TextDecoration.Underline,
                         )
                     }
@@ -292,13 +289,13 @@ private fun OptionCell(
                 ) {
                     Text(
                         text = "❌ 정답: ",
-                        color = AppColor.errorColor,
+                        color = AppColor.status_error,
                         style = AppTypography.Body1_Normal
                     )
 
                     Text(
                         text = correctAnswerText,
-                        color = AppColor.errorColor,
+                        color = AppColor.status_error,
                         style = AppTypography.Body1_Normal,
                         modifier = Modifier.weight(1f)
                     )

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -528,6 +529,7 @@ fun ProblemUI(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .imePadding()
                     .padding(bottom = 60.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
@@ -651,7 +653,7 @@ fun CustomSnackBar(
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = PrimitiveColor.Gray1100,
-            contentColor = AppColor.text1w
+            contentColor = AppColor.text_on_color_1
         ),
     ) {
         Box(
@@ -666,7 +668,7 @@ fun CustomSnackBar(
             Text(
                 text = text,
                 style = AppTypography.Label1,
-                color = AppColor.text1w,
+                color = AppColor.text_on_color_1,
                 textAlign = TextAlign.Center
             )
         }

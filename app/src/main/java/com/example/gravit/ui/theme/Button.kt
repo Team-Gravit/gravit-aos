@@ -3,6 +3,7 @@ package com.example.gravit.ui.theme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -31,7 +32,15 @@ fun BlockButton(
     enabled: Boolean = true,
     state: ButtonState = ButtonState.Default,
     style: TextStyle = AppTypography.Headline2,
+    fillMaxWidth: Boolean = true,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding
 ){
+    val buttonModifier = if (fillMaxWidth) {
+        modifier.fillMaxWidth()
+    } else {
+        modifier
+    }
+
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -59,7 +68,7 @@ fun BlockButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth(),
+        modifier = buttonModifier,
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(
             contentColor = contentColor,
@@ -67,7 +76,8 @@ fun BlockButton(
             disabledContainerColor = AppColor.CTA_disabled,
             disabledContentColor = AppColor.CTA_text
         ),
-        border = BorderStroke(1.dp, border)
+        border = BorderStroke(1.dp, border),
+        contentPadding = contentPadding,
     ) {
         Text(
             text = text,

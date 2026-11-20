@@ -44,98 +44,111 @@ fun ConfirmDialog(
             usePlatformDefaultWidth = false
         )
     ) {
-        Surface(
-            modifier = Modifier
-                .width(328.dp)
-                .padding(bottom = 16.dp)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(10.dp),
-            color = Color.White
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            val dialogWidth = when {
+                maxWidth < 360.dp -> maxWidth - 32.dp
+                maxWidth < 600.dp -> 360.dp.coerceAtMost(maxWidth - 32.dp)
+                maxWidth < 840.dp -> 480.dp
+                else -> 560.dp
+            }
+
+            Surface(
                 modifier = Modifier
-                    .width(328.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(dialogWidth)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(10.dp),
+                color = Color.White
             ) {
-                Spacer(Modifier.height(20.dp))
-                imageRes?.let {
-                    Image(
-                        painter = painterResource(id = it),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(width = 145.dp, height = 164.dp)
-                    )
-
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Spacer(Modifier.height(20.dp))
-                }
-
-                Text(
-                    text = titleText,
-                    style = AppTypography.Heading1,
-                    color = AppColor.text1,
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = descriptionText,
-                    style = AppTypography.Label2,
-                    color = AppColor.text4,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(Modifier.height(32.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Button(
-                        onClick = {
-                            onCancel()
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = AppColor.Main1
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, AppColor.divider1)
-                    ) {
-                        Text(
-                            text = cancelButtonText,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = pretendard
+                    imageRes?.let {
+                        Image(
+                            painter = painterResource(id = it),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(width = 145.dp, height = 164.dp)
                         )
+
+                        Spacer(Modifier.height(20.dp))
                     }
 
-                    Button(
-                        onClick = {
-                            onConfirm()
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF9B00CF),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(
-                            text = confirmButtonText,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = pretendard
-                        )
+                    Text(
+                        text = titleText,
+                        style = AppTypography.Heading1,
+                        color = AppColor.text1,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = descriptionText,
+                        style = AppTypography.Label2,
+                        color = AppColor.text4,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(Modifier.height(32.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    )
+                    {
+                        Button(
+                            onClick = {
+                                onCancel()
+                                onDismiss()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = AppColor.Main1
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, AppColor.divider1)
+                        ) {
+                            Text(
+                                text = cancelButtonText,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = pretendard
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                onConfirm()
+                                onDismiss()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF9B00CF),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = confirmButtonText,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = pretendard
+                            )
+                        }
                     }
                 }
             }

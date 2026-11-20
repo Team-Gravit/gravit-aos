@@ -1,3 +1,4 @@
+
 package com.inuappcenter.gravit.main.User.Notice
 
 import android.os.Build
@@ -36,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,22 +55,24 @@ import com.inuappcenter.gravit.main.User.UserScreenVM
 import com.inuappcenter.gravit.main.User.UserVMFactory
 import com.inuappcenter.gravit.ui.theme.ProfilePalette
 import kotlinx.coroutines.delay
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.foundation.lazy.items
 import com.example.gravit.share.LoadFailedDialog
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Notification(
     navController: NavController,
 ){
-    val date = LocalDate.now()
-    val dateText = date.format(DateTimeFormatter.ofPattern("yyyy. MM. dd (E)", Locale.KOREAN))
-
     val context = LocalContext.current
-    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(RetrofitInstance.api, context))
+    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(
+        RetrofitInstance.api,
+        context
+    )
+    )
     val notificationUi by notificationVM.state.collectAsState()
     val congratulateVM: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, context))
 
@@ -154,6 +156,12 @@ fun Notification(
 
     val listState = rememberLazyListState()
     val notifications = (notificationUi as? NotificationVM.UiState.Success)?.data
+    val groupedNotifications = notifications
+        ?.groupBy { notification ->
+            LocalDateTime.parse(notification.createdAt).toLocalDate()
+        }
+        ?.toSortedMap(compareByDescending { it })
+
     StatusBarStyle(darkIcons = true)
     Box (
         modifier = Modifier
@@ -176,33 +184,74 @@ fun Notification(
                     .background(AppColor.bg1)
                     .weight(1f)
             ) {
-                Column {
-                    Text(
-                        text = dateText,
-                        style = AppTypography.Label2,
-                        color = PrimitiveColor.Gray500,
-                        modifier = Modifier.padding(
-                            top = 20.dp,
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 16.dp
-                        )
-                    )
-                    when (notificationUi){
-                        is NotificationVM.UiState.Success ->{
-                            if(notifications.isNullOrEmpty()){
-                                EmptyUi()
-                            }else{
-                                LazyColumn(
-                                    state = listState,
+                when (notificationUi){
+                    is NotificationVM.UiState.Success ->{
+                        if (notifications.isNullOrEmpty()) {
+                            Column(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text(
+                                    text = LocalDate.now().format(
+                                        DateTimeFormatter.ofPattern(
+                                            "yyyy. MM. dd (E)",
+                                            Locale.KOREAN
+                                        )
+                                    ),
+                                    style = AppTypography.Label2,
+                                    color = PrimitiveColor.Gray500,
+                                    modifier = Modifier.padding(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top = 20.dp
+                                    )
+                                )
+
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(AppColor.bg2),
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    items(notifications) { notification ->
+                                    EmptyUi()
+                                }
+                            }
+                        }else{
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(AppColor.bg2),
+                            ) {
+                                groupedNotifications?.forEach { (date, dateNotifications) ->
+                                    item(key = "date_$date") {
+                                        Text(
+                                            text = date.format(
+                                                DateTimeFormatter.ofPattern(
+                                                    "yyyy. MM. dd (E)",
+                                                    Locale.KOREAN
+                                                )
+                                            ),
+                                            style = AppTypography.Label2,
+                                            color = PrimitiveColor.Gray500,
+                                            modifier = Modifier.padding(
+                                                start = 16.dp,
+                                                end = 16.dp,
+                                                top = if (date == groupedNotifications?.firstKey()) 20.dp else 8.dp,
+                                                bottom = 12.dp
+                                            )
+                                        )
+                                    }
+                                    items(
+                                        items = dateNotifications,
+                                        key = { it.id }
+                                    ) { notification ->
                                         Box(
                                             modifier = Modifier
-                                                .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                                                .padding(
+                                                    start = 16.dp,
+                                                    end = 16.dp,
+                                                    bottom = 12.dp
+                                                )
                                                 .fillMaxWidth()
                                                 .clip(RoundedCornerShape(8.dp))
                                                 .background(AppColor.bg0)
@@ -221,15 +270,21 @@ fun Notification(
                                                             modifier = Modifier
                                                                 .size(38.dp)
                                                                 .clip(CircleShape)
-                                                                .background(ProfilePalette.idToColor(
-                                                                    notification.actor?.profileImgNumber ?: 1
-                                                                )),
+                                                                .background(
+                                                                    ProfilePalette.idToColor(
+                                                                        notification.actor?.profileImgNumber
+                                                                            ?: 1
+                                                                    )
+                                                                ),
                                                             contentAlignment = Alignment.Center
                                                         ) {
                                                             Image(
-                                                                painter = painterResource(id = R.drawable.profile_logo),
+                                                                painter = painterResource(id = R.drawable.gravit_logo),
                                                                 contentDescription = "profile logo",
-                                                                modifier = Modifier.size(18.dp, 20.dp)
+                                                                modifier = Modifier.size(
+                                                                    18.dp,
+                                                                    20.dp
+                                                                )
                                                             )
                                                         }
                                                         Spacer(Modifier.width(12.dp))
@@ -238,7 +293,8 @@ fun Notification(
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
                                                                 Text(
-                                                                    text = notification.actor?.nickname ?: "",
+                                                                    text = notification.actor?.nickname
+                                                                        ?: "",
                                                                     style = AppTypography.Label1,
                                                                     color = AppColor.text1
                                                                 )
@@ -269,7 +325,7 @@ fun Notification(
                                                                 text = notification.message,
                                                                 style = AppTypography.Label1,
                                                                 color = AppColor.text1,
-                                                                modifier = Modifier.weight(1f, fill = false),
+                                                                modifier = Modifier.weight(1f),
                                                                 softWrap = true
                                                             )
 
@@ -289,7 +345,8 @@ fun Notification(
                                                 if (notification.actionType != "NONE") {
                                                     Spacer(Modifier.height(12.dp))
                                                     Spacer(Modifier.weight(1f))
-                                                    val isCongratulated = notification.actionType == "CONGRATULATE" && notification.congratulated == true
+                                                    val isCongratulated =
+                                                        notification.actionType == "CONGRATULATE" && notification.congratulated == true
                                                     InlineButton(
                                                         text =
                                                             when (notification.actionType) {
@@ -306,7 +363,9 @@ fun Notification(
                                                                 "GO_TO_LEARNING" -> {
                                                                     if (notification.targetId == null)
                                                                         navController.navigate("chapter")
-                                                                    else navController.navigate("lessonList/${notification.targetId}")
+                                                                    else navController.navigate(
+                                                                        "lessonList/${notification.targetId}"
+                                                                    )
                                                                 }
 
                                                                 "GO_TO_NOTICE" -> {
@@ -326,7 +385,9 @@ fun Notification(
 
                                                                 "CONGRATULATE" -> {
                                                                     notification.targetId?.let { targetId ->
-                                                                        congratulateVM.congratulate(targetId)
+                                                                        congratulateVM.congratulate(
+                                                                            targetId
+                                                                        )
                                                                     }
                                                                 }
 
@@ -368,10 +429,11 @@ fun Notification(
                                         }
                                     }
                                 }
+
                             }
                         }
-                        else -> Unit
                     }
+                    else -> Unit
                 }
             }
         }
@@ -425,7 +487,7 @@ fun EmptyUi(){
 
                 withStyle(
                     AppTypography.Label1.toSpanStyle()
-                        .copy(color = AppColor.text3w)
+                        .copy(color = AppColor.text_on_color_3)
                 ) {
                     append("궁금한 점이 있다면 문의하기를 통해 남겨주세요.")
                 }
