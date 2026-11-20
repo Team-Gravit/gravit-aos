@@ -192,43 +192,49 @@ fun LeagueScreen(
             val source by vm.source.collectAsState()
             val latestUi by androidx.compose.runtime.rememberUpdatedState(ui)
             val density = LocalDensity.current
-            var isInitialScrollDone by remember(ui.generation) {
-                mutableStateOf(false)
-            }
+            var isInitialScrollDone by remember(ui.generation) { mutableStateOf(false) }
+            var hasCompletedFirstEntry by remember { mutableStateOf(false) }
+
             LaunchedEffect(my.userId) {
                 vm.selectUserLeague(my)
             }
 
-            LaunchedEffect(ui.generation) {
-                listState.scrollToItem(0)
-            }
+            LaunchedEffect(ui.generation, ui.initialized) {
+                if (!ui.initialized) return@LaunchedEffect
 
-            LaunchedEffect(ui.generation, ui.initialized, ui.scrollToMe, ui.items, source) {
-                if (!ui.initialized ||
-                    !ui.scrollToMe ||
-                    source != LeagueViewModel.Source.UserLeague
-                ) return@LaunchedEffect
+                if (!hasCompletedFirstEntry && ui.scrollToMe) {
+                    val index = ui.items.indexOfFirst {
+                        it.userId == my.userId
+                    }
 
-                val index = ui.items.indexOfFirst { it.userId == my.userId }
+                    if (index >= 0) {
+                        val viewportHeight = snapshotFlow {
+                            listState.layoutInfo.viewportSize.height
+                        }.first { it > 0 }
 
-                if (index >= 0) {
-                    val viewportHeight = snapshotFlow {
-                        listState.layoutInfo.viewportSize.height
-                    }.first { it > 0 }
+                        val rowHeight = with(density) { 74.dp.roundToPx() }
+                        val visibleCount = (viewportHeight / rowHeight).coerceAtLeast(1)
+                        val itemsBefore = ((visibleCount - 1) / 2).coerceAtMost(4)
+                        val startIndex = (index - itemsBefore).coerceAtLeast(0)
 
-                    val rowHeight = with(density) { 74.dp.roundToPx() }
-                    val visibleCount = (viewportHeight / rowHeight).coerceAtLeast(1)
-                    val itemsBefore = ((visibleCount - 1) / 2).coerceAtMost(4)
-                    val startIndex = (index - itemsBefore).coerceAtLeast(0)
+                        listState.scrollToItem(
+                            if (index == 0) 0 else startIndex + 1
+                        )
+                    } else {
+                        listState.scrollToItem(0)
+                    }
 
-                    listState.scrollToItem(
-                        if (index == 0) 0 else startIndex + 1
-                    )
+                    hasCompletedFirstEntry = true
+                    vm.markInitialScrollCompleted()
+                } else {
+                    listState.scrollToItem(0)
 
-                    isInitialScrollDone = true
+                    if (ui.scrollToMe) {
+                        vm.markInitialScrollCompleted()
+                    }
                 }
 
-                vm.markInitialScrollCompleted()
+                isInitialScrollDone = true
             }
             LaunchedEffect(listState) {
                 snapshotFlow {
@@ -271,6 +277,7 @@ fun LeagueUI(
     isInitialScrollDone: Boolean
 ){
     val hazeState = rememberHazeState()
+    val showRanking = isInitialScrollDone || (!ui.initialized && ui.errorNext != null)
     StatusBarStyle(darkIcons = false)
 
     Box(
@@ -353,7 +360,7 @@ fun LeagueUI(
                                     state = listState,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .alpha(if (isInitialScrollDone) 1f else 0f),
+                                        .alpha(if (showRanking) 1f else 0f),
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(bottom = 80.dp)
                                 ) {
@@ -421,7 +428,7 @@ fun LeagueUI(
                                     }
                                 }
 
-                                if (!isInitialScrollDone) {
+                                if (!showRanking) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxSize()
