@@ -202,39 +202,41 @@ fun LeagueScreen(
             LaunchedEffect(ui.generation, ui.initialized) {
                 if (!ui.initialized) return@LaunchedEffect
 
-                if (!hasCompletedFirstEntry && ui.scrollToMe) {
-                    val index = ui.items.indexOfFirst {
-                        it.userId == my.userId
-                    }
+                try {
+                    if (!hasCompletedFirstEntry && ui.scrollToMe) {
+                        val index = ui.items.indexOfFirst {
+                            it.userId == my.userId
+                        }
 
-                    if (index >= 0) {
-                        val viewportHeight = snapshotFlow {
-                            listState.layoutInfo.viewportSize.height
-                        }.first { it > 0 }
+                        if (index >= 0) {
+                            val viewportHeight = snapshotFlow {
+                                listState.layoutInfo.viewportSize.height
+                            }.first { it > 0 }
 
-                        val rowHeight = with(density) { 74.dp.roundToPx() }
-                        val visibleCount = (viewportHeight / rowHeight).coerceAtLeast(1)
-                        val itemsBefore = ((visibleCount - 1) / 2).coerceAtMost(4)
-                        val startIndex = (index - itemsBefore).coerceAtLeast(0)
+                            val rowHeight = with(density) { 74.dp.roundToPx() }
+                            val visibleCount = (viewportHeight / rowHeight).coerceAtLeast(1)
+                            val itemsBefore = ((visibleCount - 1) / 2).coerceAtMost(4)
+                            val startIndex = (index - itemsBefore).coerceAtLeast(0)
 
-                        listState.scrollToItem(
-                            if (index == 0) 0 else startIndex + 1
-                        )
+                            listState.scrollToItem(
+                                if (index == 0) 0 else startIndex + 1
+                            )
+                        } else {
+                            listState.scrollToItem(0)
+                        }
+
+                        hasCompletedFirstEntry = true
+                        vm.markInitialScrollCompleted()
                     } else {
                         listState.scrollToItem(0)
-                    }
 
-                    hasCompletedFirstEntry = true
-                    vm.markInitialScrollCompleted()
-                } else {
-                    listState.scrollToItem(0)
-
-                    if (ui.scrollToMe) {
-                        vm.markInitialScrollCompleted()
+                        if (ui.scrollToMe) {
+                            vm.markInitialScrollCompleted()
+                        }
                     }
+                } finally {
+                    isInitialScrollDone = true
                 }
-
-                isInitialScrollDone = true
             }
             LaunchedEffect(listState) {
                 snapshotFlow {
@@ -358,6 +360,7 @@ fun LeagueUI(
                             ) {
                                 LazyColumn(
                                     state = listState,
+                                    userScrollEnabled = showRanking,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .alpha(if (showRanking) 1f else 0f),
