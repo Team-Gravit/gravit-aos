@@ -78,10 +78,10 @@ object AppColor {
     val status_accent = Color(0xFF1FABFF)
 
     // Status Subtle
-    val status_error_subtle = status_error.copy(alpha = 10f)
-    val status_success_subtle = status_success.copy(alpha = 10f)
-    val status_warning_subtle = status_warning.copy(alpha = 10f)
-    val status_accent_subtle = status_accent.copy(alpha = 10f)
+    val status_error_subtle = status_error.copy(alpha = 0.1f)
+    val status_success_subtle = status_success.copy(alpha = 0.1f)
+    val status_warning_subtle = status_warning.copy(alpha = 0.1f)
+    val status_accent_subtle = status_accent.copy(alpha = 0.1f)
 
 
     //Chart
