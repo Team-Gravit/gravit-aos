@@ -1,0 +1,1264 @@
+package com.inuappcenter.gravit.main.Home
+
+import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.inuappcenter.gravit.share.LoadFailedDialog
+import com.inuappcenter.gravit.share.StatusBarStyle
+import com.inuappcenter.gravit.ui.theme.AppColor
+import com.inuappcenter.gravit.ui.theme.AppTypography
+import com.inuappcenter.gravit.ui.theme.PrimitiveColor
+import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.MainPageResponse
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.api.Units
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import com.inuappcenter.gravit.ui.theme.TierPalette
+import com.inuappcenter.gravit.ui.theme.pretendard
+import java.util.Locale
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun HomeScreen(
+    navController: NavController,
+) {
+    val context = LocalContext.current
+    val vm: HomeViewModel = viewModel(factory = HomeVMFactory(RetrofitInstance.api, context))
+    val ui by vm.state.collectAsState()
+
+    var navigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        vm.load()
+    }
+
+    LaunchedEffect(ui) {
+        if (navigated) return@LaunchedEffect
+
+        when (ui) {
+            HomeViewModel.UiState.SessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+
+            HomeViewModel.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404") {
+                    launchSingleTop = true
+                }
+            }
+
+            else -> navigated = false
+        }
+    }
+
+    when (ui) {
+        HomeViewModel.UiState.Idle,
+        HomeViewModel.UiState.Loading -> {
+            HomeSkeletonUI()
+        }
+
+        is HomeViewModel.UiState.Success -> {
+            val state = ui as HomeViewModel.UiState.Success
+            HomeUI(
+                home = state.data,
+                units = state.data.mainLearningResponse.units,
+                navController = navController
+            )
+        }
+        HomeViewModel.UiState.Failed -> {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                HomeSkeletonUI()
+
+                LoadFailedDialog(
+                    onRetryClick = {
+                        vm.load()
+                    }
+                )
+            }
+        }
+
+        else -> Unit
+    }
+}
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun HomeUI(
+    home: MainPageResponse,
+    units: List<Units>,
+    navController: NavController
+) {
+    val configuration = LocalConfiguration.current
+    val isTablet = configuration.screenWidthDp >= 600
+    if (isTablet) {
+        HomeUITabletLandscape(home, units, navController)
+    } else {
+        HomeUIMobileOriginal(home, units, navController)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("ConfigurationScreenWidthHeight", "DefaultLocale")
+@Composable
+private fun HomeUIMobileOriginal(
+    home: MainPageResponse,
+    units: List<Units>,
+    navController: NavController
+) {
+
+    val userLevelInfo = home.mainProfile.userLevelDetailResponse
+    val userLeagueInfo = home.mainLeagueResponse
+    val userLearningInfo = home.mainLearningResponse
+    val recommendedInfo = home.recommendedUnitResponses
+        .firstOrNull { recommended ->
+            resolvePlanetRes(recommended.chapterId) != null
+        }
+        ?: home.recommendedUnitResponses.firstOrNull()
+
+    val recommendedPlanetRes = recommendedInfo
+        ?.chapterId
+        ?.let { resolvePlanetRes(it) }
+
+    val weeklyInfo = home.weeklyRecordResponse
+    val missionInfo = home.missionResponse
+
+    val level = userLevelInfo.level
+    val leagueName = userLeagueInfo.leagueName
+
+    val levelRate = userLevelInfo.levelRate
+    val levelProgress = (levelRate / 100.0)
+        .coerceIn(0.0, 1.0)
+
+    val leagueId = userLeagueInfo.leagueId
+    val lpRange = (userLeagueInfo.maxLP - userLeagueInfo.minLP).toDouble()
+
+    val leagueProgress = if (lpRange > 0.0) {
+        ((userLeagueInfo.currentLP - userLeagueInfo.minLP).toDouble() / lpRange)
+            .coerceIn(0.0, 1.0)
+    } else {
+        0.0
+    }
+
+    val consecutiveDays = weeklyInfo.consecutiveSolvedDays
+
+    val configuration = LocalConfiguration.current
+    val isTabletLandscape =
+        configuration.screenWidthDp >= 600 && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    StatusBarStyle(darkIcons = false)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg2)
+    ) {
+        if (isTabletLandscape) {
+            Image(
+                painter = painterResource(id = R.drawable.main_bg2),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(274.dp),
+                alignment = Alignment.TopCenter,
+                contentScale = ContentScale.Fit
+            )
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            if (isTabletLandscape) Color.Transparent else AppColor.bg2
+                        )
+                ) {
+                    if (!isTabletLandscape) {
+                        Image(
+                            painter = painterResource(id = R.drawable.main_back),
+                            contentDescription = "main back",
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.FillWidth
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(WindowInsets.statusBars.asPaddingValues())
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(36.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    LeagueGauge(levelProgress, modifier = Modifier.size(32.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .background(ProfilePalette.idToColor(home.mainProfile.profileImgNumber)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.gravit_logo),
+                                            contentDescription = "profile logo",
+                                            modifier = Modifier.width(12.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Lv $level",
+                                    style = AppTypography.Label1,
+                                    color = PrimitiveColor.Gray50
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(20.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(36.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    LeagueGauge(leagueProgress, modifier = Modifier.size(32.dp))
+
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Image(
+                                            painter = TierPalette.painterFor(leagueId),
+                                            contentDescription = "tier",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = leagueName,
+                                    style = AppTypography.Label1,
+                                    color = PrimitiveColor.Gray50
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(90.dp))
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.Bottom,
+                            horizontalAlignment = Alignment.Start,
+                        ) {
+                            val nickname = home.mainProfile.nickname
+
+                            Text(
+                                text = "어서오세요, ${nickname}님!",
+                                style = AppTypography.Title3,
+                                color = PrimitiveColor.Gray50,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 30.dp)
+                            )
+
+                            Text(
+                                text = "그래빗과 함께 cs 지식을 마스터해요!",
+                                style = AppTypography.Body1_Normal,
+                                color = PrimitiveColor.Gray100,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 24.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .defaultMinSize(minHeight = 124.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(color = Color.White)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "연속 학습일",
+                                            style = AppTypography.Label2,
+                                            color = PrimitiveColor.Gray500
+                                        )
+                                        Text(
+                                            text = "자세히 보기",
+                                            style = AppTypography.Label2,
+                                            color = PrimitiveColor.Gray400,
+                                            modifier = Modifier.clickable(
+                                                indication = null,
+                                                interactionSource = remember { MutableInteractionSource() }
+                                            ) {
+                                                navController.navigate("user")
+                                            }
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(
+                                        buildAnnotatedString {
+                                            withStyle(
+                                                SpanStyle(
+                                                    color = Color.Black,
+                                                    fontSize = 28.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = (-0.6).sp
+                                                )
+                                            ) {
+                                                append("$consecutiveDays ")
+                                            }
+
+                                            withStyle(
+                                                SpanStyle(
+                                                    color = PrimitiveColor.Gray800,
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            ) {
+                                                append("일 연속")
+                                            }
+                                        },
+                                        fontFamily = pretendard
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val screenWidth = LocalConfiguration.current.screenWidthDp
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = if (screenWidth >= 600) {
+                                            Arrangement.spacedBy(8.dp)
+                                        } else {
+                                            Arrangement.SpaceBetween
+                                        },
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        val days = listOf(
+                                            Triple(
+                                                "월",
+                                                weeklyInfo.MONDAY.dayTiming,
+                                                weeklyInfo.MONDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "화",
+                                                weeklyInfo.TUESDAY.dayTiming,
+                                                weeklyInfo.TUESDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "수",
+                                                weeklyInfo.WEDNESDAY.dayTiming,
+                                                weeklyInfo.WEDNESDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "목",
+                                                weeklyInfo.THURSDAY.dayTiming,
+                                                weeklyInfo.THURSDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "금",
+                                                weeklyInfo.FRIDAY.dayTiming,
+                                                weeklyInfo.FRIDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "토",
+                                                weeklyInfo.SATURDAY.dayTiming,
+                                                weeklyInfo.SATURDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "일",
+                                                weeklyInfo.SUNDAY.dayTiming,
+                                                weeklyInfo.SUNDAY.isCompleted
+                                            )
+                                        )
+                                        days.forEach { (label, day, completed) ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(
+                                                        when (day) {
+                                                            "TODAY" -> AppColor.Main1
+                                                            "PAST" if completed -> Color(0xFFFBF1FF)
+                                                            else -> Color.White
+                                                        }
+                                                    )
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = when (day) {
+                                                            "TODAY" -> AppColor.Main1
+                                                            "PAST" if completed -> AppColor.Main1
+                                                            else -> PrimitiveColor.Gray400
+                                                        },
+                                                        shape = RoundedCornerShape(4.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = label,
+                                                    style = AppTypography.Label1,
+                                                    color = when (day) {
+                                                        "TODAY" -> AppColor.bg0
+                                                        "PAST" if completed -> AppColor.Main1
+                                                        else -> PrimitiveColor.Gray500
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(156.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.White)
+                                            .clickable {
+                                                val route =
+                                                    if (missionInfo.missionType == "FOLLOW_NEW_FRIEND") {
+                                                        "user"
+                                                    } else {
+                                                        "chapter"
+                                                    }
+                                                navController.navigate(route) {
+                                                    launchSingleTop = true
+                                                }
+                                            }
+                                            .padding(16.dp)
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = "오늘의 미션",
+                                                style = AppTypography.Label2,
+                                                color = PrimitiveColor.Gray500
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = missionInfo.missionDescription,
+                                                style = AppTypography.Headline2,
+                                                color = Color.Black
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = "완료 시 +${missionInfo.awardXp} XP",
+                                                style = AppTypography.Caption1,
+                                                color = AppColor.Main1
+                                            )
+                                        }
+
+                                        Column(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = "진행률",
+                                                    style = AppTypography.Caption2,
+                                                    color = PrimitiveColor.Gray500
+                                                )
+                                                Text(
+                                                    text = "${
+                                                        String.format(
+                                                            Locale.US,
+                                                            "%.1f",
+                                                            missionInfo.progressRate
+                                                        ).removeSuffix(".0")
+                                                    }%",
+                                                    style = AppTypography.Caption2,
+                                                    color = AppColor.Main1
+                                                )
+                                            }
+
+                                            Spacer(Modifier.height(4.dp))
+
+                                            RoundedGauge(
+                                                height = 8.dp,
+                                                width = 0.dp,
+                                                rate = missionInfo.progressRate,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = Color(0xFFFBF1FF)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(156.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable(onClick = { navController.navigate("unit/${recommendedInfo?.chapterId ?: 1}") })
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.planet_bg),
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+
+                                        recommendedPlanetRes?.let { planetRes ->
+                                            Image(
+                                                painter = painterResource(id = planetRes),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomEnd)
+                                                    .size(130.dp)
+                                                    .offset(
+                                                        x = 30.dp,
+                                                        y = 35.dp
+                                                    ),
+                                                contentScale = ContentScale.Fit
+                                            )
+                                        }
+                                        Column(
+                                            modifier = Modifier.padding(16.dp)
+                                        ) {
+                                            Text(
+                                                text = "새 주제 시작하기",
+                                                style = AppTypography.Label2,
+                                                color = PrimitiveColor.Gray400
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = recommendedInfo?.chapterTitle ?: "자료구조",
+                                                style = AppTypography.Headline1,
+                                                color = PrimitiveColor.Gray50
+                                            )
+
+                                            Spacer(modifier = Modifier.height(3.dp))
+
+                                            Text(
+                                                text = recommendedInfo?.unitTitle ?: "배열",
+                                                style = AppTypography.Caption1,
+                                                color = PrimitiveColor.Gray400
+                                            )
+                                        }
+                                        Column(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .fillMaxWidth()
+                                                .padding(16.dp)
+                                        ) {
+                                            Text(
+                                                text = "학습하러 가기 ->",
+                                                style = AppTypography.Label1,
+                                                color = Color(0xFFFBF1FF),
+                                                textDecoration = TextDecoration.Underline
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        val chapterId = userLearningInfo.recentSolvedChapterId
+                        val chapterName = userLearningInfo.recentSolvedChapterTitle
+                        val progressRate = userLearningInfo.recentSolvedChapterProgressRate
+
+                        PreviousButton(
+                            chapterId = chapterId,
+                            chapterName = chapterName,
+                            progressRate = progressRate,
+                            units = units,
+
+                            onClick = {
+                                if (chapterId == 0L) {
+                                    navController.navigate("chapter") {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            },
+
+                            onViewAllClick = {
+                                navController.navigate("unit/$chapterId") {
+                                    launchSingleTop = true
+                                }
+                            },
+
+                            onUnitClick = { unit ->
+                                navController.navigate(
+                                    "lessonList/${unit.unitId}"
+                                ) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("ConfigurationScreenWidthHeight", "DefaultLocale")
+@Composable
+private fun HomeUITabletLandscape(
+    home: MainPageResponse,
+    units: List<Units>,
+    navController: NavController
+) {
+    val userLevelInfo = home.mainProfile.userLevelDetailResponse
+    val userLeagueInfo = home.mainLeagueResponse
+    val userLearningInfo = home.mainLearningResponse
+    val recommendedInfo = home.recommendedUnitResponses
+        .firstOrNull { recommended ->
+            resolvePlanetRes(recommended.chapterId) != null
+        }
+        ?: home.recommendedUnitResponses.firstOrNull()
+
+    val recommendedPlanetRes = recommendedInfo
+        ?.chapterId
+        ?.let { resolvePlanetRes(it) }
+
+    val weeklyInfo = home.weeklyRecordResponse
+    val missionInfo = home.missionResponse
+
+    val level = userLevelInfo.level
+    val leagueName = userLeagueInfo.leagueName
+
+    val levelRate = userLevelInfo.levelRate
+    val levelProgress = (levelRate / 100.0)
+        .coerceIn(0.0, 1.0)
+
+    val leagueId = userLeagueInfo.leagueId
+    val lpRange = (userLeagueInfo.maxLP - userLeagueInfo.minLP).toDouble()
+
+    val leagueProgress = if (lpRange > 0.0) {
+        ((userLeagueInfo.currentLP - userLeagueInfo.minLP).toDouble() / lpRange)
+            .coerceIn(0.0, 1.0)
+    } else {
+        0.0
+    }
+
+    val consecutiveDays = weeklyInfo.consecutiveSolvedDays
+    val configuration = LocalConfiguration.current
+    val isTabletPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
+    StatusBarStyle(darkIcons = false)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColor.bg2)
+    ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val backgroundPainter = painterResource(
+                        id = R.drawable.main_bg2
+                    )
+                    val imageSize = backgroundPainter.intrinsicSize
+                    val imageRatio = imageSize.width / imageSize.height
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clipToBounds()
+                            .then(
+                                if (isTabletPortrait) {
+                                    Modifier.wrapContentHeight()
+                                } else if (imageRatio.isFinite() && imageRatio > 0f) {
+                                    Modifier.aspectRatio(imageRatio)
+                                } else {
+                                    Modifier.wrapContentHeight()
+                                }
+                            )
+                    ) {
+                        Image(
+                            painter = backgroundPainter,
+                            contentDescription = null,
+                            modifier = if (isTabletPortrait) Modifier.matchParentSize() else Modifier.fillMaxSize(),
+                            alignment = if (isTabletPortrait) Alignment.TopEnd else Alignment.TopCenter,
+                            contentScale = if (isTabletPortrait) ContentScale.Crop else ContentScale.Fit
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(
+                                    if (isTabletPortrait) Modifier else Modifier.fillMaxSize()
+                                )
+                                .padding(WindowInsets.statusBars.asPaddingValues())
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Top
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier.size(36.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        LeagueGauge(levelProgress, modifier = Modifier.size(32.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .clip(CircleShape)
+                                                .background(ProfilePalette.idToColor(home.mainProfile.profileImgNumber)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.gravit_logo),
+                                                contentDescription = "profile logo",
+                                                modifier = Modifier.width(12.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "Lv $level",
+                                        style = AppTypography.Label1,
+                                        color = PrimitiveColor.Gray50
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(20.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier.size(36.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        LeagueGauge(leagueProgress, modifier = Modifier.size(32.dp))
+                                        Image(
+                                            painter = TierPalette.painterFor(leagueId),
+                                            contentDescription = "tier",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = leagueName,
+                                        style = AppTypography.Label1,
+                                        color = PrimitiveColor.Gray50
+                                    )
+                                }
+                            }
+
+                            Spacer(
+                                modifier = Modifier.height(
+                                    24.dp
+                                )
+                            )
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = "어서오세요, ${home.mainProfile.nickname}님!",
+                                    style = AppTypography.Title3,
+                                    color = PrimitiveColor.Gray50,
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 30.dp)
+                                )
+                                Text(
+                                    text = "그래빗과 함께 cs 지식을 마스터해요!",
+                                    style = AppTypography.Body1_Normal,
+                                    color = PrimitiveColor.Gray100,
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 24.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Spacer(modifier = Modifier.height(0.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .defaultMinSize(minHeight = 124.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(color = Color.White)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "연속 학습일",
+                                            style = AppTypography.Label2,
+                                            color = PrimitiveColor.Gray500
+                                        )
+                                        Text(
+                                            text = "자세히 보기",
+                                            style = AppTypography.Label2,
+                                            color = PrimitiveColor.Gray400,
+                                            modifier = Modifier.clickable(
+                                                indication = null,
+                                                interactionSource = remember { MutableInteractionSource() }
+                                            ) {
+                                                navController.navigate("user")
+                                            }
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(
+                                        buildAnnotatedString {
+                                            withStyle(
+                                                SpanStyle(
+                                                    color = Color.Black,
+                                                    fontSize = 28.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = (-0.6).sp
+                                                )
+                                            ) {
+                                                append("$consecutiveDays ")
+                                            }
+
+                                            withStyle(
+                                                SpanStyle(
+                                                    color = PrimitiveColor.Gray800,
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            ) {
+                                                append("일 연속")
+                                            }
+                                        },
+                                        fontFamily = pretendard
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val screenWidth = LocalConfiguration.current.screenWidthDp
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = if (screenWidth >= 600) {
+                                            Arrangement.spacedBy(8.dp)
+                                        } else {
+                                            Arrangement.SpaceBetween
+                                        },
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        val days = listOf(
+                                            Triple(
+                                                "월",
+                                                weeklyInfo.MONDAY.dayTiming,
+                                                weeklyInfo.MONDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "화",
+                                                weeklyInfo.TUESDAY.dayTiming,
+                                                weeklyInfo.TUESDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "수",
+                                                weeklyInfo.WEDNESDAY.dayTiming,
+                                                weeklyInfo.WEDNESDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "목",
+                                                weeklyInfo.THURSDAY.dayTiming,
+                                                weeklyInfo.THURSDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "금",
+                                                weeklyInfo.FRIDAY.dayTiming,
+                                                weeklyInfo.FRIDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "토",
+                                                weeklyInfo.SATURDAY.dayTiming,
+                                                weeklyInfo.SATURDAY.isCompleted
+                                            ),
+                                            Triple(
+                                                "일",
+                                                weeklyInfo.SUNDAY.dayTiming,
+                                                weeklyInfo.SUNDAY.isCompleted
+                                            )
+                                        )
+                                        days.forEach { (label, day, completed) ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(
+                                                        when (day) {
+                                                            "TODAY" -> AppColor.Main1
+                                                            "PAST" if completed -> Color(0xFFFBF1FF)
+                                                            else -> Color.White
+                                                        }
+                                                    )
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = when (day) {
+                                                            "TODAY" -> AppColor.Main1
+                                                            "PAST" if completed -> AppColor.Main1
+                                                            else -> PrimitiveColor.Gray400
+                                                        },
+                                                        shape = RoundedCornerShape(4.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = label,
+                                                    style = AppTypography.Label1,
+                                                    color = when (day) {
+                                                        "TODAY" -> AppColor.bg0
+                                                        "PAST" if completed -> AppColor.Main1
+                                                        else -> PrimitiveColor.Gray500
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(156.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.White)
+                                            .clickable {
+                                                val route =
+                                                    if (missionInfo.missionType == "FOLLOW_NEW_FRIEND") {
+                                                        "user"
+                                                    } else {
+                                                        "chapter"
+                                                    }
+                                                navController.navigate(route) {
+                                                    launchSingleTop = true
+                                                }
+                                            }
+                                            .padding(16.dp)
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = "오늘의 미션",
+                                                style = AppTypography.Label2,
+                                                color = PrimitiveColor.Gray500
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = missionInfo.missionDescription,
+                                                style = AppTypography.Headline2,
+                                                color = Color.Black
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = "완료 시 +${missionInfo.awardXp} XP",
+                                                style = AppTypography.Caption1,
+                                                color = AppColor.Main1
+                                            )
+                                        }
+
+                                        Column(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = "진행률",
+                                                    style = AppTypography.Caption2,
+                                                    color = PrimitiveColor.Gray500
+                                                )
+                                                Text(
+                                                    text = "${
+                                                        String.format(
+                                                            Locale.US,
+                                                            "%.1f",
+                                                            missionInfo.progressRate
+                                                        ).removeSuffix(".0")
+                                                    }%",
+                                                    style = AppTypography.Caption2,
+                                                    color = AppColor.Main1
+                                                )
+                                            }
+
+                                            Spacer(Modifier.height(4.dp))
+
+                                            RoundedGauge(
+                                                height = 8.dp,
+                                                width = 0.dp,
+                                                rate = missionInfo.progressRate,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = Color(0xFFFBF1FF)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(156.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable(onClick = { navController.navigate("unit/${recommendedInfo?.chapterId ?: 1}") })
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.planet_bg),
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+
+                                        recommendedPlanetRes?.let { planetRes ->
+                                            Image(
+                                                painter = painterResource(id = planetRes),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomEnd)
+                                                    .size(130.dp)
+                                                    .offset(
+                                                        x = 30.dp,
+                                                        y = 35.dp
+                                                    ),
+                                                contentScale = ContentScale.Fit
+                                            )
+                                        }
+                                        Column(
+                                            modifier = Modifier.padding(16.dp)
+                                        ) {
+                                            Text(
+                                                text = "새 주제 시작하기",
+                                                style = AppTypography.Label2,
+                                                color = PrimitiveColor.Gray400
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = recommendedInfo?.chapterTitle ?: "자료구조",
+                                                style = AppTypography.Headline1,
+                                                color = PrimitiveColor.Gray50
+                                            )
+
+                                            Spacer(modifier = Modifier.height(3.dp))
+
+                                            Text(
+                                                text = recommendedInfo?.unitTitle ?: "배열",
+                                                style = AppTypography.Caption1,
+                                                color = PrimitiveColor.Gray400
+                                            )
+                                        }
+                                        Column(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .fillMaxWidth()
+                                                .padding(16.dp)
+                                        ) {
+                                            Text(
+                                                text = "학습하러 가기 ->",
+                                                style = AppTypography.Label1,
+                                                color = Color(0xFFFBF1FF),
+                                                textDecoration = TextDecoration.Underline
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        val chapterId = userLearningInfo.recentSolvedChapterId
+                        val chapterName = userLearningInfo.recentSolvedChapterTitle
+                        val progressRate = userLearningInfo.recentSolvedChapterProgressRate
+
+                        PreviousButton(
+                            chapterId = chapterId,
+                            chapterName = chapterName,
+                            progressRate = progressRate,
+                            units = units,
+
+                            onClick = {
+                                if (chapterId == 0L) {
+                                    navController.navigate("chapter") {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            },
+
+                            onViewAllClick = {
+                                navController.navigate("unit/$chapterId") {
+                                    launchSingleTop = true
+                                }
+                            },
+
+                            onUnitClick = { unit ->
+                                navController.navigate(
+                                    "lessonList/${unit.unitId}"
+                                ) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+fun resolvePlanetRes(chapterId: Long): Int? {
+    return planetById[chapterId]
+}
+val planetById = mapOf(
+    1L to R.drawable.planet_01_mercury,
+    2L to R.drawable.planet_02_venus,
+    3L to R.drawable.planet_03_earth,
+    4L to R.drawable.planet_04_mars,
+    5L to R.drawable.planet_05_jupiter,
+    6L to R.drawable.planet_06_saturn,
+    7L to R.drawable.planet_07_uranus,
+    8L to R.drawable.planet_08_neptune,
+    9L to R.drawable.planet_09_sun,
+    10L to R.drawable.planet_10_pluto,
+    11L to R.drawable.planet_11_ceres,
+    12L to R.drawable.planet_12_eris,
+    13L to R.drawable.planet_13_vesta,
+    14L to R.drawable.planet_14_io,
+    15L to R.drawable.planet_15_europa,
+    16L to R.drawable.planet_16_titan,
+    17L to R.drawable.planet_17_triton,
+    18L to R.drawable.planet_18_charon,
+    19L to R.drawable.planet_19_phobos,
+    20L to R.drawable.planet_20_deimos,
+    21L to R.drawable.planet_21_mimas,
+    22L to R.drawable.planet_22_rhea,
+    23L to R.drawable.planet_23_tethys,
+    24L to R.drawable.planet_24_dione,
+    25L to R.drawable.planet_25_oberon,
+)

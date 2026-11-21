@@ -1,0 +1,498 @@
+
+package com.inuappcenter.gravit.main.User.Notice
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.inuappcenter.gravit.share.StatusBarStyle
+import com.inuappcenter.gravit.ui.theme.AppColor
+import com.inuappcenter.gravit.ui.theme.AppTypography
+import com.inuappcenter.gravit.ui.theme.InlineButton
+import com.inuappcenter.gravit.ui.theme.InlineButtonState
+import com.inuappcenter.gravit.ui.theme.PrimitiveColor
+import com.inuappcenter.gravit.R
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.main.Study.Problem.CustomSnackBar
+import com.inuappcenter.gravit.main.User.TopBar
+import com.inuappcenter.gravit.main.User.UserScreenVM
+import com.inuappcenter.gravit.main.User.UserVMFactory
+import com.inuappcenter.gravit.ui.theme.ProfilePalette
+import kotlinx.coroutines.delay
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import androidx.compose.foundation.lazy.items
+import com.inuappcenter.gravit.share.LoadFailedDialog
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun Notification(
+    navController: NavController,
+){
+    val context = LocalContext.current
+    val notificationVM: NotificationVM = viewModel(factory = NotificationVMFactory(
+        RetrofitInstance.api,
+        context
+    )
+    )
+    val notificationUi by notificationVM.state.collectAsState()
+    val congratulateVM: UserScreenVM = viewModel(factory = UserVMFactory(RetrofitInstance.api, context))
+
+    var navigated by remember { mutableStateOf(false) }
+
+    var showSnackBar by remember { mutableStateOf(false) }
+    var snackBarText by remember { mutableStateOf("") }
+
+    val isLoading = notificationUi == NotificationVM.UiState.Loading
+    val isSessionExpired = notificationUi == NotificationVM.UiState.SessionExpired
+
+    val followingRequestIds by notificationVM.followingRequestIds.collectAsState()
+
+    LaunchedEffect(Unit) {
+        notificationVM.load()
+    }
+
+    LaunchedEffect(isSessionExpired, notificationUi) {
+        if (navigated) return@LaunchedEffect
+        when {
+            isSessionExpired -> {
+                navigated = true
+                navController.navigate("error/401") {
+                    launchSingleTop = true
+                }
+            }
+            notificationUi == NotificationVM.UiState.NotFound -> {
+                navigated = true
+                navController.navigate("error/404"){
+                    launchSingleTop = true
+                }
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(Unit) {
+        congratulateVM.congratulateEvent.collect { event ->
+            when (event) {
+                is UserScreenVM.CongratulateEvent.Success -> {
+                    notificationVM.markCongratulated(event.targetId)
+                }
+
+                is UserScreenVM.CongratulateEvent.Failed -> {
+                    snackBarText = event.message
+                    showSnackBar = true
+                }
+
+                UserScreenVM.CongratulateEvent.SessionExpired -> {
+                    if (!navigated) {
+                        navigated = true
+                        navController.navigate("error/401") {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
+        notificationVM.followEvent.collect { event ->
+            when (event) {
+                is NotificationVM.FollowEvent.Success -> Unit
+
+                is NotificationVM.FollowEvent.Failed -> {
+                    snackBarText = event.message
+                    showSnackBar = true
+                }
+
+                NotificationVM.FollowEvent.SessionExpired -> {
+                    if (!navigated) {
+                        navigated = true
+
+                        navController.navigate("error/401") {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val listState = rememberLazyListState()
+    val notifications = (notificationUi as? NotificationVM.UiState.Success)?.data
+    val groupedNotifications = notifications
+        ?.groupBy { notification ->
+            LocalDateTime.parse(notification.createdAt).toLocalDate()
+        }
+        ?.toSortedMap(compareByDescending { it })
+
+    StatusBarStyle(darkIcons = true)
+    Box (
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+    ){
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColor.bg0)
+        ) {
+            TopBar(
+                navController = navController,
+                title = "알림",
+                height = 48.dp
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppColor.bg1)
+                    .weight(1f)
+            ) {
+                when (notificationUi){
+                    is NotificationVM.UiState.Success ->{
+                        if (notifications.isNullOrEmpty()) {
+                            Column(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text(
+                                    text = LocalDate.now().format(
+                                        DateTimeFormatter.ofPattern(
+                                            "yyyy. MM. dd (E)",
+                                            Locale.KOREAN
+                                        )
+                                    ),
+                                    style = AppTypography.Label2,
+                                    color = PrimitiveColor.Gray500,
+                                    modifier = Modifier.padding(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top = 20.dp
+                                    )
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    EmptyUi()
+                                }
+                            }
+                        }else{
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(AppColor.bg2),
+                            ) {
+                                groupedNotifications?.forEach { (date, dateNotifications) ->
+                                    item(key = "date_$date") {
+                                        Text(
+                                            text = date.format(
+                                                DateTimeFormatter.ofPattern(
+                                                    "yyyy. MM. dd (E)",
+                                                    Locale.KOREAN
+                                                )
+                                            ),
+                                            style = AppTypography.Label2,
+                                            color = PrimitiveColor.Gray500,
+                                            modifier = Modifier.padding(
+                                                start = 16.dp,
+                                                end = 16.dp,
+                                                top = if (date == groupedNotifications?.firstKey()) 20.dp else 8.dp,
+                                                bottom = 12.dp
+                                            )
+                                        )
+                                    }
+                                    items(
+                                        items = dateNotifications,
+                                        key = { it.id }
+                                    ) { notification ->
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(
+                                                    start = 16.dp,
+                                                    end = 16.dp,
+                                                    bottom = 12.dp
+                                                )
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(AppColor.bg0)
+                                                .border(
+                                                    1.dp,
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = AppColor.divider1
+                                                )
+                                                .padding(16.dp)
+                                        ) {
+                                            Column(
+                                            ) {
+                                                if (notification.type == "FOLLOW" || notification.actionType == "UNFOLLOW") {
+                                                    Row {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(38.dp)
+                                                                .clip(CircleShape)
+                                                                .background(
+                                                                    ProfilePalette.idToColor(
+                                                                        notification.actor?.profileImgNumber
+                                                                            ?: 1
+                                                                    )
+                                                                ),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Image(
+                                                                painter = painterResource(id = R.drawable.gravit_logo),
+                                                                contentDescription = "profile logo",
+                                                                modifier = Modifier.size(
+                                                                    18.dp,
+                                                                    20.dp
+                                                                )
+                                                            )
+                                                        }
+                                                        Spacer(Modifier.width(12.dp))
+                                                        Column() {
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Text(
+                                                                    text = notification.actor?.nickname
+                                                                        ?: "",
+                                                                    style = AppTypography.Label1,
+                                                                    color = AppColor.text1
+                                                                )
+                                                                Spacer(Modifier.width(8.dp))
+                                                                Text(
+                                                                    text = notification.timeAgo,
+                                                                    style = AppTypography.Caption1,
+                                                                    color = AppColor.text4
+                                                                )
+                                                            }
+                                                            Spacer(Modifier.height(4.dp))
+                                                            Text(
+                                                                text = notification.message,
+                                                                style = AppTypography.Label2,
+                                                                maxLines = 2,
+                                                                color = AppColor.text3
+                                                            )
+                                                        }
+                                                    }
+                                                } else {
+                                                    Box(
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.Top
+                                                        ) {
+                                                            Text(
+                                                                text = notification.message,
+                                                                style = AppTypography.Label1,
+                                                                color = AppColor.text1,
+                                                                modifier = Modifier.weight(1f),
+                                                                softWrap = true
+                                                            )
+
+                                                            Spacer(Modifier.width(8.dp))
+
+                                                            Text(
+                                                                text = notification.timeAgo,
+                                                                style = AppTypography.Caption1,
+                                                                color = AppColor.text4,
+                                                                maxLines = 1,
+                                                                softWrap = false
+                                                            )
+                                                        }
+
+                                                    }
+                                                }
+                                                if (notification.actionType != "NONE") {
+                                                    Spacer(Modifier.height(12.dp))
+                                                    Spacer(Modifier.weight(1f))
+                                                    val isCongratulated =
+                                                        notification.actionType == "CONGRATULATE" && notification.congratulated == true
+                                                    InlineButton(
+                                                        text =
+                                                            when (notification.actionType) {
+                                                                "FOLLOW_BACK" -> "맞팔로우"
+                                                                "GO_TO_LEARNING" -> "학습하러 가기"
+                                                                "GO_TO_NOTICE" -> "공지사항 바로가기"
+                                                                "UNFOLLOW" -> "팔로우 취소"
+                                                                "CONGRATULATE" -> "축하하기"
+                                                                "GO_TO_INQUIRY" -> "문의사항 바로가기"
+                                                                else -> ""
+                                                            },
+                                                        onClick = {
+                                                            when (notification.actionType) {
+                                                                "GO_TO_LEARNING" -> {
+                                                                    if (notification.targetId == null)
+                                                                        navController.navigate("chapter")
+                                                                    else navController.navigate(
+                                                                        "lessonList/${notification.targetId}"
+                                                                    )
+                                                                }
+
+                                                                "GO_TO_NOTICE" -> {
+                                                                    navController.navigate("user/notice/detail/${notification.targetId}")
+                                                                }
+
+                                                                "FOLLOW_BACK", "UNFOLLOW" -> {
+                                                                    notification.targetId?.let { targetId ->
+                                                                        if (targetId !in followingRequestIds) {
+                                                                            notificationVM.toggleFollow(
+                                                                                targetId = targetId,
+                                                                                actionType = notification.actionType
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                "CONGRATULATE" -> {
+                                                                    notification.targetId?.let { targetId ->
+                                                                        congratulateVM.congratulate(
+                                                                            targetId
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                "GO_TO_INQUIRY" -> {
+                                                                    navController.navigate("inquiry")
+                                                                }
+
+                                                                else -> Unit
+                                                            }
+                                                        },
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(32.dp),
+                                                        style = AppTypography.Label2,
+                                                        state = when {
+                                                            notification.actionType == "UNFOLLOW" ->
+                                                                InlineButtonState.Stroke_Color
+
+                                                            isCongratulated ->
+                                                                InlineButtonState.Stroke
+
+                                                            else ->
+                                                                InlineButtonState.Default
+                                                        },
+
+                                                        color = when {
+                                                            notification.actionType == "UNFOLLOW" ->
+                                                                AppColor.CTA
+
+                                                            isCongratulated ->
+                                                                AppColor.text3
+
+                                                            else ->
+                                                                AppColor.CTA_text
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                    else -> Unit
+                }
+            }
+        }
+        if(isLoading){
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        if (notificationUi == NotificationVM.UiState.Failed) {
+            LoadFailedDialog(
+                onRetryClick = {
+                    notificationVM.load()
+                }
+            )
+        }
+        if (showSnackBar) {
+            CustomSnackBar(
+                text = snackBarText,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp)
+            )
+
+            LaunchedEffect(snackBarText) {
+                delay(2000)
+                showSnackBar = false
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyUi(){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = buildAnnotatedString {
+                withStyle(
+                    AppTypography.Headline1.toSpanStyle()
+                        .copy(color = AppColor.text2)
+                ) {
+                    append("알림이 없어요.")
+                }
+
+                append("\n")
+
+                withStyle(
+                    AppTypography.Label1.toSpanStyle()
+                        .copy(color = AppColor.text_on_color_3)
+                ) {
+                    append("궁금한 점이 있다면 문의하기를 통해 남겨주세요.")
+                }
+            },
+            textAlign = TextAlign.Center
+        )
+    }
+}
