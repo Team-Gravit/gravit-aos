@@ -1,0 +1,446 @@
+package com.inuappcenter.gravit.main.Study.Problem
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.inuappcenter.gravit.main.ResultDialog
+import com.inuappcenter.gravit.ui.theme.AppColor
+import com.inuappcenter.gravit.ui.theme.AppTypography
+import com.inuappcenter.gravit.ui.theme.BlockButton
+import com.inuappcenter.gravit.ui.theme.ButtonState
+import com.inuappcenter.gravit.ui.theme.PrimitiveColor
+import com.inuappcenter.gravit.api.RetrofitInstance
+import com.inuappcenter.gravit.R
+
+@Composable
+fun ReportDialog(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    problemId: Long,
+    onOverlayOpened: () -> Unit = {},
+    onOverlayClosed: () -> Unit = {},
+    onReportFailed: () -> Unit,
+) {
+    val context = LocalContext.current
+    val vm: ReportVM = viewModel(factory = ReportVMFactory(RetrofitInstance.api, context))
+    val ui by vm.state.collectAsState()
+
+    var showDialog by remember { mutableStateOf(false) }
+    var showConfirm by remember { mutableStateOf(false) }
+    var navigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(ui) {
+        when (ui) {
+            ReportVM.UiState.Success -> {
+                showDialog = false
+                showConfirm = true
+            }
+
+            ReportVM.UiState.Failed -> {
+                showDialog = false
+                onOverlayClosed()
+                onReportFailed()
+            }
+
+            ReportVM.UiState.SessionExpired -> {
+                if (!navigated) {
+                    navigated = true
+
+                    showDialog = false
+                    onOverlayClosed()
+
+                    navController.navigate("error/401") {
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            ReportVM.UiState.NotFound -> {
+                if (!navigated) {
+                    navigated = true
+
+                    showDialog = false
+                    onOverlayClosed()
+
+                    navController.navigate("error/404") {
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            else -> {
+                navigated = false
+            }
+        }
+    }
+
+    Icon(
+        painter = painterResource(id = R.drawable.report_icon),
+        contentDescription = "report",
+        modifier = modifier
+            .size(24.dp)
+            .clickable {
+                showDialog = true
+                onOverlayOpened()
+            },
+        tint = AppColor.icon_default
+    )
+
+    if (showDialog) {
+        var text by remember { mutableStateOf("") }
+        var selectedIndex by remember { mutableStateOf<Int?>(null) }
+
+        val options = listOf(
+            "문제/선지에 오탈자가 있습니다." to "TYPO_ERROR",
+            "문제 자체에 오류가 있습니다." to "CONTENT_ERROR",
+            "답안에 오류가 있습니다." to "ANSWER_ERROR",
+            "기타" to "OTHER_ERROR"
+        )
+
+        val isLoading = ui == ReportVM.UiState.Loading
+        val canSubmit = selectedIndex != null && !isLoading
+
+        Dialog(
+            onDismissRequest = {
+                if (!isLoading) {
+                    showDialog = false
+                    onOverlayClosed()
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                val dialogWidth = when {
+                    maxWidth < 360.dp -> maxWidth - 32.dp
+                    maxWidth < 600.dp -> 360.dp.coerceAtMost(maxWidth - 32.dp)
+                    maxWidth < 840.dp -> 480.dp
+                    else -> 560.dp
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .width(dialogWidth)
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 20.dp
+                                )
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "신고하기",
+                                    style = AppTypography.Body2_Normal,
+                                    color = PrimitiveColor.Gray500
+                                )
+
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .clickable(
+                                            enabled = !isLoading,
+                                            interactionSource = remember {
+                                                MutableInteractionSource()
+                                            },
+                                            indication = null
+                                        ) {
+                                            showDialog = false
+                                            onOverlayClosed()
+                                        },
+                                    tint = AppColor.text1
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            thickness = 1.dp,
+                            color = AppColor.divider1
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 16.dp
+                                )
+                        ) {
+                            options.forEachIndexed { idx, opt ->
+                                Option(
+                                    isChecked = selectedIndex == idx,
+                                    text = opt.first,
+                                    onClick = {
+                                        if (!isLoading) {
+                                            selectedIndex = idx
+                                        }
+                                    }
+                                )
+
+                                Spacer(Modifier.height(12.dp))
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White)
+                                    .border(
+                                        width = 1.dp,
+                                        color = AppColor.divider1,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 10.dp
+                                    )
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "신고내용",
+                                        style = AppTypography.Caption1,
+                                        color = Color(0xFFA1A1A1)
+                                    )
+
+                                    Spacer(Modifier.height(4.dp))
+
+                                    BasicTextField(
+                                        value = text,
+                                        onValueChange = {
+                                            if (!isLoading) {
+                                                text = it
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f),
+                                        textStyle = AppTypography.Body2_Reading.copy(color = AppColor.text1),
+                                        enabled = !isLoading
+                                    )
+                                }
+                            }
+                        }
+
+                        ReportButton(
+                            onClick1 = {
+                                showDialog = false
+                                onOverlayClosed()
+                            },
+                            text1 = "그만두기",
+                            enabled1 = !isLoading,
+                            onClick2 = {
+                                val selected =
+                                    selectedIndex?.let { options[it] }
+
+                                val reportType =
+                                    selected?.second ?: return@ReportButton
+
+                                vm.submit(
+                                    reportType,
+                                    text,
+                                    problemId
+                                )
+                            },
+
+                            text2 = "제출하기",
+                            enabled2 = canSubmit,
+
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 12.dp,
+                                bottom = 16.dp
+                            ),
+                            modifier1 = Modifier
+                                .height(48.dp)
+                                .weight(1f),
+                            modifier2 = Modifier
+                                .height(48.dp)
+                                .weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showConfirm && !showDialog) {
+        Dialog(
+            onDismissRequest = {
+                showConfirm = false
+                onOverlayClosed()
+            },
+            properties = DialogProperties(
+                dismissOnClickOutside = false,
+                dismissOnBackPress = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            ResultDialog(
+                onDismiss = {
+                    showConfirm = false
+                    onOverlayClosed()
+                },
+                titleText = "회원님의 신고가\n접수되었어요.",
+                descriptionText = "회원님의 소중한 의견들을 모아\n더욱 쾌적한 앱 환경을 만들겠습니다.\n단, 허위로 신고할 경우 제재 대상이 될 수 있어요.",
+                buttonText = "확인",
+                onButtonClick = {
+                    showConfirm = false
+                    onOverlayClosed()
+                }
+            )
+        }
+    }
+}
+@Composable
+fun ReportButton(
+    modifier: Modifier,
+    onClick1: () -> Unit,
+    text1: String,
+    enabled1: Boolean = true,
+    onClick2: () -> Unit,
+    text2: String,
+    enabled2: Boolean = true,
+    modifier1: Modifier,
+    modifier2: Modifier
+) {
+    val isSmallScreen = LocalConfiguration.current.screenWidthDp < 360
+
+    Row(modifier = modifier.fillMaxWidth()) {
+        BlockButton(
+            state = ButtonState.Stroke,
+            onClick = onClick1,
+            text = text1,
+            enabled = enabled1,
+            modifier = modifier1,
+            contentPadding = PaddingValues(
+                horizontal = if (isSmallScreen) 4.dp else 16.dp
+            ),
+        )
+        Spacer(Modifier.width(12.dp))
+        BlockButton(
+            state = ButtonState.Default,
+            onClick = onClick2,
+            text = text2,
+            enabled = enabled2,
+            modifier = modifier2
+        )
+    }
+}
+
+@Composable
+fun Option(
+    text : String,
+    onClick: () -> Unit,
+    isChecked: Boolean,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(42.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
+            .clip(RoundedCornerShape(8.dp))
+            .background(AppColor.bg0)
+            .border(
+                width = 1.dp,
+                color = AppColor.divider1,
+                shape = RoundedCornerShape(8.dp)
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Spacer(
+            Modifier.width(12.dp)
+        )
+        Image(
+            painter = painterResource(
+                id = if(isChecked)
+                    R.drawable.checked
+                else
+                    R.drawable.unchecked
+            ),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(
+            Modifier.width(10.dp)
+        )
+        Text(
+            text = text,
+            style = AppTypography.Body1_Normal,
+            color = AppColor.text2
+        )
+    }
+}
