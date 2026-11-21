@@ -31,7 +31,7 @@ android {
         applicationId = "com.inuappcenter.gravit"
         minSdk = 25
         targetSdk = 36
-        versionCode = 1
+        versionCode = 4
         versionName = "1.0.0"
 
         val kakaoKey = properties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
